@@ -490,10 +490,21 @@
         </main>
 
         <footer class="mt-10 bg-[#0F172A] px-4 py-8 text-sm text-slate-400 sm:px-8">
-            <div class="mx-auto max-w-[1400px]">
-                <strong class="text-white">MiCatalogo</strong>
-                <p class="mt-2">Catálogo y vitrina para vendedores independientes.</p>
-                <p class="mt-6 border-t border-slate-700 pt-4">© {{ now()->year }} MiCatalogo. No procesamos pagos ni órdenes.</p>
+            <div class="mx-auto grid max-w-[1400px] gap-6 sm:grid-cols-[1.2fr_1fr] sm:items-end">
+                <div>
+                    <strong class="text-white">MiCatalogo</strong>
+                    <p class="mt-2 max-w-xl">Catálogo y vitrina digital para vendedores independientes. Los clientes contactan directamente por WhatsApp.</p>
+                    <p class="mt-3 max-w-xl">MiCatalogo no procesa pagos, órdenes ni entregas; cada tienda gestiona sus ventas de forma directa.</p>
+                </div>
+                <div class="sm:text-right">
+                    <p>© {{ now()->year }} MiCatalogo. Todos los derechos reservados.</p>
+                    <p class="mt-2">
+                        Created by
+                        <a class="font-semibold text-white underline decoration-blue-400 underline-offset-4 hover:text-blue-200" href="https://bsolutions.dev" target="_blank" rel="noopener noreferrer">
+                            BSolutions.dev
+                        </a>
+                    </p>
+                </div>
             </div>
         </footer>
     </div>
