@@ -211,17 +211,7 @@
             </section>
         </main>
 
-        <footer class="mt-12 border-t border-slate-200 bg-white px-4 py-6 text-center text-xs text-slate-500 sm:px-8">
-            <p>
-                Vitrina digital impulsada por <strong class="text-slate-700">MiCatalogo</strong>. Contacto directo por WhatsApp; no procesamos pagos, órdenes ni entregas.
-            </p>
-            <p class="mt-2">
-                Created by
-                <a class="font-semibold text-slate-700 underline decoration-blue-400 underline-offset-4 hover:text-blue-700" href="https://bsolutions.dev" target="_blank" rel="noopener noreferrer">
-                    BSolutions.dev
-                </a>
-            </p>
-        </footer>
+        <x-public-footer />
     </div>
 
     <!-- Share Script -->

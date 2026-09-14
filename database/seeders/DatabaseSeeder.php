@@ -61,40 +61,41 @@ class DatabaseSeeder extends Seeder
         );
 
         $softwareCategory = $categories->get('software');
+        $assetBaseUrl = rtrim((string) config('app.url'), '/');
 
         $bsolutionsProducts = [
             [
-                'name' => 'BsolutionsCRMWAS',
+                'name' => 'CRM WhatsApp Multiagente',
                 'slug' => 'bsolutionscrmwas',
-                'price' => 4500,
-                'description' => "CRM Multiagente para WhatsApp Business API.\nTenancy isolation, mensajería masiva oficial, automatización de respuestas y analítica en tiempo real.",
-                'image' => 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=80&fm=webp',
+                'price' => 9500,
+                'description' => "Bandeja multiagente para WhatsApp Business API.\nIncluye asignación de conversaciones, respuestas rápidas, etiquetas, métricas de atención y seguimiento por cliente.",
+                'image' => "{$assetBaseUrl}/images/catalog/crm-whatsapp.svg",
             ],
             [
-                'name' => 'TicketPro',
+                'name' => 'TicketPro Banca',
                 'slug' => 'ticketpro',
-                'price' => 8500,
-                'description' => "Ecosistema integral para gestión y auditoría de bancas de lotería.\nControl de límites por grupo y globales, sorteos en vivo y aplicación móvil Android.",
-                'image' => 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=80&fm=webp',
+                'price' => 18000,
+                'description' => "Sistema para bancas de lotería con ventas, reportes, control de límites, auditoría y administración por sucursal.\nPensado para operaciones que necesitan control diario y trazabilidad.",
+                'image' => "{$assetBaseUrl}/images/catalog/ticketpro.svg",
             ],
             [
                 'name' => 'MiCatalogo Pro',
                 'slug' => 'micatalogo-pro',
-                'price' => 2500,
-                'description' => "Vitrina digital y catálogo interactivo para ventas por WhatsApp.\nPermite a comercios publicar productos, compartir enlaces directos y recibir consultas sin comisiones.",
-                'image' => 'https://images.unsplash.com/photo-1556742049-0a67c5574f73?w=800&auto=format&fit=crop&q=80&fm=webp',
+                'price' => 3500,
+                'description' => "Catálogo digital para negocios que venden por WhatsApp.\nIncluye página pública, productos con fotos, botón directo a WhatsApp, enlaces compartibles y panel para administrar tiendas.",
+                'image' => "{$assetBaseUrl}/images/catalog/micatalogo-pro.svg",
             ],
             [
                 'name' => 'Bot Automatizado WhatsApp',
                 'slug' => 'bot-automatizado-whatsapp',
-                'price' => 3500,
-                'description' => "Chatbot con IA y reglas preconfiguradas para soporte y ventas 24/7.\nRespuestas automáticas, envío dinámico de catálogo y derivación fluida a agentes humanos.",
-                'image' => 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80&fm=webp',
+                'price' => 7500,
+                'description' => "Bot para responder preguntas frecuentes, enviar catálogo, capturar datos del cliente y derivar conversaciones a un asesor.\nIdeal para negocios que reciben mensajes fuera de horario.",
+                'image' => "{$assetBaseUrl}/images/catalog/bot-whatsapp.svg",
             ],
         ];
 
         foreach ($bsolutionsProducts as $pData) {
-            $prod = Product::firstOrCreate(
+            $prod = Product::updateOrCreate(
                 ['shop_id' => $bsolutionsShop->id, 'slug' => $pData['slug']],
                 [
                     'name' => $pData['name'],
@@ -109,7 +110,7 @@ class DatabaseSeeder extends Seeder
                 ]
             );
 
-            ProductImage::firstOrCreate(
+            ProductImage::updateOrCreate(
                 ['product_id' => $prod->id, 'sort_order' => 0],
                 [
                     'object_key' => $pData['image'],

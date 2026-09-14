@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-labelledby="title desc">
+  <title id="title">TicketPro</title>
+  <desc id="desc">Sistema de control para bancas de loteria, limites y auditoria.</desc>
+  <rect width="1200" height="900" rx="56" fill="#111827"/>
+  <rect x="135" y="110" width="930" height="680" rx="42" fill="#f9fafb"/>
+  <text x="200" y="210" fill="#111827" font-family="Arial, sans-serif" font-size="54" font-weight="900">TicketPro</text>
+  <text x="200" y="260" fill="#6b7280" font-family="Arial, sans-serif" font-size="24">Ventas, limites y auditoria para bancas</text>
+  <g>
+    <rect x="200" y="340" width="220" height="270" rx="28" fill="#fee2e2"/>
+    <text x="245" y="460" fill="#991b1b" font-family="Arial, sans-serif" font-size="78" font-weight="900">12</text>
+    <text x="235" y="530" fill="#991b1b" font-family="Arial, sans-serif" font-size="28" font-weight="800">Sorteos</text>
+  </g>
+  <g>
+    <rect x="490" y="340" width="220" height="270" rx="28" fill="#dbeafe"/>
+    <text x="535" y="460" fill="#1d4ed8" font-family="Arial, sans-serif" font-size="78" font-weight="900">RD$</text>
+    <text x="530" y="530" fill="#1d4ed8" font-family="Arial, sans-serif" font-size="28" font-weight="800">Limites</text>
+  </g>
+  <g>
+    <rect x="780" y="340" width="220" height="270" rx="28" fill="#dcfce7"/>
+    <text x="835" y="460" fill="#166534" font-family="Arial, sans-serif" font-size="78" font-weight="900">✓</text>
+    <text x="820" y="530" fill="#166534" font-family="Arial, sans-serif" font-size="28" font-weight="800">Auditoria</text>
+  </g>
+</svg>

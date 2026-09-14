@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Notifications\VerifyEmailCodeNotification;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -69,5 +70,10 @@ class User extends Authenticatable implements MustVerifyEmail
     public function ownsShop(Shop $shop): bool
     {
         return $this->id === $shop->user_id;
+    }
+
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmailCodeNotification);
     }
 }

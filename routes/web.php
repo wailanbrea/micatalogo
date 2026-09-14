@@ -5,6 +5,7 @@ use App\Http\Controllers\AdminGlobalCategoryController;
 use App\Http\Controllers\AdminModerationController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\CatalogHomeController;
+use App\Http\Controllers\EmailVerificationCodeController;
 use App\Http\Controllers\PublicProductController;
 use App\Http\Controllers\PublicReportController;
 use App\Http\Controllers\PublicShopController;
@@ -27,6 +28,12 @@ Route::get('/r/wa/tienda/{shop:slug}', [WhatsAppRedirectController::class, 'shop
 Route::get('/r/wa/tienda/{shop:slug}/producto/{product:slug}', [WhatsAppRedirectController::class, 'product'])->name('track.wa.product');
 
 Route::post('/reportar', [PublicReportController::class, 'store'])->middleware('throttle:report')->name('reports.store');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/email/verify', [EmailVerificationCodeController::class, 'show'])->name('verification.notice');
+    Route::post('/email/verify-code', [EmailVerificationCodeController::class, 'verify'])->middleware('throttle:6,1')->name('verification.verify-code');
+    Route::post('/email/verification-code', [EmailVerificationCodeController::class, 'resend'])->middleware('throttle:3,10')->name('verification.send-code');
+});
 
 Route::middleware(['auth', 'verified'])->prefix('panel')->name('seller.')->group(function () {
     Route::get('/', [SellerShopController::class, 'index'])->name('dashboard');

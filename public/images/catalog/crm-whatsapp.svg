@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-labelledby="title desc">
+  <title id="title">CRM WhatsApp</title>
+  <desc id="desc">Bandeja multiagente para conversaciones de WhatsApp Business.</desc>
+  <rect width="1200" height="900" rx="56" fill="#052e16"/>
+  <path d="M0 650c190-95 360-95 510 0s330 95 690-70v320H0z" fill="#22c55e" opacity="0.22"/>
+  <rect x="140" y="120" width="920" height="650" rx="36" fill="#f8fafc"/>
+  <rect x="140" y="120" width="300" height="650" rx="36" fill="#0f172a"/>
+  <text x="185" y="205" fill="#fff" font-family="Arial, sans-serif" font-size="36" font-weight="800">CRM WhatsApp</text>
+  <g fill="#e2e8f0">
+    <rect x="185" y="260" width="210" height="52" rx="18"/>
+    <rect x="185" y="334" width="210" height="52" rx="18"/>
+    <rect x="185" y="408" width="210" height="52" rx="18"/>
+  </g>
+  <rect x="500" y="190" width="430" height="82" rx="28" fill="#dcfce7"/>
+  <rect x="570" y="310" width="370" height="82" rx="28" fill="#e0f2fe"/>
+  <rect x="500" y="430" width="470" height="82" rx="28" fill="#dcfce7"/>
+  <rect x="500" y="620" width="360" height="54" rx="27" fill="#16a34a"/>
+  <text x="545" y="656" fill="#fff" font-family="Arial, sans-serif" font-size="24" font-weight="800">Responder cliente</text>
+</svg>
