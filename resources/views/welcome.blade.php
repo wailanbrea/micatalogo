@@ -2,11 +2,11 @@
     <div class="min-h-screen bg-[#F5F7FA] text-slate-800">
         <!-- Main Topbar with Dominant Search -->
         <header class="bg-[#0F172A] text-white">
-            <div class="mx-auto flex max-w-[1400px] flex-wrap items-center gap-3 px-4 py-3 sm:flex-nowrap sm:px-8">
+            <div class="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-3 px-4 py-3 lg:flex-nowrap sm:px-8">
                 <a class="shrink-0 text-xl font-bold tracking-tight" href="{{ route('home') }}">
                     Mi<span class="text-blue-400">Catalogo</span>
                 </a>
-                <form class="order-3 flex w-full flex-1 sm:order-none" method="GET" action="{{ route('home') }}">
+                <form class="order-3 flex w-full flex-1 lg:order-none" method="GET" action="{{ route('home') }}">
                     @if (request('shipping'))
                         <input type="hidden" name="shipping" value="{{ request('shipping') }}">
                     @endif
@@ -165,7 +165,7 @@
                         <a class="hidden text-slate-200 hover:text-white sm:block" href="{{ route('login') }}">
                             Iniciar sesión
                         </a>
-                        <a class="rounded-md bg-blue-600 px-3 py-2 font-semibold hover:bg-blue-700 text-white" href="{{ route('register') }}">
+                        <a class="rounded-md bg-blue-600 px-3.5 py-2 font-semibold hover:bg-blue-700 text-white whitespace-nowrap shrink-0 text-xs sm:text-sm shadow-xs" href="{{ route('register') }}">
                             Crear mi catalogo gratis
                         </a>
                     @endauth

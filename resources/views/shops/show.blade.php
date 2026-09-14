@@ -3,27 +3,28 @@
         <!-- Top Nav -->
         <header class="border-b border-slate-200 bg-white">
             <div class="mx-auto flex max-w-[1400px] items-center justify-between px-4 py-3 sm:px-8">
-                <a class="flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-800" href="{{ route('home') }}">
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                    <span>Explorar MiCatalogo</span>
+                <a class="flex items-center gap-1.5 text-xs font-semibold text-blue-700 hover:text-blue-800 sm:text-sm" href="{{ route('home') }}">
+                    <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    <span class="hidden sm:inline">Explorar MiCatalogo</span>
+                    <span class="sm:hidden">Inicio</span>
                 </a>
-                <a class="text-sm font-bold tracking-tight text-slate-900" href="{{ route('home') }}">
+                <a class="text-sm font-bold tracking-tight text-slate-900 hidden sm:inline" href="{{ route('home') }}">
                     Mi<span class="text-blue-600">Catalogo</span>
                 </a>
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2 sm:gap-3">
                     @auth
                         @can('update', $shop)
-                            <a class="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 transition shadow-2xs inline-flex items-center gap-1.5" href="{{ route('seller.shops.products.index', $shop) }}">
+                            <a class="rounded-md bg-blue-600 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-blue-700 transition shadow-2xs inline-flex items-center gap-1.5 shrink-0" href="{{ route('seller.shops.products.index', $shop) }}">
                                 <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                                <span>Administrar tienda</span>
+                                <span>Administrar</span>
                             </a>
                         @endcan
                         @if (auth()->user()->isAdmin())
-                            <a class="rounded-md bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 border border-rose-200" href="{{ route('admin.dashboard') }}">
+                            <a class="hidden sm:inline-block rounded-md bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 border border-rose-200" href="{{ route('admin.dashboard') }}">
                                 Panel Admin
                             </a>
                         @endif
-                        <a class="rounded-md bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200" href="{{ route('seller.dashboard') }}">
+                        <a class="rounded-md bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 shrink-0" href="{{ route('seller.dashboard') }}">
                             Mis tiendas
                         </a>
                         <form method="POST" action="{{ route('logout') }}" class="inline">
@@ -33,10 +34,10 @@
                             </button>
                         </form>
                     @else
-                        <a class="text-xs font-semibold text-slate-600 hover:text-slate-900" href="{{ route('login') }}">
+                        <a class="hidden sm:inline-block text-xs font-semibold text-slate-600 hover:text-slate-900" href="{{ route('login') }}">
                             Iniciar sesión
                         </a>
-                        <a class="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 transition" href="{{ route('register') }}">
+                        <a class="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 transition shrink-0 whitespace-nowrap" href="{{ route('register') }}">
                             Crear tienda gratis
                         </a>
                     @endauth
@@ -47,7 +48,8 @@
         <!-- Shop Profile Header -->
         <section class="border-b border-slate-200 bg-white shadow-xs">
             <div class="mx-auto max-w-[1400px] px-4 py-8 sm:px-8">
-                <div class="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                    <div class="flex items-start sm:items-center gap-4 sm:gap-5">
                         @if ($shop->logo_url)
                             <img src="{{ $shop->logo_url }}" alt="{{ $shop->name }}" class="h-16 w-16 shrink-0 rounded-2xl object-cover shadow-md sm:h-20 sm:w-20 border border-slate-200">
                         @else
@@ -55,10 +57,10 @@
                                 {{ str($shop->name)->substr(0, 1)->upper() }}
                             </div>
                         @endif
-                        <div>
+                        <div class="min-w-0">
                             <div class="flex flex-wrap items-center gap-2">
-                                <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">{{ $shop->name }}</h1>
-                                <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+                                <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl truncate">{{ $shop->name }}</h1>
+                                <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 shrink-0">
                                     <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> Catálogo Verificado
                                 </span>
                             </div>
@@ -67,7 +69,7 @@
                             @endif
                             <div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
                                 @if ($shop->offers_shipping)
-                                    <span class="inline-flex items-center gap-1 text-slate-700">
+                                    <span class="inline-flex items-center gap-1 text-slate-700 font-medium">
                                         <svg class="h-4 w-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                                         Envíos disponibles
                                     </span>
@@ -83,14 +85,16 @@
                     </div>
 
                     <!-- Direct Actions -->
-                    <div class="flex flex-wrap items-center gap-3">
-                        <a class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-95" href="{{ route('track.wa.shop', $shop) }}" data-wa-target="https://wa.me/{{ $shop->whatsapp_country_code.$shop->whatsapp_number }}" rel="noopener noreferrer" target="_blank">
-                            <svg class="h-5 w-5 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
-                            Contactar por WhatsApp
+                    <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                        <a class="flex-1 sm:flex-none justify-center inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-95 text-center whitespace-nowrap" href="{{ route('track.wa.shop', $shop) }}" data-wa-target="https://wa.me/{{ $shop->whatsapp_country_code.$shop->whatsapp_number }}" rel="noopener noreferrer" target="_blank">
+                            <svg class="h-5 w-5 fill-current shrink-0" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
+                            <span class="hidden sm:inline">Contactar por WhatsApp</span>
+                            <span class="sm:hidden">WhatsApp</span>
                         </a>
-                        <button class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50" id="share-btn" onclick="shareStore('{{ $shop->name }}', '{{ url()->current() }}')" type="button">
+                        <button class="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50 cursor-pointer" id="share-btn" onclick="shareStore('{{ $shop->name }}', '{{ url()->current() }}')" type="button">
                             <svg class="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
-                            Compartir catálogo
+                            <span class="hidden sm:inline">Compartir catálogo</span>
+                            <span class="sm:hidden">Compartir</span>
                         </button>
                         <x-report-modal type="shop" :id="$shop->public_id" :name="$shop->name" />
                     </div>
@@ -99,7 +103,7 @@
         </section>
 
         <!-- Main Content Area -->
-        <main class="mx-auto max-w-[1400px] px-4 py-6 sm:px-8">
+        <main class="mx-auto max-w-[1400px] px-4 py-6 sm:px-8 pb-24 sm:pb-8">
             <!-- Categories Filter Tabs -->
             @if ($categories->isNotEmpty())
                 <div class="mb-6">
@@ -223,6 +227,29 @@
                     </a>
                 </div>
             </section>
+
+            <!-- Sticky Bottom Store Contact Bar for Mobile Screens (Amazon Storefront Pattern) -->
+            <div class="fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-2.5 shadow-2xl flex items-center justify-between gap-3 sm:hidden">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    @if ($shop->logo_url)
+                        <img src="{{ $shop->logo_url }}" alt="{{ $shop->name }}" class="h-9 w-9 shrink-0 rounded-xl object-cover border border-slate-200">
+                    @else
+                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-xs font-black text-white">
+                            {{ str($shop->name)->substr(0, 1)->upper() }}
+                        </div>
+                    @endif
+                    <div class="min-w-0">
+                        <p class="text-xs font-bold text-slate-900 truncate">{{ $shop->name }}</p>
+                        <span class="text-[10px] font-semibold text-emerald-700 flex items-center gap-1">
+                            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> Catálogo Verificado
+                        </span>
+                    </div>
+                </div>
+                <a class="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm active:scale-95 text-center" href="{{ route('track.wa.shop', $shop) }}" data-wa-target="https://wa.me/{{ $shop->whatsapp_country_code.$shop->whatsapp_number }}" rel="noopener noreferrer" target="_blank">
+                    <svg class="h-4 w-4 fill-current shrink-0" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
+                    <span>WhatsApp</span>
+                </a>
+            </div>
         </main>
 
         <x-public-footer />

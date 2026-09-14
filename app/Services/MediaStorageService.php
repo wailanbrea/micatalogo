@@ -36,6 +36,15 @@ class MediaStorageService
 
     public function url(string $objectKey): string
     {
+        if (str_starts_with($objectKey, 'http://localhost/images/') || str_starts_with($objectKey, 'http://127.0.0.1/images/')) {
+            $path = parse_url($objectKey, PHP_URL_PATH);
+            return asset(ltrim($path, '/'));
+        }
+
+        if (str_starts_with($objectKey, '/images/') || str_starts_with($objectKey, 'images/catalog/')) {
+            return asset(ltrim($objectKey, '/'));
+        }
+
         if (str_starts_with($objectKey, 'http://') || str_starts_with($objectKey, 'https://')) {
             return $objectKey;
         }
