@@ -8,6 +8,7 @@ use App\Enums\ProductModerationStatus;
 use App\Models\GlobalCategory;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Models\ProductInventory;
 use App\Models\Shop;
 use App\Models\ShopCategory;
 use App\Models\User;
@@ -68,6 +69,10 @@ class DatabaseSeeder extends Seeder
                 'name' => 'CRM WhatsApp Multiagente',
                 'slug' => 'bsolutionscrmwas',
                 'price' => 9500,
+                'cost_price' => 3800,
+                'stock' => 12,
+                'sold' => 8,
+                'low_stock' => 3,
                 'description' => "Bandeja multiagente para WhatsApp Business API.\nIncluye asignación de conversaciones, respuestas rápidas, etiquetas, métricas de atención y seguimiento por cliente.",
                 'image' => "{$assetBaseUrl}/images/catalog/crm-whatsapp.svg",
             ],
@@ -75,6 +80,10 @@ class DatabaseSeeder extends Seeder
                 'name' => 'TicketPro Banca',
                 'slug' => 'ticketpro',
                 'price' => 18000,
+                'cost_price' => 7500,
+                'stock' => 2,
+                'sold' => 14,
+                'low_stock' => 3,
                 'description' => "Sistema para bancas de lotería con ventas, reportes, control de límites, auditoría y administración por sucursal.\nPensado para operaciones que necesitan control diario y trazabilidad.",
                 'image' => "{$assetBaseUrl}/images/catalog/ticketpro.svg",
             ],
@@ -82,6 +91,10 @@ class DatabaseSeeder extends Seeder
                 'name' => 'MiCatalogo Pro',
                 'slug' => 'micatalogo-pro',
                 'price' => 3500,
+                'cost_price' => 1200,
+                'stock' => 25,
+                'sold' => 32,
+                'low_stock' => 5,
                 'description' => "Catálogo digital para negocios que venden por WhatsApp.\nIncluye página pública, productos con fotos, botón directo a WhatsApp, enlaces compartibles y panel para administrar tiendas.",
                 'image' => "{$assetBaseUrl}/images/catalog/micatalogo-pro.svg",
             ],
@@ -89,6 +102,10 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Bot Automatizado WhatsApp',
                 'slug' => 'bot-automatizado-whatsapp',
                 'price' => 7500,
+                'cost_price' => 2800,
+                'stock' => 1,
+                'sold' => 9,
+                'low_stock' => 2,
                 'description' => "Bot para responder preguntas frecuentes, enviar catálogo, capturar datos del cliente y derivar conversaciones a un asesor.\nIdeal para negocios que reciben mensajes fuera de horario.",
                 'image' => "{$assetBaseUrl}/images/catalog/bot-whatsapp.svg",
             ],
@@ -107,6 +124,17 @@ class DatabaseSeeder extends Seeder
                     'global_category_id' => $softwareCategory->id,
                     'shop_category_id' => $softwareShopCat->id,
                     'published_at' => now(),
+                ]
+            );
+
+            ProductInventory::updateOrCreate(
+                ['product_id' => $prod->id],
+                [
+                    'track_inventory' => true,
+                    'cost_price' => $pData['cost_price'],
+                    'stock_quantity' => $pData['stock'],
+                    'sold_quantity' => $pData['sold'],
+                    'low_stock_threshold' => $pData['low_stock'],
                 ]
             );
 

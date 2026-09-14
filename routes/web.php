@@ -10,6 +10,7 @@ use App\Http\Controllers\PublicProductController;
 use App\Http\Controllers\PublicReportController;
 use App\Http\Controllers\PublicShopController;
 use App\Http\Controllers\SellerBulkProductController;
+use App\Http\Controllers\SellerInventoryController;
 use App\Http\Controllers\SellerProductController;
 use App\Http\Controllers\SellerShopController;
 use App\Http\Controllers\SellerShopMetricController;
@@ -69,6 +70,12 @@ Route::middleware(['auth', 'verified'])->prefix('panel')->name('seller.')->group
         Route::get('/tiendas/{shop}/metricas', [SellerShopMetricController::class, 'index'])->name('shops.metrics.index');
         Route::get('/tiendas/{shop}/qr/descargar', [SellerShopMetricController::class, 'downloadQr'])->name('shops.qr.download');
         Route::get('/tiendas/{shop}/qr/imprimir', [SellerShopMetricController::class, 'print'])->name('shops.qr.print');
+
+        Route::get('/tiendas/{shop}/inventario', [SellerInventoryController::class, 'index'])->name('shops.inventory.index');
+        Route::post('/tiendas/{shop}/productos/{product}/inventario/venta', [SellerInventoryController::class, 'recordSale'])->middleware('can:update,product')->name('shops.inventory.sale');
+        Route::post('/tiendas/{shop}/productos/{product}/inventario/reposicion', [SellerInventoryController::class, 'recordRestock'])->middleware('can:update,product')->name('shops.inventory.restock');
+        Route::post('/tiendas/{shop}/productos/{product}/inventario/ajuste', [SellerInventoryController::class, 'adjustStock'])->middleware('can:update,product')->name('shops.inventory.adjustment');
+        Route::get('/tiendas/{shop}/productos/{product}/inventario/movimientos', [SellerInventoryController::class, 'movements'])->middleware('can:update,product')->name('shops.inventory.movements');
     });
 });
 

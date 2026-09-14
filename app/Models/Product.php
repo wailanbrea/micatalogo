@@ -68,6 +68,30 @@ class Product extends Model
         return $this->hasMany(ProductDailyMetric::class);
     }
 
+    public function inventory(): HasOne
+    {
+        return $this->hasOne(ProductInventory::class);
+    }
+
+    public function inventoryMovements(): HasMany
+    {
+        return $this->hasMany(InventoryMovement::class)->orderByDesc('created_at')->orderByDesc('id');
+    }
+
+    public function isInventoryTracked(): bool
+    {
+        return (bool) ($this->inventory?->track_inventory ?? false);
+    }
+
+    public function getInventoryStatusAttribute(): string
+    {
+        if (! $this->isInventoryTracked()) {
+            return $this->availability_status->value;
+        }
+
+        return $this->inventory->status();
+    }
+
     public function scopePublic(Builder $query): void
     {
         $query->where('moderation_status', ProductModerationStatus::Active)

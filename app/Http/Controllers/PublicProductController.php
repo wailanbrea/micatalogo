@@ -17,12 +17,12 @@ class PublicProductController extends Controller
 
         $metricService->recordProductPageView($product, $request);
 
-        $product->loadMissing(['images' => fn ($query) => $query->orderBy('sort_order')->orderBy('id')]);
+        $product->loadMissing(['images' => fn ($query) => $query->orderBy('sort_order')->orderBy('id'), 'inventory']);
 
         $relatedProducts = $shop->products()
             ->where('id', '!=', $product->id)
             ->where('moderation_status', ProductModerationStatus::Active)
-            ->with(['images' => fn ($query) => $query->orderBy('sort_order')->orderBy('id')])
+            ->with(['images' => fn ($query) => $query->orderBy('sort_order')->orderBy('id'), 'inventory'])
             ->latest('id')
             ->take(4)
             ->get();

@@ -26,7 +26,7 @@ test('homepage renders a single CTA to create catalog and displays software cate
     $response->assertSee('BSolutions.dev');
 
     // Verify BSolutions products are present
-    $response->assertSee('BsolutionsCRMWAS');
+    $response->assertSee('CRM WhatsApp Multiagente');
     $response->assertSee('TicketPro');
 
     // Verify WebP image URLs are rendered
@@ -43,8 +43,8 @@ test('product detail view renders product image when available', function () {
     $response->assertOk();
 
     $response->assertSee($product->name);
-    $response->assertSee('RD$ 4,500');
-    $response->assertSee('fm=webp');
+    $response->assertSee('RD$ 9,500');
+    $response->assertSee('crm-whatsapp.svg');
     $response->assertSee('https://wa.me/18095550100');
 });
 

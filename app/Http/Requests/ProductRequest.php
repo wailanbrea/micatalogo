@@ -37,6 +37,10 @@ class ProductRequest extends FormRequest
                 'integer',
                 Rule::exists('shop_categories', 'id')->where('shop_id', $shop?->id),
             ],
+            'track_inventory' => ['nullable', 'boolean'],
+            'cost_price' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            'stock_quantity' => ['nullable', 'integer', 'min:0', 'max:100000'],
+            'low_stock_threshold' => ['nullable', 'integer', 'min:1', 'max:1000'],
         ];
     }
 }

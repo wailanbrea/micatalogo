@@ -104,7 +104,25 @@
                                         @endif
                                     </td>
                                     <td class="px-4 py-3.5 whitespace-nowrap">
-                                        @if ($product->availability_status->value === 'available')
+                                        @if ($product->isInventoryTracked())
+                                            @php $inv = $product->inventory; @endphp
+                                            @if ($inv->stock_quantity <= 0)
+                                                <span class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-700">
+                                                    <i class="h-1.5 w-1.5 rounded-full bg-rose-500"></i> Agotado (0)
+                                                </span>
+                                            @elseif ($inv->stock_quantity <= $inv->low_stock_threshold)
+                                                <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-700">
+                                                    <i class="h-1.5 w-1.5 rounded-full bg-amber-500"></i> Stock bajo ({{ $inv->stock_quantity }})
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                                                    <i class="h-1.5 w-1.5 rounded-full bg-emerald-500"></i> Stock: {{ $inv->stock_quantity }}
+                                                </span>
+                                            @endif
+                                            @if ($inv->sold_quantity > 0)
+                                                <span class="block text-[10px] text-slate-400 font-mono">{{ $inv->sold_quantity }} vendidos</span>
+                                            @endif
+                                        @elseif ($product->availability_status->value === 'available')
                                             <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
                                                 <i class="h-1.5 w-1.5 rounded-full bg-emerald-500"></i> Disponible
                                             </span>

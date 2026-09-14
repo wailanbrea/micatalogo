@@ -33,7 +33,7 @@ class PublicShopController extends Controller
 
         $productsQuery = $shop->products()
             ->where('moderation_status', ProductModerationStatus::Active)
-            ->with(['images' => fn ($query) => $query->orderBy('sort_order')])
+            ->with(['images' => fn ($query) => $query->orderBy('sort_order'), 'inventory'])
             ->latest('id');
 
         if ($selectedCategory) {

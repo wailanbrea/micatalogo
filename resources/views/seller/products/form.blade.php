@@ -32,7 +32,7 @@
                     </div>
                 @endif
 
-                <form class="mt-6 space-y-6" method="POST" action="{{ $product->exists ? route('seller.shops.products.update', [$shop, $product]) : route('seller.shops.products.store', $shop) }}">
+                <form class="mt-6 space-y-6" method="POST" action="{{ $product->exists ? route('seller.shops.products.update', [$shop, $product]) : route('seller.shops.products.store', $shop) }}" x-data="{ trackInventory: {{ old('track_inventory', ($product->inventory?->track_inventory ?? true) ? 'true' : 'false') }} }">
                     @csrf
                     @if ($product->exists)
                         @method('PUT')
@@ -44,10 +44,11 @@
                         <input class="mt-1.5 w-full rounded-md border border-slate-300 px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="name" name="name" required type="text" value="{{ old('name', $product->name) }}" placeholder="Ej: Zapatillas Urbanas Pro">
                     </div>
 
-                    <!-- Slug y Precio -->
+                    <!-- Precios: Venta y Costo (Contabilidad de Inventario) -->
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div>
-                            <label class="block text-sm font-semibold text-slate-800" for="price">Precio (RD$) *</label>
+                            <label class="block text-sm font-semibold text-slate-800" for="price">Precio de Venta al Público (RD$) *</label>
+                            <p class="text-[11px] text-slate-500">Precio visible para los clientes en la vitrina.</p>
                             <div class="relative mt-1.5 rounded-md shadow-sm">
                                 <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-slate-500">RD$</span>
                                 <input class="w-full rounded-md border border-slate-300 pl-12 pr-3 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="price" name="price" step="0.01" min="0" type="number" value="{{ old('price', $product->price) }}" placeholder="0.00">
@@ -55,9 +56,22 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-semibold text-slate-800" for="slug">Slug (opcional)</label>
-                            <input class="mt-1.5 w-full rounded-md border border-slate-300 px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="slug" name="slug" type="text" value="{{ old('slug', $product->slug) }}" placeholder="autogenerado-si-se-deja-vacio">
+                            <label class="block text-sm font-semibold text-slate-800" for="cost_price">
+                                Precio de Compra / Costo (RD$)
+                                <span class="text-xs font-normal text-slate-500">(Privado)</span>
+                            </label>
+                            <p class="text-[11px] text-slate-500">Solo tú lo ves. Para calcular valor de inventario y margen.</p>
+                            <div class="relative mt-1.5 rounded-md shadow-sm">
+                                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-slate-500">RD$</span>
+                                <input class="w-full rounded-md border border-slate-300 pl-12 pr-3 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="cost_price" name="cost_price" step="0.01" min="0" type="number" value="{{ old('cost_price', $product->inventory?->cost_price) }}" placeholder="0.00">
+                            </div>
                         </div>
+                    </div>
+
+                    <!-- Slug -->
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-800" for="slug">Slug / Enlace amigable (opcional)</label>
+                        <input class="mt-1.5 w-full rounded-md border border-slate-300 px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="slug" name="slug" type="text" value="{{ old('slug', $product->slug) }}" placeholder="autogenerado-si-se-deja-vacio">
                     </div>
 
                     <!-- Categorías -->
@@ -106,6 +120,61 @@
                                 <option value="active" @selected(old('moderation_status', $product->moderation_status?->value ?? 'active') === 'active')>Activo (Visible en vitrina)</option>
                                 <option value="draft" @selected(old('moderation_status', $product->moderation_status?->value) === 'draft')>Borrador (Oculto al público)</option>
                             </select>
+                        </div>
+                    </div>
+
+                    <!-- Control de Inventario (Inventory Lite) -->
+                    <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4 sm:p-5">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <label class="text-sm font-bold text-slate-900 flex items-center gap-2 cursor-pointer" for="track_inventory">
+                                    <input
+                                        type="checkbox"
+                                        id="track_inventory"
+                                        name="track_inventory"
+                                        value="1"
+                                        x-model="trackInventory"
+                                        class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                    >
+                                    Controlar inventario y stock de este producto
+                                </label>
+                                <p class="text-xs text-slate-500 mt-0.5 ml-6">
+                                    Permite registrar ventas, reposiciones, alertas de poco stock y agotado automático en la vitrina.
+                                </p>
+                            </div>
+                            <span class="rounded bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-800 uppercase tracking-wider">Inventory Lite</span>
+                        </div>
+
+                        <div x-show="trackInventory" class="mt-4 grid gap-4 sm:grid-cols-2 pt-3 border-t border-slate-200/80">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700" for="stock_quantity">
+                                    {{ $product->exists ? 'Stock actual' : 'Stock inicial' }}
+                                </label>
+                                <p class="text-[11px] text-slate-500">Unidades físicas disponibles para la venta.</p>
+                                <input
+                                    type="number"
+                                    id="stock_quantity"
+                                    name="stock_quantity"
+                                    min="0"
+                                    value="{{ old('stock_quantity', $product->inventory?->stock_quantity ?? 0) }}"
+                                    class="mt-1.5 w-full rounded-md border border-slate-300 px-3.5 py-2 text-sm text-slate-900 font-mono font-bold focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                                >
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700" for="low_stock_threshold">
+                                    Alerta de Stock Mínimo
+                                </label>
+                                <p class="text-[11px] text-slate-500">Avisar cuando queden igual o menos de estas unidades.</p>
+                                <input
+                                    type="number"
+                                    id="low_stock_threshold"
+                                    name="low_stock_threshold"
+                                    min="1"
+                                    value="{{ old('low_stock_threshold', $product->inventory?->low_stock_threshold ?? 3) }}"
+                                    class="mt-1.5 w-full rounded-md border border-slate-300 px-3.5 py-2 text-sm text-slate-900 font-mono focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                                >
+                            </div>
                         </div>
                     </div>
 

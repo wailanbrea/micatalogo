@@ -157,7 +157,21 @@
                                     </p>
                                 </div>
                                 <div class="mt-2">
-                                    @if ($product->availability_status->value === 'available')
+                                    @if ($product->isInventoryTracked())
+                                        @if ($product->inventory->isOutOfStock() || $product->availability_status->value === 'out_of_stock')
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-800">
+                                                <span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span> Agotado
+                                            </span>
+                                        @elseif ($product->inventory->isLowStock())
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-800">
+                                                <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span> ¡Últimas {{ $product->inventory->stock_quantity }} unid.!
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-800">
+                                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> Disponible
+                                            </span>
+                                        @endif
+                                    @elseif ($product->availability_status->value === 'available')
                                         <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-800">
                                             <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> Disponible
                                         </span>

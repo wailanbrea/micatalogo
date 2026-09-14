@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductModerationStatus;
 use App\Http\Requests\ProductRequest;
 use App\Models\GlobalCategory;
@@ -25,7 +26,7 @@ class SellerProductController extends Controller
         $status = $request->string('status')->value();
 
         $products = $shop->products()
-            ->with(['globalCategory', 'shopCategory', 'images'])
+            ->with(['globalCategory', 'shopCategory', 'images', 'inventory'])
             ->when($search, fn ($q) => $q->where('name', 'like', "%{$search}%"))
             ->when($status, fn ($q) => $q->where('availability_status', $status))
             ->latest()
@@ -69,13 +70,43 @@ class SellerProductController extends Controller
                 'Has alcanzado el limite maximo de productos para tu tienda.'
             );
 
-            $attributes = $this->attributes($request->validated(), $lockedShop);
+            $validated = $request->validated();
+            $inventoryData = [
+                'track_inventory' => (bool) ($validated['track_inventory'] ?? false),
+                'cost_price' => isset($validated['cost_price']) && $validated['cost_price'] !== '' ? $validated['cost_price'] : null,
+                'stock_quantity' => (int) ($validated['stock_quantity'] ?? 0),
+                'low_stock_threshold' => (int) ($validated['low_stock_threshold'] ?? 3),
+            ];
+
+            if ($inventoryData['track_inventory'] && $inventoryData['stock_quantity'] === 0) {
+                $validated['availability_status'] = ProductAvailabilityStatus::OutOfStock->value;
+            }
+
+            $attributes = $this->attributes($validated, $lockedShop);
 
             if (($attributes['moderation_status'] ?? null) === ProductModerationStatus::Active->value) {
                 $attributes['published_at'] = now();
             }
 
-            return $lockedShop->products()->create($attributes);
+            unset($attributes['track_inventory'], $attributes['cost_price'], $attributes['stock_quantity'], $attributes['low_stock_threshold']);
+
+            $product = $lockedShop->products()->create($attributes);
+
+            $product->inventory()->create($inventoryData);
+
+            if ($inventoryData['track_inventory'] && $inventoryData['stock_quantity'] > 0) {
+                $product->inventoryMovements()->create([
+                    'user_id' => $request->user()->id,
+                    'type' => 'restock',
+                    'quantity' => $inventoryData['stock_quantity'],
+                    'stock_before' => 0,
+                    'stock_after' => $inventoryData['stock_quantity'],
+                    'notes' => 'Stock inicial al crear producto',
+                    'created_at' => now(),
+                ]);
+            }
+
+            return $product;
         });
 
         return to_route('seller.shops.products.index', $shop)->with('status', 'Producto creado exitosamente.');
@@ -83,6 +114,8 @@ class SellerProductController extends Controller
 
     public function edit(Shop $shop, Product $product): View
     {
+        $product->loadMissing('inventory');
+
         return view('seller.products.form', [
             'shop' => $shop,
             'product' => $product,
@@ -93,13 +126,68 @@ class SellerProductController extends Controller
 
     public function update(ProductRequest $request, Shop $shop, Product $product): RedirectResponse
     {
-        $attributes = $this->attributes($request->validated(), $shop, $product);
+        DB::transaction(function () use ($request, $shop, $product) {
+            $product = Product::query()->lockForUpdate()->findOrFail($product->id);
+            $validated = $request->validated();
 
-        if (($attributes['moderation_status'] ?? null) === ProductModerationStatus::Active->value && ! $product->published_at) {
-            $attributes['published_at'] = now();
-        }
+            $trackInventory = (bool) ($validated['track_inventory'] ?? false);
+            $costPrice = isset($validated['cost_price']) && $validated['cost_price'] !== '' ? $validated['cost_price'] : null;
+            $stockQuantity = $trackInventory && isset($validated['stock_quantity']) ? (int) $validated['stock_quantity'] : null;
+            $lowStockThreshold = (int) ($validated['low_stock_threshold'] ?? 3);
 
-        $product->update($attributes);
+            $inventory = $product->inventory()->lockForUpdate()->firstOrCreate(
+                ['product_id' => $product->id],
+                [
+                    'track_inventory' => $trackInventory,
+                    'cost_price' => $costPrice,
+                    'stock_quantity' => $stockQuantity ?? 0,
+                    'sold_quantity' => 0,
+                    'low_stock_threshold' => $lowStockThreshold,
+                ]
+            );
+
+            $stockChanged = false;
+            $oldStock = $inventory->stock_quantity;
+
+            $inventory->track_inventory = $trackInventory;
+            $inventory->cost_price = $costPrice;
+            $inventory->low_stock_threshold = $lowStockThreshold;
+
+            if ($stockQuantity !== null && $stockQuantity !== $oldStock) {
+                $inventory->stock_quantity = $stockQuantity;
+                $stockChanged = true;
+            }
+
+            $inventory->save();
+
+            if ($stockChanged) {
+                $product->inventoryMovements()->create([
+                    'user_id' => $request->user()->id,
+                    'type' => 'adjustment',
+                    'quantity' => $stockQuantity - $oldStock,
+                    'stock_before' => $oldStock,
+                    'stock_after' => $stockQuantity,
+                    'notes' => 'Ajuste manual desde edición de producto',
+                    'created_at' => now(),
+                ]);
+            }
+
+            if ($trackInventory && $inventory->stock_quantity === 0) {
+                $validated['availability_status'] = ProductAvailabilityStatus::OutOfStock->value;
+            } elseif ($trackInventory && $inventory->stock_quantity > 0 && $product->availability_status === ProductAvailabilityStatus::OutOfStock && $stockChanged) {
+                $validated['availability_status'] = ProductAvailabilityStatus::Available->value;
+            }
+
+            $attributes = $this->attributes($validated, $shop, $product);
+
+            if (($attributes['moderation_status'] ?? null) === ProductModerationStatus::Active->value && ! $product->published_at) {
+                $attributes['published_at'] = now();
+            }
+
+            unset($attributes['track_inventory'], $attributes['cost_price'], $attributes['stock_quantity'], $attributes['low_stock_threshold']);
+
+            $product->update($attributes);
+        });
 
         return to_route('seller.shops.products.index', $shop)->with('status', 'Producto actualizado.');
     }

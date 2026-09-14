@@ -51,6 +51,29 @@
             </span>
         </a>
 
+        <!-- Inventario Lite -->
+        <a
+            href="{{ route('seller.shops.inventory.index', $shop) }}"
+            class="flex items-center gap-1.5 py-3 px-3 border-b-2 transition {{ $activeTab === 'inventory' ? 'border-blue-600 text-blue-700 font-bold' : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300' }}"
+        >
+            <svg class="h-4 w-4 shrink-0 {{ $activeTab === 'inventory' ? 'text-blue-600' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+            <span>Inventario</span>
+            @php
+                $alertCount = \App\Models\ProductInventory::whereHas('product', fn($q) => $q->where('shop_id', $shop->id))
+                    ->where('track_inventory', true)
+                    ->where(function($q) {
+                        $q->whereColumn('stock_quantity', '<=', 'low_stock_threshold')
+                          ->orWhere('stock_quantity', '<=', 0);
+                    })
+                    ->count();
+            @endphp
+            @if ($alertCount > 0)
+                <span class="rounded-full bg-amber-100 px-1.5 py-0.2 text-[10px] font-bold text-amber-800 font-mono">
+                    {{ $alertCount }}
+                </span>
+            @endif
+        </a>
+
         <!-- Categorías -->
         <a 
             href="{{ route('seller.shops.categories.index', $shop) }}" 
