@@ -1,0 +1,13 @@
+User-agent: *
+Disallow: /panel/
+Disallow: /admin/
+Disallow: /r/wa/
+Disallow: /reportar
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /*?*q=
+
+Sitemap: https://micatalogo.com.do/sitemap.xml
+

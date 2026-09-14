@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+
+<html lang="es"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "outline": "#737686", "on-background": "#0b1c30", "surface-container-high": "#dce9ff", "on-secondary-fixed": "#131b2e", "surface-card": "#FFFFFF", "surface-variant": "#d3e4fe", "on-error-container": "#93000a", "on-primary-fixed-variant": "#003ea8", "secondary": "#565e74", "text-heading": "#0F172A", "header-navy-hover": "#1E293B", "on-primary-container": "#eeefff", "surface-container-lowest": "#ffffff", "on-primary-fixed": "#00174b", "header-navy": "#0F172A", "on-tertiary-fixed-variant": "#005236", "on-primary": "#ffffff", "primary-fixed-dim": "#b4c5ff", "inverse-surface": "#213145", "inverse-on-surface": "#eaf1ff", "surface-container": "#e5eeff", "on-surface": "#0b1c30", "tertiary": "#006242", "status-available-dot": "#10B981", "border-subtle": "#E2E8F0", "on-error": "#ffffff", "surface": "#f8f9ff", "secondary-fixed": "#dae2fd", "tertiary-fixed": "#6ffbbe", "secondary-container": "#dae2fd", "status-out-text": "#64748B", "outline-variant": "#c3c6d7", "surface-tint": "#0053db", "text-body": "#1E293B", "background": "#f8f9ff", "border-strong": "#CBD5E1", "surface-canvas": "F5F7FA", "primary": "#004ac6", "surface-bright": "#f8f9ff", "on-tertiary": "#ffffff", "surface-container-low": "#eff4ff", "secondary-fixed-dim": "#bec6e0", "on-tertiary-container": "#bdffdb", "ad-slot-border": "#CBD5E1", "inverse-primary": "#b4c5ff", "text-muted": "#64748B", "on-tertiary-fixed": "#002113", "on-secondary-container": "#5c647a", "surface-container-highest": "#d3e4fe", "primary-container": "#2563eb", "status-out-bg": "#F1F5F9", "surface-dim": "#cbdbf5", "status-available-text": "#065F46", "tertiary-fixed-dim": "#4edea3", "error": "#ba1a1a", "on-secondary-fixed-variant": "#3f465c", "on-secondary": "#ffffff", "status-available-bg": "#ECFDF5", "primary-fixed": "#dbe1ff", "error-container": "#ffdad6", "tertiary-container": "#007d55", "status-out-dot": "#94A3B8", "ad-slot-bg": "#F1F5F9", "on-surface-variant": "#434655" }, "borderRadius": { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, "spacing": { "margin-desktop": "2rem", "space-xl": "2rem", "space-sm": "0.5rem", "gutter-desktop": "1.25rem", "gutter": "1rem", "margin": "1rem", "space-lg": "1.25rem", "margin-tablet": "1.5rem", "space-md": "0.75rem", "space-xs": "0.25rem" }, "fontFamily": { "headline-xl-mobile": [ "Inter" ], "price-lg": [ "Inter" ], "headline-lg": [ "Inter" ], "headline-lg-mobile": [ "Inter" ], "body-sm": [ "Inter" ], "body-md": [ "Inter" ], "headline-xl": [ "Inter" ], "price-md": [ "Inter" ], "headline-md": [ "Inter" ], "body-lg": [ "Inter" ], "label-sm": [ "Inter" ], "headline-sm": [ "Inter" ], "label-md": [ "Inter" ] }, "fontSize": { "headline-xl-mobile": [ "24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" } ], "price-lg": [ "20px", { "lineHeight": "24px", "letterSpacing": "-0.02em", "fontWeight": "700" } ], "headline-lg": [ "24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "700" } ], "headline-lg-mobile": [ "20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" } ], "body-sm": [ "12px", { "lineHeight": "16px", "fontWeight": "400" } ], "body-md": [ "14px", { "lineHeight": "20px", "fontWeight": "400" } ], "headline-xl": [ "32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" } ], "price-md": [ "16px", { "lineHeight": "20px", "letterSpacing": "-0.01em", "fontWeight": "700" } ], "headline-md": [ "18px", { "lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "600" } ], "body-lg": [ "16px", { "lineHeight": "24px", "fontWeight": "400" } ], "label-sm": [ "11px", { "lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "600" } ], "headline-sm": [ "16px", { "lineHeight": "24px", "fontWeight": "600" } ], "label-md": [ "13px", { "lineHeight": "16px", "fontWeight": "500" } ] } } } };</script></head><body class="bg-background font-body-md text-body antialiased"><header class="fixed top-0 left-0 right-0 w-full z-50 shadow-[0_1px_8px_rgba(0,0,0,0.06)]"><div class="bg-header-navy text-on-primary"><div class="h-16 max-w-[1400px] mx-auto px-margin-desktop flex items-center justify-between gap-space-lg"><div class="flex items-center gap-space-md shrink-0"><img alt="Logo MiCatalogo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1W5vjpcvP1ZxNohI4ne1md2TNzd1-S2xvjMuXliM56wNeuR1gZAplhMc7GPF8yeICY_NqfxU5r_6c-OU5wUvbIUxg40PycLOrLkpe_M7-iWrlBxeBgF132XjR-oDsZGT0gQa2Cj2mShupyxlyeflxjjEvhD8ghC6TZBczvbVs1gC0DcSViv9yZOXc2MN_j2RynIAGsx60892MIGYL0WvYjhruYQrZnx2TmExqtYbyOEwkJaPqtYyr6V7w"/><a class="font-headline-lg text-headline-lg text-on-primary tracking-tight flex items-center" data-path="explore" href="#">MiCatalogo<span class="w-1.5 h-1.5 rounded-full bg-primary-container ml-0.5"></span></a></div><div class="flex-1 max-w-3xl"><form action="#" class="flex items-center w-full h-10 bg-surface-card rounded-xl overflow-hidden shadow-sm" method="GET"><div class="relative hidden lg:flex items-center h-full bg-surface-container-low border-r border-border-subtle px-space-md"><select aria-label="Seleccionar categoría" class="bg-transparent font-label-md text-label-md text-text-body focus:outline-none cursor-pointer pr-space-xs"><option value="todas">Todas</option><option value="moda">Moda</option><option value="tecnologia">Tecnología</option><option value="belleza">Belleza</option><option value="hogar">Hogar</option></select></div><div class="flex-1 flex items-center px-space-md h-full"><span class="material-symbols-outlined text-outline text-[20px] mr-space-xs">search</span><input class="w-full bg-transparent font-body-md text-body-md text-on-background placeholder:text-outline focus:outline-none" placeholder="¿Qué estás buscando?" type="text"/></div><button aria-label="Buscar en el catálogo" class="h-full px-space-lg bg-primary-container text-on-primary hover:bg-primary transition-colors flex items-center justify-center" type="submit"><span class="material-symbols-outlined text-[20px]">search</span></button></form></div><div class="flex items-center gap-space-md shrink-0"><a class="font-label-md text-label-md text-border-subtle hover:text-on-primary px-space-sm py-space-xs transition-colors" data-path="login" href="#">Iniciar sesión</a><a class="font-label-md text-label-md bg-primary-container hover:bg-primary text-on-primary px-space-lg py-2.5 rounded-xl font-semibold shadow-sm transition-all text-center whitespace-nowrap" data-path="create-catalog" href="#">Crear mi catálogo gratis</a><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></div><div class="bg-surface-card border-b border-border-subtle"><div class="h-11 max-w-[1400px] mx-auto px-margin-desktop flex items-center justify-between"><nav class="flex items-center gap-space-lg overflow-x-auto whitespace-nowrap" data-active-classes="text-primary font-semibold"><a aria-current="page" class="transition-colors text-primary font-semibold" data-path="explore" href="#">Inicio</a><a class="font-label-md text-label-md text-secondary hover:text-primary transition-colors" data-path="category-moda" href="#">Moda</a><a class="font-label-md text-label-md text-secondary hover:text-primary transition-colors" data-path="category-tecnologia" href="#">Tecnología</a><a class="font-label-md text-label-md text-secondary hover:text-primary transition-colors" data-path="category-belleza" href="#">Belleza</a><a class="font-label-md text-label-md text-secondary hover:text-primary transition-colors" data-path="category-hogar" href="#">Hogar</a><a class="font-label-md text-label-md text-secondary hover:text-primary transition-colors" data-path="category-accesorios" href="#">Accesorios</a><a class="font-label-md text-label-md text-secondary hover:text-primary transition-colors" data-path="category-calzado" href="#">Calzado</a><a class="font-label-md text-label-md text-secondary hover:text-primary transition-colors" data-path="category-deportes" href="#">Deportes</a><a class="font-label-md text-label-md text-secondary hover:text-primary transition-colors" data-path="category-vehiculos" href="#">Vehículos</a><a class="font-label-md text-label-md text-secondary hover:text-primary transition-colors" data-path="category-otros" href="#">Otros</a><a class="font-label-md text-label-md text-primary font-semibold flex items-center hover:underline" data-path="categories" href="#">Ver todas (+14)</a></nav><div class="hidden xl:flex items-center gap-space-xs text-text-muted font-body-sm text-body-sm shrink-0"><span class="w-2 h-2 rounded-full bg-status-available-dot"></span>Vitrina directa por WhatsApp</div></div></div></header><main class="w-full pt-[108px] bg-background min-h-[calc(100vh-320px)]"><div class="flex flex-col w-full">
+<!-- 1. FRANJA INFORMATIVA PEQUEÑA: CAPTACIÓN DE VENDEDORES -->
+<div class="max-w-[1400px] w-full mx-auto px-margin-desktop my-space-md">
+<div class="bg-surface-container-low rounded-xl px-space-lg py-3.5 flex flex-col md:flex-row items-center justify-between gap-space-md shadow-sm">
+<div class="flex items-center gap-space-md">
+<div class="w-10 h-10 rounded-full bg-primary-container/10 flex items-center justify-center shrink-0 text-primary-container">
+<span class="material-symbols-outlined text-[22px]">storefront</span>
+</div>
+<div>
+<div class="flex items-center gap-space-xs flex-wrap">
+<h2 class="font-headline-sm text-headline-sm text-text-heading">
+              ¿Vendes por WhatsApp? Crea tu catálogo gratis y comparte un solo enlace.
+            </h2>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-status-available-bg text-status-available-text font-label-sm text-label-sm font-semibold">
+              0% Comisión
+            </span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">
+            Sin intermediarios, vitrina ultrarrápida y recepción de pedidos directo a tu chat.
+          </p>
+</div>
+</div>
+<div class="flex items-center gap-space-md shrink-0 w-full md:w-auto justify-end">
+<a class="w-full md:w-auto inline-flex items-center justify-center gap-1.5 bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md font-semibold px- space-lg py-2.5 rounded-lg shadow-sm transition-colors" data-path="create-catalog" href="#">
+<span>Crear catálogo gratis</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</a>
+</div>
+</div>
+</div>
+<!-- 2. SECCIÓN: PRODUCTOS RECIENTES -->
+<section class="max-w-[1400px] w-full mx-auto px-margin-desktop mt-space-md mb-space-xl">
+<div class="flex items-center justify-between mb-space-md">
+<div class="flex items-baseline gap-space-sm">
+<h2 class="font-headline-lg text-headline-lg text-text-heading">Productos recientes</h2>
+<span class="hidden sm:inline font-body-sm text-body-sm text-text-muted">Novedades agregadas hoy</span>
+</div>
+<a class="group inline-flex items-center gap-1 font-label-md text-label-md text-primary-container hover:text-primary font-semibold transition-colors" data-path="explore" href="#">
+<span>Ver más</span>
+<span class="material-symbols-outlined text-[16px] transition-transform group-hover:translate-x-0.5">arrow_forward</span>
+</a>
+</div>
+<!-- 5 Column Grid (Desktop) -->
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-space-md lg:gap-gutter-desktop">
+<!-- Card 1 -->
+<a class="group flex flex-col bg-surface-card rounded-lg shadow-sm hover:shadow-md transition-all duration-150 overflow-hidden" data-path="product-1" href="#">
+<div class="relative w-full aspect-square bg-surface-container-low overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-200" data-alt="Modern high performance wireless sports running shoes with breathable mesh and responsive foam sole in crisp studio product lighting on neutral pure background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGP82lLN16izXOe0737hlBpRRYUAR847M8d-PLXqUknG0nr6d0VT7wJ2zjpDhUk4-MVjAD8ZErZ9v8SedSQB62dlJAitVxFkwGkmbgQVkHek546VKA3-OKfAwoP5H3FdYkcc201N9dLpwhT8qNXt6itXNy4NVZ4oqmwmhzQQlGIVb6l1v_vzcQrLwg9DeSvV24L8akWbTpO9Oe2VOgFwiOYL8WCARJIuPbu7nGiPELFFjE3mlHCMKt"/>
+<span class="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-status-available-bg text-status-available-text font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-status-available-dot"></span>Disponible
+          </span>
+</div>
+<div class="p-space-md flex flex-col flex-1 justify-between gap-1.5">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-text-heading line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+              Zapatillas Running Air Sprint 270 Pro
+            </h3>
+<p class="font-price-lg text-price-lg text-text-heading mt-1">RD$ 4,500</p>
+</div>
+<div class="pt-2 flex items-center gap-1.5 text-text-muted font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[15px] text-outline">store</span>
+<span class="truncate">Urban Kicks RD</span>
+</div>
+</div>
+</a>
+<!-- Card 2 -->
+<a class="group flex flex-col bg-surface-card rounded-lg shadow-sm hover:shadow-md transition-all duration-150 overflow-hidden" data-path="product-2" href="#">
+<div class="relative w-full aspect-square bg-surface-container-low overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-200" data-alt="Over-ear matte black wireless headphones with active noise cancellation studio angled shot clean reflections isolated commercial product photography" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxpm7hkmwcQ7ALk4Y4pZu8aeGJ-J9TJVlStq09k4Y8VZL_welyT-ubOV_1gEypbURzPVKRzXDFdOJpwk5svevL3w8ARRNkMKM5tsmfE3sUI0rzXcBr_keAIbEViWM1KgYRw1uRjOx78EXmZ8x6GMgbiuF967Ow6dURTOAONvnBZxOsAkqk7yZEIM8A6jjL2D7kAaIA0oqNP8WVp3vehNcWDaMEmnCzsuhGlHebYixQ0q3Vam3h-2oR"/>
+<span class="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-status-available-bg text-status-available-text font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-status-available-dot"></span>Disponible
+          </span>
+</div>
+<div class="p-space-md flex flex-col flex-1 justify-between gap-1.5">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-text-heading line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+              Audífonos Diadema Bluetooth ANC Bass+
+            </h3>
+<p class="font-price-lg text-price-lg text-text-heading mt-1">RD$ 2,850</p>
+</div>
+<div class="pt-2 flex items-center gap-1.5 text-text-muted font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[15px] text-outline">store</span>
+<span class="truncate">ElectroMundo RD</span>
+</div>
+</div>
+</a>
+<!-- Card 3 -->
+<a class="group flex flex-col bg-surface-card rounded-lg shadow-sm hover:shadow-md transition-all duration-150 overflow-hidden" data-path="product-3" href="#">
+<div class="relative w-full aspect-square bg-surface-container-low overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-200" data-alt="Classic stainless steel manual french press coffee maker with clear glass carafe showing rich brewed coffee isolated on clean minimal background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwQWvOKb3uLZp3wSbS3ZPX4uPfUAps0C1u9rh4Dj3M4pid5oaGXFfkZHlibVa_H8P_NHoP28rbk7SwFCk1f9Qnv0iitaaKDe7c_-TRVCayD7G1ZpFOi4TxJLeWpndFyOA51tPPDRwNmgVoiRagkwPMebfi_m4dt93s-6SlwwR-PfNpQMqSZfpqtINMbZVveMz4i-aTOvEpKhSdCud6-GqdS36wW1Ol6Xh-3UuuGsPU3EB5VJRghuRq"/>
+<span class="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-status-available-bg text-status-available-text font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-status-available-dot"></span>Disponible
+          </span>
+</div>
+<div class="p-space-md flex flex-col flex-1 justify-between gap-1.5">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-text-heading line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+              Cafetera Prensa Francesa Vidrio 800ml
+            </h3>
+<p class="font-price-lg text-price-lg text-text-heading mt-1">RD$ 1,200</p>
+</div>
+<div class="pt-2 flex items-center gap-1.5 text-text-muted font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[15px] text-outline">store</span>
+<span class="truncate">Hogar &amp; Estilo</span>
+</div>
+</div>
+</a>
+<!-- Card 4 -->
+<a class="group flex flex-col bg-surface-card rounded-lg shadow-sm hover:shadow-md transition-all duration-150 overflow-hidden" data-path="product-4" href="#">
+<div class="relative w-full aspect-square bg-surface-container-low overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-200" data-alt="Premium minimalist smartwatch with metallic bezel and olive silicone band displaying clean digital dial high precision commercial photography" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCIZZDxm6bT0LGUGrWgEh2d7d1ZPr25kZOYJJb2YIMifDJ7JZg917Fg4ccWR9awnsWuoNKb3RQOshxQGN8N1DhZet9a9cJWimVON1BYPoG51F96P3Yce7p_4OYIVd67kRwXCaLUTXi_-p9efrTSGVJAn6zOkbVdPhNqR2bTmP6benb0EzkVviarRnIr2k-BvA4QgnWO2jqpaVkB5_jbIQ0j4joQfQOg1PseUMV-G7FcZs-j3IB28Tff"/>
+<span class="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-status-available-bg text-status-available-text font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-status-available-dot"></span>Disponible
+          </span>
+</div>
+<div class="p-space-md flex flex-col flex-1 justify-between gap-1.5">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-text-heading line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+              Smartwatch Deportivo Serie 8 Ultra AMOLED
+            </h3>
+<p class="font-price-lg text-price-lg text-text-heading mt-1">RD$ 3,600</p>
+</div>
+<div class="pt-2 flex items-center gap-1.5 text-text-muted font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[15px] text-outline">store</span>
+<span class="truncate">TechStore RD</span>
+</div>
+</div>
+</a>
+<!-- Card 5 (Agotado) -->
+<a class="group flex flex-col bg-surface-card rounded-lg shadow-sm hover:shadow-md transition-all duration-150 overflow-hidden opacity-90" data-path="product-5" href="#">
+<div class="relative w-full aspect-square bg-surface-container-low overflow-hidden">
+<img class="w-full h-full object-cover grayscale-[20%] group-hover:scale-[1.02] transition-transform duration-200" data-alt="Complete professional cosmetic brush and makeup kit in soft pastel pink leather pouch laid out on white marble studio setup" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYg1MsAsV6Qfq_N60yuImPlq67M3pe_16AFxT_bPvvEPZv4ovUok5WMfOuQnqUjl83wvjrx1WRMxQLSJsN_tFA1A04wVJ_rUqIqw3tRYhpZ0nL4KIGQbBTTyTkFSvwMEGhxcYDwqx5Kgj2dWTlGqDYnSw3AQlb_NnMeGF2ocCpoYtras3209o4AT4IGnIzqp4daUSb9F0RHSUWDAVX2WO3sJiPiYsSCQf66YvNqRYHfG7hizYT21xK"/>
+<span class="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-status-out-bg text-status-out-text font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-status-out-dot"></span>Agotado
+          </span>
+</div>
+<div class="p-space-md flex flex-col flex-1 justify-between gap-1.5">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-text-heading line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+              Kit Cosmética Profesional 12 Brochas &amp; Neceser
+            </h3>
+<p class="font-price-lg text-price-lg text-text-heading mt-1">RD$ 1,850</p>
+</div>
+<div class="pt-2 flex items-center gap-1.5 text-text-muted font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[15px] text-outline">store</span>
+<span class="truncate">Bella Cosmetics</span>
+</div>
+</div>
+</a>
+</div>
+</section>
+<!-- 3. ESPACIO PUBLICITARIO DISCRETO (SLOT AD) -->
+<div class="max-w-[1400px] w-full mx-auto px-margin-desktop mb-space-xl">
+<div class="relative w-full bg-ad-slot-bg rounded-lg p- space-md sm:p-space-lg flex flex-col sm:flex-row items-center justify-between gap-space-md overflow-hidden">
+<div class="absolute top-2 right-3 font-label-sm text-label-sm text-outline tracking-widest uppercase">
+        Publicidad
+      </div>
+<div class="flex items-center gap-space-md">
+<div class="w-12 h-12 rounded-lg bg-surface-card flex items-center justify-center text-primary shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-[28px]">local_shipping</span>
+</div>
+<div class="pr-6">
+<span class="font-label-sm text-label-sm text-primary font-semibold tracking-wide uppercase">Envíos Exprés Nacionales</span>
+<h4 class="font-headline-sm text-headline-sm text-text-heading leading-tight mt-0.5">
+            Envía paquetes a todo el país el mismo día con tarifas corporativas
+          </h4>
+<p class="font-body-sm text-body-sm text-text-muted hidden md:block mt-0.5">
+            Integrado para comerciantes independientes que despachan por WhatsApp y mensajería local.
+          </p>
+</div>
+</div>
+<a class="shrink-0 inline-flex items-center gap-1 bg-surface-card hover:bg-surface text-text-heading font-label-md text-label-md font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors whitespace-nowrap" href="#">
+<span>Conocer servicio</span>
+<span class="material-symbols-outlined text-[16px] text-outline">open_in_new</span>
+</a>
+</div>
+</div>
+<!-- 4. SECCIÓN: TIENDAS DESTACADAS -->
+<section class="max-w-[1400px] w-full mx-auto px-margin-desktop mb-space-xl">
+<div class="mb-space-md">
+<h2 class="font-headline-lg text-headline-lg text-text-heading">Tiendas destacadas</h2>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">
+        Explora los catálogos de nuestros vendedores verificados con atención directa
+      </p>
+</div>
+<!-- 5 Store Cards Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-space-md">
+<!-- Store 1 -->
+<div class="bg-surface-card rounded-lg p-space-md shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-space-md">
+<div class="flex items-center gap-space-md">
+<div class="w-12 h-12 rounded-full overflow-hidden shrink-0 bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Brand logo of modern urban fashion sneaker store clean monochrome typography and icon" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCogiD5xhM5gtnxLaOljbdKoKpwmNI4KJjhSSpyvHsmNmQlXq3SFyqrUgwh6-6S9xSgJQja2jv3NOwzK0qSSwsvlc-J-g42W2GWJRRXIx_Jsqx75iTlmsARXkUQ5w5ZNvc8590lBp5EX9nXwUh1FWUoE8TGssED-YF4I-3ZolyYLQdYJNEcq3N8o9OSwsbvHVDZmKL-kQJw6xwpGVEen7WpG4nCMNcd_KPmfwbCgt4bBkiepoKXebAL"/>
+</div>
+<div class="min-w-0">
+<h3 class="font-headline-sm text-headline-sm text-text-heading truncate">Urban Kicks</h3>
+<p class="font-body-sm text-body-sm text-text-muted truncate">Moda y Calzado</p>
+</div>
+</div>
+<div class="flex items-center justify-between pt- space-xs">
+<span class="inline-flex items-center gap-1 text-text-muted font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-outline">inventory_2</span>
+            54 items
+          </span>
+<a class="font-label-md text-label-md text-primary-container hover:text-primary font-semibold inline-flex items-center gap-0.5" data-path="store-urban-kicks" href="#">
+            Catálogo <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+</a>
+</div>
+</div>
+<!-- Store 2 -->
+<div class="bg-surface-card rounded-lg p-space-md shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-space-md">
+<div class="flex items-center gap-space-md">
+<div class="w-12 h-12 rounded-full overflow-hidden shrink-0 bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Electronics store brand emblem with sleek metallic blue circuits and modern gadget logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD476P2FGqLdYaV6vAju7_hu4maphfhTYO2A0UYIBBz_suTKtbnvb8jUog8_gryVz1TOtnp5XtqON2g37KcvtEtvLBklAfA29eGCsCi3oZq2Rr5-LDa63KFrdNnVFglC-psuFUeSrvPHYQW2DlpAifyIbEsruNdmWo_5354rbOKKqAWAaKjUeGcBlGHzMECC01_yKQkHM4nsGlIg0-Qa85s21u7NZrYTR_4ZQvtRd6eEo_BqR0Qqaye"/>
+</div>
+<div class="min-w-0">
+<h3 class="font-headline-sm text-headline-sm text-text-heading truncate">ElectroMundo RD</h3>
+<p class="font-body-sm text-body-sm text-text-muted truncate">Tecnología &amp; Audio</p>
+</div>
+</div>
+<div class="flex items-center justify-between pt- space-xs">
+<span class="inline-flex items-center gap-1 text-text-muted font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-outline">inventory_2</span>
+            82 items
+          </span>
+<a class="font-label-md text-label-md text-primary-container hover:text-primary font-semibold inline-flex items-center gap-0.5" data-path="store-electromundo" href="#">
+            Catálogo <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+</a>
+</div>
+</div>
+<!-- Store 3 -->
+<div class="bg-surface-card rounded-lg p-space-md shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-space-md">
+<div class="flex items-center gap-space-md">
+<div class="w-12 h-12 rounded-full overflow-hidden shrink-0 bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Elegance beauty salon and cosmetic store brand mark rose gold floral minimalist emblem" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBA3gnZ2PTTTbgMJnInIRkIzIsXGdXB51APU2KTn08sb_4DtJ_3t5pa5wXfpEknlk02duLyREHLHwoT1cMBI-v40MDU6P4dcK4sxTq2XvhHDEK1pJrU5FTT0TLoeXkHkiU_-m_fXcr8_EQk7ckKzysruHhaxm9bYtaVB4gdfu7iW2qAwdf2IZTTlpYPF6EYZMFYwWtam1iI7lZQkg0kHhL2waMdYn4hgAj1itAUmmrKuq25FgNXUAxH"/>
+</div>
+<div class="min-w-0">
+<h3 class="font-headline-sm text-headline-sm text-text-heading truncate">Bella Cosmetics</h3>
+<p class="font-body-sm text-body-sm text-text-muted truncate">Belleza y Cuidado</p>
+</div>
+</div>
+<div class="flex items-center justify-between pt- space-xs">
+<span class="inline-flex items-center gap-1 text-text-muted font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-outline">inventory_2</span>
+            39 items
+          </span>
+<a class="font-label-md text-label-md text-primary-container hover:text-primary font-semibold inline-flex items-center gap-0.5" data-path="store-bella-cosmetics" href="#">
+            Catálogo <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+</a>
+</div>
+</div>
+<!-- Store 4 -->
+<div class="bg-surface-card rounded-lg p-space-md shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-space-md">
+<div class="flex items-center gap-space-md">
+<div class="w-12 h-12 rounded-full overflow-hidden shrink-0 bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Minimalist home decor brand mark with warm terracotta and sage line art furniture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_ICtok1h_QcRzpSd9Mca8tC5n7UOAngmr1y7nkyyRVU9SFleEKWlVJn_I6_xzAz6Z3X1tW_GuOqTK1gGzRC0AU6G6qDJh2ujWIZeJrUc8nxy1n_sdUiUNhAolYi_-3DaOngfNs-H5hQqVI1roGITcrKSo5685mOTHp7HVWNAJf7x_HiR9HaWR6R2-Q9JW3I6AgK2j2chctdoT9pIiiqZJsZGQtl3QpTBEjnGfQ9DBlypFyimuoqoK"/>
+</div>
+<div class="min-w-0">
+<h3 class="font-headline-sm text-headline-sm text-text-heading truncate">Hogar &amp; Estilo</h3>
+<p class="font-body-sm text-body-sm text-text-muted truncate">Muebles &amp; Cocina</p>
+</div>
+</div>
+<div class="flex items-center justify-between pt- space-xs">
+<span class="inline-flex items-center gap-1 text-text-muted font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-outline">inventory_2</span>
+            61 items
+          </span>
+<a class="font-label-md text-label-md text-primary-container hover:text-primary font-semibold inline-flex items-center gap-0.5" data-path="store-hogar-estilo" href="#">
+            Catálogo <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+</a>
+</div>
+</div>
+<!-- Store 5 -->
+<div class="bg-surface-card rounded-lg p-space-md shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-space-md">
+<div class="flex items-center gap-space-md">
+<div class="w-12 h-12 rounded-full overflow-hidden shrink-0 bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="High tech accessories and mobile gear brand logo with sharp clean modern aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDl3vUBaa_kLMXe1477fQ6vR0Fu7ZJ-ZxB8vI91hsCd2AH2VcbeJtLdL08mWgYS7gsFy0_sbWb6O6oeb32vi1R-8H-ffNEZXTssA_HeY4BimtmG8bK_5Q6JyQ7RiKiHjpaIhArMfefuq-ltjHPdFEusLa0bmMmuNq_y002Ht4bsX1-0iyu-EbZcfFuYcw3qTxFdUgW879bL5ekbqVxIqA1iETeUEpi6-6heGBen5kNLQUk5bZDksb2N"/>
+</div>
+<div class="min-w-0">
+<h3 class="font-headline-sm text-headline-sm text-text-heading truncate">TechStore RD</h3>
+<p class="font-body-sm text-body-sm text-text-muted truncate">Wearables &amp; Móvil</p>
+</div>
+</div>
+<div class="flex items-center justify-between pt- space-xs">
+<span class="inline-flex items-center gap-1 text-text-muted font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-outline">inventory_2</span>
+            110 items
+          </span>
+<a class="font-label-md text-label-md text-primary-container hover:text-primary font-semibold inline-flex items-center gap-0.5" data-path="store-techstore-rd" href="#">
+            Catálogo <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+</a>
+</div>
+</div>
+</div>
+</section>
+<!-- 5. SECCIÓN: EXPLORA POR CATEGORÍA -->
+<section class="max-w-[1400px] w-full mx-auto px-margin-desktop mb-space-xl">
+<div class="flex items-center justify-between mb-space-md">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-text-heading">Explora por categoría</h2>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">Encuentra catálogos organizados por rubro comercial</p>
+</div>
+<a class="font-label-md text-label-md text-primary-container hover:text-primary font-semibold" data-path="categories" href="#">
+        Ver todas (+14)
+      </a>
+</div>
+<!-- 8 Category Bento Grid -->
+<div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-space-md">
+<!-- Cat 1 -->
+<a class="group flex flex-col items-center text-center p-3.5 bg-surface-card rounded-lg shadow-sm hover:shadow-md transition-all" data-path="category-moda" href="#">
+<div class="w-12 h-12 rounded-xl bg-surface-container-low flex items-center justify-center text-primary mb-2 group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[24px]">apparel</span>
+</div>
+<span class="font-headline-sm text-headline-sm text-text-heading group-hover:text-primary transition-colors">Moda</span>
+<span class="font-body-sm text-body-sm text-text-muted mt-0.5">1,420 prod.</span>
+</a>
+<!-- Cat 2 -->
+<a class="group flex flex-col items-center text-center p-3.5 bg-surface-card rounded-lg shadow-sm hover:shadow-md transition-all" data-path="category-tecnologia" href="#">
+<div class="w-12 h-12 rounded-xl bg-surface-container-low flex items-center justify-center text-primary mb-2 group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[24px]">devices</span>
+</div>
+<span class="font-headline-sm text-headline-sm text-text-heading group-hover:text-primary transition-colors">Tecnología</span>
+<span class="font-body-sm text-body-sm text-text-muted mt-0.5">980 prod.</span>
+</a>
+<!-- Cat 3 -->
+<a class="group flex flex-col items-center text-center p-3.5 bg-surface-card rounded-lg shadow-sm hover:shadow-md transition-all" data-path="category-calzado" href="#">
+<div class="w-12 h-12 rounded-xl bg-surface-container-low flex items-center justify-center text-primary mb-2 group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[24px]">steps</span>
+</div>
+<span class="font-headline-sm text-headline-sm text-text-heading group-hover:text-primary transition-colors">Calzado</span>
+<span class="font-body-sm text-body-sm text-text-muted mt-0.5">750 prod.</span>
+</a>
+<!-- Cat 4 -->
+<a class="group flex flex-col items-center text-center p-3.5 bg-surface-card rounded-lg shadow-sm hover:shadow-md transition-all" data-path="category-belleza" href="#">
+<div class="w-12 h-12 rounded-xl bg-surface-container-low flex items-center justify-center text-primary mb-2 group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[24px]">spa</span>
+</div>
+<span class="font-headline-sm text-headline-sm text-text-heading group-hover:text-primary transition-colors">Belleza</span>
+<span class="font-body-sm text-body-sm text-text-muted mt-0.5">620 prod.</span>
+</a>
+<!-- Cat 5 -->
+<a class="group flex flex-col items-center text-center p-3.5 bg-surface-card rounded-lg shadow-sm hover:shadow-md transition-all" data-path="category-hogar" href="#">
+<div class="w-12 h-12 rounded-xl bg-surface-container-low flex items-center justify-center text-primary mb-2 group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[24px]">chair</span>
+</div>
+<span class="font-headline-sm text-headline-sm text-text-heading group-hover:text-primary transition-colors">Hogar</span>
+<span class="font-body-sm text-body-sm text-text-muted mt-0.5">540 prod.</span>
+</a>
+<!-- Cat 6 -->
+<a class="group flex flex-col items-center text-center p-3.5 bg-surface-card rounded-lg shadow-sm hover:shadow-md transition-all" data-path="category-deportes" href="#">
+<div class="w-12 h-12 rounded-xl bg-surface-container-low flex items-center justify-center text-primary mb-2 group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[24px]">fitness_center</span>
+</div>
+<span class="font-headline-sm text-headline-sm text-text-heading group-hover:text-primary transition-colors">Deportes</span>
+<span class="font-body-sm text-body-sm text-text-muted mt-0.5">430 prod.</span>
+</a>
+<!-- Cat 7 -->
+<a class="group flex flex-col items-center text-center p-3.5 bg-surface-card rounded-lg shadow-sm hover:shadow-md transition-all" data-path="category-accesorios" href="#">
+<div class="w-12 h-12 rounded-xl bg-surface-container-low flex items-center justify-center text-primary mb-2 group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[24px]">watch</span>
+</div>
+<span class="font-headline-sm text-headline-sm text-text-heading group-hover:text-primary transition-colors">Accesorios</span>
+<span class="font-body-sm text-body-sm text-text-muted mt-0.5">890 prod.</span>
+</a>
+<!-- Cat 8 -->
+<a class="group flex flex-col items-center text-center p-3.5 bg-surface-card rounded-lg shadow-sm hover:shadow-md transition-all" data-path="category-vehiculos" href="#">
+<div class="w-12 h-12 rounded-xl bg-surface-container-low flex items-center justify-center text-primary mb-2 group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[24px]">directions_car</span>
+</div>
+<span class="font-headline-sm text-headline-sm text-text-heading group-hover:text-primary transition-colors">Vehículos</span>
+<span class="font-body-sm text-body-sm text-text-muted mt-0.5">310 prod.</span>
+</a>
+</div>
+</section>
+<!-- 6. SECCIÓN: MÁS PRODUCTOS (Catálogo Extenso) -->
+<section class="max-w-[1400px] w-full mx-auto px-margin-desktop mb-space-xl">
+<div class="flex items-center justify-between mb-space-md">
+<h2 class="font-headline-lg text-headline-lg text-text-heading">Más productos para ti</h2>
+<div class="flex items-center gap-space-xs text-text-muted font-body-sm text-body-sm">
+<span>Mostrando 1–10 de 1,248</span>
+</div>
+</div>
+<!-- 5 Columns x 2 Rows = 10 Products -->
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-space-md lg:gap-gutter-desktop">
+<!-- Product 6 -->
+<a class="group flex flex-col bg-surface-card rounded-lg shadow-sm hover:shadow-md transition-all duration-150 overflow-hidden" data-path="product-6" href="#">
+<div class="relative w-full aspect-square bg-surface-container-low overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-200" data-alt="Elegant casual floral summer midi dress in soft linen fabric hanging on wooden hanger natural soft lighting studio setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6PGQWNG0k-LWCS9ehzchdN_Nnv4Hwtb5qrt2W_q-e804B2Ba6sLr49gZi9JqqX3FFgeFaJ_Ofa7R57dcegf_1v0Y27D5dF8uOMZYfqoZUARVqQ_IpbXa1L1ZQg7KaPeb11K9ZNmAuQiL-shzWbfnko-Zdpj8T68esYq41TPtSGeyH59D2dFieQ1DDJzzl9ggK6uJQ13JzFhtGS7UjOx3Np1fMXl7xEkY1SEF96uQHHnfHFhHMAwhz"/>
+<span class="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-status-available-bg text-status-available-text font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-status-available-dot"></span>Disponible
+          </span>
+</div>
+<div class="p-space-md flex flex-col flex-1 justify-between gap-1.5">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-text-heading line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+              Vestido Casual Estampado Botánico Floral
+            </h3>
+<p class="font-price-lg text-price-lg text-text-heading mt-1">RD$ 2,200</p>
+</div>
+<div class="pt-2 flex items-center gap-1.5 text-text-muted font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[15px] text-outline">store</span>
+<span class="truncate">Brea Fashion</span>
+</div>
+</div>
+</a>
+<!-- Product 7 -->
+<a class="group flex flex-col bg-surface-card rounded-lg shadow-sm hover:shadow-md transition-all duration-150 overflow-hidden" data-path="product-7" href="#">
+<div class="relative w-full aspect-square bg-surface-container-low overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-200" data-alt="Compact mechanical wireless gaming keyboard with RGB backlighting and tactile switches isolated high resolution product render" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBAmLT5imlwfAl7aiwVLzhB9QjiRlV25KefUrf6UrX97ec7By5jTDfbAOh5d0nYqyDA62yFjI3afHph9hcFiv8700rfSAVuspKN4DQMac1Zu13LoUUeCxgrTkqi6F6OYbZchDZLHRtJsi1my0_oV1gnwvzynykY8jnh-inlRzUS_ZCRlfPNBJ1oJTv7Yq3RklDJhxI18j7IwE_ThHl-vw5GI5QRA9Rb-W-1tat6_0fKQGV_YJrBgi_3"/>
+<span class="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-status-available-bg text-status-available-text font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-status-available-dot"></span>Disponible
+          </span>
+</div>
+<div class="p-space-md flex flex-col flex-1 justify-between gap-1.5">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-text-heading line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+              Teclado Mecánico Inalámbrico 60% RGB Switch Red
+            </h3>
+<p class="font-price-lg text-price-lg text-text-heading mt-1">RD$ 3,150</p>
+</div>
+<div class="pt-2 flex items-center gap-1.5 text-text-muted font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[15px] text-outline">store</span>
+<span class="truncate">TechStore RD</span>
+</div>
+</div>
+</a>
+<!-- Product 8 -->
+<a class="group flex flex-col bg-surface-card rounded-lg shadow-sm hover:shadow-md transition-all duration-150 overflow-hidden" data-path="product-8" href="#">
+<div class="relative w-full aspect-square bg-surface-container-low overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-200" data-alt="Classic polarized aviator sunglasses with gold frame on white reflective background studio shot luxury accessory" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAhiJ-eJjYvFP6Zgl3D6LFgP2YaBuCaaew_EYEEedrOYWGv0iOjI7jJC6guX1TdHpZMt-uDmWtqAWPVJroOGWTDKGfPdFf-C5TEHGDjpRi5HIm-NEI1aC2kpaOZtA1bs_LFgF5ooC9dj9sI3uzOvKB1s4koam3xw1OsWdr3nlozNYrp0f5FEQTVasO69zSRt59kT5fHMnLU3tQdN0XB8LjFWbV_PaJryq5X4UAemZ7q1aEJW1n_a1PN"/>
+<span class="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-status-available-bg text-status-available-text font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-status-available-dot"></span>Disponible
+          </span>
+</div>
+<div class="p-space-md flex flex-col flex-1 justify-between gap-1.5">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-text-heading line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+              Gafas de Sol Aviador Polarizadas Protección UV400
+            </h3>
+<p class="font-price-lg text-price-lg text-text-heading mt-1">RD$ 1,450</p>
+</div>
+<div class="pt-2 flex items-center gap-1.5 text-text-muted font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[15px] text-outline">store</span>
+<span class="truncate">Urban Kicks RD</span>
+</div>
+</div>
+</a>
+<!-- Product 9 -->
+<a class="group flex flex-col bg-surface-card rounded-lg shadow-sm hover:shadow-md transition-all duration-150 overflow-hidden" data-path="product-9" href="#">
+<div class="relative w-full aspect-square bg-surface-container-low overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-200" data-alt="Modern stainless steel electric milk frother and hot foam maker on stone kitchen counter bright natural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsvlRd68LkLky8VzbYFKOCROk_e7KOaXD4RFTwGDiwk35MaEnCmeGLg8cNJuH7VskNiTCI1aK4cWTiD3DDUn65TnkV1AHHsPW7iqXFLfI2YBo4tewfLHz6fp-eYMozJqvk4DMILIcvKvKfwZFZBlHrsUNGROSnDUHdtgrgTuCGJL9h2loMY3BRKlmIt1SaYnGomOPW9Xm1-gwtVPb_xaqSrsUl2DSbE-d6yUqPmJQrdOwcRbkg3szr"/>
+<span class="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-status-available-bg text-status-available-text font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-status-available-dot"></span>Disponible
+          </span>
+</div>
+<div class="p-space-md flex flex-col flex-1 justify-between gap-1.5">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-text-heading line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+              Espumador Eléctrico de Leche Automático 4 en 1
+            </h3>
+<p class="font-price-lg text-price-lg text-text-heading mt-1">RD$ 1,950</p>
+</div>
+<div class="pt-2 flex items-center gap-1.5 text-text-muted font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[15px] text-outline">store</span>
+<span class="truncate">Hogar &amp; Estilo</span>
+</div>
+</div>
+</a>
+<!-- Product 10 -->
+<a class="group flex flex-col bg-surface-card rounded-lg shadow-sm hover:shadow-md transition-all duration-150 overflow-hidden" data-path="product-10" href="#">
+<div class="relative w-full aspect-square bg-surface-container-low overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-200" data-alt="Amber glass bottles of organic facial vitamin c serum and hyaluronic acid with natural botanical leaves studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAJZ_z0jgoHbAkO48H1SHgFfaF8NhovMz2e7i7by7ZMPRZJnbqSouQKmd8pIL8mwIJMMK7jqEZvn-7DcZ7e-UAgmHTBTJtBgiPochhSYew40YeU1mM7SFvRhZofsmkbJaxafjXQu2eLDlxIb_ou93NvaJqRq5Q9ivfBNe-a0XKFHkpg45Gaf0Y-FVLac8jo710sQCxAisv9PLfM8BgbCJ1itgwkTTTS-_A5IBrRwK7wzU75Rf56kwTT"/>
+<span class="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-status-available-bg text-status-available-text font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-status-available-dot"></span>Disponible
+          </span>
+</div>
+<div class="p-space-md flex flex-col flex-1 justify-between gap-1.5">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-text-heading line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+              Sérum Facial Vitamina C Anti-Manchas 30ml
+            </h3>
+<p class="font-price-lg text-price-lg text-text-heading mt-1">RD$ 950</p>
+</div>
+<div class="pt-2 flex items-center gap-1.5 text-text-muted font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[15px] text-outline">store</span>
+<span class="truncate">Bella Cosmetics</span>
+</div>
+</div>
+</a>
+</div>
+<!-- Ver Más Productos Button -->
+<div class="mt-space-xl flex flex-col items-center justify-center gap-space-sm">
+<button class="w-full sm:w-auto min-w-[280px] px-space-xl py-3.5 bg-surface-card hover:bg-surface-container text-text-heading font-label-md text-label-md font-semibold rounded-lg shadow-sm hover:shadow transition-all flex items-center justify-center gap-2" id="btn-load-more" type="button">
+<span>Ver más productos</span>
+<span class="material-symbols-outlined text-[18px]">expand_more</span>
+</button>
+<p class="font-body-sm text-body-sm text-text-muted">
+        Nuevos comerciantes suben productos diariamente sin costo.
+      </p>
+</div>
+</section>
+</div>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('btn-load-more');
+    if (btn) {
+      btn.addEventListener('click', () => {
+        btn.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span><span>Cargando catálogo...</span>';
+        setTimeout(() => {
+          btn.innerHTML = '<span>Mostrando todos los productos disponibles</span><span class="material-symbols-outlined text-[18px]">check</span>';
+          btn.disabled = true;
+          btn.classList.add('opacity-75', 'cursor-default');
+        }, 800);
+      });
+    }
+  });
+</script></main><footer class="w-full bg-header-navy text-outline border-t border-header-navy-hover mt-space-xl"><div class="max-w-[1400px] mx-auto px-margin-desktop py-12"><div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-space-xl"><div class="col-span-2 lg:col-span-1"><div class="flex items-center gap-space-xs mb-space-md"><img alt="Logo MiCatalogo" class="h-6 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1W5vjpcvP1ZxNohI4ne1md2TNzd1-S2xvjMuXliM56wNeuR1gZAplhMc7GPF8yeICY_NqfxU5r_6c-OU5wUvbIUxg40PycLOrLkpe_M7-iWrlBxeBgF132XjR-oDsZGT0gQa2Cj2mShupyxlyeflxjjEvhD8ghC6TZBczvbVs1gC0DcSViv9yZOXc2MN_j2RynIAGsx60892MIGYL0WvYjhruYQrZnx2TmExqtYbyOEwkJaPqtYyr6V7w"/><span class="font-headline-sm text-headline-sm text-on-primary">MiCatalogo</span></div><p class="font-body-sm text-body-sm text-outline leading-relaxed mb-space-md">Plataforma de catálogos y vitrinas digitales optimizadas para vendedores independientes que comercializan directamente por WhatsApp.</p><div class="inline-flex items-center gap-1.5 px-space-md py-1 bg-header-navy-hover rounded-xl text-border-subtle font-label-sm text-label-sm"><span class="w-2 h-2 rounded-full bg-status-available-dot"></span>Sin comisiones de venta</div></div><div><h3 class="font-label-md text-label-md text-on-primary uppercase tracking-wider mb-space-md">MiCatalogo</h3><ul class="space-y-space-xs font-body-sm text-body-sm"><li class="list-none"><a class="text-outline hover:text-on-primary transition-colors" data-path="explore" href="#">Explorar productos</a></li><li class="list-none"><a class="text-outline hover:text-on-primary transition-colors" data-path="stores" href="#">Tiendas destacadas</a></li><li class="list-none"><a class="text-outline hover:text-on-primary transition-colors" data-path="how-it-works" href="#">Cómo funciona</a></li><li class="list-none"><a class="text-outline hover:text-on-primary transition-colors" data-path="categories" href="#">Directorio de rubros</a></li></ul></div><div><h3 class="font-label-md text-label-md text-on-primary uppercase tracking-wider mb-space-md">Para Vendedores</h3><ul class="space-y-space-xs font-body-sm text-body-sm"><li class="list-none"><a class="text-outline hover:text-on-primary transition-colors" data-path="create-catalog" href="#">Crear catálogo gratis</a></li><li class="list-none"><a class="text-outline hover:text-on-primary transition-colors" data-path="seller-guide" href="#">Guía de ventas WhatsApp</a></li><li class="list-none"><a class="text-outline hover:text-on-primary transition-colors" data-path="login" href="#">Panel de comerciante</a></li><li class="list-none"><a class="text-outline hover:text-on-primary transition-colors" data-path="pricing" href="#">Planes y beneficios</a></li></ul></div><div><h3 class="font-label-md text-label-md text-on-primary uppercase tracking-wider mb-space-md">Legal y Políticas</h3><ul class="space-y-space-xs font-body-sm text-body-sm"><li class="list-none"><a class="text-outline hover:text-on-primary transition-colors" data-path="terms" href="#">Términos de servicio</a></li><li class="list-none"><a class="text-outline hover:text-on-primary transition-colors" data-path="privacy" href="#">Privacidad y cookies</a></li><li class="list-none"><a class="text-outline hover:text-on-primary transition-colors" data-path="prohibited-content" href="#">Contenido prohibido</a></li><li class="list-none"><a class="text-outline hover:text-on-primary transition-colors" data-path="safety" href="#">Seguridad para compradores</a></li></ul></div><div><h3 class="font-label-md text-label-md text-on-primary uppercase tracking-wider mb-space-md">Soporte y Reportes</h3><ul class="space-y-space-xs font-body-sm text-body-sm"><li class="list-none"><a class="text-outline hover:text-on-primary transition-colors" data-path="report-store" href="#">Reportar tienda</a></li><li class="list-none"><a class="text-outline hover:text-on-primary transition-colors" data-path="help" href="#">Centro de ayuda</a></li><li class="list-none"><a class="text-outline hover:text-on-primary transition-colors" data-path="contact" href="#">Contacto directo</a></li></ul></div></div><div class="border-t border-header-navy-hover mt-10 pt-space-md flex flex-col md:flex-row items-center justify-between gap-space-md font-body-sm text-body-sm text-outline"><p>© MiCatalogo — Plataforma de vitrinas para vendedores independientes. Todos los derechos reservados.</p><p class="text-outline/80">Las transacciones y entregas se coordinan exclusivamente entre cliente y vendedor vía WhatsApp.</p></div></div></footer></body></html>
