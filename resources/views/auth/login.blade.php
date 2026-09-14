@@ -183,8 +183,14 @@
                         </button>
                     </form>
 
-                    <!-- Bottom Signup Link -->
-                    <div class="mt-8 pt-6 border-t border-slate-100 text-center">
+                    <!-- Bottom Links -->
+                    <div class="mt-8 pt-6 border-t border-slate-100 space-y-2.5 text-center">
+                        <p class="text-xs text-slate-500">
+                            ¿Tienes un código de activación pendiente?
+                            <a class="font-bold text-blue-600 hover:text-blue-800 transition ml-1" href="{{ route('verification.notice') }}">
+                                Activa tu cuenta aquí →
+                            </a>
+                        </p>
                         <p class="text-xs text-slate-500">
                             ¿Aún no tienes tu catálogo?
                             <a class="font-bold text-blue-600 hover:text-blue-800 transition ml-1" href="{{ url('/register') }}">

@@ -6,6 +6,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\URL;
 
 class VerifyEmailCodeNotification extends Notification
 {
@@ -22,17 +23,37 @@ class VerifyEmailCodeNotification extends Notification
         DB::table('email_verification_codes')->insert([
             'user_id' => $notifiable->getKey(),
             'code_hash' => Hash::make($code),
-            'expires_at' => now()->addMinutes(10),
+            'expires_at' => now()->addMinutes(15),
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
+        $directUrl = URL::temporarySignedRoute(
+            'verification.verify-link',
+            now()->addMinutes(60),
+            [
+                'id' => $notifiable->getKey(),
+                'hash' => sha1($notifiable->getEmailForVerification()),
+            ]
+        );
+
+        $manualUrl = route('verification.notice', [
+            'email' => $notifiable->getEmailForVerification(),
+        ]);
+
+        $firstName = str($notifiable->name)->explode(' ')->first() ?: 'Vendedor';
+
         return (new MailMessage)
-            ->subject('Tu código de verificación de MiCatalogo')
-            ->greeting('Hola, '.str($notifiable->name)->explode(' ')->first())
-            ->line('Usa este código para confirmar tu correo y activar tu catálogo:')
+            ->subject('Activa tu cuenta en MiCatalogo')
+            ->greeting('¡Hola, '.$firstName.'!')
+            ->line('Gracias por registrarte en MiCatalogo. Para activar tu catálogo comercial y acceder de inmediato a tu panel, haz clic en el siguiente botón:')
+            ->action('Activar mi cuenta y vitrina', $directUrl)
+            ->line('---')
+            ->line('**¿Prefieres usar tu código de 6 dígitos?**')
+            ->line('Tu código de activación es:')
             ->line('**'.$code.'**')
-            ->line('El código vence en 10 minutos. Si no solicitaste esta cuenta, puedes ignorar este correo.')
+            ->line('Puedes ingresar este código directamente en la página web: '.$manualUrl)
+            ->line('Este código vence en 15 minutos (el enlace directo de activación es válido por 60 minutos). Si tú no creaste esta cuenta, puedes descartar este mensaje de forma segura.')
             ->salutation('El equipo de MiCatalogo');
     }
 }

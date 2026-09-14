@@ -30,11 +30,11 @@ Route::get('/r/wa/tienda/{shop:slug}/producto/{product:slug}', [WhatsAppRedirect
 
 Route::post('/reportar', [PublicReportController::class, 'store'])->middleware('throttle:report')->name('reports.store');
 
-Route::middleware('auth')->group(function () {
-    Route::get('/email/verify', [EmailVerificationCodeController::class, 'show'])->name('verification.notice');
-    Route::post('/email/verify-code', [EmailVerificationCodeController::class, 'verify'])->middleware('throttle:6,1')->name('verification.verify-code');
-    Route::post('/email/verification-code', [EmailVerificationCodeController::class, 'resend'])->middleware('throttle:3,10')->name('verification.send-code');
-});
+Route::get('/email/verify', [EmailVerificationCodeController::class, 'show'])->name('verification.notice');
+Route::post('/email/verify-code', [EmailVerificationCodeController::class, 'verify'])->middleware('throttle:10,1')->name('verification.verify-code');
+Route::post('/email/verification-code', [EmailVerificationCodeController::class, 'resend'])->middleware('throttle:5,10')->name('verification.send-code');
+Route::get('/email/activar/{id}/{hash}', [EmailVerificationCodeController::class, 'verifyDirectLink'])->middleware('throttle:10,1')->name('verification.verify-link');
+
 
 Route::middleware(['auth', 'verified'])->prefix('panel')->name('seller.')->group(function () {
     Route::get('/', [SellerShopController::class, 'index'])->name('dashboard');
