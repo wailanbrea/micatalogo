@@ -150,6 +150,25 @@ class SellerBulkProductTest extends TestCase
         $this->assertEquals(99, $shop->products()->count());
     }
 
+    public function test_bulk_upload_uses_the_configured_product_quota(): void
+    {
+        config()->set('catalog.free.max_products_per_shop', 2);
+
+        $seller = User::factory()->create();
+        $shop = Shop::factory()->create(['user_id' => $seller->id]);
+        Product::factory()->count(2)->create(['shop_id' => $shop->id]);
+
+        $response = $this->actingAs($seller)
+            ->post("/panel/tiendas/{$shop->public_id}/subida-masiva", [
+                'products' => [
+                    ['name' => 'Producto fuera de cuota', 'price' => '500'],
+                ],
+            ]);
+
+        $response->assertSessionHasErrors('products');
+        $this->assertSame(2, $shop->products()->count());
+    }
+
     public function test_a_seller_cannot_bulk_upload_to_another_sellers_shop(): void
     {
         $seller = User::factory()->create();

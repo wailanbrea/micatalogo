@@ -19,7 +19,7 @@ class SellerBulkProductController extends Controller
     public function create(Shop $shop): View
     {
         $usedQuota = $shop->products()->count();
-        $maxQuota = (int) config('catalog.limits.free_products_per_shop', 100);
+        $maxQuota = (int) config('catalog.free.max_products_per_shop', 100);
         $remainingQuota = max(0, $maxQuota - $usedQuota);
 
         $categories = $shop->categories()->orderBy('name')->get();
@@ -54,7 +54,7 @@ class SellerBulkProductController extends Controller
             $lockedShop = Shop::whereKey($shop->getKey())->lockForUpdate()->firstOrFail();
             $currentCount = $lockedShop->products()->count();
             $batchCount = count($batch);
-            $maxLimit = (int) config('catalog.limits.free_products_per_shop', 100);
+            $maxLimit = (int) config('catalog.free.max_products_per_shop', 100);
 
             if ($currentCount + $batchCount > $maxLimit) {
                 throw ValidationException::withMessages([
