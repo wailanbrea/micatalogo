@@ -40,8 +40,17 @@ class PublicShopController extends Controller
             $productsQuery->where('shop_category_id', $selectedCategory->id);
         }
 
+        $searchQuery = $request->string('q')->trim()->value();
+        if ($searchQuery !== '') {
+            $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $searchQuery);
+            $productsQuery->where(function ($q) use ($escaped) {
+                $q->where('name', 'like', "%{$escaped}%")
+                    ->orWhere('description', 'like', "%{$escaped}%");
+            });
+        }
+
         $products = $productsQuery->paginate(16)->withQueryString();
 
-        return view('shops.show', compact('shop', 'categories', 'selectedCategory', 'products'));
+        return view('shops.show', compact('shop', 'categories', 'selectedCategory', 'products', 'searchQuery'));
     }
 }

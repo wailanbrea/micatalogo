@@ -78,7 +78,7 @@ class EmailVerificationFlowTest extends TestCase
         $invalidUrl = route('verification.verify-link', [
             'id' => $user->id,
             'hash' => sha1($user->getEmailForVerification()),
-        ]) . '?signature=tampered-signature';
+        ]).'?signature=tampered-signature';
 
         $response = $this->get($invalidUrl);
 

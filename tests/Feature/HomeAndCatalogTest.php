@@ -8,29 +8,22 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-test('homepage renders a single CTA to create catalog and displays software category', function () {
+test('homepage renders seller landing page and never displays cross-store products', function () {
     $this->seed(DatabaseSeeder::class);
 
     $response = $this->get('/');
     $response->assertOk();
 
-    // Verify there is only one "Crear mi catalogo gratis" CTA
-    $content = $response->getContent();
-    $ctaCount = substr_count($content, 'Crear mi catalogo gratis');
-    expect($ctaCount)->toBe(1);
+    // Verify value propositions are present
+    $response->assertSee('Crea tu catálogo gratis');
+    $response->assertSee('Sube tus productos una vez');
+    $response->assertSee('Comparte un solo enlace con tus clientes');
+    $response->assertSee('Vitrina 100% Aislada');
+    $response->assertSee('Pedidos por WhatsApp');
 
-    // Verify Software category is visible in categories bar
-    $response->assertSee('Software');
-
-    // Verify BSolutions.dev shop is visible in featured shops
-    $response->assertSee('BSolutions.dev');
-
-    // Verify BSolutions products are present
-    $response->assertSee('CRM WhatsApp Multiagente');
-    $response->assertSee('TicketPro');
-
-    // Verify WebP image URLs are rendered
-    $response->assertSee('fm=webp');
+    // Verify home does NOT leak or promote specific products or stores
+    $response->assertDontSee('CRM WhatsApp Multiagente');
+    $response->assertDontSee('TicketPro');
 });
 
 test('product detail view renders product image when available', function () {

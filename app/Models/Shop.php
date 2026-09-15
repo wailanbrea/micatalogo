@@ -15,11 +15,18 @@ class Shop extends Model
 {
     use HasFactory, HasPublicId, SoftDeletes;
 
-    protected $fillable = ['name', 'slug', 'description', 'logo_object_key', 'whatsapp_country_code', 'whatsapp_number', 'offers_shipping', 'instagram', 'status'];
+    protected $fillable = ['name', 'slug', 'description', 'logo_object_key', 'whatsapp_country_code', 'whatsapp_number', 'offers_shipping', 'instagram', 'status', 'discovery_enabled'];
+
+    protected $attributes = [
+        'discovery_enabled' => false,
+    ];
 
     protected function casts(): array
     {
-        return ['offers_shipping' => 'boolean'];
+        return [
+            'offers_shipping' => 'boolean',
+            'discovery_enabled' => 'boolean',
+        ];
     }
 
     public function getLogoUrlAttribute(): ?string

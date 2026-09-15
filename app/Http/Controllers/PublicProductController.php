@@ -19,13 +19,24 @@ class PublicProductController extends Controller
 
         $product->loadMissing(['images' => fn ($query) => $query->orderBy('sort_order')->orderBy('id'), 'inventory']);
 
-        $relatedProducts = $shop->products()
+        $relatedQuery = $shop->products()
             ->where('id', '!=', $product->id)
             ->where('moderation_status', ProductModerationStatus::Active)
-            ->with(['images' => fn ($query) => $query->orderBy('sort_order')->orderBy('id'), 'inventory'])
-            ->latest('id')
-            ->take(4)
-            ->get();
+            ->with(['images' => fn ($query) => $query->orderBy('sort_order')->orderBy('id'), 'inventory']);
+
+        if ($product->shop_category_id) {
+            $sameCategory = (clone $relatedQuery)
+                ->where('shop_category_id', $product->shop_category_id)
+                ->latest('id')
+                ->take(4)
+                ->get();
+
+            $relatedProducts = $sameCategory->isNotEmpty()
+                ? $sameCategory
+                : $relatedQuery->latest('id')->take(4)->get();
+        } else {
+            $relatedProducts = $relatedQuery->latest('id')->take(4)->get();
+        }
 
         return view('products.show', compact('shop', 'product', 'relatedProducts'));
     }

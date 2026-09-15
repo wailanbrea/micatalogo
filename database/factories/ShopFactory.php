@@ -27,6 +27,7 @@ class ShopFactory extends Factory
             'whatsapp_number' => fake()->numerify('809#######'),
             'offers_shipping' => false,
             'status' => 'active',
+            'discovery_enabled' => false,
         ];
     }
 }

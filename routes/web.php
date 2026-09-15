@@ -22,11 +22,13 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', CatalogHomeController::class)->name('home');
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
-Route::get('/tienda/{shop:slug}', [PublicShopController::class, 'show'])->name('shops.show');
-Route::get('/tienda/{shop:slug}/producto/{product:slug}', [PublicProductController::class, 'show'])->name('products.show');
+Route::scopeBindings()->group(function () {
+    Route::get('/tienda/{shop:slug}', [PublicShopController::class, 'show'])->name('shops.show');
+    Route::get('/tienda/{shop:slug}/producto/{product:slug}', [PublicProductController::class, 'show'])->name('products.show');
 
-Route::get('/r/wa/tienda/{shop:slug}', [WhatsAppRedirectController::class, 'shop'])->name('track.wa.shop');
-Route::get('/r/wa/tienda/{shop:slug}/producto/{product:slug}', [WhatsAppRedirectController::class, 'product'])->name('track.wa.product');
+    Route::get('/r/wa/tienda/{shop:slug}', [WhatsAppRedirectController::class, 'shop'])->name('track.wa.shop');
+    Route::get('/r/wa/tienda/{shop:slug}/producto/{product:slug}', [WhatsAppRedirectController::class, 'product'])->name('track.wa.product');
+});
 
 Route::post('/reportar', [PublicReportController::class, 'store'])->middleware('throttle:report')->name('reports.store');
 
@@ -34,7 +36,6 @@ Route::get('/email/verify', [EmailVerificationCodeController::class, 'show'])->n
 Route::post('/email/verify-code', [EmailVerificationCodeController::class, 'verify'])->middleware('throttle:10,1')->name('verification.verify-code');
 Route::post('/email/verification-code', [EmailVerificationCodeController::class, 'resend'])->middleware('throttle:5,10')->name('verification.send-code');
 Route::get('/email/activar/{id}/{hash}', [EmailVerificationCodeController::class, 'verifyDirectLink'])->middleware('throttle:10,1')->name('verification.verify-link');
-
 
 Route::middleware(['auth', 'verified'])->prefix('panel')->name('seller.')->group(function () {
     Route::get('/', [SellerShopController::class, 'index'])->name('dashboard');

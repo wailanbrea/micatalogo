@@ -41,3 +41,15 @@ Only registration, password reset, and email verification are enabled for the MV
 The user created the Catalogo Web Turnstile widget. Login and registration use its
 public Site Key only when TURNSTILE_ENABLED is true. Server validation calls Siteverify
 with the private key from .env and rejects missing, invalid, or action-mismatched tokens.
+
+## 2026-09-14 - Aislamiento Total entre Vitrinas (SaaS Single-Seller Storefront)
+
+- **Contexto**: MiCatalogo inició con elementos de marketplace abierto (búsqueda global y listados compartidos en home).
+- **Decisión**: La plataforma opera bajo el principio de **aislamiento estricto entre vitrinas**. Un vendedor nunca compite ni comparte tráfico con otros vendedores dentro de su catálogo.
+- **Implementación**:
+  - `Route::scopeBindings()` en rutas públicas de vitrina y producto para resolver automáticamente `WHERE shop_id = ? AND slug = ?` y retornar `404` estricto en caso de discrepancia de slugs o manipulación de URLs.
+  - Buscador interno `/tienda/{shop}?q=...` acotado exclusivamente a `$shop->products()`.
+  - Componente `x-shop-footer`, navegación de tienda y productos relacionados contextualizados 100% al comercio activo.
+  - La raíz pública `/` se convierte en una landing page de conversión para vendedores independientes, sin alimentar búsquedas de terceros ni recomendaciones cruzadas.
+  - Campo `shops.discovery_enabled` (boolean por defecto `false`) para permitir futuras extensiones de descubrimiento únicamente con consentimiento explícito del vendedor.
+

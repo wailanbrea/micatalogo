@@ -38,6 +38,7 @@ class MediaStorageService
     {
         if (str_starts_with($objectKey, 'http://localhost/images/') || str_starts_with($objectKey, 'http://127.0.0.1/images/')) {
             $path = parse_url($objectKey, PHP_URL_PATH);
+
             return asset(ltrim($path, '/'));
         }
 

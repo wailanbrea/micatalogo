@@ -10,16 +10,18 @@
 ## Completed
 
 - Auth, email verification, Turnstile, rate limits, roles, policies, and tenant isolation.
+- Single-Seller Storefront Isolation: scoped route model binding (`Route::scopeBindings()`),
+  store-isolated search, dedicated shop footer, URL tampering prevention returning 404,
+  and seller acquisition landing page on `/`.
 - Seller shops, categories, products, bulk upload, WebP processing, local media fallback,
-  optional R2 integration, storefronts, search, shipping filters, WhatsApp tracking, and metrics.
+  optional R2 integration, storefronts, scoped search, inventory control, WhatsApp tracking, and metrics.
 - Reports, moderation queue, administrator dashboard, user management, SEO, ads, security
   headers, error pages, scheduled maintenance, logos, and QR marketing tools.
-- Demo BSolutions.dev software catalog and homepage media are present.
-- Product image selection only renders ready images and avoids eager-load N+1 queries.
+- Migration `add_discovery_enabled_to_shops_table` executed and `Shop` model configured.
 
 ## Verified
 
-- `php artisan test`: 108 tests, 417 assertions.
+- `php artisan test`: 137 tests, 540 assertions (100% passing).
 - `php .\vendor\bin\pint --test`: passing.
 - `npm run build`: passing.
 - R2 is not configured locally; media uses the local public fallback.

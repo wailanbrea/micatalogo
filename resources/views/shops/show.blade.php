@@ -3,14 +3,13 @@
         <!-- Top Nav -->
         <header class="border-b border-slate-200 bg-white">
             <div class="mx-auto flex max-w-[1400px] items-center justify-between px-4 py-3 sm:px-8">
-                <a class="flex items-center gap-1.5 text-xs font-semibold text-blue-700 hover:text-blue-800 sm:text-sm" href="{{ route('home') }}">
-                    <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                    <span class="hidden sm:inline">Explorar MiCatalogo</span>
-                    <span class="sm:hidden">Inicio</span>
-                </a>
-                <a class="text-sm font-bold tracking-tight text-slate-900 hidden sm:inline" href="{{ route('home') }}">
-                    Mi<span class="text-blue-600">Catalogo</span>
-                </a>
+                <div class="flex items-center gap-3">
+                    <span class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">
+                        <span class="h-2 w-2 rounded-full bg-emerald-500"></span> Vitrina Oficial
+                    </span>
+                    <span class="hidden sm:inline text-slate-300">|</span>
+                    <span class="hidden sm:inline text-xs text-slate-500 font-medium">Powered by <a href="{{ route('home') }}" class="font-bold text-slate-700 hover:text-blue-600 transition">MiCatalogo</a></span>
+                </div>
                 <div class="flex items-center gap-2 sm:gap-3">
                     @auth
                         @can('update', $shop)
@@ -38,7 +37,7 @@
                             Iniciar sesión
                         </a>
                         <a class="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 transition shrink-0 whitespace-nowrap" href="{{ route('register') }}">
-                            Crear tienda gratis
+                            Crear catálogo gratis
                         </a>
                     @endauth
                 </div>
@@ -84,19 +83,41 @@
                         </div>
                     </div>
 
-                    <!-- Direct Actions -->
-                    <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-                        <a class="flex-1 sm:flex-none justify-center inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-95 text-center whitespace-nowrap" href="{{ route('track.wa.shop', $shop) }}" data-wa-target="https://wa.me/{{ $shop->whatsapp_country_code.$shop->whatsapp_number }}" rel="noopener noreferrer" target="_blank">
-                            <svg class="h-5 w-5 fill-current shrink-0" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
-                            <span class="hidden sm:inline">Contactar por WhatsApp</span>
-                            <span class="sm:hidden">WhatsApp</span>
-                        </a>
-                        <button class="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50 cursor-pointer" id="share-btn" onclick="shareStore('{{ $shop->name }}', '{{ url()->current() }}')" type="button">
-                            <svg class="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
-                            <span class="hidden sm:inline">Compartir catálogo</span>
-                            <span class="sm:hidden">Compartir</span>
-                        </button>
-                        <x-report-modal type="shop" :id="$shop->public_id" :name="$shop->name" />
+                    <!-- Direct Actions & Store-Scoped Search Bar (Amazon Single-Storefront Pattern) -->
+                    <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full lg:w-auto">
+                        <!-- Internal Search within this Shop Only -->
+                        <form method="GET" action="{{ route('shops.show', $shop) }}" class="relative w-full sm:w-72 lg:w-80">
+                            @if (request('categoria'))
+                                <input type="hidden" name="categoria" value="{{ request('categoria') }}">
+                            @endif
+                            <div class="relative flex items-center">
+                                <input 
+                                    class="w-full rounded-xl border border-slate-300 bg-slate-50/70 py-2.5 pl-9 pr-20 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10 shadow-xs transition" 
+                                    type="search" 
+                                    name="q" 
+                                    value="{{ $searchQuery }}" 
+                                    placeholder="Buscar en {{ $shop->name }}...">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                </div>
+                                <button class="absolute right-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 transition cursor-pointer shadow-xs" type="submit">
+                                    Buscar
+                                </button>
+                            </div>
+                        </form>
+
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <a class="flex-1 sm:flex-none justify-center inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-95 text-center whitespace-nowrap" href="{{ route('track.wa.shop', $shop) }}" data-wa-target="https://wa.me/{{ $shop->whatsapp_country_code.$shop->whatsapp_number }}" rel="noopener noreferrer" target="_blank">
+                                <svg class="h-4 w-4 fill-current shrink-0" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
+                                <span class="hidden sm:inline">WhatsApp</span>
+                                <span class="sm:hidden">WhatsApp</span>
+                            </a>
+                            <button class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50 cursor-pointer" id="share-btn" onclick="shareStore('{{ $shop->name }}', '{{ url()->current() }}')" type="button">
+                                <svg class="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                                <span>Compartir</span>
+                            </button>
+                            <x-report-modal type="shop" :id="$shop->public_id" :name="$shop->name" />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -104,15 +125,28 @@
 
         <!-- Main Content Area -->
         <main class="mx-auto max-w-[1400px] px-4 py-6 sm:px-8 pb-24 sm:pb-8">
-            <!-- Categories Filter Tabs -->
+            <!-- Active Search Filter Banner -->
+            @if ($searchQuery)
+                <div class="mb-6 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-blue-200 bg-blue-50/80 p-3.5 text-xs text-blue-900">
+                    <div class="flex items-center gap-2">
+                        <svg class="h-4 w-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        <span>Mostrando resultados para <strong class="font-bold text-blue-950">"{{ $searchQuery }}"</strong> en {{ $shop->name }} ({{ $products->total() }} {{ $products->total() === 1 ? 'producto' : 'productos' }})</span>
+                    </div>
+                    <a href="{{ route('shops.show', array_filter(['shop' => $shop, 'categoria' => request('categoria')])) }}" class="inline-flex items-center gap-1 font-bold text-blue-700 hover:text-blue-900 underline">
+                        ✕ Limpiar búsqueda
+                    </a>
+                </div>
+            @endif
+
+            <!-- Categories Filter Tabs (Strictly from this shop) -->
             @if ($categories->isNotEmpty())
                 <div class="mb-6">
                     <div class="flex items-center gap-2 overflow-x-auto pb-2 text-sm font-medium">
-                        <a class="whitespace-nowrap rounded-full px-4 py-2 transition {{ !$selectedCategory ? 'bg-blue-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' }}" href="{{ route('shops.show', $shop) }}">
+                        <a class="whitespace-nowrap rounded-full px-4 py-2 transition {{ !$selectedCategory ? 'bg-blue-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' }}" href="{{ route('shops.show', array_filter(['shop' => $shop, 'q' => $searchQuery])) }}">
                             Todos los productos ({{ $shop->products()->where('moderation_status', 'active')->count() }})
                         </a>
                         @foreach ($categories as $category)
-                            <a class="whitespace-nowrap rounded-full px-4 py-2 transition {{ $selectedCategory?->id === $category->id ? 'bg-blue-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' }}" href="{{ route('shops.show', [$shop, 'categoria' => $category->slug]) }}">
+                            <a class="whitespace-nowrap rounded-full px-4 py-2 transition {{ $selectedCategory?->id === $category->id ? 'bg-blue-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' }}" href="{{ route('shops.show', array_filter(['shop' => $shop, 'categoria' => $category->slug, 'q' => $searchQuery])) }}">
                                 {{ $category->name }} ({{ $category->products_count }})
                             </a>
                         @endforeach
@@ -124,7 +158,7 @@
             <div class="mb-4 flex items-center justify-between">
                 <div>
                     <h2 class="text-xl font-bold text-slate-900">
-                        {{ $selectedCategory ? $selectedCategory->name : 'Catálogo de productos' }}
+                        {{ $selectedCategory ? $selectedCategory->name : ($searchQuery ? 'Búsqueda de productos' : 'Catálogo de productos') }}
                     </h2>
                     <p class="text-xs text-slate-500">
                         {{ $products->total() }} {{ $products->total() === 1 ? 'producto disponible' : 'productos disponibles' }}
@@ -195,11 +229,23 @@
                 @empty
                     <div class="col-span-full rounded-xl border border-dashed border-slate-300 bg-white p-12 text-center">
                         <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
-                        <p class="mt-3 text-base font-semibold text-slate-800">No hay productos en esta sección</p>
-                        <p class="mt-1 text-sm text-slate-500">Prueba seleccionando otra categoría o vuelve a ver todo el catálogo.</p>
-                        @if ($selectedCategory)
+                        <p class="mt-3 text-base font-semibold text-slate-800">
+                            @if ($searchQuery)
+                                No encontramos productos para "{{ $searchQuery }}" en {{ $shop->name }}
+                            @else
+                                No hay productos en esta sección
+                            @endif
+                        </p>
+                        <p class="mt-1 text-sm text-slate-500">
+                            @if ($searchQuery)
+                                Intenta buscar con otras palabras o restablece la búsqueda.
+                            @else
+                                Prueba seleccionando otra categoría o vuelve a ver todo el catálogo.
+                            @endif
+                        </p>
+                        @if ($selectedCategory || $searchQuery)
                             <a class="mt-4 inline-block rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700" href="{{ route('shops.show', $shop) }}">
-                                Ver todos los productos
+                                Ver todo el catálogo de {{ $shop->name }}
                             </a>
                         @endif
                     </div>
@@ -252,7 +298,7 @@
             </div>
         </main>
 
-        <x-public-footer />
+        <x-shop-footer :shop="$shop" />
     </div>
 
     <!-- Share Script -->

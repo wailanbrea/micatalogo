@@ -21,3 +21,9 @@ Catalog authorization uses model policies and database query scopes. A seller ma
 read or mutate their own shops and dependent categories, products, images, and metrics.
 Administrators are granted catalog-wide access by policy; global categories and report
 review are administrator-only.
+
+Public storefronts enforce strict URL scoping using Laravel `Route::scopeBindings()`.
+Public URLs like `/tienda/{shop}/producto/{product}` and tracking routes strictly verify
+`$product->shop_id === $shop->id` and abort with HTTP 404 on any mismatch, preventing
+competitor parameter tampering and cross-seller information leakage.
+

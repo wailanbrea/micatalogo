@@ -17,3 +17,14 @@
   persistence. Instagram handles are stored without a leading `@`.
 - When a requested shop slug collides, the system deterministically appends a numeric
   suffix. Soft-deleted shops retain their slug to prevent accidental URL takeover.
+- Storefront Isolation: A seller's catalog never promotes, suggests, searches, or displays
+  products from other sellers. Store headers, footers, categories, and related products
+  are strictly scoped to the active shop.
+- Scoped Route Binding: Visiting `/tienda/{shop}/producto/{product}` strictly ensures the
+  product belongs to the shop. Any mismatch or slug tampering returns HTTP 404 immediately.
+- Search Scoping: Storefront search (`/tienda/{shop}?q=...`) queries only that shop's catalog.
+- Public Landing Page: The root `/` is a SaaS marketing page for acquiring sellers, not
+  a shared marketplace directory.
+- Discovery Flag: `shops.discovery_enabled` defaults to `false`. External discovery is
+  opt-in only.
+

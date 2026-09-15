@@ -11,13 +11,10 @@
             <div class="mx-auto flex max-w-[1200px] items-center justify-between px-4 py-3 sm:px-8">
                 <a class="flex items-center gap-1.5 text-xs font-semibold text-blue-700 hover:text-blue-800 sm:text-sm shrink-0" href="{{ route('shops.show', $shop) }}">
                     <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                    <span class="hidden sm:inline">Volver a {{ $shop->name }}</span>
-                    <span class="sm:hidden">Volver</span>
+                    <span>Volver a {{ $shop->name }}</span>
                 </a>
                 <div class="flex items-center gap-2 sm:gap-3">
-                    <a class="text-sm font-bold tracking-tight text-slate-900 hidden md:inline" href="{{ route('home') }}">
-                        Mi<span class="text-blue-600">Catalogo</span>
-                    </a>
+                    <span class="text-xs text-slate-400 hidden md:inline font-medium">Powered by <a href="{{ route('home') }}" class="font-bold text-slate-600 hover:text-blue-600 transition">MiCatalogo</a></span>
                     @auth
                         @can('update', $product)
                             <a class="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 transition shadow-2xs inline-flex items-center gap-1.5" href="{{ route('seller.shops.products.edit', [$shop, $product]) }}">
@@ -52,11 +49,9 @@
         </header>
 
         <main class="mx-auto max-w-[1300px] px-4 py-6 sm:px-6 lg:px-8 pb-24 sm:pb-8">
-            <!-- Breadcrumbs -->
+            <!-- Breadcrumbs (Scoped to this Shop) -->
             <nav class="mb-5 flex items-center gap-2 text-xs text-slate-500 overflow-x-auto whitespace-nowrap" aria-label="Ruta de navegación">
-                <a class="hover:text-slate-800 transition" href="{{ route('home') }}">Inicio</a>
-                <span class="text-slate-300">/</span>
-                <a class="hover:text-slate-800 transition" href="{{ route('shops.show', $shop) }}">{{ $shop->name }}</a>
+                <a class="font-bold text-blue-700 hover:text-blue-900 transition" href="{{ route('shops.show', $shop) }}">{{ $shop->name }}</a>
                 @if ($product->shopCategory)
                     <span class="text-slate-300">/</span>
                     <a class="hover:text-slate-800 transition" href="{{ route('shops.show', [$shop, 'categoria' => $product->shopCategory->slug]) }}">{{ $product->shopCategory->name }}</a>
@@ -311,7 +306,7 @@
             @endif
         </main>
 
-        <x-public-footer />
+        <x-shop-footer :shop="$shop" />
     </div>
 
     <!-- Gallery & Share Scripts -->

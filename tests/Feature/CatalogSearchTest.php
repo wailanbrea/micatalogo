@@ -139,7 +139,7 @@ class CatalogSearchTest extends TestCase
         $this->assertCount(0, $results);
     }
 
-    public function test_home_page_performs_search_query(): void
+    public function test_shop_storefront_performs_internal_search_query(): void
     {
         $seller = User::factory()->create();
         $shop = Shop::factory()->create(['user_id' => $seller->id, 'status' => 'active']);
@@ -158,11 +158,11 @@ class CatalogSearchTest extends TestCase
             'moderation_status' => ProductModerationStatus::Active,
         ]);
 
-        $response = $this->get('/?q=Laptop');
+        $response = $this->get(route('shops.show', ['shop' => $shop, 'q' => 'Laptop']));
 
         $response->assertOk();
-        $response->assertSee('Resultados para');
-        $response->assertSee('"Laptop"', false);
+        $response->assertSee('Mostrando resultados para');
+        $response->assertSee('Laptop');
         $response->assertSee('Laptop Ultra Pro');
         $response->assertDontSee('Sofá Cama 3 Puestos');
     }
@@ -302,7 +302,7 @@ class CatalogSearchTest extends TestCase
         $this->assertEquals('Articulo B', $nameAsc[1]);
     }
 
-    public function test_home_page_displays_filters_and_active_chips(): void
+    public function test_shop_storefront_displays_active_search_chip_and_clear_link(): void
     {
         $seller = User::factory()->create();
         $shop = Shop::factory()->create(['user_id' => $seller->id, 'status' => 'active', 'slug' => 'tienda-demo']);
@@ -315,14 +315,12 @@ class CatalogSearchTest extends TestCase
             'moderation_status' => ProductModerationStatus::Active,
         ]);
 
-        // Request with active filters
-        $response = $this->get('/?q=Camisa&min_price=1000&max_price=2000&stock=available');
+        // Request with active store search
+        $response = $this->get(route('shops.show', ['shop' => $shop, 'q' => 'Camisa']));
 
         $response->assertOk();
-        $response->assertSee('Filtros aplicados:');
-        $response->assertSee('Solo en stock');
-        $response->assertSee('RD$ 1,000 - 2,000');
-        $response->assertSee('Limpiar todos');
+        $response->assertSee('Mostrando resultados para');
+        $response->assertSee('Limpiar búsqueda');
         $response->assertSee('Camisa Formal Azul');
     }
 }
