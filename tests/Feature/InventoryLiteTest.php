@@ -2,6 +2,7 @@
 
 use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductModerationStatus;
+use App\Models\InventoryMovement;
 use App\Models\Product;
 use App\Models\ProductInventory;
 use App\Models\Shop;
@@ -235,6 +236,105 @@ test('adjusting stock sets exact count without altering sold quantity', function
     ]);
 });
 
+test('editing a legacy product does not enable inventory tracking or alter its availability', function () {
+    $user = User::factory()->create();
+    $shop = Shop::factory()->create(['user_id' => $user->id]);
+    $product = Product::factory()->create([
+        'shop_id' => $shop->id,
+        'availability_status' => ProductAvailabilityStatus::Available,
+    ]);
+
+    $this->actingAs($user)->put(route('seller.shops.products.update', [$shop, $product]), [
+        'name' => 'Producto legado actualizado',
+        'price' => $product->price,
+        'availability_status' => ProductAvailabilityStatus::Available->value,
+        'moderation_status' => $product->moderation_status->value,
+    ])->assertRedirect();
+
+    $product->refresh();
+    expect($product->availability_status)->toBe(ProductAvailabilityStatus::Available);
+    expect($product->inventory->track_inventory)->toBeFalse();
+    $this->assertDatabaseMissing('inventory_movements', ['product_id' => $product->id]);
+});
+
+test('activating inventory records opening stock and synchronizes availability', function () {
+    $user = User::factory()->create();
+    $shop = Shop::factory()->create(['user_id' => $user->id]);
+    $product = Product::factory()->create([
+        'shop_id' => $shop->id,
+        'availability_status' => ProductAvailabilityStatus::OutOfStock,
+    ]);
+
+    $this->actingAs($user)->put(route('seller.shops.products.update', [$shop, $product]), [
+        'name' => $product->name,
+        'price' => $product->price,
+        'availability_status' => ProductAvailabilityStatus::OutOfStock->value,
+        'moderation_status' => $product->moderation_status->value,
+        'track_inventory' => true,
+        'stock_quantity' => 12,
+        'low_stock_threshold' => 3,
+    ])->assertRedirect();
+
+    $product->refresh();
+    expect($product->availability_status)->toBe(ProductAvailabilityStatus::Available);
+    $this->assertDatabaseHas('inventory_movements', [
+        'product_id' => $product->id,
+        'type' => 'adjustment',
+        'quantity' => 12,
+        'stock_before' => 0,
+        'stock_after' => 12,
+    ]);
+});
+
+test('public stock filter excludes tracked products without units', function () {
+    $shop = Shop::factory()->create(['status' => 'active']);
+    $available = Product::factory()->create([
+        'shop_id' => $shop->id,
+        'moderation_status' => ProductModerationStatus::Active,
+        'availability_status' => ProductAvailabilityStatus::Available,
+        'name' => 'Producto con stock',
+    ]);
+    $empty = Product::factory()->create([
+        'shop_id' => $shop->id,
+        'moderation_status' => ProductModerationStatus::Active,
+        'availability_status' => ProductAvailabilityStatus::Available,
+        'name' => 'Producto agotado',
+    ]);
+
+    ProductInventory::create(['product_id' => $available->id, 'track_inventory' => true, 'stock_quantity' => 2, 'low_stock_threshold' => 3]);
+    ProductInventory::create(['product_id' => $empty->id, 'track_inventory' => true, 'stock_quantity' => 0, 'low_stock_threshold' => 3]);
+
+    $this->get(route('shops.show', [$shop, 'stock' => 'available']))
+        ->assertOk()
+        ->assertSee('Producto con stock')
+        ->assertDontSee('Producto agotado');
+});
+
+test('gross profit retains the sale price and cost captured at the time of sale', function () {
+    $product = Product::factory()->create(['price' => 100]);
+    $inventory = ProductInventory::create([
+        'product_id' => $product->id,
+        'track_inventory' => true,
+        'cost_price' => 60,
+        'stock_quantity' => 2,
+        'sold_quantity' => 0,
+        'low_stock_threshold' => 1,
+    ]);
+
+    app(InventoryService::class)->recordSale($product, 1);
+
+    $product->update(['price' => 200]);
+    $inventory->update(['cost_price' => 80]);
+
+    expect($inventory->fresh()->gross_profit)->toBe(40.0);
+    $this->assertDatabaseHas('inventory_movements', [
+        'product_id' => $product->id,
+        'type' => 'sale',
+        'unit_price' => 100,
+        'unit_cost' => 60,
+    ]);
+});
+
 test('inventory service computes financial valuation and gross profit correctly', function () {
     $shop = Shop::factory()->create();
     $product = Product::factory()->create([
@@ -252,6 +352,16 @@ test('inventory service computes financial valuation and gross profit correctly'
     ]);
 
     expect($inventory->inventory_value)->toBe(6000.0); // 10 * 600
+    InventoryMovement::create([
+        'product_id' => $product->id,
+        'type' => 'sale',
+        'quantity' => -5,
+        'stock_before' => 15,
+        'stock_after' => 10,
+        'unit_price' => 1000,
+        'unit_cost' => 600,
+    ]);
+
     expect($inventory->gross_profit)->toBe(2000.0);    // 5 * (1000 - 600)
     expect($inventory->unit_margin)->toBe(400.0);      // 1000 - 600
     expect($inventory->margin_percentage)->toBe(66.7); // (400 / 600) * 100

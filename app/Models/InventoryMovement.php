@@ -19,6 +19,8 @@ class InventoryMovement extends Model
         'quantity',
         'stock_before',
         'stock_after',
+        'unit_price',
+        'unit_cost',
         'notes',
         'created_at',
     ];
@@ -29,6 +31,8 @@ class InventoryMovement extends Model
             'quantity' => 'integer',
             'stock_before' => 'integer',
             'stock_after' => 'integer',
+            'unit_price' => 'decimal:2',
+            'unit_cost' => 'decimal:2',
             'created_at' => 'datetime',
         ];
     }

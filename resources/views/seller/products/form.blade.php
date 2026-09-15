@@ -32,7 +32,7 @@
                     </div>
                 @endif
 
-                <form class="mt-6 space-y-6" method="POST" action="{{ $product->exists ? route('seller.shops.products.update', [$shop, $product]) : route('seller.shops.products.store', $shop) }}" x-data="{ trackInventory: {{ old('track_inventory', ($product->inventory?->track_inventory ?? true) ? 'true' : 'false') }} }">
+                <form class="mt-6 space-y-6" method="POST" action="{{ $product->exists ? route('seller.shops.products.update', [$shop, $product]) : route('seller.shops.products.store', $shop) }}" x-data="{ trackInventory: {{ old('track_inventory', $product->exists ? ($product->inventory?->track_inventory ?? false) : true) ? 'true' : 'false') }}">
                     @csrf
                     @if ($product->exists)
                         @method('PUT')

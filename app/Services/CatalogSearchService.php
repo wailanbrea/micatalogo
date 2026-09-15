@@ -62,7 +62,18 @@ class CatalogSearchService
         }
 
         if ($stock === 'available') {
-            $query->where('availability_status', ProductAvailabilityStatus::Available);
+            $query->where(function ($products) {
+                $products->whereHas('inventory', fn ($inventory) => $inventory
+                    ->where('track_inventory', true)
+                    ->where('stock_quantity', '>', 0))
+                    ->orWhere(function ($untracked) {
+                        $untracked->where('availability_status', ProductAvailabilityStatus::Available)
+                            ->where(function ($inventory) {
+                                $inventory->whereDoesntHave('inventory')
+                                    ->orWhereHas('inventory', fn ($inventory) => $inventory->where('track_inventory', false));
+                            });
+                    });
+            });
         }
 
         if ($term !== '') {

@@ -109,8 +109,9 @@
             </header>
 
             <!-- Hero Section -->
-            <section class="relative px-4 pt-16 pb-20 sm:px-8 sm:pt-24 sm:pb-28">
-                <div class="mx-auto max-w-4xl text-center">
+            <section class="relative px-4 pb-20 pt-16 sm:px-8 sm:pb-28 sm:pt-24">
+                <div class="mx-auto grid max-w-[1200px] items-center gap-12 lg:grid-cols-[1.05fr_.95fr]">
+                    <div class="text-center lg:text-left">
                     <div class="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3.5 py-1.5 text-xs font-semibold text-blue-400 mb-6">
                         <span class="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span>
                         <span>Plataforma de Vitrinas Digitales Independientes</span>
@@ -124,11 +125,11 @@
                         Comparte un solo enlace con tus clientes.
                     </h1>
 
-                    <p class="mx-auto mt-6 max-w-2xl text-base sm:text-lg leading-relaxed text-slate-400">
+                    <p class="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-slate-400 sm:text-lg lg:mx-0">
                         Tu negocio merece una vitrina profesional, limpia y sin distracciones. Tus clientes compran directamente en tu WhatsApp sin intermediarios, sin comisiones y <strong class="text-slate-200">sin promocionar a competidores</strong>.
                     </p>
 
-                    <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <div class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row lg:justify-start">
                         @guest
                             <a class="w-full sm:w-auto rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-4 text-base font-extrabold text-white shadow-xl shadow-blue-600/30 hover:from-blue-700 hover:to-indigo-700 active:scale-95 transition" href="{{ route('register') }}">
                                 Crear catálogo gratis →
@@ -149,6 +150,52 @@
                     <p class="mt-4 text-xs text-slate-500">
                         ✓ Sin tarjeta de crédito &nbsp;•&nbsp; ✓ Listo en menos de 3 minutos &nbsp;•&nbsp; ✓ Optimizado para celulares
                     </p>
+                    </div>
+
+                    <div class="relative mx-auto w-full max-w-[440px] lg:max-w-none" aria-label="Vista previa de una vitrina MiCatalogo">
+                        <div class="absolute -inset-5 rounded-[2.5rem] bg-gradient-to-br from-blue-500/20 via-indigo-500/10 to-transparent blur-2xl"></div>
+                        <div class="relative overflow-hidden rounded-[2rem] border border-slate-700/80 bg-slate-900/90 p-3 shadow-2xl shadow-black/35 ring-1 ring-white/5">
+                            <div class="flex items-center justify-between border-b border-slate-800 px-2 pb-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-black text-white">N</span>
+                                    <div>
+                                        <p class="text-xs font-bold text-white">Nativa Studio</p>
+                                        <p class="text-[10px] text-emerald-400">● Responde por WhatsApp</p>
+                                    </div>
+                                </div>
+                                <span class="rounded-full bg-slate-800 px-2 py-1 text-[10px] font-semibold text-slate-300">Tu enlace</span>
+                            </div>
+
+                            <div class="mt-3 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 p-4">
+                                <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-100">Nueva colección</p>
+                                <p class="mt-1 text-lg font-black tracking-tight text-white">Todo tu catálogo.<br>Un solo enlace.</p>
+                                <div class="mt-3 h-1.5 w-24 rounded-full bg-white/50"></div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2.5 pt-3">
+                                <div class="rounded-xl border border-slate-800 bg-slate-950 p-2.5">
+                                    <div class="flex aspect-[4/3] items-center justify-center rounded-lg bg-amber-100 text-3xl">⌁</div>
+                                    <p class="mt-2 truncate text-[11px] font-bold text-white">Bolso artesanal</p>
+                                    <div class="mt-1 flex items-center justify-between"><span class="text-[10px] font-semibold text-emerald-400">RD$ 2,400</span><span class="text-[9px] text-slate-500">En stock</span></div>
+                                </div>
+                                <div class="rounded-xl border border-slate-800 bg-slate-950 p-2.5">
+                                    <div class="flex aspect-[4/3] items-center justify-center rounded-lg bg-sky-100 text-3xl">◒</div>
+                                    <p class="mt-2 truncate text-[11px] font-bold text-white">Lámpara de mesa</p>
+                                    <div class="mt-1 flex items-center justify-between"><span class="text-[10px] font-semibold text-emerald-400">RD$ 1,750</span><span class="text-[9px] text-slate-500">En stock</span></div>
+                                </div>
+                            </div>
+
+                            <div class="mt-3 flex items-center justify-between rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2">
+                                <span class="text-[10px] font-semibold text-emerald-200">Consulta directa, sin comisiones</span>
+                                <span class="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-black text-slate-950">↗</span>
+                            </div>
+                        </div>
+
+                        <div class="absolute -bottom-5 -left-5 hidden rounded-2xl border border-slate-700 bg-slate-900 px-3 py-2.5 shadow-xl sm:block">
+                            <p class="text-[10px] text-slate-400">Pedidos esta semana</p>
+                            <p class="mt-0.5 text-lg font-black text-white">+24 <span class="text-[10px] font-bold text-emerald-400">WhatsApp</span></p>
+                        </div>
+                    </div>
                 </div>
             </section>
 

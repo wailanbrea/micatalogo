@@ -101,6 +101,8 @@ class SellerProductController extends Controller
                     'quantity' => $inventoryData['stock_quantity'],
                     'stock_before' => 0,
                     'stock_after' => $inventoryData['stock_quantity'],
+                    'unit_price' => $product->price,
+                    'unit_cost' => $inventoryData['cost_price'],
                     'notes' => 'Stock inicial al crear producto',
                     'created_at' => now(),
                 ]);
@@ -135,16 +137,18 @@ class SellerProductController extends Controller
             $stockQuantity = $trackInventory && isset($validated['stock_quantity']) ? (int) $validated['stock_quantity'] : null;
             $lowStockThreshold = (int) ($validated['low_stock_threshold'] ?? 3);
 
-            $inventory = $product->inventory()->lockForUpdate()->firstOrCreate(
-                ['product_id' => $product->id],
-                [
+            $inventory = $product->inventory()->lockForUpdate()->first();
+            $createdInventory = $inventory === null;
+
+            if ($createdInventory) {
+                $inventory = $product->inventory()->create([
                     'track_inventory' => $trackInventory,
                     'cost_price' => $costPrice,
-                    'stock_quantity' => $stockQuantity ?? 0,
+                    'stock_quantity' => 0,
                     'sold_quantity' => 0,
                     'low_stock_threshold' => $lowStockThreshold,
-                ]
-            );
+                ]);
+            }
 
             $stockChanged = false;
             $oldStock = $inventory->stock_quantity;
@@ -167,15 +171,17 @@ class SellerProductController extends Controller
                     'quantity' => $stockQuantity - $oldStock,
                     'stock_before' => $oldStock,
                     'stock_after' => $stockQuantity,
+                    'unit_price' => $product->price,
+                    'unit_cost' => $costPrice,
                     'notes' => 'Ajuste manual desde edición de producto',
                     'created_at' => now(),
                 ]);
             }
 
-            if ($trackInventory && $inventory->stock_quantity === 0) {
-                $validated['availability_status'] = ProductAvailabilityStatus::OutOfStock->value;
-            } elseif ($trackInventory && $inventory->stock_quantity > 0 && $product->availability_status === ProductAvailabilityStatus::OutOfStock && $stockChanged) {
-                $validated['availability_status'] = ProductAvailabilityStatus::Available->value;
+            if ($trackInventory) {
+                $validated['availability_status'] = $inventory->stock_quantity === 0
+                    ? ProductAvailabilityStatus::OutOfStock->value
+                    : ProductAvailabilityStatus::Available->value;
             }
 
             $attributes = $this->attributes($validated, $shop, $product);

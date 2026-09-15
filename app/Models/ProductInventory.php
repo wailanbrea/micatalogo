@@ -49,7 +49,7 @@ class ProductInventory extends Model
 
     public function isAvailable(): bool
     {
-        return ! $this->track_inventory || $this->stock_quantity > $this->low_stock_threshold;
+        return ! $this->track_inventory || $this->stock_quantity > 0;
     }
 
     public function status(): string
@@ -92,18 +92,20 @@ class ProductInventory extends Model
     }
 
     /**
-     * Estimated gross profit generated from sales: sold_quantity * (price - cost_price)
+     * Gross profit uses the price and cost captured when each sale was recorded.
      */
     public function getGrossProfitAttribute(): float
     {
-        if (! $this->cost_price || $this->sold_quantity <= 0 || ! $this->product) {
+        if (! $this->product) {
             return 0.0;
         }
 
-        $salePrice = (float) $this->product->price;
-        $unitProfit = $salePrice - (float) $this->cost_price;
-
-        return round($unitProfit * $this->sold_quantity, 2);
+        return round((float) $this->product->inventoryMovements()
+            ->where('type', 'sale')
+            ->whereNotNull('unit_price')
+            ->whereNotNull('unit_cost')
+            ->selectRaw('COALESCE(SUM(ABS(quantity) * (unit_price - unit_cost)), 0) as total')
+            ->value('total'), 2);
     }
 
     /**

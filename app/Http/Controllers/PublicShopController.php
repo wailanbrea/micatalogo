@@ -62,7 +62,18 @@ class PublicShopController extends Controller
         }
 
         if ($stock === 'available') {
-            $productsQuery->where('availability_status', ProductAvailabilityStatus::Available);
+            $productsQuery->where(function ($query) {
+                $query->whereHas('inventory', fn ($inventory) => $inventory
+                    ->where('track_inventory', true)
+                    ->where('stock_quantity', '>', 0))
+                    ->orWhere(function ($untracked) {
+                        $untracked->where('availability_status', ProductAvailabilityStatus::Available)
+                            ->where(function ($inventory) {
+                                $inventory->whereDoesntHave('inventory')
+                                    ->orWhereHas('inventory', fn ($inventory) => $inventory->where('track_inventory', false));
+                            });
+                    });
+            });
         }
 
         if ($sort === 'price_asc') {
