@@ -245,13 +245,23 @@
                                 <a 
                                     class="rounded-lg bg-blue-600 px-3 py-1.5 font-bold text-white shadow-2xs hover:bg-blue-700 transition" 
                                     href="{{ route('seller.shops.products.index', $shop) }}"
+                                    wire:navigate.hover
                                 >
                                     Productos ({{ $shop->products_count ?? $shop->products()->count() }})
+                                </a>
+
+                                <a
+                                    class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 font-semibold text-amber-800 hover:bg-amber-100 transition shadow-2xs"
+                                    href="{{ route('seller.shops.inventory.index', $shop) }}"
+                                    wire:navigate.hover
+                                >
+                                    Inventario
                                 </a>
 
                                 <a 
                                     class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs" 
                                     href="{{ route('seller.shops.products.bulk.create', $shop) }}"
+                                    wire:navigate.hover
                                 >
                                     Subida masiva
                                 </a>
@@ -259,6 +269,7 @@
                                 <a 
                                     class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs" 
                                     href="{{ route('seller.shops.categories.index', $shop) }}"
+                                    wire:navigate.hover
                                 >
                                     Categorías
                                 </a>
@@ -266,6 +277,7 @@
                                 <a 
                                     class="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 font-bold text-indigo-700 hover:bg-indigo-100 transition shadow-2xs inline-flex items-center gap-1.5" 
                                     href="{{ route('seller.shops.metrics.index', $shop) }}"
+                                    wire:navigate.hover
                                     title="Ver métricas de visitas, contactos WhatsApp y código QR"
                                 >
                                     <svg class="h-3.5 w-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
@@ -275,6 +287,7 @@
                                 <a 
                                     class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs" 
                                     href="{{ route('seller.shops.edit', $shop) }}"
+                                    wire:navigate.hover
                                 >
                                     Configuración
                                 </a>
@@ -328,4 +341,3 @@
         </div>
     </main>
 </x-layouts.app>
-

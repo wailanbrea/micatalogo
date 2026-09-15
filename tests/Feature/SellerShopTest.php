@@ -131,7 +131,7 @@ test('admin can filter all shops by status and shipping', function () {
 
 test('seller dashboard renders unified persistent navigation and account dropdown', function () {
     $seller = User::factory()->create(['name' => 'Juan Perez', 'email' => 'juan@example.com']);
-    Shop::factory()->for($seller)->create(['name' => 'Tienda Juan']);
+    $shop = Shop::factory()->for($seller)->create(['name' => 'Tienda Juan']);
 
     $response = $this->actingAs($seller)->get(route('seller.dashboard'));
 
@@ -140,7 +140,8 @@ test('seller dashboard renders unified persistent navigation and account dropdow
         ->assertSee('Hola, Juan')
         ->assertSee('Mi Cuenta')
         ->assertSee('juan@example.com')
-        ->assertSee('Vendedor');
+        ->assertSee('Vendedor')
+        ->assertSee(route('seller.shops.inventory.index', $shop));
 });
 
 test('a seller can upload a shop logo which is converted to WebP and stored', function () {
