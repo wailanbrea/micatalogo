@@ -233,11 +233,11 @@
                             <div class="bg-slate-50 p-3 rounded-2xl flex items-center justify-between border border-slate-200/80 shadow-xs">
                                 <div class="flex items-center gap-2.5">
                                     <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-xs">
-                                        BF
+                                        BS
                                     </div>
                                     <div class="flex flex-col">
                                         <div class="flex items-center gap-1">
-                                            <span class="font-bold text-xs text-slate-900">Brea Fashion</span>
+                                            <span class="font-bold text-xs text-slate-900">Bsolutions</span>
                                             <svg class="w-3.5 h-3.5 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                         </div>
                                         <span class="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
@@ -254,7 +254,7 @@
                             <!-- Mockup Internal Search -->
                             <div class="bg-slate-50 rounded-xl px-3 py-2 flex items-center gap-2 border border-slate-200 text-slate-400 text-xs">
                                 <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                                <span class="text-[11px] text-slate-400">Buscar en Brea Fashion...</span>
+                                <span class="text-[11px] text-slate-400">Buscar en Bsolutions...</span>
                             </div>
 
                             <!-- Category Filter Pills (Interactive) -->
@@ -566,8 +566,8 @@
                                     </p>
                                     <!-- Rich Link Preview -->
                                     <div class="mt-2.5 bg-white rounded-xl p-3 border border-blue-200/80 shadow-xs flex flex-col gap-1">
-                                        <span class="text-xs font-bold text-blue-600">micatalogo.bsolutions.dev/tienda/brea-fashion</span>
-                                        <span class="text-[11px] text-slate-600 line-clamp-1">Catálogo oficial de Brea Fashion • Moda y calzado</span>
+                                        <span class="text-xs font-bold text-blue-600">micatalogo.bsolutions.dev/tienda/bsolutions-dev</span>
+                                        <span class="text-[11px] text-slate-600 line-clamp-1">Catálogo oficial de Bsolutions • Tecnología y accesorios</span>
                                         <div class="flex items-center gap-2 mt-1">
                                             <span class="text-[10px] font-semibold text-emerald-600">● 24 productos en stock</span>
                                         </div>
@@ -873,7 +873,7 @@
             <!-- 8. AISLAMIENTO DEL CATÁLOGO (Espacio propio de marca) -->
             <section class="w-full bg-slate-100/70 border-y border-slate-200/80 py-16 lg:py-24">
                 <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center gap-6"
-                     x-data="{ copied: false, copyLink() { navigator.clipboard.writeText('https://micatalogo.bsolutions.dev/tienda/brea-fashion'); this.copied = true; setTimeout(() => this.copied = false, 3000); } }">
+                     x-data="{ copied: false, copyLink() { navigator.clipboard.writeText('https://micatalogo.bsolutions.dev/tienda/bsolutions-dev'); this.copied = true; setTimeout(() => this.copied = false, 3000); } }">
                     <div class="inline-flex items-center gap-2 bg-blue-50 text-blue-700 border border-blue-100 px-3.5 py-1.5 rounded-full text-xs font-semibold">
                         <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                         <span>Sin distracciones ni competencia</span>
@@ -1018,14 +1018,14 @@
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
                             <div class="flex items-center gap-3">
                                 <div class="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-extrabold text-base shadow-xs">
-                                    BF
+                                    BS
                                 </div>
                                 <div>
                                     <div class="flex items-center gap-1.5">
-                                        <h3 class="font-bold text-base text-slate-900">Brea Fashion</h3>
+                                        <h3 class="font-bold text-base text-slate-900">BSolutions</h3>
                                         <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                     </div>
-                                    <p class="text-xs text-slate-500">Ropa urbana y calzado deportivo exclusivo</p>
+                                    <p class="text-xs text-slate-500">Tecnología, accesorios y soluciones exclusivas</p>
                                 </div>
                             </div>
                             <div class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 px-3.5 py-1.5 rounded-xl text-xs font-bold">
@@ -1038,7 +1038,7 @@
                         <div class="flex flex-col sm:flex-row gap-3">
                             <div class="flex-1 bg-slate-50 px-3.5 py-2 rounded-xl flex items-center gap-2 border border-slate-200 text-slate-400 text-xs">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                                <span>Buscar productos en Brea Fashion...</span>
+                                <span>Buscar productos en BSolutions...</span>
                             </div>
                             <div class="flex items-center gap-1.5 overflow-x-auto text-xs">
                                 <span class="px-3 py-1.5 rounded-xl bg-blue-600 text-white font-semibold">Tenis (14)</span>
@@ -1057,7 +1057,7 @@
                                     <span class="px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-xs font-bold">
                                         ● En stock para entrega hoy
                                     </span>
-                                    <span class="text-xs text-slate-400">Código: BF-109</span>
+                                    <span class="text-xs text-slate-400">Código: BS-109</span>
                                 </div>
                                 <h4 class="text-base font-bold text-slate-900">Nike Air Max 270 Especial Edition</h4>
                                 <p class="text-xs text-slate-600 leading-relaxed">
