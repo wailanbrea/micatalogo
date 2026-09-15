@@ -87,9 +87,11 @@
                     <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full lg:w-auto">
                         <!-- Internal Search within this Shop Only -->
                         <form method="GET" action="{{ route('shops.show', $shop) }}" class="relative w-full sm:w-72 lg:w-80">
-                            @if (request('categoria'))
-                                <input type="hidden" name="categoria" value="{{ request('categoria') }}">
-                            @endif
+                            @foreach (request()->except(['q', 'page']) as $k => $v)
+                                @if (is_string($v) && $v !== '')
+                                    <input type="hidden" name="{{ $k }}" value="{{ $v }}">
+                                @endif
+                            @endforeach
                             <div class="relative flex items-center">
                                 <input 
                                     class="w-full rounded-xl border border-slate-300 bg-slate-50/70 py-2.5 pl-9 pr-20 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10 shadow-xs transition" 
@@ -125,32 +127,154 @@
 
         <!-- Main Content Area -->
         <main class="mx-auto max-w-[1400px] px-4 py-6 sm:px-8 pb-24 sm:pb-8">
-            <!-- Active Search Filter Banner -->
-            @if ($searchQuery)
-                <div class="mb-6 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-blue-200 bg-blue-50/80 p-3.5 text-xs text-blue-900">
-                    <div class="flex items-center gap-2">
-                        <svg class="h-4 w-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        <span>Mostrando resultados para <strong class="font-bold text-blue-950">"{{ $searchQuery }}"</strong> en {{ $shop->name }} ({{ $products->total() }} {{ $products->total() === 1 ? 'producto' : 'productos' }})</span>
-                    </div>
-                    <a href="{{ route('shops.show', array_filter(['shop' => $shop, 'categoria' => request('categoria')])) }}" class="inline-flex items-center gap-1 font-bold text-blue-700 hover:text-blue-900 underline">
-                        ✕ Limpiar búsqueda
-                    </a>
-                </div>
-            @endif
-
             <!-- Categories Filter Tabs (Strictly from this shop) -->
             @if ($categories->isNotEmpty())
-                <div class="mb-6">
+                <div class="mb-5">
                     <div class="flex items-center gap-2 overflow-x-auto pb-2 text-sm font-medium">
-                        <a class="whitespace-nowrap rounded-full px-4 py-2 transition {{ !$selectedCategory ? 'bg-blue-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' }}" href="{{ route('shops.show', array_filter(['shop' => $shop, 'q' => $searchQuery])) }}">
+                        <a class="whitespace-nowrap rounded-full px-4 py-2 transition {{ !$selectedCategory ? 'bg-blue-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' }}" href="{{ request()->fullUrlWithQuery(['categoria' => null, 'page' => null]) }}">
                             Todos los productos ({{ $shop->products()->where('moderation_status', 'active')->count() }})
                         </a>
                         @foreach ($categories as $category)
-                            <a class="whitespace-nowrap rounded-full px-4 py-2 transition {{ $selectedCategory?->id === $category->id ? 'bg-blue-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' }}" href="{{ route('shops.show', array_filter(['shop' => $shop, 'categoria' => $category->slug, 'q' => $searchQuery])) }}">
+                            <a class="whitespace-nowrap rounded-full px-4 py-2 transition {{ $selectedCategory?->id === $category->id ? 'bg-blue-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' }}" href="{{ request()->fullUrlWithQuery(['categoria' => $category->slug, 'page' => null]) }}">
                                 {{ $category->name }} ({{ $category->products_count }})
                             </a>
                         @endforeach
                     </div>
+                </div>
+            @endif
+
+            <!-- Sort & Quick Filters Bar -->
+            <div class="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-xs">
+                <!-- Left: Quick Stock & Sort -->
+                <div class="flex flex-wrap items-center gap-3">
+                    <!-- Stock Filter Toggle -->
+                    <a 
+                        href="{{ request()->fullUrlWithQuery(['stock' => $stock === 'available' ? null : 'available', 'page' => null]) }}" 
+                        class="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold border transition {{ $stock === 'available' ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100' }}"
+                    >
+                        <span class="h-2 w-2 rounded-full {{ $stock === 'available' ? 'bg-white' : 'bg-emerald-500' }}"></span>
+                        <span>Solo en stock</span>
+                    </a>
+
+                    <!-- Sort Dropdown -->
+                    <div class="flex items-center gap-1.5 text-xs">
+                        <span class="text-slate-500 font-medium">Ordenar:</span>
+                        <form method="GET" action="{{ route('shops.show', $shop) }}" class="inline">
+                            @foreach (request()->except(['sort', 'page']) as $k => $v)
+                                @if (is_string($v) && $v !== '')
+                                    <input type="hidden" name="{{ $k }}" value="{{ $v }}">
+                                @endif
+                            @endforeach
+                            <select 
+                                name="sort" 
+                                onchange="this.form.submit()" 
+                                class="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 focus:border-blue-600 focus:outline-none cursor-pointer"
+                            >
+                                <option value="latest" {{ $sort === 'latest' ? 'selected' : '' }}>Más recientes</option>
+                                <option value="price_asc" {{ $sort === 'price_asc' ? 'selected' : '' }}>Menor precio</option>
+                                <option value="price_desc" {{ $sort === 'price_desc' ? 'selected' : '' }}>Mayor precio</option>
+                                <option value="name_asc" {{ $sort === 'name_asc' ? 'selected' : '' }}>Nombre (A-Z)</option>
+                            </select>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Right: Price Range Filters -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="font-bold text-slate-400 uppercase tracking-wider text-[10px]">Precio:</span>
+                    <a 
+                        href="{{ request()->fullUrlWithQuery(['min_price' => null, 'max_price' => 1000, 'page' => null]) }}" 
+                        class="rounded-full px-2.5 py-1 text-xs font-medium border transition {{ $maxPrice == 1000 && empty($minPrice) ? 'bg-blue-600 text-white border-blue-600 shadow-xs' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100' }}"
+                    >
+                        &lt; RD$ 1K
+                    </a>
+                    <a 
+                        href="{{ request()->fullUrlWithQuery(['min_price' => 1000, 'max_price' => 5000, 'page' => null]) }}" 
+                        class="rounded-full px-2.5 py-1 text-xs font-medium border transition {{ $minPrice == 1000 && $maxPrice == 5000 ? 'bg-blue-600 text-white border-blue-600 shadow-xs' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100' }}"
+                    >
+                        RD$ 1K - 5K
+                    </a>
+                    <a 
+                        href="{{ request()->fullUrlWithQuery(['min_price' => 5000, 'max_price' => null, 'page' => null]) }}" 
+                        class="rounded-full px-2.5 py-1 text-xs font-medium border transition {{ $minPrice == 5000 && empty($maxPrice) ? 'bg-blue-600 text-white border-blue-600 shadow-xs' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100' }}"
+                    >
+                        &gt; RD$ 5K
+                    </a>
+
+                    <!-- Custom Price Range Inputs -->
+                    <form method="GET" action="{{ route('shops.show', $shop) }}" class="inline-flex items-center gap-1 ml-1">
+                        @foreach (request()->except(['min_price', 'max_price', 'page']) as $k => $v)
+                            @if (is_string($v) && $v !== '')
+                                <input type="hidden" name="{{ $k }}" value="{{ $v }}">
+                            @endif
+                        @endforeach
+                        <input 
+                            type="number" 
+                            name="min_price" 
+                            value="{{ $minPrice }}" 
+                            placeholder="Min" 
+                            min="0" 
+                            class="w-16 rounded-lg border border-slate-300 px-2 py-1 text-xs text-slate-800 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none"
+                        >
+                        <span class="text-slate-400">-</span>
+                        <input 
+                            type="number" 
+                            name="max_price" 
+                            value="{{ $maxPrice }}" 
+                            placeholder="Max" 
+                            min="0" 
+                            class="w-16 rounded-lg border border-slate-300 px-2 py-1 text-xs text-slate-800 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none"
+                        >
+                        <button type="submit" class="rounded-lg bg-slate-800 px-2.5 py-1 text-xs font-bold text-white hover:bg-slate-700 transition cursor-pointer">
+                            RD$
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Active Filter Chips Banner -->
+            @if ($hasActiveFilters)
+                <div class="mb-5 flex flex-wrap items-center gap-2 rounded-xl bg-blue-50/70 p-3 border border-blue-200 text-xs">
+                    <span class="font-bold text-blue-950 text-[11px]">Filtros aplicados:</span>
+
+                    @if ($searchQuery)
+                        <div class="inline-flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1 text-slate-700 font-medium border border-blue-200 shadow-2xs">
+                            <span>Mostrando resultados para <strong class="text-blue-950">"{{ $searchQuery }}"</strong></span>
+                            <a href="{{ request()->fullUrlWithQuery(['q' => null, 'page' => null]) }}" class="inline-flex items-center gap-1 font-bold text-blue-700 hover:text-rose-600 transition" title="Limpiar búsqueda">✕ Limpiar búsqueda</a>
+                        </div>
+                    @endif
+
+                    @if ($selectedCategory)
+                        <div class="inline-flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1 text-slate-700 font-medium border border-blue-200 shadow-2xs">
+                            <span>Categoría: <strong class="text-blue-950">{{ $selectedCategory->name }}</strong></span>
+                            <a href="{{ request()->fullUrlWithQuery(['categoria' => null, 'page' => null]) }}" class="font-bold text-slate-400 hover:text-rose-600 transition" title="Quitar filtro de categoría">✕</a>
+                        </div>
+                    @endif
+
+                    @if ($stock === 'available')
+                        <div class="inline-flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1 text-slate-700 font-medium border border-blue-200 shadow-2xs">
+                            <span>Solo en stock</span>
+                            <a href="{{ request()->fullUrlWithQuery(['stock' => null, 'page' => null]) }}" class="font-bold text-slate-400 hover:text-rose-600 transition" title="Quitar filtro de stock">✕</a>
+                        </div>
+                    @endif
+
+                    @if ($minPrice || $maxPrice)
+                        <div class="inline-flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1 text-slate-700 font-medium border border-blue-200 shadow-2xs">
+                            <span>Precio: <strong class="text-blue-950">RD$ {{ $minPrice ? number_format((float)$minPrice) : '0' }} - {{ $maxPrice ? number_format((float)$maxPrice) : '∞' }}</strong></span>
+                            <a href="{{ request()->fullUrlWithQuery(['min_price' => null, 'max_price' => null, 'page' => null]) }}" class="font-bold text-slate-400 hover:text-rose-600 transition" title="Quitar filtro de precio">✕</a>
+                        </div>
+                    @endif
+
+                    @if ($sort && $sort !== 'latest')
+                        <div class="inline-flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1 text-slate-700 font-medium border border-blue-200 shadow-2xs">
+                            <span>Orden: <strong class="text-blue-950">{{ $sort === 'price_asc' ? 'Menor precio' : ($sort === 'price_desc' ? 'Mayor precio' : 'Nombre A-Z') }}</strong></span>
+                            <a href="{{ request()->fullUrlWithQuery(['sort' => null, 'page' => null]) }}" class="font-bold text-slate-400 hover:text-rose-600 transition" title="Quitar orden">✕</a>
+                        </div>
+                    @endif
+
+                    <a href="{{ route('shops.show', $shop) }}" class="ml-auto inline-flex items-center gap-1 rounded-lg bg-rose-600 px-3 py-1 text-white font-bold hover:bg-rose-700 transition shadow-2xs text-[11px]">
+                        Limpiar todos ✕
+                    </a>
                 </div>
             @endif
 

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductModerationStatus;
 use App\Models\Product;
 use App\Models\Shop;
@@ -271,5 +272,64 @@ class StorefrontIsolationTest extends TestCase
         $shop = Shop::factory()->create();
 
         $this->assertFalse($shop->discovery_enabled);
+    }
+
+    public function test_storefront_filters_by_price_range_and_stock_and_sort(): void
+    {
+        $shop = Shop::factory()->create(['status' => 'active', 'name' => 'Tienda Con Filtros']);
+
+        $cheap = Product::factory()->create([
+            'shop_id' => $shop->id,
+            'name' => 'Cable USB-C Barato',
+            'price' => 300,
+            'availability_status' => ProductAvailabilityStatus::Available,
+            'moderation_status' => ProductModerationStatus::Active,
+        ]);
+
+        $midAvailable = Product::factory()->create([
+            'shop_id' => $shop->id,
+            'name' => 'Teclado Gamer Mecánico',
+            'price' => 2500,
+            'availability_status' => ProductAvailabilityStatus::Available,
+            'moderation_status' => ProductModerationStatus::Active,
+        ]);
+
+        $midOutOfStock = Product::factory()->create([
+            'shop_id' => $shop->id,
+            'name' => 'Mouse Gamer Agotado',
+            'price' => 2000,
+            'availability_status' => ProductAvailabilityStatus::OutOfStock,
+            'moderation_status' => ProductModerationStatus::Active,
+        ]);
+
+        $expensive = Product::factory()->create([
+            'shop_id' => $shop->id,
+            'name' => 'Monitor 4K OLED',
+            'price' => 35000,
+            'availability_status' => ProductAvailabilityStatus::Available,
+            'moderation_status' => ProductModerationStatus::Active,
+        ]);
+
+        // Filter by price range 1000 - 5000, only available, sorted by price asc
+        $response = $this->get(route('shops.show', [
+            'shop' => $shop,
+            'min_price' => 1000,
+            'max_price' => 5000,
+            'stock' => 'available',
+            'sort' => 'price_asc',
+        ]));
+
+        $response->assertOk();
+        $response->assertSee('Teclado Gamer Mecánico');
+        $response->assertDontSee('Cable USB-C Barato');
+        $response->assertDontSee('Mouse Gamer Agotado');
+        $response->assertDontSee('Monitor 4K OLED');
+
+        // Check active filter chips
+        $response->assertSee('Filtros aplicados:');
+        $response->assertSee('Solo en stock');
+        $response->assertSee('RD$ 1,000 - 5,000');
+        $response->assertSee('Menor precio');
+        $response->assertSee('Limpiar todos');
     }
 }

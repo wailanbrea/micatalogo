@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductModerationStatus;
 use App\Models\Shop;
 use App\Services\MetricRecordingService;
@@ -17,6 +18,11 @@ class PublicShopController extends Controller
         $metricService->recordShopPageView($shop, $request);
 
         $selectedCategorySlug = $request->query('categoria');
+        $searchQuery = $request->string('q')->trim()->value();
+        $minPrice = $request->filled('min_price') && is_numeric($request->query('min_price')) ? (float) $request->query('min_price') : null;
+        $maxPrice = $request->filled('max_price') && is_numeric($request->query('max_price')) ? (float) $request->query('max_price') : null;
+        $stock = $request->query('stock');
+        $sort = $request->query('sort', 'latest');
 
         $categories = $shop->categories()
             ->orderBy('sort_order')
@@ -33,14 +39,12 @@ class PublicShopController extends Controller
 
         $productsQuery = $shop->products()
             ->where('moderation_status', ProductModerationStatus::Active)
-            ->with(['images' => fn ($query) => $query->orderBy('sort_order'), 'inventory'])
-            ->latest('id');
+            ->with(['images' => fn ($query) => $query->orderBy('sort_order'), 'inventory']);
 
         if ($selectedCategory) {
             $productsQuery->where('shop_category_id', $selectedCategory->id);
         }
 
-        $searchQuery = $request->string('q')->trim()->value();
         if ($searchQuery !== '') {
             $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $searchQuery);
             $productsQuery->where(function ($q) use ($escaped) {
@@ -49,8 +53,48 @@ class PublicShopController extends Controller
             });
         }
 
+        if ($minPrice !== null && $minPrice >= 0) {
+            $productsQuery->where('price', '>=', $minPrice);
+        }
+
+        if ($maxPrice !== null && $maxPrice > 0) {
+            $productsQuery->where('price', '<=', $maxPrice);
+        }
+
+        if ($stock === 'available') {
+            $productsQuery->where('availability_status', ProductAvailabilityStatus::Available);
+        }
+
+        if ($sort === 'price_asc') {
+            $productsQuery->orderBy('price', 'asc');
+        } elseif ($sort === 'price_desc') {
+            $productsQuery->orderBy('price', 'desc');
+        } elseif ($sort === 'name_asc') {
+            $productsQuery->orderBy('name', 'asc');
+        } else {
+            $productsQuery->latest('id');
+        }
+
+        $hasActiveFilters = $searchQuery !== ''
+            || $selectedCategory !== null
+            || $minPrice !== null
+            || $maxPrice !== null
+            || $stock === 'available'
+            || ($sort && $sort !== 'latest');
+
         $products = $productsQuery->paginate(16)->withQueryString();
 
-        return view('shops.show', compact('shop', 'categories', 'selectedCategory', 'products', 'searchQuery'));
+        return view('shops.show', compact(
+            'shop',
+            'categories',
+            'selectedCategory',
+            'products',
+            'searchQuery',
+            'minPrice',
+            'maxPrice',
+            'stock',
+            'sort',
+            'hasActiveFilters'
+        ));
     }
 }
