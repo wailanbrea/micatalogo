@@ -16,32 +16,28 @@ class ShopAnalyticsService
         $thirtyDaysAgo = now()->subDays(29)->toDateString();
         $sevenDaysAgo = now()->subDays(6)->toDateString();
 
-        // 1. Métricas agregadas de la tienda
-        $allTime = DB::table('shop_daily_metrics')
+        // Obtener los totales de todos los periodos en una sola lectura indexada.
+        $totals = DB::table('shop_daily_metrics')
             ->where('shop_id', $shop->id)
-            ->selectRaw('COALESCE(SUM(page_views), 0) as total_views, COALESCE(SUM(whatsapp_clicks), 0) as total_clicks')
+            ->selectRaw(
+                'COALESCE(SUM(page_views), 0) as total_views,
+                COALESCE(SUM(whatsapp_clicks), 0) as total_clicks,
+                COALESCE(SUM(CASE WHEN date BETWEEN ? AND ? THEN page_views ELSE 0 END), 0) as views_30d,
+                COALESCE(SUM(CASE WHEN date BETWEEN ? AND ? THEN whatsapp_clicks ELSE 0 END), 0) as clicks_30d,
+                COALESCE(SUM(CASE WHEN date BETWEEN ? AND ? THEN page_views ELSE 0 END), 0) as views_7d,
+                COALESCE(SUM(CASE WHEN date BETWEEN ? AND ? THEN whatsapp_clicks ELSE 0 END), 0) as clicks_7d',
+                [$thirtyDaysAgo, $today, $thirtyDaysAgo, $today, $sevenDaysAgo, $today, $sevenDaysAgo, $today]
+            )
             ->first();
 
-        $last30Days = DB::table('shop_daily_metrics')
-            ->where('shop_id', $shop->id)
-            ->whereBetween('date', [$thirtyDaysAgo, $today])
-            ->selectRaw('COALESCE(SUM(page_views), 0) as views, COALESCE(SUM(whatsapp_clicks), 0) as clicks')
-            ->first();
+        $totalViews = (int) ($totals->total_views ?? 0);
+        $totalClicks = (int) ($totals->total_clicks ?? 0);
 
-        $last7Days = DB::table('shop_daily_metrics')
-            ->where('shop_id', $shop->id)
-            ->whereBetween('date', [$sevenDaysAgo, $today])
-            ->selectRaw('COALESCE(SUM(page_views), 0) as views, COALESCE(SUM(whatsapp_clicks), 0) as clicks')
-            ->first();
+        $views30d = (int) ($totals->views_30d ?? 0);
+        $clicks30d = (int) ($totals->clicks_30d ?? 0);
 
-        $totalViews = (int) ($allTime->total_views ?? 0);
-        $totalClicks = (int) ($allTime->total_clicks ?? 0);
-
-        $views30d = (int) ($last30Days->views ?? 0);
-        $clicks30d = (int) ($last30Days->clicks ?? 0);
-
-        $views7d = (int) ($last7Days->views ?? 0);
-        $clicks7d = (int) ($last7Days->clicks ?? 0);
+        $views7d = (int) ($totals->views_7d ?? 0);
+        $clicks7d = (int) ($totals->clicks_7d ?? 0);
 
         // Conversión a WhatsApp en los últimos 30 días
         $conversionRate30d = $views30d > 0
@@ -144,6 +140,13 @@ class ShopAnalyticsService
             })
             ->values();
 
+        $productCounts = $shop->products()
+            ->selectRaw(
+                'COUNT(*) as total, COALESCE(SUM(CASE WHEN availability_status = ? AND moderation_status = ? THEN 1 ELSE 0 END), 0) as active',
+                ['available', 'active']
+            )
+            ->first();
+
         return [
             'total_views' => $totalViews,
             'total_clicks' => $totalClicks,
@@ -157,8 +160,8 @@ class ShopAnalyticsService
             'max_daily_views' => $maxDailyViews,
             'top_by_clicks' => $topByClicks,
             'top_by_views' => $topByViews,
-            'total_products_count' => $shop->products()->count(),
-            'active_products_count' => $shop->products()->where('availability_status', 'available')->where('moderation_status', 'active')->count(),
+            'total_products_count' => (int) ($productCounts->total ?? 0),
+            'active_products_count' => (int) ($productCounts->active ?? 0),
         ];
     }
 }

@@ -110,6 +110,7 @@
 
     <!-- Script for Dynamic Rows and File Previews -->
     <script>
+        (() => {
         const categories = @json($categories);
         const globalCategories = @json($globalCategories);
         const maxQuota = {{ min(30, $remainingQuota) }};
@@ -313,5 +314,10 @@
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
         }
+
+        window.addBlankRow = addBlankRow;
+        window.clearAllRows = clearAllRows;
+        window.removeRow = removeRow;
+        })();
     </script>
 </x-layouts.app>

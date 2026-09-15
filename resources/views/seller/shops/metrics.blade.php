@@ -11,7 +11,7 @@
     <main class="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-7xl">
             <!-- Shop Context & Local Navigation Tabs -->
-            <x-seller.shop-header :shop="$shop" activeTab="metrics" />
+            <x-seller.shop-header :shop="$shop" :productCount="$metrics['total_products_count']" activeTab="metrics" />
 
             <!-- Performance KPI Cards -->
             <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

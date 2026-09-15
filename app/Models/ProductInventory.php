@@ -101,6 +101,7 @@ class ProductInventory extends Model
         }
 
         return round((float) $this->product->inventoryMovements()
+            ->reorder()
             ->where('type', 'sale')
             ->whereNotNull('unit_price')
             ->whereNotNull('unit_cost')
