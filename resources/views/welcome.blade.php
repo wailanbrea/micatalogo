@@ -23,6 +23,7 @@
 
                 <!-- Desktop Navigation Links -->
                 <nav class="hidden md:flex items-center gap-7">
+                    <a class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" href="#ejemplos">Ejemplos</a>
                     <a class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" href="#como-funciona">Cómo funciona</a>
                     <a class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" href="#ventajas">Ventajas</a>
                     <a class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" href="#inventario">Inventario</a>
@@ -998,80 +999,211 @@
                 </div>
             </section>
 
-            <!-- 10. DEMO VISUAL DE VITRINA AMPLIADA -->
-            <section class="w-full bg-slate-100/70 border-y border-slate-200/80 py-16 lg:py-24">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center gap-10">
+            <!-- 10. ESCAPARATE VIVO POR RUBROS ESTILO PUNTTO -->
+            <section class="w-full bg-slate-100/70 border-y border-slate-200/80 py-16 lg:py-24" id="ejemplos"
+                     x-data="{
+                         activeRubro: 'moda',
+                         waToast: null,
+                         rubros: {
+                             moda: {
+                                 title: 'Moda & Calzado',
+                                 icon: '👟',
+                                 storeName: 'Bsolutions Moda & Calzado',
+                                 tag: 'Ropa urbana, tenis y accesorios en tendencia',
+                                 avatar: 'BM',
+                                 badge: 'Abierto hoy',
+                                 cats: ['Todos (28)', 'Tenis (14)', 'Camisas (8)', 'Gorras (6)'],
+                                 products: [
+                                     { id: 1, name: 'Nike Air Max 270 Especial', price: 'RD$ 4,500', stock: '● En stock', icon: '👟', desc: 'Amortiguación reactiva con cámara de aire visible. Tallas 39 al 43.' },
+                                     { id: 2, name: 'Camisa Lino Slim Fit Manga Larga', price: 'RD$ 1,850', stock: '● En stock', icon: '👕', desc: 'Tejido fresco 100% lino transpirable para clima cálido.' },
+                                     { id: 3, name: 'Gorra Urbana New Era 59FIFTY', price: 'RD$ 950', stock: '● Pocas unid.', icon: '🧢', desc: 'Corona alta estructurada con visera plana y bordado frontal.' }
+                                 ]
+                             },
+                             tech: {
+                                 title: 'Tecnología & Gadgets',
+                                 icon: '📱',
+                                 storeName: 'Bsolutions Tech Store',
+                                 tag: 'Dispositivos, audífonos y accesorios premium',
+                                 avatar: 'BT',
+                                 badge: 'Garantía 6 meses',
+                                 cats: ['Todos (34)', 'Audífonos (12)', 'Relojes (10)', 'Cargadores (12)'],
+                                 products: [
+                                     { id: 4, name: 'AirPods Pro 2da Generación', price: 'RD$ 6,200', stock: '● En stock', icon: '🎧', desc: 'Cancelación activa de ruido y audio espacial con seguimiento dinámico.' },
+                                     { id: 5, name: 'Smartwatch Ultra 49mm Titanium', price: 'RD$ 3,400', stock: '● En stock', icon: '⌚', desc: 'Pantalla OLED de 2.02 pulgadas, resistencia al agua y llamadas Bluetooth.' },
+                                     { id: 6, name: 'Batería MagSafe Portátil 10,000 mAh', price: 'RD$ 1,650', stock: '● Pocas unid.', icon: '🔋', desc: 'Carga inalámbrica magnética rápida de 15W y puerto USB-C bidireccional.' }
+                                 ]
+                             },
+                             perfumes: {
+                                 title: 'Perfumes & Decants',
+                                 icon: '🧴',
+                                 storeName: 'Aroma Real RD',
+                                 tag: 'Fragancias originales y decants para probar',
+                                 avatar: 'AR',
+                                 badge: '100% Original',
+                                 cats: ['Todos (45)', 'Diseñador (20)', 'Nicho (15)', 'Decants (10)'],
+                                 products: [
+                                     { id: 7, name: 'Dior Sauvage Parfum 100ml', price: 'RD$ 6,800', stock: '● En stock', icon: '✨', desc: 'Fragancia intensa con acordes cítricos de mandarina y cálido sándalo.' },
+                                     { id: 8, name: 'Baccarat Rouge 540 Decant 10ml', price: 'RD$ 1,950', stock: '● En stock', icon: '💎', desc: 'Presentación decant en atomizador de vidrio premium de 10 ml.' },
+                                     { id: 9, name: 'Club de Nuit Intense Man 105ml', price: 'RD$ 3,200', stock: '● En stock', icon: '🔥', desc: 'Aroma amaderado especiado con salida cítrica de abedul y grosella negra.' }
+                                 ]
+                             },
+                             joyeria: {
+                                 title: 'Joyería & Accesorios',
+                                 icon: '💍',
+                                 storeName: 'Aureum Joyería Fina',
+                                 tag: 'Piezas en plata 925, oro laminado y relojes',
+                                 avatar: 'AJ',
+                                 badge: 'Certificado 925',
+                                 cats: ['Todos (19)', 'Cadenas (8)', 'Anillos (6)', 'Aretes (5)'],
+                                 products: [
+                                     { id: 10, name: 'Cadena Cubana Plata 925 (60cm)', price: 'RD$ 4,200', stock: '● En stock', icon: '⛓️', desc: 'Eslabones macizos pulidos a mano con broche de seguridad tipo cajón.' },
+                                     { id: 11, name: 'Anillo Solitario Circón Suizo', price: 'RD$ 2,100', stock: '● En stock', icon: '💍', desc: 'Plata esterlina con baño de rodio y piedra central de alto brillo.' },
+                                     { id: 12, name: 'Reloj Cronógrafo Acero Inoxidable', price: 'RD$ 5,400', stock: '● Pocas unid.', icon: '⌚', desc: 'Movimiento cuarzo japonés, cristal mineral resistente a rayones y fecha.' }
+                                 ]
+                             },
+                             comida: {
+                                 title: 'Comida & Postres',
+                                 icon: '🍔',
+                                 storeName: 'Deli Burger & Bakery',
+                                 tag: 'Hamburguesas smash, postres y bebidas frías',
+                                 avatar: 'DB',
+                                 badge: 'Delivery activo',
+                                 cats: ['Todos (22)', 'Burgers (8)', 'Postres (8)', 'Bebidas (6)'],
+                                 products: [
+                                     { id: 13, name: 'Smash Burger Doble Bacon Deluxe', price: 'RD$ 480', stock: '● Disponible', icon: '🍔', desc: 'Doble carne angus smash, queso cheddar madurado, tocineta crujiente y pan brioche.' },
+                                     { id: 14, name: 'Cheesecake Frutos Rojos Artesanal', price: 'RD$ 320', stock: '● Disponible', icon: '🍰', desc: 'Base crujiente de galleta con compota artesanal de fresas y moras.' },
+                                     { id: 15, name: 'Café Frappé Moka con Crema 16oz', price: 'RD$ 250', stock: '● Disponible', icon: '🥤', desc: 'Espresso doble batido con salsa de chocolate oscuro y crema chantilly.' }
+                                 ]
+                             }
+                         },
+                         sendWaSim(pName, pPrice) {
+                             const store = this.rubros[this.activeRubro].storeName;
+                             this.waToast = { name: pName, price: pPrice, store: store };
+                             setTimeout(() => { this.waToast = null; }, 4000);
+                         }
+                     }">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center gap-8">
                     <div class="text-center max-w-2xl flex flex-col items-center gap-2">
                         <span class="text-xs font-bold text-blue-600 uppercase tracking-widest bg-blue-50 border border-blue-100 px-3 py-1 rounded-full">
-                            Demostración interactiva
+                            Ejemplos reales por rubro
                         </span>
                         <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-                            Así se ve tu catálogo en el teléfono de tu cliente
+                            Un catálogo adaptado a tu tipo de negocio
                         </h2>
                         <p class="text-base text-slate-600">
-                            Una vitrina limpia, profesional y ultrarrápida que se adapta a cualquier tamaño de pantalla.
+                            Explora cómo se ve y funciona la vitrina de MiCatalogo para diferentes tipos de vendedores independientes.
                         </p>
                     </div>
 
-                    <!-- Mockup Ampliado -->
-                    <div class="w-full max-w-3xl bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-200 flex flex-col gap-5">
+                    <!-- Category Tabs (Puntto Horizontal Selector) -->
+                    <div class="w-full flex items-center justify-start sm:justify-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+                        <template x-for="(data, key) in rubros" :key="key">
+                            <button 
+                                type="button" 
+                                @click="activeRubro = key"
+                                :class="activeRubro === key ? 'bg-slate-900 text-white font-extrabold shadow-md' : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'"
+                                class="inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0"
+                            >
+                                <span class="text-base" x-text="data.icon"></span>
+                                <span x-text="data.title"></span>
+                            </button>
+                        </template>
+                    </div>
+
+                    <!-- Interactive Showcase Device Container -->
+                    <div class="w-full max-w-4xl bg-white rounded-3xl p-5 sm:p-8 shadow-xl border border-slate-200 relative transition-all">
+                        <!-- Toast Alert for WhatsApp interactive simulation -->
+                        <div x-show="waToast" 
+                             x-cloak
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 -translate-y-3 scale-95"
+                             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                             x-transition:leave="transition ease-in duration-150"
+                             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                             x-transition:leave-end="opacity-0 -translate-y-3 scale-95"
+                             class="absolute top-4 left-4 right-4 z-40 mx-auto max-w-lg bg-emerald-600 text-white text-xs font-semibold p-3.5 rounded-2xl shadow-2xl flex items-center justify-between gap-3 border border-emerald-500">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <span class="text-xl shrink-0">📲</span>
+                                <div class="min-w-0">
+                                    <p class="font-bold truncate">¡Mensaje generado para WhatsApp!</p>
+                                    <p class="text-[11px] text-emerald-100 truncate">
+                                        "Hola <span x-text="waToast ? waToast.store : ''"></span>, me interesa <strong x-text="waToast ? waToast.name : ''"></strong> (<span x-text="waToast ? waToast.price : ''"></span>)"
+                                    </p>
+                                </div>
+                            </div>
+                            <button @click="waToast = null" class="text-white/80 hover:text-white font-black text-sm p-1">✕</button>
+                        </div>
+
                         <!-- Store Header Demo -->
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
                             <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-extrabold text-base shadow-xs">
-                                    BS
-                                </div>
-                                <div>
+                                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-extrabold text-base shadow-xs" x-text="rubros[activeRubro].avatar"></div>
+                                <div class="min-w-0">
                                     <div class="flex items-center gap-1.5">
-                                        <h3 class="font-bold text-base text-slate-900">BSolutions</h3>
-                                        <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                        <h3 class="font-extrabold text-base text-slate-900 truncate" x-text="rubros[activeRubro].storeName"></h3>
+                                        <svg class="w-4 h-4 text-blue-600 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                     </div>
-                                    <p class="text-xs text-slate-500">Tecnología, accesorios y soluciones exclusivas</p>
+                                    <p class="text-xs text-slate-500 truncate" x-text="rubros[activeRubro].tag"></p>
                                 </div>
                             </div>
-                            <div class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 px-3.5 py-1.5 rounded-xl text-xs font-bold">
-                                <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
-                                <span>WhatsApp oficial conectado</span>
+                            <div class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 px-3.5 py-1.5 rounded-xl text-xs font-bold self-start sm:self-auto">
+                                <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                <span x-text="rubros[activeRubro].badge"></span>
                             </div>
                         </div>
 
-                        <!-- Search & Category Bar Demo -->
-                        <div class="flex flex-col sm:flex-row gap-3">
+                        <!-- Scoped Search & Category Pills -->
+                        <div class="flex flex-col sm:flex-row gap-3 my-4">
                             <div class="flex-1 bg-slate-50 px-3.5 py-2 rounded-xl flex items-center gap-2 border border-slate-200 text-slate-400 text-xs">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                                <span>Buscar productos en BSolutions...</span>
+                                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                <span class="truncate">Buscar en <span x-text="rubros[activeRubro].storeName"></span>...</span>
                             </div>
                             <div class="flex items-center gap-1.5 overflow-x-auto text-xs no-scrollbar">
-                                <span class="px-3 py-1.5 rounded-xl bg-blue-600 text-white font-semibold">Tenis (14)</span>
-                                <span class="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 font-semibold">Camisas (8)</span>
-                                <span class="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 font-semibold">Gorras (5)</span>
+                                <template x-for="(cat, idx) in rubros[activeRubro].cats" :key="idx">
+                                    <span 
+                                        :class="idx === 0 ? 'bg-slate-900 text-white font-bold' : 'bg-slate-100 text-slate-700'"
+                                        class="px-3 py-1.5 rounded-xl text-xs whitespace-nowrap" 
+                                        x-text="cat"
+                                    ></span>
+                                </template>
                             </div>
                         </div>
 
-                        <!-- Featured Product Item -->
-                        <div class="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200/90 flex flex-col sm:flex-row gap-5 items-center">
-                            <div class="w-full sm:w-40 h-36 rounded-xl bg-white flex items-center justify-center text-5xl border border-slate-200/80 shrink-0 shadow-2xs">
-                                👟
-                            </div>
-                            <div class="flex flex-col flex-1 w-full gap-2">
-                                <div class="flex items-center justify-between">
-                                    <span class="px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-xs font-bold">
-                                        ● En stock para entrega hoy
-                                    </span>
-                                    <span class="text-xs text-slate-400">Código: BS-109</span>
+                        <!-- Dynamic Product Grid in Showcase -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <template x-for="prod in rubros[activeRubro].products" :key="prod.id">
+                                <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200/90 flex flex-col justify-between gap-3 hover:border-blue-300 transition-colors">
+                                    <div>
+                                        <div class="w-full h-32 rounded-xl bg-white flex items-center justify-center text-4xl border border-slate-200/80 shadow-2xs">
+                                            <span x-text="prod.icon"></span>
+                                        </div>
+                                        <div class="mt-3 flex items-center justify-between">
+                                            <span class="text-[10px] font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-md" x-text="prod.stock"></span>
+                                        </div>
+                                        <h4 class="mt-1.5 text-xs sm:text-sm font-bold text-slate-900 line-clamp-1" x-text="prod.name"></h4>
+                                        <p class="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed" x-text="prod.desc"></p>
+                                    </div>
+                                    <div class="pt-2 border-t border-slate-200/60 flex items-center justify-between">
+                                        <span class="text-sm sm:text-base font-extrabold text-slate-900 tabular-nums whitespace-nowrap" x-text="prod.price"></span>
+                                        <button 
+                                            type="button" 
+                                            @click="sendWaSim(prod.name, prod.price)" 
+                                            class="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-[11px] font-bold shadow-2xs transition active:scale-95 cursor-pointer"
+                                        >
+                                            <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
+                                            <span>WhatsApp</span>
+                                        </button>
+                                    </div>
                                 </div>
-                                <h4 class="text-base font-bold text-slate-900">Nike Air Max 270 Especial Edition</h4>
-                                <p class="text-xs text-slate-600 leading-relaxed">
-                                    Amortiguación reactiva con cámara de aire visible. Disponibles en tallas del 39 al 43 con entrega a domicilio hoy.
-                                </p>
-                                <div class="flex items-center justify-between pt-1">
-                                    <span class="text-lg font-black text-blue-600">RD$ 4,500</span>
-                                    <span class="inline-flex items-center gap-1.5 bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-xs">
-                                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
-                                        Pedir por WhatsApp
-                                    </span>
-                                </div>
-                            </div>
+                            </template>
+                        </div>
+
+                        <!-- Live Demo link -->
+                        <div class="mt-6 pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                            <span class="text-slate-500 font-medium">¿Quieres probar una tienda en vivo completa?</span>
+                            <a href="{{ route('shops.show', 'bsolutions-dev') }}" target="_blank" class="inline-flex items-center gap-1.5 font-bold text-blue-600 hover:text-blue-700">
+                                <span>Ver vitrina interactiva de Bsolutions →</span>
+                            </a>
                         </div>
                     </div>
                 </div>

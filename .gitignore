@@ -24,5 +24,6 @@ Homestead.yaml
 Thumbs.db
 /.playwright-mcp
 /.tools/composer/composer.phar
-
-
+/graphify-out
+/pantalla principal diseno
+landing-*.png

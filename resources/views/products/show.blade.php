@@ -62,8 +62,17 @@
         <main
             x-data="{
                 quantity: 1,
+                cart: [],
+                shopId: @js($shop->public_id),
+                addedFeedback: false,
                 decantOptions: @js($decantOptionData),
                 selectedDecantId: @js($selectedDecantId),
+                init() {
+                    try {
+                        const saved = localStorage.getItem('micatalogo_cart_' + this.shopId);
+                        if (saved) this.cart = JSON.parse(saved);
+                    } catch (e) {}
+                },
                 get selectedDecant() {
                     return this.decantOptions.find((option) => option.id === this.selectedDecantId) || null;
                 },
@@ -82,6 +91,38 @@
                     }
 
                     return `${this.selectedDecant.waUrl}?quantity=${this.quantity}`;
+                },
+                get cartCount() {
+                    return this.cart.reduce((t, i) => t + i.quantity, 0);
+                },
+                addToOrder() {
+                    const id = this.selectedDecant ? this.selectedDecant.id : @js($product->public_id);
+                    const name = this.selectedDecant ? @js($product->name) + ' (' + this.selectedDecant.volume + ' ml)' : @js($product->name);
+                    const price = this.selectedDecant ? Number(this.selectedDecant.price) : Number(@js((float)$product->price));
+                    const max = this.quantityMax;
+                    const img = @js($product->images->isNotEmpty() ? $product->images->first()->url : null);
+                    const url = @js(route('products.show', [$shop, $product]));
+
+                    const existing = this.cart.find(i => i.id === id);
+                    if (existing) {
+                        existing.quantity = Math.min(max, existing.quantity + this.quantity);
+                    } else {
+                        this.cart.push({
+                            id: id,
+                            name: name,
+                            price: price,
+                            image: img,
+                            url: url,
+                            quantity: this.quantity,
+                            maxStock: max,
+                        });
+                    }
+                    try {
+                        localStorage.setItem('micatalogo_cart_' + this.shopId, JSON.stringify(this.cart));
+                    } catch (e) {}
+
+                    this.addedFeedback = true;
+                    setTimeout(() => { this.addedFeedback = false; }, 3000);
                 }
             }"
             class="mx-auto max-w-[1300px] px-4 py-6 sm:px-6 lg:px-8 pb-24 sm:pb-8"
@@ -281,7 +322,7 @@
                         @endif
 
                         <!-- Primary CTA Button -->
-                        <div>
+                        <div class="space-y-2">
                             @if ($isUnavailable && $decantOptions->isEmpty())
                                 <span class="flex w-full items-center justify-center rounded-xl bg-slate-200 px-5 py-3.5 text-sm font-bold text-slate-500">Producto no disponible</span>
                             @else
@@ -289,7 +330,23 @@
                                 <svg class="h-5 w-5 fill-current shrink-0" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
                                 <span>Consultar por WhatsApp</span>
                             </a>
-                            <p class="mt-2 text-center text-[11px] text-slate-500">
+
+                            <button 
+                                type="button" 
+                                @click="addToOrder()" 
+                                class="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white py-3 px-4 text-xs font-bold text-slate-800 shadow-2xs hover:bg-slate-50 transition active:scale-98 cursor-pointer"
+                            >
+                                <svg class="h-4 w-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                                <span x-text="addedFeedback ? '¡Agregado a tu pedido! ✓' : '+ Agregar a mi pedido'"></span>
+                            </button>
+
+                            <div x-show="cartCount > 0" x-cloak class="pt-1 text-center">
+                                <a href="{{ route('shops.show', $shop) }}" class="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 hover:underline">
+                                    <span>🛍️ Tienes <strong x-text="cartCount"></strong> artículo(s) en tu pedido · Ver tienda →</span>
+                                </a>
+                            </div>
+
+                            <p class="mt-1 text-center text-[11px] text-slate-500">
                                 Serás redirigido a WhatsApp directamente con el vendedor.
                             </p>
                             @endif
