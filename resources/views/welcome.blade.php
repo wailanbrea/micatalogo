@@ -348,6 +348,440 @@
                 </div>
             </section>
 
+            
+            <!-- ======================================================== -->
+            <!-- 2. SECCIÓN ESTILO PUNTTO: "HECHO PARA LO QUE VENDES" (SMARTPHONE INTERACTIVO) -->
+            <!-- ======================================================== -->
+            <section class="w-full bg-slate-50/80 border-b border-slate-200/80 py-16 lg:py-24" id="ejemplos"
+                     x-data="{
+                         activeRubro: 'perfumeria',
+                         cartCount: 2,
+                         waNotification: false,
+                         filterOpen: true,
+                         activeSort: 'recientes',
+                         brandFilter: '',
+                         itemsInCart: { 1: 1, 2: 1 },
+                         rubros: {
+                             perfumeria: {
+                                 name: 'Perfumería',
+                                 sub: 'Concentración · Tamaño · Género',
+                                 storeName: 'Aroma Real RD',
+                                 tag: 'Decants & Fragancias 100% Originales',
+                                 avatar: 'AR',
+                                 color: 'from-amber-600 to-rose-600',
+                                 cats: ['Todo (26)', 'Decants (8)', 'Diseñador (12)', 'Árabes (6)'],
+                                 brands: ['Lattafa', 'Valentino', 'Versace', 'Armaf'],
+                                 products: [
+                                     { id: 1, brand: 'LATTAFA', name: 'Yara Candy Eau de Parfum', detail: 'EDP · 100ml', price: '3,500', icon: '🧴', tag: 'Top Ventas' },
+                                     { id: 2, brand: 'VALENTINO', name: 'Uomo Born in Roma Intense', detail: 'EDP · 100ml', price: '8,500', icon: '✨', tag: 'Exclusivo' },
+                                     { id: 3, brand: 'VERSACE', name: 'Eros Flame Pour Homme', detail: 'EDP · 100ml', price: '5,900', icon: '🔥', tag: 'En stock' },
+                                     { id: 4, brand: 'ARMAF', name: 'Club de Nuit Intense Man', detail: 'EDT · 105ml', price: '3,200', icon: '💎', tag: 'Clásico' }
+                                 ]
+                             },
+                             vapes: {
+                                 name: 'Vapes & Pods',
+                                 sub: 'Tipo · Nicotina · Capacidad',
+                                 storeName: 'Cloud Pods RD',
+                                 tag: 'Vape Shop & Dispositivos Desechables',
+                                 avatar: 'CP',
+                                 color: 'from-purple-600 to-indigo-600',
+                                 cats: ['Todo (32)', 'Desechables (18)', 'Pods Recargables (8)', 'Líquidos (6)'],
+                                 brands: ['Lost Mary', 'Geek Bar', 'Elf Bar', 'Oxbar'],
+                                 products: [
+                                     { id: 5, brand: 'LOST MARY', name: 'MO20000 Pro Ice Watermelon', detail: '20,000 Puffs · 5%', price: '1,350', icon: '💨', tag: 'Nuevo' },
+                                     { id: 6, brand: 'GEEK BAR', name: 'Pulse 15000 Blow Pop', detail: '15,000 Puffs · Modo Pulse', price: '1,200', icon: '⚡', tag: 'Top Ventas' },
+                                     { id: 7, brand: 'OXBAR', name: 'Magic Maze 2.0 Blue Razz', detail: '30,000 Puffs · Display LED', price: '1,450', icon: '🫐', tag: 'En stock' },
+                                     { id: 8, brand: 'ELF BAR', name: 'BC5000 Strawberry Kiwi', detail: '5,000 Puffs · Recargable Type-C', price: '850', icon: '🍓', tag: 'Oferta' }
+                                 ]
+                             },
+                             celulares: {
+                                 name: 'Celulares & Tech',
+                                 sub: 'Modelo · Almacenamiento · Condición',
+                                 storeName: 'iShop Móvil RD',
+                                 tag: 'iPhones, Accesorios y Gadgets Garantizados',
+                                 avatar: 'IM',
+                                 color: 'from-blue-600 to-cyan-600',
+                                 cats: ['Todo (41)', 'iPhones (18)', 'AirPods (7)', 'Accesorios (16)'],
+                                 brands: ['Apple', 'Samsung', 'Anker', 'JBL'],
+                                 products: [
+                                     { id: 9, brand: 'APPLE', name: 'iPhone 15 Pro Max Titanium', detail: '256GB · Sellado · Garantía 1 año', price: '58,000', icon: '📱', tag: 'Nuevo' },
+                                     { id: 10, brand: 'APPLE', name: 'AirPods Pro 2da Gen USB-C', detail: 'Cancelación Activa de Ruido', price: '12,500', icon: '🎧', tag: 'Original' },
+                                     { id: 11, brand: 'APPLE', name: 'Apple Watch Series 9 45mm', detail: 'Aluminio Midnight · GPS', price: '21,000', icon: '⌚', tag: 'En stock' },
+                                     { id: 12, brand: 'ANKER', name: 'Cargador Rápido GaN 30W', detail: 'USB-C Cable Trenzado incluido', price: '1,650', icon: '🔌', tag: 'Top Accesorio' }
+                                 ]
+                             },
+                             tenis: {
+                                 name: 'Tenis & Calzado',
+                                 sub: 'Talla · Modelo · Colorway',
+                                 storeName: 'Bsolutions Kicks',
+                                 tag: 'Sneakers exclusivos y calzado urbano',
+                                 avatar: 'BK',
+                                 color: 'from-orange-600 to-amber-600',
+                                 cats: ['Todo (35)', 'Nike (15)', 'Adidas (10)', 'New Balance (10)'],
+                                 brands: ['Nike', 'Adidas', 'New Balance', 'Jordan'],
+                                 products: [
+                                     { id: 13, brand: 'NIKE', name: 'Air Max 270 React Triple Black', detail: 'Talla 42 (US 9) · Nuevo en caja', price: '4,800', icon: '👟', tag: 'Top Ventas' },
+                                     { id: 14, brand: 'ADIDAS', name: 'Samba OG Classic White/Black', detail: 'Talla 41 (US 8.5) · Cuero genuino', price: '5,200', icon: '👟', tag: 'Tendencia' },
+                                     { id: 15, brand: 'NEW BALANCE', name: '550 Vintage White Green', detail: 'Talla 43 (US 9.5) · Edición Retro', price: '4,950', icon: '👟', tag: 'En stock' },
+                                     { id: 16, brand: 'JORDAN', name: 'Air Jordan 1 Retro High Chicago', detail: 'Talla 42.5 (US 9) · Premium Leather', price: '8,900', icon: '🏀', tag: 'Exclusivo' }
+                                 ]
+                             },
+                             joyeria: {
+                                 name: 'Joyería & Relojes',
+                                 sub: 'Material · Tipo · Género',
+                                 storeName: 'Aureum Joyería Fina',
+                                 tag: 'Plata Italiana 925 y Oro Laminado 18k',
+                                 avatar: 'AJ',
+                                 color: 'from-amber-500 to-yellow-600',
+                                 cats: ['Todo (28)', 'Cadenas (10)', 'Anillos (8)', 'Relojes (10)'],
+                                 brands: ['Aureum', 'Casio Vintage', 'Silver Italy', 'Tissot'],
+                                 products: [
+                                     { id: 17, brand: 'SILVER ITALY', name: 'Cadena Cubana Maciza 60cm', detail: 'Plata Ley 925 · 8mm de grosor', price: '4,200', icon: '⛓️', tag: 'Plata 925' },
+                                     { id: 18, brand: 'AUREUM', name: 'Anillo Solitario Circón Suizo', detail: 'Baño de Oro 18K · Talla 7', price: '1,850', icon: '💍', tag: 'Garantía' },
+                                     { id: 19, brand: 'CASIO', name: 'Reloj Vintage Digital Dorado', detail: 'Acero Inoxidable · Alarma & Crono', price: '2,900', icon: '⌚', tag: 'Clásico' },
+                                     { id: 20, brand: 'AUREUM', name: 'Pulsera Tennis Zirconias 4mm', detail: 'Cierre doble seguridad · 19cm', price: '3,400', icon: '✨', tag: 'En stock' }
+                                 ]
+                             },
+                             ropa: {
+                                 name: 'Ropa & Boutique',
+                                 sub: 'Tipo · Talla · Color',
+                                 storeName: 'Moda Urbana RD',
+                                 tag: 'Prendas exclusivas, lino y streetwear',
+                                 avatar: 'MU',
+                                 color: 'from-emerald-600 to-teal-600',
+                                 cats: ['Todo (50)', 'Camisas (20)', 'Pantalones (15)', 'Bermudas (15)'],
+                                 brands: ['Zara Man', 'Lino Premium', 'Streetwear RD', 'Polo Club'],
+                                 products: [
+                                     { id: 21, brand: 'LINO PREMIUM', name: 'Camisa Lino Manga Corta Slim', detail: '100% Lino Transpirable · Talla M', price: '1,450', icon: '👕', tag: 'Fresco' },
+                                     { id: 22, brand: 'STREETWEAR RD', name: 'Pantalón Cargo Oversized Negro', detail: 'Bolsillos laterales · Talla 32', price: '2,200', icon: '👖', tag: 'Top Ventas' },
+                                     { id: 23, brand: 'POLO CLUB', name: 'Polo Piqué Algodón Pima', detail: 'Cuello clásico · Talla L · Azul Marino', price: '1,150', icon: '👕', tag: 'Básico' },
+                                     { id: 24, brand: 'STREETWEAR RD', name: 'Chaqueta Bomber Street Urbana', detail: 'Cierre frontal · Forro térmico · Talla M', price: '3,400', icon: '🧥', tag: 'Nuevo' }
+                                 ]
+                             },
+                             reposteria: {
+                                 name: 'Repostería & Café',
+                                 sub: 'Tipo · Sabor · Porciones',
+                                 storeName: 'Dulce Antojo Bakery',
+                                 tag: 'Pastelería artesanal y postres fríos',
+                                 avatar: 'DA',
+                                 color: 'from-pink-600 to-rose-600',
+                                 cats: ['Todo (24)', 'Pasteles (10)', 'Postres Fríos (8)', 'Cafetería (6)'],
+                                 brands: ['Artesanal', 'Frutas Frescas', 'Chocolate Belga', 'Gourmet'],
+                                 products: [
+                                     { id: 25, brand: 'ARTESANAL', name: 'Cheesecake Frutos Rojos Familiar', detail: '8 a 10 Porciones · Con compota natural', price: '1,250', icon: '🍰', tag: 'Favorito' },
+                                     { id: 26, brand: 'GOURMET', name: 'Pastel Tres Leches Tradicional', detail: 'Merengue flameado con canela · Individual', price: '275', icon: '🍮', tag: 'Fresco del día' },
+                                     { id: 27, brand: 'CHOCOLATE BELGA', name: 'Tarta Chocolate 70% Ganache', detail: 'Bizcocho húmedo · 10 Porciones', price: '1,600', icon: '🍫', tag: 'Premium' },
+                                     { id: 28, brand: 'ARTESANAL', name: 'Caja de 6 Cupcakes Red Velvet', detail: 'Frosting de queso crema suave', price: '650', icon: '🧁', tag: 'Para regalo' }
+                                 ]
+                             }
+                         },
+                         addToCartSim(id) {
+                             if (!this.itemsInCart[id]) {
+                                 this.itemsInCart[id] = 1;
+                                 this.cartCount++;
+                             } else {
+                                 this.itemsInCart[id]++;
+                             }
+                             this.waNotification = true;
+                             setTimeout(() => { this.waNotification = false; }, 3000);
+                         },
+                         removeFromCartSim(id) {
+                             if (this.itemsInCart[id] > 1) {
+                                 this.itemsInCart[id]--;
+                             } else if (this.itemsInCart[id] === 1) {
+                                 delete this.itemsInCart[id];
+                                 this.cartCount = Math.max(0, this.cartCount - 1);
+                             }
+                         }
+                     }">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <!-- Section Title & Headline -->
+                    <div class="max-w-3xl mb-12">
+                        <span class="text-xs font-bold text-amber-800 bg-amber-100/80 border border-amber-200 px-3.5 py-1 rounded-full uppercase tracking-widest">
+                            Para cualquier mostrador
+                        </span>
+                        <h2 class="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight mt-3">
+                            Hecho para lo que vendes.
+                        </h2>
+                        <p class="text-base sm:text-lg text-slate-600 mt-3 leading-relaxed max-w-2xl">
+                            Elige tu tipo de negocio y la vitrina llega con plantilla, filtros y catálogo listos. Y esta no es una maqueta: tócala.
+                        </p>
+                    </div>
+
+                    <!-- Layout: 3 Columns (Rubros List | Smartphone Center | Filters Drawer Right) -->
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                        
+                        <!-- Col 1: Categories / Niches Vertical Selector (Left, 4 cols) -->
+                        <div class="lg:col-span-4 flex flex-col gap-2">
+                            <!-- Mobile horizontal scroll tab for categories -->
+                            <div class="flex lg:hidden overflow-x-auto gap-2 pb-2 no-scrollbar">
+                                <template x-for="(data, key) in rubros" :key="key">
+                                    <button 
+                                        type="button" 
+                                        @click="activeRubro = key"
+                                        :class="activeRubro === key ? 'bg-slate-900 text-white font-extrabold shadow-md' : 'bg-white text-slate-700 border border-slate-200'"
+                                        class="px-4 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap transition cursor-pointer"
+                                        x-text="data.name"
+                                    ></button>
+                                </template>
+                            </div>
+
+                            <!-- Desktop vertical card list -->
+                            <div class="hidden lg:flex flex-col gap-1.5">
+                                <template x-for="(data, key) in rubros" :key="key">
+                                    <button 
+                                        type="button" 
+                                        @click="activeRubro = key"
+                                        :class="activeRubro === key ? 'bg-amber-50/90 border-amber-300 ring-2 ring-amber-500/20 shadow-xs' : 'bg-transparent border-transparent hover:bg-white hover:border-slate-200 text-slate-600'"
+                                        class="w-full text-left p-3.5 rounded-2xl border transition-all duration-150 flex flex-col gap-0.5 cursor-pointer group"
+                                    >
+                                        <div class="flex items-center justify-between">
+                                            <span 
+                                                class="text-base font-extrabold transition-colors"
+                                                :class="activeRubro === key ? 'text-amber-950' : 'text-slate-900 group-hover:text-blue-600'"
+                                                x-text="data.name"
+                                            ></span>
+                                            <span x-show="activeRubro === key" class="text-xs text-amber-700 font-black">● Activa</span>
+                                        </div>
+                                        <span class="text-xs text-slate-500 font-medium" x-text="data.sub"></span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Col 2: The Real Smartphone Mockup Frame (Center, 5 cols) -->
+                        <div class="lg:col-span-5 flex flex-col items-center">
+                            <!-- Floating Pill Badge over phone -->
+                            <div class="inline-flex items-center gap-2 rounded-full bg-slate-900 px-3.5 py-1 text-[11px] font-bold text-white shadow-lg mb-3">
+                                <span class="h-2 w-2 rounded-full bg-amber-400 animate-pulse"></span>
+                                <span class="uppercase tracking-widest text-[10px]">Demo en vivo — Pruébala</span>
+                            </div>
+
+                            <!-- Phone Outer Shell (iPhone Mockup Realista) -->
+                            <div class="relative w-full max-w-[340px] sm:max-w-[360px] bg-slate-950 rounded-[52px] p-3 shadow-2xl border-[10px] border-slate-900 ring-1 ring-slate-800/80">
+                                <!-- Dynamic Island Notch -->
+                                <div class="absolute top-4 left-1/2 -translate-x-1/2 w-24 h-4 bg-black rounded-full z-30 flex items-center justify-end pr-2 gap-1.5">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-blue-500/80"></span>
+                                </div>
+
+                                <!-- Screen Inside -->
+                                <div class="bg-[#F8FAFC] rounded-[42px] overflow-hidden flex flex-col h-[600px] relative text-slate-900 select-none border border-slate-200/50">
+                                    <!-- Toast Alert on item added -->
+                                    <div 
+                                        x-show="waNotification" 
+                                        x-cloak
+                                        x-transition:enter="transition ease-out duration-200"
+                                        x-transition:enter-start="opacity-0 -translate-y-4"
+                                        x-transition:enter-end="opacity-100 translate-y-0"
+                                        x-transition:leave="transition ease-in duration-150"
+                                        x-transition:leave-start="opacity-100 translate-y-0"
+                                        x-transition:leave-end="opacity-0 -translate-y-4"
+                                        class="absolute top-8 inset-x-3 z-30 bg-emerald-600 text-white p-2.5 rounded-2xl shadow-xl flex items-center justify-between text-xs font-bold gap-2"
+                                    >
+                                        <div class="flex items-center gap-2 truncate">
+                                            <span>🛍️</span>
+                                            <span class="truncate">¡Producto agregado al pedido!</span>
+                                        </div>
+                                        <button @click="waNotification = false" class="text-white/80 font-bold p-1">✕</button>
+                                    </div>
+
+                                    <!-- Top Phone Bar (Clock, Wifi, Battery) -->
+                                    <div class="flex items-center justify-between px-6 pt-3 pb-1 text-[11px] font-bold text-slate-600 shrink-0">
+                                        <span>9:41</span>
+                                        <div class="flex items-center gap-1.5">
+                                            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zm6-4a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zm6-3a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+                                            <span class="w-4 h-2 rounded-xs border border-slate-600 p-0.5 flex items-center"><span class="w-full h-full bg-slate-700"></span></span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Storefront Header inside Phone -->
+                                    <div class="p-3 bg-white border-b border-slate-200/80 flex items-center justify-between gap-2 shrink-0">
+                                        <div class="flex items-center gap-2 min-w-0">
+                                            <div 
+                                                class="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-xs shadow-xs shrink-0 bg-gradient-to-br"
+                                                :class="rubros[activeRubro].color"
+                                                x-text="rubros[activeRubro].avatar"
+                                            ></div>
+                                            <div class="min-w-0">
+                                                <div class="flex items-center gap-1">
+                                                    <span class="font-extrabold text-xs text-slate-900 truncate" x-text="rubros[activeRubro].storeName"></span>
+                                                    <svg class="w-3 h-3 text-blue-600 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                                </div>
+                                                <span class="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Abierto hoy
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Cart Pill Button inside Phone -->
+                                        <button 
+                                            type="button" 
+                                            class="relative flex items-center justify-center w-8 h-8 rounded-xl bg-slate-900 text-white shadow-xs cursor-pointer active:scale-95 transition"
+                                            title="Ver pedido"
+                                        >
+                                            <span class="text-xs">🛍️</span>
+                                            <span 
+                                                class="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-blue-600 text-white text-[9px] font-black flex items-center justify-center border border-white"
+                                                x-text="cartCount"
+                                            ></span>
+                                        </button>
+                                    </div>
+
+                                    <!-- Search & Filter Bar inside Phone -->
+                                    <div class="px-3 pt-2.5 pb-2 bg-white flex items-center gap-2 shrink-0 border-b border-slate-100">
+                                        <div class="flex-1 bg-slate-100/90 rounded-xl px-2.5 py-1.5 flex items-center gap-1.5 text-slate-400 text-[11px]">
+                                            <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                            <span class="truncate">Buscar productos, marcas...</span>
+                                        </div>
+                                        <button 
+                                            type="button" 
+                                            @click="filterOpen = !filterOpen"
+                                            class="p-1.5 rounded-xl border border-slate-200 bg-white text-slate-700 shadow-2xs hover:bg-slate-50 transition cursor-pointer"
+                                            title="Filtros"
+                                        >
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                                        </button>
+                                    </div>
+
+                                    <!-- Category Pill Tabs inside Phone -->
+                                    <div class="px-3 py-2 bg-white flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0 border-b border-slate-100">
+                                        <template x-for="(cat, idx) in rubros[activeRubro].cats" :key="idx">
+                                            <button 
+                                                type="button" 
+                                                class="px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap transition"
+                                                :class="idx === 0 ? 'bg-slate-900 text-white shadow-2xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                                                x-text="cat"
+                                            ></button>
+                                        </template>
+                                    </div>
+
+                                    <!-- Product 2-Column Grid inside Phone (Scrollable body) -->
+                                    <div class="flex-1 overflow-y-auto p-3 space-y-2.5">
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <template x-for="p in rubros[activeRubro].products" :key="p.id">
+                                                <div class="bg-white rounded-2xl p-2 border border-slate-200/90 shadow-2xs flex flex-col justify-between hover:border-blue-400 transition">
+                                                    <div>
+                                                        <!-- Product Visual Box -->
+                                                        <div class="w-full aspect-square rounded-xl bg-slate-50 flex items-center justify-center text-3xl border border-slate-100 relative overflow-hidden">
+                                                            <span x-text="p.icon"></span>
+                                                            <span class="absolute top-1 left-1 rounded-md bg-amber-500/90 text-white text-[8px] font-black px-1.5 py-0.2" x-text="p.tag"></span>
+                                                        </div>
+
+                                                        <!-- Brand & Name -->
+                                                        <div class="mt-1.5">
+                                                            <span class="text-[9px] font-black uppercase tracking-wider text-slate-400" x-text="p.brand"></span>
+                                                            <h4 class="text-[11px] font-bold text-slate-900 line-clamp-2 leading-tight" x-text="p.name"></h4>
+                                                            <p class="text-[9px] text-slate-500 truncate mt-0.5" x-text="p.detail"></p>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Price & Cart Button -->
+                                                    <div class="mt-2 pt-1.5 border-t border-slate-100">
+                                                        <p class="text-xs font-black text-slate-900 tabular-nums whitespace-nowrap">
+                                                            RD$ <span x-text="p.price"></span>
+                                                        </p>
+
+                                                        <!-- Action: Agregar or Stepper -->
+                                                        <div class="mt-1.5">
+                                                            <template x-if="!itemsInCart[p.id]">
+                                                                <button 
+                                                                    type="button" 
+                                                                    @click="addToCartSim(p.id)"
+                                                                    class="w-full py-1 px-2 rounded-lg bg-slate-900 hover:bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center gap-1 transition active:scale-95 cursor-pointer shadow-2xs"
+                                                                >
+                                                                    <span>+ Agregar</span>
+                                                                </button>
+                                                            </template>
+                                                            <template x-if="itemsInCart[p.id]">
+                                                                <div class="w-full flex items-center justify-between rounded-lg bg-amber-50 border border-amber-200 p-0.5">
+                                                                    <button type="button" @click="removeFromCartSim(p.id)" class="w-5 h-5 flex items-center justify-center text-xs font-bold text-amber-900 hover:bg-amber-200 rounded">-</button>
+                                                                    <span class="text-[10px] font-black text-amber-900 tabular-nums" x-text="itemsInCart[p.id]"></span>
+                                                                    <button type="button" @click="addToCartSim(p.id)" class="w-5 h-5 flex items-center justify-center text-xs font-bold text-amber-900 hover:bg-amber-200 rounded">+</button>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+
+                                        <!-- WhatsApp Send Order CTA inside phone footer -->
+                                        <div class="pt-1">
+                                            <a 
+                                                :href="'https://wa.me/18095550100?text=' + encodeURIComponent('Hola ' + rubros[activeRubro].storeName + ', me interesa hacer un pedido de ' + cartCount + ' artículos de su catálogo.')"
+                                                target="_blank"
+                                                class="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-extrabold flex items-center justify-center gap-1.5 shadow-xs transition"
+                                            >
+                                                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
+                                                <span>Enviar pedido por WhatsApp</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Col 3: The Floating Filters Drawer / Panel (Right, 3 cols) -->
+                        <div class="lg:col-span-3 hidden lg:flex flex-col">
+                            <div class="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xl space-y-4 sticky top-28">
+                                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                                    <h3 class="text-sm font-extrabold text-slate-900">Filtros</h3>
+                                    <span class="text-xs text-slate-400 hover:text-slate-600 cursor-pointer">✕</span>
+                                </div>
+
+                                <!-- Ordenar -->
+                                <div class="space-y-2">
+                                    <span class="text-[10px] font-black uppercase tracking-wider text-slate-400">Ordenar</span>
+                                    <div class="space-y-1.5 text-xs">
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" name="sim_sort" value="recientes" checked class="text-blue-600 focus:ring-blue-500">
+                                            <span class="font-bold text-slate-800">Más recientes</span>
+                                        </label>
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" name="sim_sort" value="menor" class="text-blue-600 focus:ring-blue-500">
+                                            <span class="text-slate-600">Precio: de menor a mayor</span>
+                                        </label>
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" name="sim_sort" value="mayor" class="text-blue-600 focus:ring-blue-500">
+                                            <span class="text-slate-600">Precio: de mayor a menor</span>
+                                        </label>
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" name="sim_sort" value="nombre" class="text-blue-600 focus:ring-blue-500">
+                                            <span class="text-slate-600">Nombre (A-Z)</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Marcas / Atributos del Rubro -->
+                                <div class="space-y-2 pt-2 border-t border-slate-100">
+                                    <span class="text-[10px] font-black uppercase tracking-wider text-slate-400">Marcas destacadas</span>
+                                    <div class="space-y-1.5 text-xs max-h-36 overflow-y-auto">
+                                        <template x-for="(brand, idx) in rubros[activeRubro].brands" :key="idx">
+                                            <label class="flex items-center justify-between cursor-pointer py-0.5">
+                                                <div class="flex items-center gap-2">
+                                                    <input type="checkbox" class="rounded text-blue-600 focus:ring-blue-500">
+                                                    <span class="text-slate-700" x-text="brand"></span>
+                                                </div>
+                                                <span class="text-[10px] text-slate-400" x-text="idx + 2"></span>
+                                            </label>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                                    <button type="button" class="text-xs text-slate-500 hover:text-slate-800 font-semibold cursor-pointer">Limpiar</button>
+                                    <button type="button" class="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold shadow-xs hover:bg-blue-600 transition cursor-pointer">
+                                        Ver productos
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
             <!-- 2. SECCIÓN DEL PROBLEMA ("¿Publicas los mismos productos una y otra vez?") -->
             <section class="w-full bg-slate-100/70 border-y border-slate-200/80 py-16 lg:py-24">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
@@ -994,216 +1428,6 @@
                                     <span>Solo actualizas cuando agregues inventario nuevo.</span>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 10. ESCAPARATE VIVO POR RUBROS ESTILO PUNTTO -->
-            <section class="w-full bg-slate-100/70 border-y border-slate-200/80 py-16 lg:py-24" id="ejemplos"
-                     x-data="{
-                         activeRubro: 'moda',
-                         waToast: null,
-                         rubros: {
-                             moda: {
-                                 title: 'Moda & Calzado',
-                                 icon: '👟',
-                                 storeName: 'Bsolutions Moda & Calzado',
-                                 tag: 'Ropa urbana, tenis y accesorios en tendencia',
-                                 avatar: 'BM',
-                                 badge: 'Abierto hoy',
-                                 cats: ['Todos (28)', 'Tenis (14)', 'Camisas (8)', 'Gorras (6)'],
-                                 products: [
-                                     { id: 1, name: 'Nike Air Max 270 Especial', price: 'RD$ 4,500', stock: '● En stock', icon: '👟', desc: 'Amortiguación reactiva con cámara de aire visible. Tallas 39 al 43.' },
-                                     { id: 2, name: 'Camisa Lino Slim Fit Manga Larga', price: 'RD$ 1,850', stock: '● En stock', icon: '👕', desc: 'Tejido fresco 100% lino transpirable para clima cálido.' },
-                                     { id: 3, name: 'Gorra Urbana New Era 59FIFTY', price: 'RD$ 950', stock: '● Pocas unid.', icon: '🧢', desc: 'Corona alta estructurada con visera plana y bordado frontal.' }
-                                 ]
-                             },
-                             tech: {
-                                 title: 'Tecnología & Gadgets',
-                                 icon: '📱',
-                                 storeName: 'Bsolutions Tech Store',
-                                 tag: 'Dispositivos, audífonos y accesorios premium',
-                                 avatar: 'BT',
-                                 badge: 'Garantía 6 meses',
-                                 cats: ['Todos (34)', 'Audífonos (12)', 'Relojes (10)', 'Cargadores (12)'],
-                                 products: [
-                                     { id: 4, name: 'AirPods Pro 2da Generación', price: 'RD$ 6,200', stock: '● En stock', icon: '🎧', desc: 'Cancelación activa de ruido y audio espacial con seguimiento dinámico.' },
-                                     { id: 5, name: 'Smartwatch Ultra 49mm Titanium', price: 'RD$ 3,400', stock: '● En stock', icon: '⌚', desc: 'Pantalla OLED de 2.02 pulgadas, resistencia al agua y llamadas Bluetooth.' },
-                                     { id: 6, name: 'Batería MagSafe Portátil 10,000 mAh', price: 'RD$ 1,650', stock: '● Pocas unid.', icon: '🔋', desc: 'Carga inalámbrica magnética rápida de 15W y puerto USB-C bidireccional.' }
-                                 ]
-                             },
-                             perfumes: {
-                                 title: 'Perfumes & Decants',
-                                 icon: '🧴',
-                                 storeName: 'Aroma Real RD',
-                                 tag: 'Fragancias originales y decants para probar',
-                                 avatar: 'AR',
-                                 badge: '100% Original',
-                                 cats: ['Todos (45)', 'Diseñador (20)', 'Nicho (15)', 'Decants (10)'],
-                                 products: [
-                                     { id: 7, name: 'Dior Sauvage Parfum 100ml', price: 'RD$ 6,800', stock: '● En stock', icon: '✨', desc: 'Fragancia intensa con acordes cítricos de mandarina y cálido sándalo.' },
-                                     { id: 8, name: 'Baccarat Rouge 540 Decant 10ml', price: 'RD$ 1,950', stock: '● En stock', icon: '💎', desc: 'Presentación decant en atomizador de vidrio premium de 10 ml.' },
-                                     { id: 9, name: 'Club de Nuit Intense Man 105ml', price: 'RD$ 3,200', stock: '● En stock', icon: '🔥', desc: 'Aroma amaderado especiado con salida cítrica de abedul y grosella negra.' }
-                                 ]
-                             },
-                             joyeria: {
-                                 title: 'Joyería & Accesorios',
-                                 icon: '💍',
-                                 storeName: 'Aureum Joyería Fina',
-                                 tag: 'Piezas en plata 925, oro laminado y relojes',
-                                 avatar: 'AJ',
-                                 badge: 'Certificado 925',
-                                 cats: ['Todos (19)', 'Cadenas (8)', 'Anillos (6)', 'Aretes (5)'],
-                                 products: [
-                                     { id: 10, name: 'Cadena Cubana Plata 925 (60cm)', price: 'RD$ 4,200', stock: '● En stock', icon: '⛓️', desc: 'Eslabones macizos pulidos a mano con broche de seguridad tipo cajón.' },
-                                     { id: 11, name: 'Anillo Solitario Circón Suizo', price: 'RD$ 2,100', stock: '● En stock', icon: '💍', desc: 'Plata esterlina con baño de rodio y piedra central de alto brillo.' },
-                                     { id: 12, name: 'Reloj Cronógrafo Acero Inoxidable', price: 'RD$ 5,400', stock: '● Pocas unid.', icon: '⌚', desc: 'Movimiento cuarzo japonés, cristal mineral resistente a rayones y fecha.' }
-                                 ]
-                             },
-                             comida: {
-                                 title: 'Comida & Postres',
-                                 icon: '🍔',
-                                 storeName: 'Deli Burger & Bakery',
-                                 tag: 'Hamburguesas smash, postres y bebidas frías',
-                                 avatar: 'DB',
-                                 badge: 'Delivery activo',
-                                 cats: ['Todos (22)', 'Burgers (8)', 'Postres (8)', 'Bebidas (6)'],
-                                 products: [
-                                     { id: 13, name: 'Smash Burger Doble Bacon Deluxe', price: 'RD$ 480', stock: '● Disponible', icon: '🍔', desc: 'Doble carne angus smash, queso cheddar madurado, tocineta crujiente y pan brioche.' },
-                                     { id: 14, name: 'Cheesecake Frutos Rojos Artesanal', price: 'RD$ 320', stock: '● Disponible', icon: '🍰', desc: 'Base crujiente de galleta con compota artesanal de fresas y moras.' },
-                                     { id: 15, name: 'Café Frappé Moka con Crema 16oz', price: 'RD$ 250', stock: '● Disponible', icon: '🥤', desc: 'Espresso doble batido con salsa de chocolate oscuro y crema chantilly.' }
-                                 ]
-                             }
-                         },
-                         sendWaSim(pName, pPrice) {
-                             const store = this.rubros[this.activeRubro].storeName;
-                             this.waToast = { name: pName, price: pPrice, store: store };
-                             setTimeout(() => { this.waToast = null; }, 4000);
-                         }
-                     }">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center gap-8">
-                    <div class="text-center max-w-2xl flex flex-col items-center gap-2">
-                        <span class="text-xs font-bold text-blue-600 uppercase tracking-widest bg-blue-50 border border-blue-100 px-3 py-1 rounded-full">
-                            Ejemplos reales por rubro
-                        </span>
-                        <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-                            Un catálogo adaptado a tu tipo de negocio
-                        </h2>
-                        <p class="text-base text-slate-600">
-                            Explora cómo se ve y funciona la vitrina de MiCatalogo para diferentes tipos de vendedores independientes.
-                        </p>
-                    </div>
-
-                    <!-- Category Tabs (Puntto Horizontal Selector) -->
-                    <div class="w-full flex items-center justify-start sm:justify-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-                        <template x-for="(data, key) in rubros" :key="key">
-                            <button 
-                                type="button" 
-                                @click="activeRubro = key"
-                                :class="activeRubro === key ? 'bg-slate-900 text-white font-extrabold shadow-md' : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'"
-                                class="inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0"
-                            >
-                                <span class="text-base" x-text="data.icon"></span>
-                                <span x-text="data.title"></span>
-                            </button>
-                        </template>
-                    </div>
-
-                    <!-- Interactive Showcase Device Container -->
-                    <div class="w-full max-w-4xl bg-white rounded-3xl p-5 sm:p-8 shadow-xl border border-slate-200 relative transition-all">
-                        <!-- Toast Alert for WhatsApp interactive simulation -->
-                        <div x-show="waToast" 
-                             x-cloak
-                             x-transition:enter="transition ease-out duration-200"
-                             x-transition:enter-start="opacity-0 -translate-y-3 scale-95"
-                             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-                             x-transition:leave="transition ease-in duration-150"
-                             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
-                             x-transition:leave-end="opacity-0 -translate-y-3 scale-95"
-                             class="absolute top-4 left-4 right-4 z-40 mx-auto max-w-lg bg-emerald-600 text-white text-xs font-semibold p-3.5 rounded-2xl shadow-2xl flex items-center justify-between gap-3 border border-emerald-500">
-                            <div class="flex items-center gap-2.5 min-w-0">
-                                <span class="text-xl shrink-0">📲</span>
-                                <div class="min-w-0">
-                                    <p class="font-bold truncate">¡Mensaje generado para WhatsApp!</p>
-                                    <p class="text-[11px] text-emerald-100 truncate">
-                                        "Hola <span x-text="waToast ? waToast.store : ''"></span>, me interesa <strong x-text="waToast ? waToast.name : ''"></strong> (<span x-text="waToast ? waToast.price : ''"></span>)"
-                                    </p>
-                                </div>
-                            </div>
-                            <button @click="waToast = null" class="text-white/80 hover:text-white font-black text-sm p-1">✕</button>
-                        </div>
-
-                        <!-- Store Header Demo -->
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
-                            <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-extrabold text-base shadow-xs" x-text="rubros[activeRubro].avatar"></div>
-                                <div class="min-w-0">
-                                    <div class="flex items-center gap-1.5">
-                                        <h3 class="font-extrabold text-base text-slate-900 truncate" x-text="rubros[activeRubro].storeName"></h3>
-                                        <svg class="w-4 h-4 text-blue-600 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                    </div>
-                                    <p class="text-xs text-slate-500 truncate" x-text="rubros[activeRubro].tag"></p>
-                                </div>
-                            </div>
-                            <div class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 px-3.5 py-1.5 rounded-xl text-xs font-bold self-start sm:self-auto">
-                                <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                                <span x-text="rubros[activeRubro].badge"></span>
-                            </div>
-                        </div>
-
-                        <!-- Scoped Search & Category Pills -->
-                        <div class="flex flex-col sm:flex-row gap-3 my-4">
-                            <div class="flex-1 bg-slate-50 px-3.5 py-2 rounded-xl flex items-center gap-2 border border-slate-200 text-slate-400 text-xs">
-                                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                                <span class="truncate">Buscar en <span x-text="rubros[activeRubro].storeName"></span>...</span>
-                            </div>
-                            <div class="flex items-center gap-1.5 overflow-x-auto text-xs no-scrollbar">
-                                <template x-for="(cat, idx) in rubros[activeRubro].cats" :key="idx">
-                                    <span 
-                                        :class="idx === 0 ? 'bg-slate-900 text-white font-bold' : 'bg-slate-100 text-slate-700'"
-                                        class="px-3 py-1.5 rounded-xl text-xs whitespace-nowrap" 
-                                        x-text="cat"
-                                    ></span>
-                                </template>
-                            </div>
-                        </div>
-
-                        <!-- Dynamic Product Grid in Showcase -->
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <template x-for="prod in rubros[activeRubro].products" :key="prod.id">
-                                <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200/90 flex flex-col justify-between gap-3 hover:border-blue-300 transition-colors">
-                                    <div>
-                                        <div class="w-full h-32 rounded-xl bg-white flex items-center justify-center text-4xl border border-slate-200/80 shadow-2xs">
-                                            <span x-text="prod.icon"></span>
-                                        </div>
-                                        <div class="mt-3 flex items-center justify-between">
-                                            <span class="text-[10px] font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-md" x-text="prod.stock"></span>
-                                        </div>
-                                        <h4 class="mt-1.5 text-xs sm:text-sm font-bold text-slate-900 line-clamp-1" x-text="prod.name"></h4>
-                                        <p class="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed" x-text="prod.desc"></p>
-                                    </div>
-                                    <div class="pt-2 border-t border-slate-200/60 flex items-center justify-between">
-                                        <span class="text-sm sm:text-base font-extrabold text-slate-900 tabular-nums whitespace-nowrap" x-text="prod.price"></span>
-                                        <button 
-                                            type="button" 
-                                            @click="sendWaSim(prod.name, prod.price)" 
-                                            class="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-[11px] font-bold shadow-2xs transition active:scale-95 cursor-pointer"
-                                        >
-                                            <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
-                                            <span>WhatsApp</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-
-                        <!-- Live Demo link -->
-                        <div class="mt-6 pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-                            <span class="text-slate-500 font-medium">¿Quieres probar una tienda en vivo completa?</span>
-                            <a href="{{ route('shops.show', 'bsolutions-dev') }}" target="_blank" class="inline-flex items-center gap-1.5 font-bold text-blue-600 hover:text-blue-700">
-                                <span>Ver vitrina interactiva de Bsolutions →</span>
-                            </a>
                         </div>
                     </div>
                 </div>
