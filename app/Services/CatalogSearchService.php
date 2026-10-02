@@ -81,7 +81,11 @@ class CatalogSearchService
 
             $query->where(function ($searchGroup) use ($escaped): void {
                 $searchGroup->where('products.name', 'like', "%{$escaped}%")
+                    ->orWhere('products.product_code', 'like', "%{$escaped}%")
+                    ->orWhere('products.brand', 'like', "%{$escaped}%")
                     ->orWhere('products.description', 'like', "%{$escaped}%")
+                    ->orWhereHas('globalCategory', fn ($category) => $category->where('name', 'like', "%{$escaped}%"))
+                    ->orWhereHas('shopCategory', fn ($category) => $category->where('name', 'like', "%{$escaped}%"))
                     ->orWhereHas('shop', function ($shopQ) use ($escaped): void {
                         $shopQ->where('name', 'like', "%{$escaped}%");
                     });

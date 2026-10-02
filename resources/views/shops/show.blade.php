@@ -2,14 +2,14 @@
     $sharedCartData = $cartItems->map(fn ($cartProduct) => [
         'name' => $cartProduct->name,
         'productId' => $cartProduct->id,
-        'price' => (float) $cartProduct->price,
+        'price' => $cartProduct->currentPrice(),
         'quantity' => 1,
     ])->values()->all();
 
     $productsJson = $products->map(fn ($p) => [
         'id' => $p->public_id,
         'name' => $p->name,
-        'price' => (float) $p->price,
+        'price' => $p->currentPrice(),
         'image' => $p->images->isNotEmpty() ? $p->images->first()->url : null,
         'url' => route('products.show', [$shop, $p]),
         'isAvailable' => $p->isInventoryTracked()
@@ -21,7 +21,11 @@
     $activeFiltersCount = ($selectedCategory ? 1 : 0) + ($stock === 'available' ? 1 : 0) + (($minPrice || $maxPrice) ? 1 : 0) + (($sort && $sort !== 'latest') ? 1 : 0);
 @endphp
 
-<x-layouts.app :title="$shop->name.' | Catálogo en MiCatalogo'">
+<x-layouts.app
+    :title="$shop->name.' | Catálogo en MiCatalogo'"
+    :description="$shop->description ?: 'Descubre el catálogo de '.$shop->name.' y pide directamente por WhatsApp.'"
+    :ogImage="$shop->cover_url ?: $shop->logo_url"
+>
     <div 
         x-data="{
             // Cart state (multi-product WhatsApp cart persisted in localStorage)
@@ -193,7 +197,8 @@
                 return '{{ route('track.wa.shop', $shop) }}?' + params.toString();
             }
         }"
-        class="min-h-screen bg-[#F8FAFC] text-slate-800 antialiased"
+        class="storefront-shell min-h-screen bg-[#F8FAFC] text-slate-800 antialiased"
+        style="--shop-primary: {{ $shop->primary_color ?: '#1d4ed8' }}; --shop-secondary: {{ $shop->secondary_color ?: '#0f172a' }};"
     >
         <!-- Top Nav (Compact, Brand-Scoped) -->
         <header class="sticky top-0 z-30 border-b border-slate-200/90 bg-white/95 backdrop-blur-md">
@@ -271,6 +276,23 @@
 
         <!-- Store Header Banner (Clean, Minimalist Puntto-Style) -->
         <section class="border-b border-slate-200/80 bg-white">
+            <div class="mx-auto max-w-[1400px] px-4 pt-4 sm:px-8 sm:pt-6">
+                <div class="relative h-32 overflow-hidden rounded-2xl bg-slate-900 shadow-sm sm:h-44">
+                    @if ($shop->cover_url)
+                        <img src="{{ $shop->cover_url }}" alt="Portada de {{ $shop->name }}" class="absolute inset-0 h-full w-full object-cover" loading="eager" fetchpriority="high">
+                    @else
+                        <div class="absolute inset-0 store-secondary-bg"></div>
+                    @endif
+                    <div class="store-cover-overlay absolute inset-0"></div>
+                    <div class="relative flex h-full items-end justify-between gap-3 p-4 sm:p-6">
+                        <div class="max-w-xl text-white">
+                            <p class="text-[10px] font-black uppercase tracking-[0.22em] text-white/70">Vitrina digital</p>
+                            <p class="mt-1 text-lg font-black tracking-tight sm:text-2xl">Descubre lo mejor de {{ $shop->name }}</p>
+                        </div>
+                        <span class="hidden rounded-full bg-white/15 px-3 py-1.5 text-[11px] font-bold text-white backdrop-blur sm:inline-flex">Compra directo por WhatsApp</span>
+                    </div>
+                </div>
+            </div>
             <div class="mx-auto max-w-[1400px] px-4 py-6 sm:px-8 sm:py-8">
                 <div class="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
                     <!-- Profile Info -->
@@ -298,6 +320,13 @@
                                         <svg class="h-3.5 w-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                                         Envíos a todo el país
                                     </span>
+                                @endif
+                                @if ($shop->address)
+                                    @if ($shop->maps_url)
+                                        <a class="inline-flex items-center gap-1 font-medium text-slate-600 hover:text-blue-700 transition" href="{{ $shop->maps_url }}" rel="noopener noreferrer" target="_blank">⌖ {{ $shop->address }}</a>
+                                    @else
+                                        <span class="inline-flex items-center gap-1 font-medium text-slate-600">⌖ {{ $shop->address }}</span>
+                                    @endif
                                 @endif
                                 @if ($shop->instagram)
                                     <a class="inline-flex items-center gap-1 font-medium text-slate-600 hover:text-pink-600 transition" href="https://instagram.com/{{ ltrim($shop->instagram, '@') }}" rel="noopener noreferrer" target="_blank">
@@ -528,7 +557,7 @@
                         $productJsData = [
                             'id' => $product->public_id,
                             'name' => $product->name,
-                            'price' => (float) $product->price,
+                                    'price' => $product->currentPrice(),
                             'image' => $productImgUrl,
                             'url' => route('products.show', [$shop, $product]),
                             'maxStock' => $productMaxStock,
@@ -575,10 +604,21 @@
                             </a>
 
                             <!-- Price (Rule 8 strictly compliant) -->
-                            <div class="mt-2 flex items-baseline justify-between">
-                                <p class="text-sm sm:text-base font-extrabold tracking-tight text-slate-900 tabular-nums whitespace-nowrap">
-                                    RD$ {{ number_format((float) $product->price, 0) }}
-                                </p>
+                            <div class="mt-2 flex items-end justify-between gap-2">
+                                <div>
+                                    @if ($product->brand)
+                                        <p class="text-[10px] font-black uppercase tracking-wider text-slate-400">{{ $product->brand }}</p>
+                                    @endif
+                                    <p class="text-sm sm:text-base font-extrabold tracking-tight text-slate-900 tabular-nums whitespace-nowrap">
+                                        RD$ {{ number_format($product->currentPrice(), 0) }}
+                                    </p>
+                                    @if ($product->isOnSale())
+                                        <p class="text-[11px] text-slate-400 line-through">RD$ {{ number_format((float) $product->price, 0) }}</p>
+                                    @endif
+                                </div>
+                                @if ($product->isOnSale())
+                                    <span class="rounded-md bg-rose-50 px-1.5 py-1 text-[10px] font-black text-rose-600">-{{ $product->discountPercent() }}%</span>
+                                @endif
                             </div>
 
                             <!-- Cart Add / Quantity Selector Button (Puntto Pattern) -->
@@ -1139,6 +1179,24 @@
 
         <x-shop-footer :shop="$shop" />
     </div>
+
+    @php
+        $shopSchema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'LocalBusiness',
+            'name' => $shop->name,
+            'description' => $shop->description ?: 'Vitrina digital de '.$shop->name,
+            'url' => url()->current(),
+            'image' => array_values(array_filter([$shop->cover_url, $shop->logo_url])),
+            'telephone' => '+'.$shop->whatsapp_country_code.$shop->whatsapp_number,
+            'address' => $shop->address ? [
+                '@type' => 'PostalAddress',
+                'addressLocality' => $shop->address,
+                'addressCountry' => 'DO',
+            ] : null,
+        ];
+    @endphp
+    <script type="application/ld+json">{!! json_encode($shopSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
 
     <!-- Share Script -->
     <script>

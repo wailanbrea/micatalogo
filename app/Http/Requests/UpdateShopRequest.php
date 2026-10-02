@@ -14,6 +14,7 @@ class UpdateShopRequest extends StoreShopRequest
         return [
             ...parent::rules(),
             'remove_logo' => ['nullable', 'boolean'],
+            'remove_cover' => ['nullable', 'boolean'],
         ];
     }
 }

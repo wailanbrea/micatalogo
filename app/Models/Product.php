@@ -6,6 +6,7 @@ use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductImageProcessingStatus;
 use App\Enums\ProductModerationStatus;
 use App\Traits\HasPublicId;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -23,6 +24,7 @@ class Product extends Model
         'shop_category_id',
         'name',
         'product_code',
+        'brand',
         'slug',
         'description',
         'source_category',
@@ -30,6 +32,9 @@ class Product extends Model
         'source_created_at',
         'source_key',
         'price',
+        'sale_price',
+        'sale_starts_at',
+        'sale_ends_at',
         'currency',
         'sale_unit',
         'volume_ml',
@@ -43,6 +48,9 @@ class Product extends Model
     {
         return [
             'price' => 'decimal:2',
+            'sale_price' => 'decimal:2',
+            'sale_starts_at' => 'datetime',
+            'sale_ends_at' => 'datetime',
             'volume_ml' => 'integer',
             'source_created_at' => 'datetime',
             'availability_status' => ProductAvailabilityStatus::class,
@@ -112,6 +120,32 @@ class Product extends Model
     public function isDecant(): bool
     {
         return $this->sale_unit === 'decant';
+    }
+
+    public function isOnSale(?Carbon $at = null): bool
+    {
+        if ($this->sale_price === null || $this->price === null || (float) $this->sale_price >= (float) $this->price) {
+            return false;
+        }
+
+        $at ??= now();
+
+        return (! $this->sale_starts_at || $this->sale_starts_at->lessThanOrEqualTo($at))
+            && (! $this->sale_ends_at || $this->sale_ends_at->greaterThanOrEqualTo($at));
+    }
+
+    public function currentPrice(): float
+    {
+        return $this->isOnSale() ? (float) $this->sale_price : (float) $this->price;
+    }
+
+    public function discountPercent(): int
+    {
+        if (! $this->isOnSale() || ! (float) $this->price) {
+            return 0;
+        }
+
+        return (int) round(100 - (((float) $this->sale_price / (float) $this->price) * 100));
     }
 
     public function saleUnitLabel(): string

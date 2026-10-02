@@ -14,6 +14,21 @@
     display: none !important;
 }
 
+.storefront-shell {
+    --shop-primary: #1d4ed8;
+    --shop-secondary: #0f172a;
+}
+
+.store-primary-bg { background-color: var(--shop-primary); }
+.store-primary-text { color: var(--shop-primary); }
+.store-primary-border { border-color: color-mix(in srgb, var(--shop-primary), white 65%); }
+.store-secondary-bg { background-color: var(--shop-secondary); }
+.store-cover-overlay { background: linear-gradient(90deg, color-mix(in srgb, var(--shop-secondary), transparent 12%), color-mix(in srgb, var(--shop-secondary), transparent 72%)); }
+
+@supports not (background: color-mix(in srgb, red, white)) {
+    .store-cover-overlay { background: linear-gradient(90deg, rgba(15, 23, 42, .78), rgba(15, 23, 42, .12)); }
+}
+
 .no-scrollbar::-webkit-scrollbar {
     display: none;
 }

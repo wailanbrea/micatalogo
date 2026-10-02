@@ -105,4 +105,27 @@ class ImageProcessingService
             $mediaStorage->disk()->delete($shop->logo_object_key);
         }
     }
+
+    public function processAndStoreShopCover(Shop $shop, UploadedFile $file, MediaStorageService $mediaStorage): string
+    {
+        $this->validateImage($file);
+
+        $image = Image::read($file->getRealPath());
+        $image->cover(width: 1400, height: 520);
+        $bytes = (string) $image->toWebp(84);
+        $checksum = hash('sha256', $bytes);
+        $objectKey = $mediaStorage->buildShopCoverObjectKey($shop->public_id, $checksum);
+
+        $this->deleteShopCover($shop, $mediaStorage);
+        $mediaStorage->disk()->put($objectKey, $bytes, 'public');
+
+        return $objectKey;
+    }
+
+    public function deleteShopCover(Shop $shop, MediaStorageService $mediaStorage): void
+    {
+        if ($shop->cover_object_key && $mediaStorage->disk()->exists($shop->cover_object_key)) {
+            $mediaStorage->disk()->delete($shop->cover_object_key);
+        }
+    }
 }

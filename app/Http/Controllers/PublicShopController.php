@@ -74,7 +74,10 @@ class PublicShopController extends Controller
             $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $searchQuery);
             $productsQuery->where(function ($q) use ($escaped) {
                 $q->where('name', 'like', "%{$escaped}%")
-                    ->orWhere('description', 'like', "%{$escaped}%");
+                    ->orWhere('brand', 'like', "%{$escaped}%")
+                    ->orWhere('product_code', 'like', "%{$escaped}%")
+                    ->orWhere('description', 'like', "%{$escaped}%")
+                    ->orWhereHas('shopCategory', fn ($category) => $category->where('name', 'like', "%{$escaped}%"));
             });
         }
 

@@ -166,4 +166,39 @@ class PublicShopStorefrontTest extends TestCase
         $response->assertSee('Mouse Inalámbrico');
         $response->assertSee('Volver a Tienda Tech');
     }
+
+    public function test_storefront_renders_branding_and_active_offer_price(): void
+    {
+        $seller = User::factory()->create();
+        $shop = Shop::factory()->create([
+            'user_id' => $seller->id,
+            'slug' => 'aroma-real',
+            'name' => 'Aroma Real',
+            'primary_color' => '#7c3aed',
+            'secondary_color' => '#1e1b4b',
+            'address' => 'Santo Domingo, RD',
+            'status' => 'active',
+        ]);
+
+        Product::factory()->create([
+            'shop_id' => $shop->id,
+            'name' => 'Hawas Ice',
+            'brand' => 'Rasasi',
+            'slug' => 'hawas-ice',
+            'price' => 3300,
+            'sale_price' => 2800,
+            'moderation_status' => ProductModerationStatus::Active,
+            'availability_status' => ProductAvailabilityStatus::Available,
+        ]);
+
+        $response = $this->get('/tienda/aroma-real');
+
+        $response->assertOk()
+            ->assertSee('--shop-primary: #7c3aed', false)
+            ->assertSee('Santo Domingo, RD')
+            ->assertSee('Rasasi')
+            ->assertSee('RD$ 2,800')
+            ->assertSee('RD$ 3,300')
+            ->assertSee('-15%');
+    }
 }

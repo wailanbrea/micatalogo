@@ -3,6 +3,7 @@
     $waMessage = "Hola, me interesa \"{$product->name}\" que vi en MiCatalogo:\n{$productUrl}";
     $waUrl = "https://wa.me/{$shop->whatsapp_country_code}{$shop->whatsapp_number}?text=".rawurlencode($waMessage);
     $isDecant = $product->isDecant();
+    $publicPrice = $product->currentPrice();
     $maxQuantity = $product->isInventoryTracked() ? max(1, (int) $product->inventory->stock_quantity) : 10000;
     $decantOptionData = $decantOptions->map(fn ($decant) => [
         'id' => $decant->public_id,
@@ -15,8 +16,12 @@
     $selectedDecantId = $isDecant ? $product->public_id : ($decantOptions->first()?->public_id);
 @endphp
 
-<x-layouts.app :title="$product->name.' | '.$shop->name.' en MiCatalogo'">
-    <div class="min-h-screen bg-[#F5F7FA] text-slate-800">
+<x-layouts.app
+    :title="$product->name.' | '.$shop->name.' en MiCatalogo'"
+    :description="$product->description ?: $product->name.' disponible en '.$shop->name.'.'"
+    :ogImage="$product->images->first()?->url ?: $shop->cover_url ?: $shop->logo_url"
+>
+    <div class="storefront-shell min-h-screen bg-[#F5F7FA] text-slate-800" style="--shop-primary: {{ $shop->primary_color ?: '#1d4ed8' }}; --shop-secondary: {{ $shop->secondary_color ?: '#0f172a' }};">
         <!-- Top Nav -->
         <header class="border-b border-slate-200 bg-white">
             <div class="mx-auto flex max-w-[1200px] items-center justify-between px-4 py-3 sm:px-8">
@@ -98,7 +103,7 @@
                 addToOrder() {
                     const id = this.selectedDecant ? this.selectedDecant.id : @js($product->public_id);
                     const name = this.selectedDecant ? @js($product->name) + ' (' + this.selectedDecant.volume + ' ml)' : @js($product->name);
-                    const price = this.selectedDecant ? Number(this.selectedDecant.price) : Number(@js((float)$product->price));
+                    const price = this.selectedDecant ? Number(this.selectedDecant.price) : Number(@js($publicPrice));
                     const max = this.quantityMax;
                     const img = @js($product->images->isNotEmpty() ? $product->images->first()->url : null);
                     const url = @js(route('products.show', [$shop, $product]));
@@ -180,6 +185,9 @@
                     </div>
 
                     <!-- Title -->
+                    @if ($product->brand)
+                        <p class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">{{ $product->brand }}</p>
+                    @endif
                     <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 leading-tight">
                         {{ $product->name }}
                     </h1>
@@ -233,10 +241,16 @@
                         <div class="flex items-baseline gap-2">
                                 <span class="text-xs font-semibold text-slate-500">{{ $isDecant ? 'Precio por decant:' : 'Precio:' }}</span>
                             <span class="text-3xl font-black tracking-tight text-slate-900">
-                                RD$ {{ number_format((float) $product->price, 0) }}
+                                RD$ {{ number_format($publicPrice, 0) }}
                             </span>
                             <span class="text-xs font-medium text-slate-500">DOP</span>
                         </div>
+                        @if (!$isDecant && $product->isOnSale())
+                            <div class="mt-1 flex items-center gap-2">
+                                <span class="text-sm text-slate-400 line-through">RD$ {{ number_format((float) $product->price, 0) }}</span>
+                                <span class="rounded-md bg-rose-50 px-2 py-1 text-[11px] font-black text-rose-600">-{{ $product->discountPercent() }}% de descuento</span>
+                            </div>
+                        @endif
                     </div>
 
                     <!-- Amazon-Style "Acerca de este producto" Feature Bullets -->
@@ -275,7 +289,10 @@
                     <div class="lg:sticky lg:top-20 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
                         <div class="space-y-1">
                             <span class="text-xs text-slate-500" x-text="selectedDecant ? 'Precio por presentación:' : 'Total a pagar:'"></span>
-                            <p class="text-2xl font-black text-slate-900" x-text="selectedDecant ? 'RD$ ' + Number(totalPrice).toLocaleString('es-DO', { maximumFractionDigits: 0 }) : 'RD$ {{ number_format((float) $product->price, 0) }}'"></p>
+                            <p class="text-2xl font-black text-slate-900" x-text="selectedDecant ? 'RD$ ' + Number(totalPrice).toLocaleString('es-DO', { maximumFractionDigits: 0 }) : 'RD$ {{ number_format($publicPrice, 0) }}'"></p>
+                            @if (!$isDecant && $product->isOnSale())
+                                <p class="text-xs text-slate-400 line-through">RD$ {{ number_format((float) $product->price, 0) }} · oferta activa</p>
+                            @endif
                             <p x-show="selectedDecant" class="text-[11px] font-medium text-slate-500" x-text="quantity + ' × RD$ ' + Number(selectedDecant.price).toLocaleString('es-DO', { maximumFractionDigits: 0 })"></p>
                         </div>
 
@@ -394,7 +411,10 @@
                     </div>
                     <div class="min-w-0">
                         <p class="text-xs font-bold text-slate-900 truncate">{{ $product->name }}</p>
-                        <p class="text-sm font-black text-emerald-700">RD$ {{ number_format((float) $product->price, 0) }}</p>
+                        <p class="text-sm font-black text-emerald-700">RD$ {{ number_format($publicPrice, 0) }}</p>
+                        @if (!$isDecant && $product->isOnSale())
+                            <p class="text-[10px] text-slate-400 line-through">RD$ {{ number_format((float) $product->price, 0) }}</p>
+                        @endif
                     </div>
                 </div>
                 <a class="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm active:scale-95 text-center" x-bind:href="whatsappUrl" data-wa-target="{{ $waUrl }}" rel="noopener noreferrer" target="_blank">
@@ -432,8 +452,11 @@
                                             {{ $related->name }}
                                         </h3>
                                         <p class="mt-1 text-sm font-bold text-slate-900">
-                                            RD$ {{ number_format((float) $related->price, 0) }}
+                                            RD$ {{ number_format($related->currentPrice(), 0) }}
                                         </p>
+                                        @if ($related->isOnSale())
+                                            <p class="text-[10px] text-slate-400 line-through">RD$ {{ number_format((float) $related->price, 0) }}</p>
+                                        @endif
                                     </div>
                                 </a>
                             </article>
@@ -445,6 +468,28 @@
 
         <x-shop-footer :shop="$shop" />
     </div>
+
+    @php
+        $productSchema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'Product',
+            'name' => $product->name,
+            'description' => $product->description ?: $product->name,
+            'image' => $product->images->pluck('url')->values()->all(),
+            'sku' => $product->product_code ?: $product->public_id,
+            'brand' => $product->brand ? ['@type' => 'Brand', 'name' => $product->brand] : null,
+            'offers' => [
+                '@type' => 'Offer',
+                'priceCurrency' => $product->currency ?: 'DOP',
+                'price' => number_format($publicPrice, 2, '.', ''),
+                'availability' => $product->isInventoryTracked() && $product->inventory->isOutOfStock()
+                    ? 'https://schema.org/OutOfStock'
+                    : 'https://schema.org/InStock',
+                'url' => $productUrl,
+            ],
+        ];
+    @endphp
+    <script type="application/ld+json">{!! json_encode($productSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
 
     <!-- Gallery & Share Scripts -->
     <script>

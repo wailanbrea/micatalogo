@@ -34,11 +34,56 @@
                         <input class="mt-1.5 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-600 focus:ring-blue-600" id="name" name="name" type="text" value="{{ old('name', $shop->name) }}" required autofocus>
                         @error('name') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                     </div>
+
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <label class="text-sm font-medium text-slate-700" for="address">Ubicación o dirección (opcional)</label>
+                            <input class="mt-1.5 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-600 focus:ring-blue-600" id="address" name="address" type="text" value="{{ old('address', $shop->address) }}" placeholder="Santo Domingo, RD">
+                            @error('address') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-slate-700" for="maps_url">Enlace de Google Maps (opcional)</label>
+                            <input class="mt-1.5 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-600 focus:ring-blue-600" id="maps_url" name="maps_url" type="url" value="{{ old('maps_url', $shop->maps_url) }}" placeholder="https://maps.google.com/...">
+                            @error('maps_url') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
                     <div>
                         <label class="text-sm font-medium text-slate-700" for="slug">Enlace personalizado</label>
                         <div class="mt-1.5 flex rounded-md shadow-sm"><span class="inline-flex items-center rounded-l-md border border-r-0 border-slate-300 bg-slate-50 px-3 text-sm text-slate-500">/tienda/</span><input class="block min-w-0 flex-1 rounded-r-md border-slate-300 focus:border-blue-600 focus:ring-blue-600" id="slug" name="slug" type="text" value="{{ old('slug', $shop->slug) }}" placeholder="mi-tienda"></div>
                         <p class="mt-1 text-xs text-slate-500">Si lo dejas vacio, lo generaremos con el nombre.</p>
                         @error('slug') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <p class="text-sm font-bold text-slate-900">Identidad visual</p>
+                                <p class="mt-0.5 text-xs text-slate-500">Estos colores se aplican a tu vitrina pública.</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input class="h-9 w-12 cursor-pointer rounded border border-slate-300 bg-white p-1" id="primary_color" name="primary_color" type="color" value="{{ old('primary_color', $shop->primary_color ?: '#1d4ed8') }}">
+                                <input class="h-9 w-12 cursor-pointer rounded border border-slate-300 bg-white p-1" id="secondary_color" name="secondary_color" type="color" value="{{ old('secondary_color', $shop->secondary_color ?: '#0f172a') }}">
+                            </div>
+                        </div>
+                        @error('primary_color') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                        @error('secondary_color') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                    </div>
+
+                    <!-- Portada de la tienda -->
+                    <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                        <label class="block text-sm font-bold text-slate-800" for="cover">Imagen de portada</label>
+                        <p class="mt-0.5 text-xs text-slate-500">Recomendado: una imagen horizontal. Se optimizará a WebP automáticamente.</p>
+                        @if ($shop->exists && $shop->cover_url)
+                            <div class="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                                <img src="{{ $shop->cover_url }}" alt="Portada {{ $shop->name }}" class="h-28 w-full object-cover">
+                            </div>
+                            <label class="mt-3 flex items-center gap-2 text-xs font-semibold text-rose-600 cursor-pointer hover:text-rose-800">
+                                <input type="checkbox" name="remove_cover" value="1" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500">
+                                <span>Eliminar portada actual</span>
+                            </label>
+                        @endif
+                        <input type="file" id="cover" name="cover" accept="image/jpeg,image/png,image/webp,image/avif" class="mt-3 text-xs text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-blue-600 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white hover:file:bg-blue-700 cursor-pointer">
+                        @error('cover') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label class="text-sm font-medium text-slate-700" for="description">Descripcion</label>

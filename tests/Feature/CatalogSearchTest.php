@@ -75,6 +75,25 @@ class CatalogSearchTest extends TestCase
         $this->assertEquals('Martillo de Acero', $results->first()->name);
     }
 
+    public function test_search_service_matches_by_brand_and_product_code(): void
+    {
+        $seller = User::factory()->create();
+        $shop = Shop::factory()->create(['user_id' => $seller->id, 'status' => 'active']);
+        $product = Product::factory()->create([
+            'shop_id' => $shop->id,
+            'name' => 'Perfume de noche',
+            'slug' => 'perfume-de-noche',
+            'brand' => 'Rasasi',
+            'product_code' => 'HAWAS-ICE-100',
+            'moderation_status' => ProductModerationStatus::Active,
+        ]);
+
+        $service = new CatalogSearchService;
+
+        $this->assertTrue($service->search(['q' => 'Rasasi'])->contains('id', $product->id));
+        $this->assertTrue($service->search(['q' => 'HAWAS-ICE-100'])->contains('id', $product->id));
+    }
+
     public function test_search_service_filters_by_global_category(): void
     {
         $seller = User::factory()->create();

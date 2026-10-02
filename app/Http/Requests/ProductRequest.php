@@ -27,10 +27,14 @@ class ProductRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'min:2', 'max:255'],
             'product_code' => ['nullable', 'string', 'max:100'],
+            'brand' => ['nullable', 'string', 'max:120'],
             'slug' => ['nullable', 'string', 'min:2', 'max:255'],
             'description' => ['nullable', 'string', 'max:5000'],
             'notes' => ['nullable', 'string', 'max:10000'],
             'price' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            'sale_price' => ['nullable', 'numeric', 'min:0', 'lt:price', 'max:99999999.99'],
+            'sale_starts_at' => ['nullable', 'date'],
+            'sale_ends_at' => ['nullable', 'date', 'after_or_equal:sale_starts_at'],
             'sale_unit' => ['nullable', Rule::in(['unit', 'bottle', 'ml', 'decant'])],
             'volume_ml' => ['required_if:sale_unit,bottle,ml,decant', 'nullable', 'integer', 'min:1', 'max:100000'],
             'inventory_source_product_id' => [

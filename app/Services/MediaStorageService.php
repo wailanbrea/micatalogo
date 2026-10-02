@@ -77,6 +77,13 @@ class MediaStorageService
         return "shops/{$publicId}/logo-{$hash}.webp";
     }
 
+    public function buildShopCoverObjectKey(string $publicId, string $checksum): string
+    {
+        $hash = substr($checksum, 0, 16);
+
+        return "shops/{$publicId}/cover-{$hash}.webp";
+    }
+
     public function healthCheck(): array
     {
         $disk = $this->disk();

@@ -183,3 +183,26 @@ test('a seller can remove their shop logo', function () {
     expect($shop->logo_object_key)->toBeNull();
     expect(Storage::disk('public')->exists('shops/test/logo-sample.webp'))->toBeFalse();
 });
+
+test('a seller can upload a storefront cover and save branding fields', function () {
+    Storage::fake('public');
+    $seller = User::factory()->create();
+    $shop = Shop::factory()->for($seller)->create(['cover_object_key' => null]);
+
+    $this->actingAs($seller)
+        ->put(route('seller.shops.update', $shop), [
+            ...shopPayload(['name' => $shop->name, 'slug' => $shop->slug]),
+            'address' => 'Santo Domingo, RD',
+            'maps_url' => 'https://maps.google.com/?q=Santo+Domingo',
+            'primary_color' => '#7c3aed',
+            'secondary_color' => '#1e1b4b',
+            'cover' => UploadedFile::fake()->image('cover.jpg', 1400, 520),
+        ])
+        ->assertRedirect(route('seller.shops.edit', $shop));
+
+    $shop->refresh();
+    expect($shop->cover_object_key)->not->toBeNull()
+        ->and($shop->primary_color)->toBe('#7c3aed')
+        ->and($shop->address)->toBe('Santo Domingo, RD');
+    expect(Storage::disk('public')->exists($shop->cover_object_key))->toBeTrue();
+});

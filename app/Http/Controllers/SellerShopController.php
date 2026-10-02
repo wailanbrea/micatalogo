@@ -105,6 +105,11 @@ class SellerShopController extends Controller
             $shop->update(['logo_object_key' => $logoKey]);
         }
 
+        if ($request->hasFile('cover')) {
+            $coverKey = $imageService->processAndStoreShopCover($shop, $request->file('cover'), $mediaStorage);
+            $shop->update(['cover_object_key' => $coverKey]);
+        }
+
         return to_route('seller.shops.edit', $shop)->with('status', 'Tienda creada.');
     }
 
@@ -122,6 +127,13 @@ class SellerShopController extends Controller
             $attributes['logo_object_key'] = null;
         } elseif ($request->hasFile('logo')) {
             $attributes['logo_object_key'] = $imageService->processAndStoreShopLogo($shop, $request->file('logo'), $mediaStorage);
+        }
+
+        if ($request->boolean('remove_cover')) {
+            $imageService->deleteShopCover($shop, $mediaStorage);
+            $attributes['cover_object_key'] = null;
+        } elseif ($request->hasFile('cover')) {
+            $attributes['cover_object_key'] = $imageService->processAndStoreShopCover($shop, $request->file('cover'), $mediaStorage);
         }
 
         $shop->update($attributes);

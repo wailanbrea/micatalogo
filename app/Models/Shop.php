@@ -15,7 +15,12 @@ class Shop extends Model
 {
     use HasFactory, HasPublicId, SoftDeletes;
 
-    protected $fillable = ['name', 'slug', 'description', 'logo_object_key', 'whatsapp_country_code', 'whatsapp_number', 'offers_shipping', 'instagram', 'status', 'discovery_enabled', 'product_limit'];
+    protected $fillable = [
+        'name', 'slug', 'description', 'logo_object_key', 'cover_object_key',
+        'primary_color', 'secondary_color', 'whatsapp_country_code', 'whatsapp_number',
+        'offers_shipping', 'instagram', 'address', 'maps_url', 'status', 'discovery_enabled',
+        'product_limit',
+    ];
 
     protected $attributes = [
         'discovery_enabled' => false,
@@ -37,6 +42,15 @@ class Shop extends Model
         }
 
         return app(MediaStorageService::class)->url($this->logo_object_key);
+    }
+
+    public function getCoverUrlAttribute(): ?string
+    {
+        if (! $this->cover_object_key) {
+            return null;
+        }
+
+        return app(MediaStorageService::class)->url($this->cover_object_key);
     }
 
     public function user(): BelongsTo

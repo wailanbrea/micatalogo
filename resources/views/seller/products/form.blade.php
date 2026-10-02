@@ -49,6 +49,11 @@
                         <input class="mt-1.5 w-full rounded-md border border-slate-300 px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="product_code" name="product_code" type="text" value="{{ old('product_code', $product->product_code) }}" placeholder="Opcional">
                     </div>
 
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-800" for="brand">Marca</label>
+                        <input class="mt-1.5 w-full rounded-md border border-slate-300 px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="brand" name="brand" type="text" value="{{ old('brand', $product->brand) }}" placeholder="Ej: Rasasi, Nike, Samsung">
+                    </div>
+
                     <!-- Precios: Venta y Costo (Contabilidad de Inventario) -->
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div>
@@ -71,6 +76,27 @@
                                 <input class="w-full rounded-md border border-slate-300 pl-12 pr-3 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="cost_price" name="cost_price" step="0.01" min="0" type="number" value="{{ old('cost_price', $product->inventory?->cost_price) }}" placeholder="0.00">
                             </div>
                         </div>
+                    </div>
+
+                    <div class="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+                        <p class="text-sm font-bold text-slate-900">Oferta (opcional)</p>
+                        <p class="mt-0.5 text-xs text-slate-600">El precio regular se conserva para mostrar el descuento en la vitrina.</p>
+                        <div class="mt-3 grid gap-4 sm:grid-cols-3">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700" for="sale_price">Precio oferta</label>
+                                <input class="mt-1.5 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900" id="sale_price" name="sale_price" type="number" step="0.01" min="0" value="{{ old('sale_price', $product->sale_price) }}" placeholder="RD$ 0.00">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700" for="sale_starts_at">Desde</label>
+                                <input class="mt-1.5 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900" id="sale_starts_at" name="sale_starts_at" type="datetime-local" value="{{ old('sale_starts_at', $product->sale_starts_at?->format('Y-m-d\\TH:i')) }}">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700" for="sale_ends_at">Hasta</label>
+                                <input class="mt-1.5 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900" id="sale_ends_at" name="sale_ends_at" type="datetime-local" value="{{ old('sale_ends_at', $product->sale_ends_at?->format('Y-m-d\\TH:i')) }}">
+                            </div>
+                        </div>
+                        @error('sale_price') <p class="mt-2 text-xs text-red-600">{{ $message }}</p> @enderror
+                        @error('sale_ends_at') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                     </div>
 
                     <!-- Presentación y unidad de venta -->

@@ -31,7 +31,12 @@ class StoreShopRequest extends FormRequest
             'whatsapp_number' => ['required', 'regex:/^[1-9][0-9]{5,14}$/'],
             'offers_shipping' => ['nullable', 'boolean'],
             'instagram' => ['nullable', 'string', 'max:30', 'regex:/^[A-Za-z0-9._]+$/'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'maps_url' => ['nullable', 'url', 'max:500'],
+            'primary_color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'secondary_color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'logo' => ['nullable', 'image', 'mimes:jpeg,png,webp,avif', 'max:'.((int) config('catalog.uploads.max_file_size_mb', 10) * 1024)],
+            'cover' => ['nullable', 'image', 'mimes:jpeg,png,webp,avif', 'max:'.((int) config('catalog.uploads.max_file_size_mb', 10) * 1024)],
         ];
     }
 }
