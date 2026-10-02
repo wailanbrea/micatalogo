@@ -21,6 +21,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Production data is never created, reset, or cleaned by the demo seeder.
+        // Demo catalogs are strictly for local development and automated tests.
+        if (app()->environment('production')) {
+            return;
+        }
+
         $categoryNames = ['Software', 'Tecnologia', 'Moda', 'Hogar', 'Belleza', 'Accesorios', 'Calzado', 'Deportes'];
         $categories = collect($categoryNames)->map(function (string $name, int $index) {
             return GlobalCategory::firstOrCreate(
@@ -49,7 +55,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'BSolutions.dev',
                 'description' => 'Desarrollo de software profesional, soluciones SaaS, CRM para WhatsApp Business API y plataformas web de alto rendimiento.',
                 'whatsapp_country_code' => '1',
-                'whatsapp_number' => '8095550100',
+                'whatsapp_number' => '8298144525',
                 'instagram' => 'bsolutions.dev',
                 'offers_shipping' => false,
                 'status' => 'active',

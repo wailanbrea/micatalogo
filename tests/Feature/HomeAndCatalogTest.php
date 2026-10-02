@@ -38,7 +38,7 @@ test('product detail view renders product image when available', function () {
     $response->assertSee($product->name);
     $response->assertSee('RD$ 9,500');
     $response->assertSee('crm-whatsapp.svg');
-    $response->assertSee('https://wa.me/18095550100');
+    $response->assertSee('https://wa.me/18298144525');
 });
 
 test('homepage renders user account dropdown when authenticated', function () {

@@ -708,7 +708,7 @@
                                         <!-- WhatsApp Send Order CTA inside phone footer -->
                                         <div class="pt-1">
                                             <a 
-                                                :href="'https://wa.me/18095550100?text=' + encodeURIComponent('Hola ' + rubros[activeRubro].storeName + ', me interesa hacer un pedido de ' + cartCount + ' artículos de su catálogo.')"
+                                                :href="'https://wa.me/18298144525?text=' + encodeURIComponent('Hola ' + rubros[activeRubro].storeName + ', me interesa hacer un pedido de ' + cartCount + ' artículos de su catálogo.')"
                                                 target="_blank"
                                                 class="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-extrabold flex items-center justify-center gap-1.5 shadow-xs transition"
                                             >
