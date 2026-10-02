@@ -30,6 +30,9 @@
 
                     @if ($totalProducts < $maxProducts)
                         <div class="flex items-center gap-2">
+                            <a class="rounded-md border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 shadow-xs hover:bg-indigo-100" href="{{ route('seller.shops.products.import.create', $shop) }}">
+                                Importar CSV/XLSX
+                            </a>
                             <a class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-xs hover:bg-slate-50" href="{{ route('seller.shops.products.bulk.create', $shop) }}">
                                 Subida masiva
                             </a>

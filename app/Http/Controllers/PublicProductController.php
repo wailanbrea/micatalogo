@@ -29,6 +29,7 @@ class PublicProductController extends Controller
             'decantProducts.inventory',
             'sourceProduct.inventory',
             'sourceProduct.decantProducts.inventory',
+            'attributeValues.attributeDefinition',
         ]);
 
         $decantOptions = $product->isDecant()

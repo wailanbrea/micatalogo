@@ -282,6 +282,20 @@
                             </p>
                         </div>
                     @endif
+
+                    @if ($product->attributeValues->isNotEmpty())
+                        <div class="border-t border-slate-200/80 pt-4">
+                            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500">Características</h2>
+                            <dl class="mt-2 divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white text-xs">
+                                @foreach ($product->attributeValues as $attributeValue)
+                                    <div class="flex items-center justify-between gap-4 px-3 py-2.5">
+                                        <dt class="font-semibold text-slate-500">{{ $attributeValue->attributeDefinition->name }}</dt>
+                                        <dd class="text-right font-bold text-slate-800">{{ $attributeValue->value }}</dd>
+                                    </div>
+                                @endforeach
+                            </dl>
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Col 3: Dedicated Amazon-Style Buy Box (Desktop: 3 cols, Tablet: full width, Mobile: in flow) -->
@@ -478,6 +492,11 @@
             'image' => $product->images->pluck('url')->values()->all(),
             'sku' => $product->product_code ?: $product->public_id,
             'brand' => $product->brand ? ['@type' => 'Brand', 'name' => $product->brand] : null,
+            'additionalProperty' => $product->attributeValues->map(fn ($value) => [
+                '@type' => 'PropertyValue',
+                'name' => $value->attributeDefinition->name,
+                'value' => $value->value,
+            ])->values()->all(),
             'offers' => [
                 '@type' => 'Offer',
                 'priceCurrency' => $product->currency ?: 'DOP',

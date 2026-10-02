@@ -2,9 +2,9 @@
 
 ## Snapshot
 
-- Date: 2026-09-14
-- Commit: initial commit pending; remote `origin` is empty.
-- Phase: deployment preflight.
+- Date: 2026-10-02
+- Commit: `fbfc7da` plus the advanced storefront work in the current release.
+- Phase: release validation and VPS deployment.
 - Local runtime: Laravel 12.69.2, PHP 8.2.33, MariaDB 11.4.12.
 
 ## Completed
@@ -18,6 +18,8 @@
 - Reports, moderation queue, administrator dashboard, user management, SEO, ads, security
   headers, error pages, scheduled maintenance, logos, and QR marketing tools.
 - Migration `add_discovery_enabled_to_shops_table` executed and `Shop` model configured.
+- Public orders with WhatsApp order numbers, dynamic product attributes and public filters.
+- CSV/XLSX inventory import with a validation preview before persistence.
 
 ## Verified
 
@@ -30,9 +32,9 @@
 
 - Configure the production R2 bucket, restricted API token, custom media domain, and health check.
 - Create the initial Git commit after reviewing all untracked files.
-- Perform VPS deployment only with explicit authorization and the `bsolutions-infra` procedure.
-- Run the production release checklist: backup verification, environment validation, build,
-  migrations, queue worker, scheduler, smoke tests, and rollback verification.
+- Run the production release checklist with the `bsolutions-infra` procedure: backup
+  verification, environment validation, build, migrations, queue worker, scheduler,
+  smoke tests, and rollback verification.
 
 ## Security Notes
 

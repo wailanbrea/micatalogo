@@ -68,6 +68,16 @@ class Shop extends Model
         return $this->hasMany(Product::class);
     }
 
+    public function attributeDefinitions(): HasMany
+    {
+        return $this->hasMany(AttributeDefinition::class)->orderBy('display_order')->orderBy('name');
+    }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
     public function productLimit(): int
     {
         return $this->product_limit ?? (int) config('catalog.free.max_products_per_shop', 100);

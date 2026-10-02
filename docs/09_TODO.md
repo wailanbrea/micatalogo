@@ -109,3 +109,11 @@
 - [x] Scheduled daily maintenance tasks in `routes/console.php` (temporary upload pruning and 30-day soft-deleted cleanup).
 - [x] Full test coverage in `tests/Feature/ProductionHardeningTest.php` (81 passing tests total).
 
+## Phase 17 — Vitrina comercial avanzada
+
+- [x] Pedidos públicos persistidos con número de orden, snapshot de precios y mensaje profesional para WhatsApp.
+- [x] Métrica diaria de pedidos enviados, manteniendo el tracking no invasivo existente.
+- [x] Atributos dinámicos por tienda/categoría con valores por producto, filtros públicos y características en la ficha.
+- [x] Importación CSV/XLSX con preview, validación de filas, categorías, stock, costos y atributos.
+- [x] Pruebas de aislamiento multi-tenant para pedidos, atributos e importación.
+

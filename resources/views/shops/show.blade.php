@@ -18,7 +18,7 @@
         'maxStock' => $p->isInventoryTracked() ? max(1, (int) $p->inventory->stock_quantity) : 9999,
     ])->keyBy('id');
 
-    $activeFiltersCount = ($selectedCategory ? 1 : 0) + ($stock === 'available' ? 1 : 0) + (($minPrice || $maxPrice) ? 1 : 0) + (($sort && $sort !== 'latest') ? 1 : 0);
+    $activeFiltersCount = ($selectedCategory ? 1 : 0) + ($stock === 'available' ? 1 : 0) + (($minPrice || $maxPrice) ? 1 : 0) + (($sort && $sort !== 'latest') ? 1 : 0) + collect($selectedAttributes)->flatten()->count();
 @endphp
 
 <x-layouts.app
@@ -39,6 +39,8 @@
             customerName: '',
             deliveryType: 'delivery',
             customerNotes: '',
+            sendingOrder: false,
+            orderError: '',
             
             // Shared cart (legacy POS inventory checkout for authenticated seller)
             selectedProducts: [],
@@ -115,36 +117,46 @@
             },
             
             // Build and send WhatsApp Order
-            sendWhatsAppOrder() {
-                if (this.cart.length === 0) return;
-                
-                let message = '¡Hola ' + this.shopName + '! 👋\n';
-                message += 'Me gustaría realizar el siguiente pedido desde su catálogo en MiCatalogo:\n\n';
-                message += '🛍️ *DETALLE DEL PEDIDO:*\n';
-                
-                this.cart.forEach(item => {
-                    const subtotal = item.quantity * item.price;
-                    message += '• ' + item.quantity + 'x ' + item.name + ' — RD$ ' + subtotal.toLocaleString('es-DO', { maximumFractionDigits: 0 }) + ' (RD$ ' + item.price.toLocaleString('es-DO', { maximumFractionDigits: 0 }) + ' c/u)\n';
-                });
-                
-                message += '\n💰 *TOTAL A PAGAR: RD$ ' + this.cartTotal.toLocaleString('es-DO', { maximumFractionDigits: 0 }) + '*\n';
-                
-                if (this.customerName.trim()) {
-                    message += '👤 *Cliente:* ' + this.customerName.trim() + '\n';
+            async sendWhatsAppOrder() {
+                if (this.cart.length === 0 || this.sendingOrder) return;
+
+                this.sendingOrder = true;
+                this.orderError = '';
+                const popup = window.open('about:blank', '_blank');
+
+                try {
+                    const response = await fetch('{{ route('orders.store', $shop) }}', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        },
+                        body: JSON.stringify({
+                            items: this.cart.map(item => ({ id: item.id, quantity: item.quantity })),
+                            customer_name: this.customerName.trim() || null,
+                            delivery_type: this.deliveryType,
+                            notes: this.customerNotes.trim() || null,
+                        }),
+                    });
+                    const payload = await response.json().catch(() => ({}));
+
+                    if (!response.ok) {
+                        throw new Error(payload.message || 'No se pudo preparar el pedido. Revisa las existencias.');
+                    }
+
+                    this.clearCart();
+                    if (popup) {
+                        popup.location = payload.whatsapp_url;
+                    } else {
+                        window.location.href = payload.whatsapp_url;
+                    }
+                } catch (error) {
+                    if (popup) popup.close();
+                    this.orderError = error.message;
+                    this.sendingOrder = false;
                 }
-                
-                @if ($shop->offers_shipping)
-                    message += '📦 *Entrega:* ' + (this.deliveryType === 'delivery' ? 'Envío a domicilio' : 'Retiro en tienda') + '\n';
-                @endif
-                
-                if (this.customerNotes.trim()) {
-                    message += '📝 *Dirección / Comentarios:* ' + this.customerNotes.trim() + '\n';
-                }
-                
-                message += '\n🔗 *Catálogo:* ' + window.location.href.split('?')[0];
-                
-                const waUrl = 'https://wa.me/' + this.shopWaCode + this.shopWaNumber + '?text=' + encodeURIComponent(message);
-                window.open(waUrl, '_blank');
             },
 
             // Legacy POS / Seller Inventory checkout methods
@@ -980,11 +992,14 @@
                                     <button 
                                         type="button" 
                                         @click="sendWhatsAppOrder()" 
+                                        :disabled="sendingOrder"
                                         class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3.5 px-4 text-sm font-extrabold text-white shadow-md hover:bg-emerald-700 transition active:scale-98 cursor-pointer"
                                     >
                                         <svg class="h-5 w-5 fill-current shrink-0" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
-                                        <span>Enviar pedido por WhatsApp</span>
+                                        <span x-text="sendingOrder ? 'Preparando pedido...' : 'Enviar pedido por WhatsApp'"></span>
                                     </button>
+
+                                    <p x-show="orderError" x-text="orderError" class="rounded-lg bg-rose-50 px-3 py-2 text-[11px] font-semibold text-rose-700" role="alert"></p>
 
                                     <p class="text-center text-[11px] text-slate-500 font-medium">
                                         Trato directo con el vendedor. Sin comisiones.
@@ -1052,6 +1067,12 @@
                                 @if ($searchQuery)
                                     <input type="hidden" name="q" value="{{ $searchQuery }}">
                                 @endif
+                                @if ($selectedCategory)
+                                    <input type="hidden" name="categoria" value="{{ $selectedCategory->slug }}">
+                                @endif
+                                @if ($stock === 'available')
+                                    <input type="hidden" name="stock" value="available">
+                                @endif
 
                                 <!-- Stock Status Filter -->
                                 <div>
@@ -1111,6 +1132,22 @@
                                         </div>
                                     </div>
                                 @endif
+
+                                <!-- Dynamic Attribute Filters -->
+                                @foreach ($attributeDefinitions as $definition)
+                                    @php $selectedValues = $selectedAttributes[$definition->slug] ?? []; @endphp
+                                    <div>
+                                        <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-2">{{ $definition->name }}</label>
+                                        <div class="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                                            @foreach ($definition->values->pluck('value')->unique()->sort()->values() as $value)
+                                                <label class="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-slate-700 hover:bg-slate-50">
+                                                    <input type="checkbox" name="atributo[{{ $definition->slug }}][]" value="{{ $value }}" @checked(in_array($value, $selectedValues, true)) class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                                                    <span class="truncate">{{ $value }}</span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endforeach
 
                                 <!-- Price Range Filter -->
                                 <div>

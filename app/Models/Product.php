@@ -107,6 +107,11 @@ class Product extends Model
         return $this->hasOne(ProductInventory::class);
     }
 
+    public function attributeValues(): HasMany
+    {
+        return $this->hasMany(ProductAttributeValue::class);
+    }
+
     public function sourceProduct(): BelongsTo
     {
         return $this->belongsTo(self::class, 'inventory_source_product_id');

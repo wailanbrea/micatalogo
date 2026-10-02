@@ -6,11 +6,13 @@ use App\Http\Controllers\AdminModerationController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\CatalogHomeController;
 use App\Http\Controllers\EmailVerificationCodeController;
+use App\Http\Controllers\PublicOrderController;
 use App\Http\Controllers\PublicProductController;
 use App\Http\Controllers\PublicReportController;
 use App\Http\Controllers\PublicShopController;
 use App\Http\Controllers\SellerBulkProductController;
 use App\Http\Controllers\SellerInventoryController;
+use App\Http\Controllers\SellerInventoryImportController;
 use App\Http\Controllers\SellerProductController;
 use App\Http\Controllers\SellerShopController;
 use App\Http\Controllers\SellerShopMetricController;
@@ -25,6 +27,7 @@ Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 Route::scopeBindings()->group(function () {
     Route::get('/tienda/{shop:slug}', [PublicShopController::class, 'show'])->name('shops.show');
     Route::get('/tienda/{shop:slug}/producto/{product:slug}', [PublicProductController::class, 'show'])->name('products.show');
+    Route::post('/tienda/{shop:slug}/pedido', [PublicOrderController::class, 'store'])->name('orders.store');
 
     Route::get('/r/wa/tienda/{shop:slug}', [WhatsAppRedirectController::class, 'shop'])->name('track.wa.shop');
     Route::get('/r/wa/tienda/{shop:slug}/producto/{product:slug}', [WhatsAppRedirectController::class, 'product'])->name('track.wa.product');
@@ -61,6 +64,9 @@ Route::middleware(['auth', 'verified'])->prefix('panel')->name('seller.')->group
         Route::post('/tiendas/{shop}/productos', [SellerProductController::class, 'store'])->name('shops.products.store');
         Route::get('/tiendas/{shop}/subida-masiva', [SellerBulkProductController::class, 'create'])->name('shops.products.bulk.create');
         Route::post('/tiendas/{shop}/subida-masiva', [SellerBulkProductController::class, 'store'])->name('shops.products.bulk.store');
+        Route::get('/tiendas/{shop}/importar', [SellerInventoryImportController::class, 'create'])->name('shops.products.import.create');
+        Route::post('/tiendas/{shop}/importar/previsualizar', [SellerInventoryImportController::class, 'preview'])->name('shops.products.import.preview');
+        Route::post('/tiendas/{shop}/importar', [SellerInventoryImportController::class, 'store'])->name('shops.products.import.store');
         Route::get('/tiendas/{shop}/productos/{product}/editar', [SellerProductController::class, 'edit'])->middleware('can:update,product')->name('shops.products.edit');
         Route::put('/tiendas/{shop}/productos/{product}', [SellerProductController::class, 'update'])->middleware('can:update,product')->name('shops.products.update');
         Route::delete('/tiendas/{shop}/productos/{product}', [SellerProductController::class, 'destroy'])->middleware('can:delete,product')->name('shops.products.destroy');

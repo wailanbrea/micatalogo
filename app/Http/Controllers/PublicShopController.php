@@ -24,6 +24,10 @@ class PublicShopController extends Controller
         $maxPrice = $request->filled('max_price') && is_numeric($request->query('max_price')) ? (float) $request->query('max_price') : null;
         $stock = $request->query('stock');
         $sort = $request->query('sort', 'latest');
+        $selectedAttributes = collect($request->input('atributo', []))
+            ->map(fn ($values) => is_array($values) ? collect($values)->filter()->values()->all() : array_filter([(string) $values]))
+            ->filter(fn ($values) => $values !== [])
+            ->all();
         $cartIds = collect(explode(',', (string) $request->query('cart', '')))
             ->filter(fn ($publicId) => $publicId !== '')
             ->take(20)
@@ -77,7 +81,19 @@ class PublicShopController extends Controller
                     ->orWhere('brand', 'like', "%{$escaped}%")
                     ->orWhere('product_code', 'like', "%{$escaped}%")
                     ->orWhere('description', 'like', "%{$escaped}%")
-                    ->orWhereHas('shopCategory', fn ($category) => $category->where('name', 'like', "%{$escaped}%"));
+                    ->orWhereHas('shopCategory', fn ($category) => $category->where('name', 'like', "%{$escaped}%"))
+                    ->orWhereHas('attributeValues', fn ($attributes) => $attributes
+                        ->where('value', 'like', "%{$escaped}%")
+                        ->orWhereHas('attributeDefinition', fn ($definition) => $definition->where('name', 'like', "%{$escaped}%")));
+            });
+        }
+
+        foreach ($selectedAttributes as $slug => $values) {
+            $productsQuery->whereHas('attributeValues', function ($attributeValues) use ($slug, $values, $shop) {
+                $attributeValues->whereIn('value', $values)
+                    ->whereHas('attributeDefinition', fn ($definition) => $definition
+                        ->where('shop_id', $shop->id)
+                        ->where('slug', $slug));
             });
         }
 
@@ -119,9 +135,19 @@ class PublicShopController extends Controller
             || $minPrice !== null
             || $maxPrice !== null
             || $stock === 'available'
+            || $selectedAttributes !== []
             || ($sort && $sort !== 'latest');
 
         $products = $productsQuery->paginate(16)->withQueryString();
+
+        $attributeDefinitions = $shop->attributeDefinitions()
+            ->where('filterable', true)
+            ->with(['values' => fn ($query) => $query->whereHas('product', fn ($product) => $product
+                ->where('shop_id', $shop->id)
+                ->where('moderation_status', ProductModerationStatus::Active))])
+            ->get()
+            ->filter(fn ($definition) => $definition->values->isNotEmpty())
+            ->values();
 
         return view('shops.show', compact(
             'shop',
@@ -134,7 +160,7 @@ class PublicShopController extends Controller
             'stock',
             'sort',
             'hasActiveFilters',
-            'cartItems'
+            'cartItems', 'attributeDefinitions', 'selectedAttributes'
         ));
     }
 }

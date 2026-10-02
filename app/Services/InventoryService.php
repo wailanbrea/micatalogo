@@ -3,8 +3,8 @@
 namespace App\Services;
 
 use App\Enums\ProductAvailabilityStatus;
-use App\Models\Invoice;
 use App\Models\InventoryMovement;
+use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\ProductInventory;
 use App\Models\Shop;
@@ -119,7 +119,7 @@ class InventoryService
     /**
      * Register all lines from a shared cart as one atomic checkout.
      *
-     * @param array<int, array{product: Product, quantity: int}> $sales
+     * @param  array<int, array{product: Product, quantity: int}>  $sales
      * @return array<int, InventoryMovement>
      */
     public function recordCartSales(array $sales, ?int $userId = null): array
@@ -335,8 +335,8 @@ class InventoryService
     /**
      * Persist a price snapshot and link the resulting invoice to its movements.
      *
-     * @param array<int, array{product: Product, quantity: int}> $sales
-     * @param array<int, InventoryMovement> $movements
+     * @param  array<int, array{product: Product, quantity: int}>  $sales
+     * @param  array<int, InventoryMovement>  $movements
      */
     private function createInvoiceForSales(int $shopId, array $sales, array $movements, ?int $userId): Invoice
     {

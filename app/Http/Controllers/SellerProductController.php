@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductModerationStatus;
 use App\Http\Requests\ProductRequest;
+use App\Models\AttributeDefinition;
 use App\Models\GlobalCategory;
 use App\Models\Product;
 use App\Models\ProductImage;
@@ -58,6 +59,7 @@ class SellerProductController extends Controller
             'globalCategories' => GlobalCategory::query()->where('status', 'active')->orderBy('sort_order')->orderBy('name')->get(),
             'shopCategories' => $shop->categories()->where('status', 'active')->orderBy('name')->get(),
             'sourceProducts' => $shop->products()->whereIn('sale_unit', ['bottle', 'ml'])->orderBy('name')->get(),
+            'attributeDefinitions' => $shop->attributeDefinitions()->get(),
         ]);
     }
 
@@ -96,7 +98,9 @@ class SellerProductController extends Controller
 
             unset($attributes['track_inventory'], $attributes['cost_price'], $attributes['stock_quantity'], $attributes['low_stock_threshold']);
 
+            unset($attributes['attributes']);
             $product = $lockedShop->products()->create($attributes);
+            $this->syncProductAttributes($product, $validated, $lockedShop);
 
             $inventoryData['stock_quantity'] = $this->presentationStock($product, $inventoryData['stock_quantity']);
             $inventoryData['available_ml'] = $this->availableMlForStock($product, $inventoryData['stock_quantity']);
@@ -125,7 +129,7 @@ class SellerProductController extends Controller
 
     public function edit(Shop $shop, Product $product): View
     {
-        $product->loadMissing('inventory');
+        $product->loadMissing(['inventory', 'attributeValues.attributeDefinition']);
 
         return view('seller.products.form', [
             'shop' => $shop,
@@ -133,6 +137,7 @@ class SellerProductController extends Controller
             'globalCategories' => GlobalCategory::query()->where('status', 'active')->orderBy('sort_order')->orderBy('name')->get(),
             'shopCategories' => $shop->categories()->where('status', 'active')->orderBy('name')->get(),
             'sourceProducts' => $shop->products()->whereKeyNot($product->id)->whereIn('sale_unit', ['bottle', 'ml'])->orderBy('name')->get(),
+            'attributeDefinitions' => $shop->attributeDefinitions()->get(),
         ]);
     }
 
@@ -145,7 +150,7 @@ class SellerProductController extends Controller
             $this->validatePresentation($validated, $shop, $product);
 
             $attributes = $this->attributes($validated, $shop, $product);
-            unset($attributes['track_inventory'], $attributes['cost_price'], $attributes['stock_quantity'], $attributes['low_stock_threshold']);
+            unset($attributes['track_inventory'], $attributes['cost_price'], $attributes['stock_quantity'], $attributes['low_stock_threshold'], $attributes['attributes']);
             $presentation = clone $product;
             $presentation->fill($attributes);
 
@@ -218,6 +223,7 @@ class SellerProductController extends Controller
             }
 
             $product->update($attributes);
+            $this->syncProductAttributes($product, $validated, $shop);
         });
 
         return to_route('seller.shops.products.index', $shop)->with('status', 'Producto actualizado.');
@@ -301,6 +307,47 @@ class SellerProductController extends Controller
             'slug' => $slug,
             'currency' => config('catalog.currency', 'DOP'),
         ];
+    }
+
+    private function syncProductAttributes(Product $product, array $input, Shop $shop): void
+    {
+        $categoryId = $product->shop_category_id;
+        $definitionIds = [];
+
+        foreach ($input['attributes'] ?? [] as $row) {
+            $name = trim((string) ($row['name'] ?? ''));
+            $value = trim((string) ($row['value'] ?? ''));
+            if ($name === '' || $value === '') {
+                continue;
+            }
+
+            $definition = AttributeDefinition::firstOrCreate(
+                [
+                    'shop_id' => $shop->id,
+                    'shop_category_id' => $categoryId,
+                    'slug' => Str::slug($name),
+                ],
+                [
+                    'name' => $name,
+                    'type' => 'text',
+                    'filterable' => (bool) ($row['filterable'] ?? true),
+                    'display_order' => count($definitionIds),
+                ]
+            );
+
+            $definition->update([
+                'name' => $name,
+                'filterable' => (bool) ($row['filterable'] ?? $definition->filterable),
+            ]);
+            $definitionIds[] = $definition->id;
+
+            $product->attributeValues()->updateOrCreate(
+                ['attribute_definition_id' => $definition->id],
+                ['value' => $value]
+            );
+        }
+
+        $product->attributeValues()->when($definitionIds !== [], fn ($query) => $query->whereNotIn('attribute_definition_id', $definitionIds))->when($definitionIds === [], fn ($query) => $query)->delete();
     }
 
     private function validatePresentation(array $input, Shop $shop, ?Product $product = null): void

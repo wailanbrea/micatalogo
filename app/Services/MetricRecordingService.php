@@ -93,6 +93,21 @@ class MetricRecordingService
         $this->recordShopWhatsAppClick($product->shop);
     }
 
+    public function recordShopOrderSent(Shop $shop): void
+    {
+        DB::table('shop_daily_metrics')->upsert(
+            [
+                'shop_id' => $shop->id,
+                'date' => now()->toDateString(),
+                'page_views' => 0,
+                'whatsapp_clicks' => 0,
+                'orders_sent' => 1,
+            ],
+            ['shop_id', 'date'],
+            ['orders_sent' => DB::raw('orders_sent + 1')]
+        );
+    }
+
     private function isCrawler(?Request $request): bool
     {
         if (! $request) {
