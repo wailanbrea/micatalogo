@@ -234,7 +234,7 @@
                             <!-- Mockup Store Header -->
                             <div class="bg-slate-50 p-3 rounded-2xl flex items-center justify-between border border-slate-200/80 shadow-xs">
                                 <div class="flex items-center gap-2.5">
-                                    <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-xs">
+                                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-black text-xs shadow-xs tracking-wider">
                                         BS
                                     </div>
                                     <div class="flex flex-col">
@@ -283,15 +283,15 @@
                                      x-transition:enter-start="opacity-0 scale-95"
                                      x-transition:enter-end="opacity-100 scale-100"
                                      class="bg-white rounded-2xl p-2.5 border border-slate-200/90 shadow-xs flex gap-3 items-center hover:border-blue-300 transition-colors">
-                                    <div class="w-20 h-20 rounded-xl bg-slate-100 flex items-center justify-center text-3xl shrink-0 overflow-hidden border border-slate-100">
-                                        👟
+                                    <div class="w-20 h-20 rounded-xl bg-slate-100 shrink-0 overflow-hidden border border-slate-100 shadow-2xs">
+                                        <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=300&h=300&q=80" alt="Nike Air Max 270" class="w-full h-full object-cover object-center" loading="lazy">
                                     </div>
                                     <div class="flex flex-col flex-1 min-w-0">
                                         <div class="flex items-center justify-between gap-1">
                                             <span class="font-bold text-xs text-slate-900 truncate">Nike Air Max 270</span>
                                             <span class="text-[9px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-md shrink-0">● En stock</span>
                                         </div>
-                                        <span class="text-sm font-extrabold text-blue-600 mt-0.5">RD$ 4,500</span>
+                                        <span class="text-sm font-black text-slate-900 mt-0.5 tabular-nums whitespace-nowrap">RD$ 4,500</span>
                                         <button type="button" @click="sendDemoWa('Nike Air Max 270')" class="mt-1.5 inline-flex items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white py-1 px-2 rounded-lg text-[10px] font-bold shadow-xs w-full transition-all cursor-pointer">
                                             <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
                                             <span>Consultar por WhatsApp</span>
@@ -305,15 +305,15 @@
                                      x-transition:enter-start="opacity-0 scale-95"
                                      x-transition:enter-end="opacity-100 scale-100"
                                      class="bg-white rounded-2xl p-2.5 border border-slate-200/90 shadow-xs flex gap-3 items-center hover:border-blue-300 transition-colors">
-                                    <div class="w-20 h-20 rounded-xl bg-slate-100 flex items-center justify-center text-3xl shrink-0 overflow-hidden border border-slate-100">
-                                        👕
+                                    <div class="w-20 h-20 rounded-xl bg-slate-100 shrink-0 overflow-hidden border border-slate-100 shadow-2xs">
+                                        <img src="https://images.unsplash.com/photo-1581655353564-df123a1eb820?auto=format&fit=crop&w=300&h=300&q=80" alt="Camisa Polo Slim Fit" class="w-full h-full object-cover object-center" loading="lazy">
                                     </div>
                                     <div class="flex flex-col flex-1 min-w-0">
                                         <div class="flex items-center justify-between gap-1">
                                             <span class="font-bold text-xs text-slate-900 truncate">Camisa Polo Slim Fit</span>
                                             <span class="text-[9px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-md shrink-0">● En stock</span>
                                         </div>
-                                        <span class="text-sm font-extrabold text-blue-600 mt-0.5">RD$ 1,200</span>
+                                        <span class="text-sm font-black text-slate-900 mt-0.5 tabular-nums whitespace-nowrap">RD$ 1,200</span>
                                         <button type="button" @click="sendDemoWa('Camisa Polo Slim Fit')" class="mt-1.5 inline-flex items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white py-1 px-2 rounded-lg text-[10px] font-bold shadow-xs w-full transition-all cursor-pointer">
                                             <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
                                             <span>Consultar por WhatsApp</span>
@@ -327,15 +327,15 @@
                                      x-transition:enter-start="opacity-0 scale-95"
                                      x-transition:enter-end="opacity-100 scale-100"
                                      class="bg-white rounded-2xl p-2.5 border border-slate-200/90 shadow-xs flex gap-3 items-center hover:border-blue-300 transition-colors">
-                                    <div class="w-20 h-20 rounded-xl bg-slate-100 flex items-center justify-center text-3xl shrink-0 overflow-hidden border border-slate-100">
-                                        🧢
+                                    <div class="w-20 h-20 rounded-xl bg-slate-100 shrink-0 overflow-hidden border border-slate-100 shadow-2xs">
+                                        <img src="https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&w=300&h=300&q=80" alt="Gorra Urbana Street" class="w-full h-full object-cover object-center" loading="lazy">
                                     </div>
                                     <div class="flex flex-col flex-1 min-w-0">
                                         <div class="flex items-center justify-between gap-1">
                                             <span class="font-bold text-xs text-slate-900 truncate">Gorra Urbana Street</span>
                                             <span class="text-[9px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-md shrink-0">● En stock</span>
                                         </div>
-                                        <span class="text-sm font-extrabold text-blue-600 mt-0.5">RD$ 850</span>
+                                        <span class="text-sm font-black text-slate-900 mt-0.5 tabular-nums whitespace-nowrap">RD$ 850</span>
                                         <button type="button" @click="sendDemoWa('Gorra Urbana Street')" class="mt-1.5 inline-flex items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white py-1 px-2 rounded-lg text-[10px] font-bold shadow-xs w-full transition-all cursor-pointer">
                                             <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
                                             <span>Consultar por WhatsApp</span>
@@ -352,7 +352,7 @@
             <!-- ======================================================== -->
             <!-- 2. SECCIÓN ESTILO PUNTTO: "HECHO PARA LO QUE VENDES" (SMARTPHONE INTERACTIVO CON FOTOS REALES) -->
             <!-- ======================================================== -->
-            <section class="w-full bg-slate-50/80 border-b border-slate-200/80 py-16 lg:py-24" id="ejemplos"
+            <section class="w-full bg-slate-50/80 border-b border-slate-200/80 pt-20 pb-16 lg:py-24 scroll-mt-16" id="ejemplos"
                      x-data="{
                          activeRubro: 'perfumeria',
                          cartCount: 2,
