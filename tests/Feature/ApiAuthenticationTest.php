@@ -86,3 +86,9 @@ test('BSPOS tokens stop working when the account becomes suspended', function ()
         ->assertForbidden()
         ->assertJsonPath('message', 'Esta cuenta no está activa.');
 });
+
+test('unauthenticated API requests return JSON without requiring an accept header', function () {
+    $this->get('/api/v1/me')
+        ->assertUnauthorized()
+        ->assertJsonPath('message', 'Unauthenticated.');
+});
