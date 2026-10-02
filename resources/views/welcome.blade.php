@@ -350,7 +350,7 @@
 
             
             <!-- ======================================================== -->
-            <!-- 2. SECCIÓN ESTILO PUNTTO: "HECHO PARA LO QUE VENDES" (SMARTPHONE INTERACTIVO) -->
+            <!-- 2. SECCIÓN ESTILO PUNTTO: "HECHO PARA LO QUE VENDES" (SMARTPHONE INTERACTIVO CON FOTOS REALES) -->
             <!-- ======================================================== -->
             <section class="w-full bg-slate-50/80 border-b border-slate-200/80 py-16 lg:py-24" id="ejemplos"
                      x-data="{
@@ -372,42 +372,10 @@
                                  cats: ['Todo (26)', 'Decants (8)', 'Diseñador (12)', 'Árabes (6)'],
                                  brands: ['Lattafa', 'Valentino', 'Versace', 'Armaf'],
                                  products: [
-                                     { id: 1, brand: 'LATTAFA', name: 'Yara Candy Eau de Parfum', detail: 'EDP · 100ml', price: '3,500', icon: '🧴', tag: 'Top Ventas' },
-                                     { id: 2, brand: 'VALENTINO', name: 'Uomo Born in Roma Intense', detail: 'EDP · 100ml', price: '8,500', icon: '✨', tag: 'Exclusivo' },
-                                     { id: 3, brand: 'VERSACE', name: 'Eros Flame Pour Homme', detail: 'EDP · 100ml', price: '5,900', icon: '🔥', tag: 'En stock' },
-                                     { id: 4, brand: 'ARMAF', name: 'Club de Nuit Intense Man', detail: 'EDT · 105ml', price: '3,200', icon: '💎', tag: 'Clásico' }
-                                 ]
-                             },
-                             vapes: {
-                                 name: 'Vapes & Pods',
-                                 sub: 'Tipo · Nicotina · Capacidad',
-                                 storeName: 'Cloud Pods RD',
-                                 tag: 'Vape Shop & Dispositivos Desechables',
-                                 avatar: 'CP',
-                                 color: 'from-purple-600 to-indigo-600',
-                                 cats: ['Todo (32)', 'Desechables (18)', 'Pods Recargables (8)', 'Líquidos (6)'],
-                                 brands: ['Lost Mary', 'Geek Bar', 'Elf Bar', 'Oxbar'],
-                                 products: [
-                                     { id: 5, brand: 'LOST MARY', name: 'MO20000 Pro Ice Watermelon', detail: '20,000 Puffs · 5%', price: '1,350', icon: '💨', tag: 'Nuevo' },
-                                     { id: 6, brand: 'GEEK BAR', name: 'Pulse 15000 Blow Pop', detail: '15,000 Puffs · Modo Pulse', price: '1,200', icon: '⚡', tag: 'Top Ventas' },
-                                     { id: 7, brand: 'OXBAR', name: 'Magic Maze 2.0 Blue Razz', detail: '30,000 Puffs · Display LED', price: '1,450', icon: '🫐', tag: 'En stock' },
-                                     { id: 8, brand: 'ELF BAR', name: 'BC5000 Strawberry Kiwi', detail: '5,000 Puffs · Recargable Type-C', price: '850', icon: '🍓', tag: 'Oferta' }
-                                 ]
-                             },
-                             celulares: {
-                                 name: 'Celulares & Tech',
-                                 sub: 'Modelo · Almacenamiento · Condición',
-                                 storeName: 'iShop Móvil RD',
-                                 tag: 'iPhones, Accesorios y Gadgets Garantizados',
-                                 avatar: 'IM',
-                                 color: 'from-blue-600 to-cyan-600',
-                                 cats: ['Todo (41)', 'iPhones (18)', 'AirPods (7)', 'Accesorios (16)'],
-                                 brands: ['Apple', 'Samsung', 'Anker', 'JBL'],
-                                 products: [
-                                     { id: 9, brand: 'APPLE', name: 'iPhone 15 Pro Max Titanium', detail: '256GB · Sellado · Garantía 1 año', price: '58,000', icon: '📱', tag: 'Nuevo' },
-                                     { id: 10, brand: 'APPLE', name: 'AirPods Pro 2da Gen USB-C', detail: 'Cancelación Activa de Ruido', price: '12,500', icon: '🎧', tag: 'Original' },
-                                     { id: 11, brand: 'APPLE', name: 'Apple Watch Series 9 45mm', detail: 'Aluminio Midnight · GPS', price: '21,000', icon: '⌚', tag: 'En stock' },
-                                     { id: 12, brand: 'ANKER', name: 'Cargador Rápido GaN 30W', detail: 'USB-C Cable Trenzado incluido', price: '1,650', icon: '🔌', tag: 'Top Accesorio' }
+                                     { id: 1, brand: 'LATTAFA', name: 'Yara Candy Eau de Parfum', detail: 'EDP · 100ml Original', price: '3,500', image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=400&h=400&q=80', tag: 'Top Ventas' },
+                                     { id: 2, brand: 'VALENTINO', name: 'Uomo Born in Roma Intense', detail: 'EDP · 100ml Importado', price: '8,500', image: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=400&h=400&q=80', tag: 'Exclusivo' },
+                                     { id: 3, brand: 'VERSACE', name: 'Eros Flame Pour Homme', detail: 'EDP · 100ml Sellado', price: '5,900', image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=400&h=400&q=80', tag: 'En stock' },
+                                     { id: 4, brand: 'ARMAF', name: 'Club de Nuit Intense Man', detail: 'EDT · 105ml Clásico', price: '3,200', image: 'https://images.unsplash.com/photo-1616949755610-8c9bbc08f138?auto=format&fit=crop&w=400&h=400&q=80', tag: 'Popular' }
                                  ]
                              },
                              tenis: {
@@ -420,26 +388,26 @@
                                  cats: ['Todo (35)', 'Nike (15)', 'Adidas (10)', 'New Balance (10)'],
                                  brands: ['Nike', 'Adidas', 'New Balance', 'Jordan'],
                                  products: [
-                                     { id: 13, brand: 'NIKE', name: 'Air Max 270 React Triple Black', detail: 'Talla 42 (US 9) · Nuevo en caja', price: '4,800', icon: '👟', tag: 'Top Ventas' },
-                                     { id: 14, brand: 'ADIDAS', name: 'Samba OG Classic White/Black', detail: 'Talla 41 (US 8.5) · Cuero genuino', price: '5,200', icon: '👟', tag: 'Tendencia' },
-                                     { id: 15, brand: 'NEW BALANCE', name: '550 Vintage White Green', detail: 'Talla 43 (US 9.5) · Edición Retro', price: '4,950', icon: '👟', tag: 'En stock' },
-                                     { id: 16, brand: 'JORDAN', name: 'Air Jordan 1 Retro High Chicago', detail: 'Talla 42.5 (US 9) · Premium Leather', price: '8,900', icon: '🏀', tag: 'Exclusivo' }
+                                     { id: 13, brand: 'NIKE', name: 'Air Max 270 React Triple Black', detail: 'Talla 42 (US 9) · Nuevo en caja', price: '4,800', image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=400&h=400&q=80', tag: 'Top Ventas' },
+                                     { id: 14, brand: 'ADIDAS', name: 'Samba OG Classic White/Black', detail: 'Talla 41 (US 8.5) · Cuero genuino', price: '5,200', image: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?auto=format&fit=crop&w=400&h=400&q=80', tag: 'Tendencia' },
+                                     { id: 15, brand: 'NEW BALANCE', name: '550 Vintage White Green', detail: 'Talla 43 (US 9.5) · Edición Retro', price: '4,950', image: 'https://images.unsplash.com/photo-1607522370275-f14206abe5d3?auto=format&fit=crop&w=400&h=400&q=80', tag: 'En stock' },
+                                     { id: 16, brand: 'JORDAN', name: 'Air Jordan 1 Retro High Chicago', detail: 'Talla 42.5 (US 9) · Cuero Premium', price: '8,900', image: 'https://images.unsplash.com/photo-1552346154-21d32810aba3?auto=format&fit=crop&w=400&h=400&q=80', tag: 'Exclusivo' }
                                  ]
                              },
-                             joyeria: {
-                                 name: 'Joyería & Relojes',
-                                 sub: 'Material · Tipo · Género',
-                                 storeName: 'Aureum Joyería Fina',
-                                 tag: 'Plata Italiana 925 y Oro Laminado 18k',
-                                 avatar: 'AJ',
-                                 color: 'from-amber-500 to-yellow-600',
-                                 cats: ['Todo (28)', 'Cadenas (10)', 'Anillos (8)', 'Relojes (10)'],
-                                 brands: ['Aureum', 'Casio Vintage', 'Silver Italy', 'Tissot'],
+                             celulares: {
+                                 name: 'Celulares & Tech',
+                                 sub: 'Modelo · Almacenamiento · Condición',
+                                 storeName: 'iShop Móvil RD',
+                                 tag: 'iPhones, Accesorios y Gadgets Garantizados',
+                                 avatar: 'IM',
+                                 color: 'from-blue-600 to-cyan-600',
+                                 cats: ['Todo (41)', 'iPhones (18)', 'AirPods (7)', 'Accesorios (16)'],
+                                 brands: ['Apple', 'Samsung', 'Anker', 'JBL'],
                                  products: [
-                                     { id: 17, brand: 'SILVER ITALY', name: 'Cadena Cubana Maciza 60cm', detail: 'Plata Ley 925 · 8mm de grosor', price: '4,200', icon: '⛓️', tag: 'Plata 925' },
-                                     { id: 18, brand: 'AUREUM', name: 'Anillo Solitario Circón Suizo', detail: 'Baño de Oro 18K · Talla 7', price: '1,850', icon: '💍', tag: 'Garantía' },
-                                     { id: 19, brand: 'CASIO', name: 'Reloj Vintage Digital Dorado', detail: 'Acero Inoxidable · Alarma & Crono', price: '2,900', icon: '⌚', tag: 'Clásico' },
-                                     { id: 20, brand: 'AUREUM', name: 'Pulsera Tennis Zirconias 4mm', detail: 'Cierre doble seguridad · 19cm', price: '3,400', icon: '✨', tag: 'En stock' }
+                                     { id: 9, brand: 'APPLE', name: 'iPhone 15 Pro Max Titanium', detail: '256GB · Sellado · Garantía 1 año', price: '58,000', image: 'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?auto=format&fit=crop&w=400&h=400&q=80', tag: 'Nuevo' },
+                                     { id: 10, brand: 'APPLE', name: 'AirPods Pro 2da Gen USB-C', detail: 'Cancelación Activa de Ruido', price: '12,500', image: 'https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?auto=format&fit=crop&w=400&h=400&q=80', tag: 'Original' },
+                                     { id: 11, brand: 'APPLE', name: 'Apple Watch Series 9 45mm', detail: 'Aluminio Midnight · Sensor Salud', price: '21,000', image: 'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?auto=format&fit=crop&w=400&h=400&q=80', tag: 'En stock' },
+                                     { id: 12, brand: 'ANKER', name: 'Cargador Rápido GaN 30W USB-C', detail: 'Cable Trenzado alta durabilidad', price: '1,650', image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=400&h=400&q=80', tag: 'Accesorio' }
                                  ]
                              },
                              ropa: {
@@ -452,10 +420,26 @@
                                  cats: ['Todo (50)', 'Camisas (20)', 'Pantalones (15)', 'Bermudas (15)'],
                                  brands: ['Zara Man', 'Lino Premium', 'Streetwear RD', 'Polo Club'],
                                  products: [
-                                     { id: 21, brand: 'LINO PREMIUM', name: 'Camisa Lino Manga Corta Slim', detail: '100% Lino Transpirable · Talla M', price: '1,450', icon: '👕', tag: 'Fresco' },
-                                     { id: 22, brand: 'STREETWEAR RD', name: 'Pantalón Cargo Oversized Negro', detail: 'Bolsillos laterales · Talla 32', price: '2,200', icon: '👖', tag: 'Top Ventas' },
-                                     { id: 23, brand: 'POLO CLUB', name: 'Polo Piqué Algodón Pima', detail: 'Cuello clásico · Talla L · Azul Marino', price: '1,150', icon: '👕', tag: 'Básico' },
-                                     { id: 24, brand: 'STREETWEAR RD', name: 'Chaqueta Bomber Street Urbana', detail: 'Cierre frontal · Forro térmico · Talla M', price: '3,400', icon: '🧥', tag: 'Nuevo' }
+                                     { id: 21, brand: 'LINO PREMIUM', name: 'Camisa Lino Manga Corta Slim', detail: '100% Lino Transpirable · Talla M', price: '1,450', image: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=400&h=400&q=80', tag: 'Fresco' },
+                                     { id: 22, brand: 'STREETWEAR RD', name: 'Pantalón Cargo Oversized Negro', detail: 'Bolsillos laterales · Talla 32', price: '2,200', image: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&w=400&h=400&q=80', tag: 'Top Ventas' },
+                                     { id: 23, brand: 'POLO CLUB', name: 'Polo Piqué Algodón Pima', detail: 'Cuello clásico · Talla L · Azul Marino', price: '1,150', image: 'https://images.unsplash.com/photo-1581655353564-df123a1eb820?auto=format&fit=crop&w=400&h=400&q=80', tag: 'Básico' },
+                                     { id: 24, brand: 'STREETWEAR RD', name: 'Chaqueta Bomber Street Urbana', detail: 'Cierre frontal · Forro térmico · Talla M', price: '3,400', image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=400&h=400&q=80', tag: 'Nuevo' }
+                                 ]
+                             },
+                             joyeria: {
+                                 name: 'Joyería & Relojes',
+                                 sub: 'Material · Tipo · Género',
+                                 storeName: 'Aureum Joyería Fina',
+                                 tag: 'Plata Italiana 925 y Oro Laminado 18k',
+                                 avatar: 'AJ',
+                                 color: 'from-amber-500 to-yellow-600',
+                                 cats: ['Todo (28)', 'Cadenas (10)', 'Anillos (8)', 'Relojes (10)'],
+                                 brands: ['Aureum', 'Casio Vintage', 'Silver Italy', 'Tissot'],
+                                 products: [
+                                     { id: 17, brand: 'SILVER ITALY', name: 'Cadena Cubana Maciza 60cm', detail: 'Plata Ley 925 · 8mm de grosor', price: '4,200', image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=400&h=400&q=80', tag: 'Plata 925' },
+                                     { id: 18, brand: 'AUREUM', name: 'Anillo Solitario Circón Suizo', detail: 'Baño de Oro 18K · Talla 7', price: '1,850', image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=400&h=400&q=80', tag: 'Garantía' },
+                                     { id: 19, brand: 'CASIO', name: 'Reloj Vintage Digital Dorado', detail: 'Acero Inoxidable · Alarma & Crono', price: '2,900', image: 'https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=400&h=400&q=80', tag: 'Clásico' },
+                                     { id: 20, brand: 'AUREUM', name: 'Aretes Perla Cultivada Plata 925', detail: 'Broche mariposa seguro · Hipoalergénico', price: '1,350', image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=400&h=400&q=80', tag: 'En stock' }
                                  ]
                              },
                              reposteria: {
@@ -468,10 +452,26 @@
                                  cats: ['Todo (24)', 'Pasteles (10)', 'Postres Fríos (8)', 'Cafetería (6)'],
                                  brands: ['Artesanal', 'Frutas Frescas', 'Chocolate Belga', 'Gourmet'],
                                  products: [
-                                     { id: 25, brand: 'ARTESANAL', name: 'Cheesecake Frutos Rojos Familiar', detail: '8 a 10 Porciones · Con compota natural', price: '1,250', icon: '🍰', tag: 'Favorito' },
-                                     { id: 26, brand: 'GOURMET', name: 'Pastel Tres Leches Tradicional', detail: 'Merengue flameado con canela · Individual', price: '275', icon: '🍮', tag: 'Fresco del día' },
-                                     { id: 27, brand: 'CHOCOLATE BELGA', name: 'Tarta Chocolate 70% Ganache', detail: 'Bizcocho húmedo · 10 Porciones', price: '1,600', icon: '🍫', tag: 'Premium' },
-                                     { id: 28, brand: 'ARTESANAL', name: 'Caja de 6 Cupcakes Red Velvet', detail: 'Frosting de queso crema suave', price: '650', icon: '🧁', tag: 'Para regalo' }
+                                     { id: 25, brand: 'ARTESANAL', name: 'Cheesecake Frutos Rojos Familiar', detail: '8 a 10 Porciones · Con compota natural', price: '1,250', image: 'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=400&h=400&q=80', tag: 'Favorito' },
+                                     { id: 26, brand: 'GOURMET', name: 'Pastel Gourmet Tres Leches', detail: 'Merengue flameado con canela · Individual', price: '275', image: 'https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?auto=format&fit=crop&w=400&h=400&q=80', tag: 'Fresco' },
+                                     { id: 27, brand: 'CHOCOLATE BELGA', name: 'Tarta Chocolate 70% Ganache', detail: 'Bizcocho húmedo · 10 Porciones', price: '1,600', image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=400&h=400&q=80', tag: 'Premium' },
+                                     { id: 28, brand: 'ARTESANAL', name: 'Caja de 6 Cupcakes Red Velvet', detail: 'Frosting de queso crema suave', price: '650', image: 'https://images.unsplash.com/photo-1587668178277-295251f900ce?auto=format&fit=crop&w=400&h=400&q=80', tag: 'Regalo' }
+                                 ]
+                             },
+                             vapes: {
+                                 name: 'Vapes & Pods',
+                                 sub: 'Tipo · Nicotina · Capacidad',
+                                 storeName: 'Cloud Pods RD',
+                                 tag: 'Vape Shop & Dispositivos Desechables',
+                                 avatar: 'CP',
+                                 color: 'from-purple-600 to-indigo-600',
+                                 cats: ['Todo (32)', 'Desechables (18)', 'Pods Recargables (8)', 'Líquidos (6)'],
+                                 brands: ['Lost Mary', 'Geek Bar', 'Elf Bar', 'Oxbar'],
+                                 products: [
+                                     { id: 5, brand: 'LOST MARY', name: 'MO20000 Pro Ice Watermelon', detail: '20,000 Puffs · 5%', price: '1,350', image: 'https://images.unsplash.com/photo-1559818454-1b3a36b94e43?auto=format&fit=crop&w=400&h=400&q=80', tag: 'Nuevo' },
+                                     { id: 6, brand: 'GEEK BAR', name: 'Pulse 15000 Blow Pop', detail: '15,000 Puffs · Modo Pulse', price: '1,200', image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=400&h=400&q=80', tag: 'Top Ventas' },
+                                     { id: 7, brand: 'OXBAR', name: 'Magic Maze 2.0 Blue Razz', detail: '30,000 Puffs · Display LED', price: '1,450', image: 'https://images.unsplash.com/photo-1527661591475-527312dd65f5?auto=format&fit=crop&w=400&h=400&q=80', tag: 'En stock' },
+                                     { id: 8, brand: 'ELF BAR', name: 'BC5000 Strawberry Kiwi', detail: '5,000 Puffs · Type-C', price: '850', image: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=400&h=400&q=80', tag: 'Oferta' }
                                  ]
                              }
                          },
@@ -655,21 +655,21 @@
                                         </template>
                                     </div>
 
-                                    <!-- Product 2-Column Grid inside Phone (Scrollable body) -->
+                                    <!-- Product 2-Column Grid inside Phone (With REAL HD Photos like Puntto) -->
                                     <div class="flex-1 overflow-y-auto p-3 space-y-2.5">
                                         <div class="grid grid-cols-2 gap-2">
                                             <template x-for="p in rubros[activeRubro].products" :key="p.id">
-                                                <div class="bg-white rounded-2xl p-2 border border-slate-200/90 shadow-2xs flex flex-col justify-between hover:border-blue-400 transition">
+                                                <div class="bg-white rounded-2xl p-2 border border-slate-200/90 shadow-2xs flex flex-col justify-between hover:border-blue-400 transition group">
                                                     <div>
-                                                        <!-- Product Visual Box -->
-                                                        <div class="w-full aspect-square rounded-xl bg-slate-50 flex items-center justify-center text-3xl border border-slate-100 relative overflow-hidden">
-                                                            <span x-text="p.icon"></span>
-                                                            <span class="absolute top-1 left-1 rounded-md bg-amber-500/90 text-white text-[8px] font-black px-1.5 py-0.2" x-text="p.tag"></span>
+                                                        <!-- Product Visual Image Container -->
+                                                        <div class="w-full aspect-square rounded-xl bg-slate-100 relative overflow-hidden border border-slate-100 shadow-2xs">
+                                                            <img :src="p.image" :alt="p.name" class="w-full h-full object-cover object-center group-hover:scale-105 transition duration-300" loading="lazy">
+                                                            <span class="absolute top-1.5 left-1.5 rounded-md bg-slate-900/80 backdrop-blur-xs text-white text-[8px] font-black px-1.5 py-0.5" x-text="p.tag"></span>
                                                         </div>
 
                                                         <!-- Brand & Name -->
-                                                        <div class="mt-1.5">
-                                                            <span class="text-[9px] font-black uppercase tracking-wider text-slate-400" x-text="p.brand"></span>
+                                                        <div class="mt-2">
+                                                            <span class="text-[9px] font-black uppercase tracking-wider text-slate-400 block" x-text="p.brand"></span>
                                                             <h4 class="text-[11px] font-bold text-slate-900 line-clamp-2 leading-tight" x-text="p.name"></h4>
                                                             <p class="text-[9px] text-slate-500 truncate mt-0.5" x-text="p.detail"></p>
                                                         </div>
@@ -687,7 +687,7 @@
                                                                 <button 
                                                                     type="button" 
                                                                     @click="addToCartSim(p.id)"
-                                                                    class="w-full py-1 px-2 rounded-lg bg-slate-900 hover:bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center gap-1 transition active:scale-95 cursor-pointer shadow-2xs"
+                                                                    class="w-full py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center gap-1 transition active:scale-95 cursor-pointer shadow-2xs"
                                                                 >
                                                                     <span>+ Agregar</span>
                                                                 </button>
@@ -1108,204 +1108,6 @@
                 </div>
             </section>
 
-            <!-- 6. SECCIÓN INVENTARIO BÁSICO CON SIMULADOR INTERACTIVO -->
-            <section class="w-full bg-slate-100/70 border-y border-slate-200/80 py-16 lg:py-24" id="inventario">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
-                        <div class="lg:col-span-5 flex flex-col gap-5">
-                            <span class="text-xs font-bold text-blue-600 uppercase tracking-widest bg-blue-50 border border-blue-100 px-3 py-1 rounded-full self-start">
-                                Orden y claridad
-                            </span>
-                            <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-                                También sabes qué estás vendiendo
-                            </h2>
-                            <p class="text-base sm:text-lg text-slate-600 leading-relaxed">
-                                Registra tus ventas rápidamente y mantén actualizado qué tienes disponible sin complicaciones ni sistemas contables complejos.
-                            </p>
-                            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-                                    📱
-                                </div>
-                                <span class="text-xs sm:text-sm font-semibold text-slate-800">Simple, visual y en tiempo real desde tu propio teléfono.</span>
-                            </div>
-                        </div>
-
-                        <!-- Simulador Interactivo de Inventario (Alpine.js) -->
-                        <div class="lg:col-span-7 flex justify-center"
-                             x-data="{ 
-                                 stock: 8, 
-                                 sales: 12, 
-                                 flashSale: false,
-                                 sellItem() {
-                                     if(this.stock > 0) {
-                                         this.stock--;
-                                         this.sales++;
-                                         this.flashSale = true;
-                                         setTimeout(() => this.flashSale = false, 1500);
-                                     }
-                                 },
-                                 restock() {
-                                     this.stock += 5;
-                                 }
-                             }">
-                            <div class="w-full max-w-xl bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-200 flex flex-col gap-5">
-                                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-xs">
-                                            📦
-                                        </div>
-                                        <span class="text-base font-bold text-slate-900">Control de Stock en Vivo</span>
-                                    </div>
-                                    <span class="text-xs text-slate-500 font-medium">3 productos registrados</span>
-                                </div>
-
-                                <!-- Rows -->
-                                <div class="flex flex-col gap-3">
-                                    <!-- Fila 1 (Interactiva con Simulación) -->
-                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200/80 gap-3 transition-colors"
-                                         :class="{ 'bg-emerald-50/80 border-emerald-300 ring-2 ring-emerald-500/20': flashSale }">
-                                        <div class="flex flex-col">
-                                            <div class="flex items-center gap-2">
-                                                <span class="font-bold text-sm text-slate-900">Nike Air Max 270</span>
-                                                <span x-show="flashSale" x-cloak class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded animate-bounce">+1 Venta!</span>
-                                            </div>
-                                            <div class="flex items-center gap-2 text-slate-500 text-xs mt-0.5">
-                                                <span>Stock: <strong class="text-slate-900 font-bold" x-text="stock">8</strong></span>
-                                                <span>•</span>
-                                                <span>Vendidos: <strong class="text-slate-900 font-bold" x-text="sales">12</strong></span>
-                                            </div>
-                                        </div>
-                                        <div class="flex items-center gap-2">
-                                            <button type="button" @click="sellItem()" class="inline-flex items-center gap-1 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer" title="Prueba registrar una venta">
-                                                <span>⚡ +1 Venta</span>
-                                            </button>
-                                            <span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold">
-                                                Disponible
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Fila 2: Perfume Sauvage -->
-                                    <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
-                                        <div class="flex flex-col">
-                                            <span class="font-bold text-sm text-slate-900">Perfume Sauvage 100ml</span>
-                                            <div class="flex items-center gap-2 text-slate-500 text-xs mt-0.5">
-                                                <span>Stock: <strong class="text-slate-900 font-bold">2</strong></span>
-                                                <span>•</span>
-                                                <span>Vendidos: <strong class="text-slate-900 font-bold">20</strong></span>
-                                            </div>
-                                        </div>
-                                        <span class="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold flex items-center gap-1">
-                                            <span>⚠ Poco stock</span>
-                                        </span>
-                                    </div>
-
-                                    <!-- Fila 3: Jordan Retro High -->
-                                    <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
-                                        <div class="flex flex-col">
-                                            <span class="font-bold text-sm text-slate-900">Jordan Retro High</span>
-                                            <div class="flex items-center gap-2 text-slate-500 text-xs mt-0.5">
-                                                <span>Stock: <strong class="text-slate-900 font-bold">0</strong></span>
-                                                <span>•</span>
-                                                <span>Vendidos: <strong class="text-slate-900 font-bold">15</strong></span>
-                                            </div>
-                                        </div>
-                                        <span class="px-3 py-1 rounded-full bg-rose-100 text-rose-800 text-xs font-semibold">
-                                            Agotado
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <!-- Resumen Rápido -->
-                                <div class="pt-1 flex items-center justify-between text-slate-500 text-xs">
-                                    <span>Total ventas registradas: <strong class="text-slate-900" x-text="sales + 35">47 artículos</strong></span>
-                                    <span class="text-blue-600 font-semibold">Actualizado hace un instante</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 7. BENEFICIO CLIENTE VS VENDEDOR -->
-            <section class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
-                <div class="flex flex-col items-center gap-12">
-                    <div class="text-center max-w-2xl flex flex-col items-center gap-2">
-                        <span class="text-xs font-bold text-blue-600 uppercase tracking-widest bg-blue-50 border border-blue-100 px-3 py-1 rounded-full">
-                            Beneficio mutuo
-                        </span>
-                        <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-                            Más fácil para ti. Más fácil para tus clientes.
-                        </h2>
-                        <p class="text-base text-slate-600">
-                            Optimiza tu tiempo de venta mientras ofreces una experiencia de compra rápida y agradable.
-                        </p>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl">
-                        <!-- Para ti (Vendedor) -->
-                        <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col gap-5 hover:shadow-md transition-shadow">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-base border border-blue-100">
-                                    💼
-                                </div>
-                                <h3 class="text-xl font-bold text-slate-900">Para ti (Vendedor)</h3>
-                            </div>
-                            <div class="flex flex-col gap-3.5 pt-1 text-sm text-slate-700">
-                                <div class="flex items-start gap-3">
-                                    <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold">✓</span>
-                                    <span>No buscar las mismas fotos diariamente en la memoria de tu móvil.</span>
-                                </div>
-                                <div class="flex items-start gap-3">
-                                    <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold">✓</span>
-                                    <span>Actualizar productos y precios desde un solo panel simplificado.</span>
-                                </div>
-                                <div class="flex items-start gap-3">
-                                    <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold">✓</span>
-                                    <span>Compartir siempre el mismo enlace permanente que nunca vence.</span>
-                                </div>
-                                <div class="flex items-start gap-3">
-                                    <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold">✓</span>
-                                    <span>Saber con exactitud qué tienes disponible y qué se ha agotado.</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Para tus clientes -->
-                        <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col gap-5 hover:shadow-md transition-shadow">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-base border border-indigo-100">
-                                    👥
-                                </div>
-                                <h3 class="text-xl font-bold text-slate-900">Para tus clientes</h3>
-                            </div>
-                            <div class="flex flex-col gap-3.5 pt-1 text-sm text-slate-700">
-                                <div class="flex items-start gap-3">
-                                    <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold">✓</span>
-                                    <span>Ver todos tus productos ordenados de forma profesional.</span>
-                                </div>
-                                <div class="flex items-start gap-3">
-                                    <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold">✓</span>
-                                    <span>Consultar precios transparentes al instante sin preguntar "¿precio?".</span>
-                                </div>
-                                <div class="flex items-start gap-3">
-                                    <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold">✓</span>
-                                    <span>Buscar y filtrar por categorías en cuestión de segundos.</span>
-                                </div>
-                                <div class="flex items-start gap-3">
-                                    <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold">✓</span>
-                                    <span>Saber si un artículo está en stock antes de iniciar la conversación.</span>
-                                </div>
-                                <div class="flex items-start gap-3">
-                                    <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold">✓</span>
-                                    <span>Contactarte por WhatsApp con el producto ya seleccionado.</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
             <!-- 8. AISLAMIENTO DEL CATÁLOGO (Espacio propio de marca) -->
             <section class="w-full bg-slate-100/70 border-y border-slate-200/80 py-16 lg:py-24">
                 <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center gap-6"
@@ -1358,77 +1160,6 @@
                     <div class="inline-flex items-center gap-2 text-slate-800 text-sm font-semibold">
                         <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                         <span>Tus clientes siguen siendo tus clientes.</span>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 9. ANTES VS DESPUÉS -->
-            <section class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
-                <div class="flex flex-col items-center gap-12">
-                    <div class="text-center max-w-2xl flex flex-col items-center gap-2">
-                        <span class="text-xs font-bold text-blue-600 uppercase tracking-widest bg-blue-50 border border-blue-100 px-3 py-1 rounded-full">
-                            Cambio radical
-                        </span>
-                        <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-                            Menos publicar. Más fácil vender.
-                        </h2>
-                        <p class="text-base text-slate-600">
-                            Compara el tiempo que gastas hoy frente al método ordenado de MiCatalogo.
-                        </p>
-                    </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full max-w-5xl">
-                        <!-- Antes -->
-                        <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col gap-4">
-                            <div class="flex items-center gap-2 text-slate-500 font-bold">
-                                <span class="text-rose-500 font-extrabold text-lg">✕</span>
-                                <h3 class="text-lg font-bold text-slate-900">Antes de MiCatalogo</h3>
-                            </div>
-                            <div class="flex flex-col gap-3.5 pt-1 text-slate-600 text-sm">
-                                <div class="flex items-center gap-3">
-                                    <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-xs shrink-0">1</span>
-                                    <span>20 fotografías desordenadas en la memoria de tu celular.</span>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-xs shrink-0">2</span>
-                                    <span>Subir una por una a estados y stories de WhatsApp.</span>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-xs shrink-0">3</span>
-                                    <span>24 horas de vigencia y desaparecen para siempre.</span>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-xs shrink-0">4</span>
-                                    <span>Volver a publicar todo desde cero mañana.</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Con MiCatalogo -->
-                        <div class="bg-white p-8 rounded-3xl border border-blue-200 shadow-md ring-1 ring-blue-500/10 flex flex-col gap-4">
-                            <div class="flex items-center gap-2 text-blue-600 font-bold">
-                                <span class="text-emerald-500 font-extrabold text-lg">✓</span>
-                                <h3 class="text-lg font-bold text-slate-900">Con MiCatalogo</h3>
-                            </div>
-                            <div class="flex flex-col gap-3.5 pt-1 text-slate-800 text-sm font-medium">
-                                <div class="flex items-center gap-3">
-                                    <span class="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">1</span>
-                                    <span>Productos clasificados y organizados por categorías.</span>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <span class="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">2</span>
-                                    <span>Tu catálogo propio con tu identidad y WhatsApp directo.</span>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <span class="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">3</span>
-                                    <span>Un solo enlace permanente disponible 24 horas al día.</span>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <span class="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">4</span>
-                                    <span>Solo actualizas cuando agregues inventario nuevo.</span>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </section>
