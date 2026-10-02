@@ -1,0 +1,181 @@
+<?php
+
+use App\Models\InventoryMovement;
+use App\Models\Invoice;
+use App\Models\Product;
+use App\Models\ProductInventory;
+use App\Models\Shop;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
+
+uses(RefreshDatabase::class);
+
+test('a POS sale uses the pos channel, requested payment status, and decrements stock', function () {
+    [$user, $shop, $product] = posSaleFixture(stock: 5, price: 300);
+    $product->update([
+        'sale_price' => 250,
+        'sale_starts_at' => now()->subMinute(),
+        'sale_ends_at' => now()->addMinute(),
+    ]);
+    $clientSaleUuid = (string) Str::uuid();
+
+    $this->withToken($user->createToken('BSPOS', ['pos:write'])->plainTextToken)
+        ->postJson("/api/v1/shops/{$shop->public_id}/pos-sales", posSalePayload($clientSaleUuid, $product, 2, '250.00', 'partial'))
+        ->assertCreated()
+        ->assertJsonPath('client_sale_uuid', $clientSaleUuid)
+        ->assertJsonPath('status', 'partial')
+        ->assertJsonPath('total', '500.00');
+
+    $invoice = Invoice::query()->with('items')->sole();
+    expect($invoice->channel)->toBe('pos')
+        ->and($invoice->status)->toBe('partial')
+        ->and((float) $invoice->total)->toBe(500.0)
+        ->and($invoice->items)->toHaveCount(1)
+        ->and((float) $invoice->items->first()->unit_price)->toBe(250.0)
+        ->and($product->fresh()->inventory->stock_quantity)->toBe(3)
+        ->and($product->fresh()->inventory->sold_quantity)->toBe(2);
+
+    $this->assertDatabaseHas('inventory_movements', [
+        'product_id' => $product->id,
+        'invoice_id' => $invoice->id,
+        'type' => 'sale',
+        'quantity' => -2,
+        'unit_price' => 250,
+    ]);
+});
+
+test('an identical POS sale replay returns its original response without another stock decrement', function () {
+    [$user, $shop, $product] = posSaleFixture(stock: 5, price: 250);
+    $payload = posSalePayload((string) Str::uuid(), $product, 2, '250.00');
+    $token = $user->createToken('BSPOS', ['pos:write'])->plainTextToken;
+
+    $first = $this->withToken($token)->postJson("/api/v1/shops/{$shop->public_id}/pos-sales", $payload);
+    $first->assertCreated();
+
+    $this->withToken($token)
+        ->postJson("/api/v1/shops/{$shop->public_id}/pos-sales", $payload)
+        ->assertCreated()
+        ->assertExactJson($first->json());
+
+    expect($product->fresh()->inventory->stock_quantity)->toBe(3)
+        ->and(InventoryMovement::query()->count())->toBe(1)
+        ->and(Invoice::query()->count())->toBe(1);
+});
+
+test('a POS sale rejects a stale price without mutating inventory or invoices', function () {
+    [$user, $shop, $product] = posSaleFixture(stock: 5, price: 250);
+
+    $this->withToken($user->createToken('BSPOS', ['pos:write'])->plainTextToken)
+        ->postJson("/api/v1/shops/{$shop->public_id}/pos-sales", posSalePayload((string) Str::uuid(), $product, 2, '249.99'))
+        ->assertConflict()
+        ->assertExactJson([
+            'message' => 'The submitted price no longer matches the catalog.',
+            'reason' => 'price_conflict',
+        ]);
+
+    expect($product->fresh()->inventory->stock_quantity)->toBe(5)
+        ->and(InventoryMovement::query()->count())->toBe(0)
+        ->and(Invoice::query()->count())->toBe(0);
+});
+
+test('a POS sale rejects insufficient remote stock without mutations', function () {
+    [$user, $shop, $product] = posSaleFixture(stock: 1, price: 250);
+
+    $this->withToken($user->createToken('BSPOS', ['pos:write'])->plainTextToken)
+        ->postJson("/api/v1/shops/{$shop->public_id}/pos-sales", posSalePayload((string) Str::uuid(), $product, 2, '250.00'))
+        ->assertConflict()
+        ->assertExactJson([
+            'message' => 'Insufficient remote stock.',
+            'reason' => 'stock_conflict',
+        ]);
+
+    expect($product->fresh()->inventory->stock_quantity)->toBe(1)
+        ->and(InventoryMovement::query()->count())->toBe(0)
+        ->and(Invoice::query()->count())->toBe(0);
+});
+
+test('a POS sale UUID cannot be reused with a different payload', function () {
+    [$user, $shop, $product] = posSaleFixture(stock: 5, price: 250);
+    $clientSaleUuid = (string) Str::uuid();
+    $token = $user->createToken('BSPOS', ['pos:write'])->plainTextToken;
+
+    $this->withToken($token)
+        ->postJson("/api/v1/shops/{$shop->public_id}/pos-sales", posSalePayload($clientSaleUuid, $product, 1, '250.00'))
+        ->assertCreated();
+
+    $this->withToken($token)
+        ->postJson("/api/v1/shops/{$shop->public_id}/pos-sales", posSalePayload($clientSaleUuid, $product, 2, '250.00'))
+        ->assertConflict()
+        ->assertExactJson([
+            'message' => 'This client sale UUID has already been used with a different payload.',
+            'reason' => 'idempotency_conflict',
+        ]);
+
+    expect($product->fresh()->inventory->stock_quantity)->toBe(4)
+        ->and(InventoryMovement::query()->count())->toBe(1)
+        ->and(Invoice::query()->count())->toBe(1);
+});
+
+test('a POS sale returns not found for a shop owned by another user', function () {
+    [, $shop, $product] = posSaleFixture(stock: 5, price: 250);
+    $otherUser = User::factory()->create();
+
+    $this->withToken($otherUser->createToken('BSPOS', ['pos:write'])->plainTextToken)
+        ->postJson("/api/v1/shops/{$shop->public_id}/pos-sales", posSalePayload((string) Str::uuid(), $product, 1, '250.00'))
+        ->assertNotFound();
+
+    expect($product->fresh()->inventory->stock_quantity)->toBe(5)
+        ->and(InventoryMovement::query()->count())->toBe(0)
+        ->and(Invoice::query()->count())->toBe(0);
+});
+
+test('a POS sale requires the pos write token ability', function () {
+    [$user, $shop, $product] = posSaleFixture(stock: 5, price: 250);
+
+    $this->withToken($user->createToken('BSPOS', ['catalog:read'])->plainTextToken)
+        ->postJson("/api/v1/shops/{$shop->public_id}/pos-sales", posSalePayload((string) Str::uuid(), $product, 1, '250.00'))
+        ->assertForbidden();
+
+    expect($product->fresh()->inventory->stock_quantity)->toBe(5)
+        ->and(InventoryMovement::query()->count())->toBe(0)
+        ->and(Invoice::query()->count())->toBe(0);
+});
+
+/**
+ * @return array{0: User, 1: Shop, 2: Product}
+ */
+function posSaleFixture(int $stock, float $price): array
+{
+    $user = User::factory()->create();
+    $shop = Shop::factory()->create(['user_id' => $user->id]);
+    $product = Product::factory()->create([
+        'shop_id' => $shop->id,
+        'price' => $price,
+        'sale_unit' => 'unit',
+    ]);
+    ProductInventory::create([
+        'product_id' => $product->id,
+        'track_inventory' => true,
+        'stock_quantity' => $stock,
+        'sold_quantity' => 0,
+    ]);
+
+    return [$user, $shop, $product];
+}
+
+/**
+ * @return array{client_sale_uuid: string, payment_status: string, items: array<int, array{product_id: string, quantity: int, unit_price: string}>}
+ */
+function posSalePayload(string $clientSaleUuid, Product $product, int $quantity, string $unitPrice, string $paymentStatus = 'paid'): array
+{
+    return [
+        'client_sale_uuid' => $clientSaleUuid,
+        'payment_status' => $paymentStatus,
+        'items' => [[
+            'product_id' => $product->public_id,
+            'quantity' => $quantity,
+            'unit_price' => $unitPrice,
+        ]],
+    ];
+}

@@ -270,16 +270,73 @@
                     </div>
                 </div>
 
+                <form method="GET" action="{{ route('seller.shops.inventory.index', $shop) }}" class="mt-5 grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 lg:grid-cols-12">
+                    <div class="lg:col-span-3">
+                        <label class="text-xs font-semibold text-slate-700" for="inventory-q">Buscar producto</label>
+                        <input id="inventory-q" name="q" type="search" value="{{ $filters['q'] }}" placeholder="Nombre del producto" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+                    </div>
+                    <div class="lg:col-span-2">
+                        <label class="text-xs font-semibold text-slate-700" for="inventory-stock">Estado de stock</label>
+                        <select id="inventory-stock" name="stock" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-700 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+                            <option value="all" @selected($filters['stock'] === 'all')>Todos</option>
+                            <option value="low" @selected($filters['stock'] === 'low')>Stock bajo</option>
+                            <option value="out" @selected($filters['stock'] === 'out')>Agotados</option>
+                            <option value="available" @selected($filters['stock'] === 'available')>Disponibles</option>
+                            <option value="untracked" @selected($filters['stock'] === 'untracked')>Sin control</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 lg:col-span-3">
+                        <div>
+                            <label class="text-xs font-semibold text-slate-700" for="inventory-price-min">Venta desde</label>
+                            <input id="inventory-price-min" name="price_min" type="number" min="0" step="0.01" value="{{ $filters['price_min'] }}" placeholder="RD$ min." class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-700" for="inventory-price-max">Venta hasta</label>
+                            <input id="inventory-price-max" name="price_max" type="number" min="0" step="0.01" value="{{ $filters['price_max'] }}" placeholder="RD$ max." class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 lg:col-span-3">
+                        <div>
+                            <label class="text-xs font-semibold text-slate-700" for="inventory-cost-min">Costo desde</label>
+                            <input id="inventory-cost-min" name="cost_min" type="number" min="0" step="0.01" value="{{ $filters['cost_min'] }}" placeholder="RD$ min." class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-700" for="inventory-cost-max">Costo hasta</label>
+                            <input id="inventory-cost-max" name="cost_max" type="number" min="0" step="0.01" value="{{ $filters['cost_max'] }}" placeholder="RD$ max." class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+                        </div>
+                    </div>
+                    <div class="flex items-end gap-2 lg:col-span-1">
+                        <button type="submit" class="w-full rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white hover:bg-slate-800">Filtrar</button>
+                    </div>
+                    @if (collect($filters)->except(['sort', 'direction'])->filter(fn ($value) => $value !== null && $value !== '' && $value !== 'all')->isNotEmpty())
+                        <div class="lg:col-span-12">
+                            <a href="{{ route('seller.shops.inventory.index', $shop) }}" class="text-xs font-semibold text-blue-700 hover:text-blue-900 hover:underline">Limpiar filtros</a>
+                        </div>
+                    @endif
+                </form>
+
+                @php
+                    $sortLink = function (string $column) use ($shop, $filters): string {
+                        $direction = $filters['sort'] === $column && $filters['direction'] === 'asc' ? 'desc' : 'asc';
+
+                        return route('seller.shops.inventory.index', array_merge(['shop' => $shop], $filters, [
+                            'sort' => $column,
+                            'direction' => $direction,
+                        ]));
+                    };
+                    $sortIndicator = fn (string $column): string => $filters['sort'] === $column ? ($filters['direction'] === 'asc' ? '↑' : '↓') : '↕';
+                @endphp
+
                 <div class="mt-5 overflow-x-auto">
                     <table class="w-full text-left text-sm text-slate-600">
                         <thead class="border-b border-slate-200 bg-slate-50 text-xs uppercase font-semibold text-slate-700">
                             <tr>
-                                <th class="px-4 py-3">Producto</th>
+                                <th class="px-4 py-3"><a class="inline-flex items-center gap-1 hover:text-blue-700" href="{{ $sortLink('product') }}">Producto <span aria-hidden="true">{{ $sortIndicator('product') }}</span></a></th>
                                 <th class="px-4 py-3 text-center">Estado Stock</th>
-                                <th class="px-4 py-3 text-right">Stock Actual</th>
-                                <th class="px-4 py-3 text-right">Vendidos</th>
-                                <th class="px-4 py-3 text-right">Precio Venta</th>
-                                <th class="px-4 py-3 text-right">Costo Compra</th>
+                                <th class="px-4 py-3 text-right"><a class="inline-flex items-center gap-1 hover:text-blue-700" href="{{ $sortLink('stock') }}">Stock Actual <span aria-hidden="true">{{ $sortIndicator('stock') }}</span></a></th>
+                                <th class="px-4 py-3 text-right"><a class="inline-flex items-center gap-1 hover:text-blue-700" href="{{ $sortLink('sold') }}">Vendidos <span aria-hidden="true">{{ $sortIndicator('sold') }}</span></a></th>
+                                <th class="px-4 py-3 text-right"><a class="inline-flex items-center gap-1 hover:text-blue-700" href="{{ $sortLink('price') }}">Precio Venta <span aria-hidden="true">{{ $sortIndicator('price') }}</span></a></th>
+                                <th class="px-4 py-3 text-right"><a class="inline-flex items-center gap-1 hover:text-blue-700" href="{{ $sortLink('cost') }}">Costo Compra <span aria-hidden="true">{{ $sortIndicator('cost') }}</span></a></th>
                                 <th class="px-4 py-3 text-right">Margen</th>
                                 <th class="px-4 py-3 text-right">Acciones Rápidas</th>
                             </tr>
@@ -453,7 +510,7 @@
                             @empty
                                 <tr>
                                     <td class="px-4 py-8 text-center text-slate-500" colspan="8">
-                                        No hay productos registrados en esta tienda.
+                                        No hay productos que coincidan con los filtros seleccionados.
                                     </td>
                                 </tr>
                             @endforelse

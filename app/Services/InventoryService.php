@@ -19,13 +19,13 @@ class InventoryService
      *
      * @throws InvalidArgumentException
      */
-    public function recordSale(Product $product, int $quantity, ?string $notes = null, ?int $userId = null, bool $createInvoice = true): InventoryMovement
+    public function recordSale(Product $product, int $quantity, ?string $notes = null, ?int $userId = null, bool $createInvoice = true, ?float $unitPrice = null): InventoryMovement
     {
         if ($quantity <= 0) {
             throw new InvalidArgumentException('La cantidad vendida debe ser mayor a 0.');
         }
 
-        return DB::transaction(function () use ($product, $quantity, $notes, $userId, $createInvoice) {
+        return DB::transaction(function () use ($product, $quantity, $notes, $userId, $createInvoice, $unitPrice) {
             $product = Product::query()->lockForUpdate()->findOrFail($product->id);
             $inventory = ProductInventory::where('product_id', $product->id)
                 ->lockForUpdate()
@@ -59,9 +59,7 @@ class InventoryService
                 $availableLabel = $consumedMl !== null && $availableMl !== null
                     ? "Solo quedan {$availableMl} ml disponibles"
                     : "Solo quedan {$before} unidades disponibles";
-                throw new InvalidArgumentException(
-                    "Stock insuficiente para {$product->name}. {$availableLabel}."
-                );
+                throw new InvalidArgumentException("Stock insuficiente para {$product->name}. {$availableLabel}.", 409);
             }
 
             $after = $before - $quantity;
@@ -94,7 +92,7 @@ class InventoryService
                 'quantity' => -$quantity,
                 'stock_before' => $before,
                 'stock_after' => $after,
-                'unit_price' => $product->price,
+                'unit_price' => $unitPrice ?? $product->price,
                 'unit_cost' => $inventory->cost_price,
                 'notes' => $notes ?: ($product->isDecant()
                     ? "Venta de decant de {$product->volume_ml} ml"
@@ -106,7 +104,7 @@ class InventoryService
             if ($createInvoice) {
                 $this->createInvoiceForSales(
                     $product->shop_id,
-                    [['product' => $product, 'quantity' => $quantity]],
+                    [['product' => $product, 'quantity' => $quantity, 'unit_price' => $unitPrice]],
                     [$movement],
                     $userId,
                 );
@@ -119,21 +117,22 @@ class InventoryService
     /**
      * Register all lines from a shared cart as one atomic checkout.
      *
-     * @param  array<int, array{product: Product, quantity: int}>  $sales
+     * @param  array<int, array{product: Product, quantity: int, unit_price?: float}>  $sales
      * @return array<int, InventoryMovement>
      */
-    public function recordCartSales(array $sales, ?int $userId = null): array
+    public function recordCartSales(array $sales, ?int $userId = null, string $channel = 'whatsapp', string $paymentStatus = 'paid'): array
     {
-        return DB::transaction(function () use ($sales, $userId): array {
+        return DB::transaction(function () use ($sales, $userId, $channel, $paymentStatus): array {
             $movements = collect($sales)->map(fn (array $sale) => $this->recordSale(
                 $sale['product'],
                 $sale['quantity'],
-                'Cobro de carrito compartido por WhatsApp',
+                $channel === 'pos' ? 'Venta POS sincronizada' : 'Cobro de carrito compartido por WhatsApp',
                 $userId,
                 false,
+                $sale['unit_price'] ?? null,
             ))->all();
 
-            $this->createInvoiceForSales($sales[0]['product']->shop_id, $sales, $movements, $userId);
+            $this->createInvoiceForSales($sales[0]['product']->shop_id, $sales, $movements, $userId, $channel, $paymentStatus);
 
             return $movements;
         });
@@ -335,17 +334,17 @@ class InventoryService
     /**
      * Persist a price snapshot and link the resulting invoice to its movements.
      *
-     * @param  array<int, array{product: Product, quantity: int}>  $sales
+     * @param  array<int, array{product: Product, quantity: int, unit_price?: float}>  $sales
      * @param  array<int, InventoryMovement>  $movements
      */
-    private function createInvoiceForSales(int $shopId, array $sales, array $movements, ?int $userId): Invoice
+    private function createInvoiceForSales(int $shopId, array $sales, array $movements, ?int $userId, string $channel = 'whatsapp', string $paymentStatus = 'paid'): Invoice
     {
         $invoice = Invoice::create([
             'shop_id' => $shopId,
             'user_id' => $userId,
             'invoice_number' => 'FAC-'.now()->format('Ymd').'-'.Str::upper(Str::random(8)),
-            'status' => 'paid',
-            'channel' => 'whatsapp',
+            'status' => $paymentStatus,
+            'channel' => $channel,
             'currency' => 'DOP',
             'subtotal' => 0,
             'total' => 0,
@@ -356,7 +355,7 @@ class InventoryService
         foreach ($sales as $index => $sale) {
             $product = $sale['product'];
             $quantity = (int) $sale['quantity'];
-            $unitPrice = (float) $product->price;
+            $unitPrice = (float) ($sale['unit_price'] ?? $product->price);
             $lineTotal = $unitPrice * $quantity;
             $total += $lineTotal;
 

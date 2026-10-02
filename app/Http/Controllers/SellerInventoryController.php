@@ -13,13 +13,75 @@ use InvalidArgumentException;
 
 class SellerInventoryController extends Controller
 {
-    public function index(Shop $shop, InventoryService $inventoryService): View
+    public function index(Request $request, Shop $shop, InventoryService $inventoryService): View
     {
+        $validated = $request->validate([
+            'q' => ['nullable', 'string', 'max:120'],
+            'stock' => ['nullable', 'in:all,low,out,available,untracked'],
+            'price_min' => ['nullable', 'numeric', 'min:0'],
+            'price_max' => ['nullable', 'numeric', 'min:0'],
+            'cost_min' => ['nullable', 'numeric', 'min:0'],
+            'cost_max' => ['nullable', 'numeric', 'min:0'],
+            'sort' => ['nullable', 'in:product,stock,sold,price,cost'],
+            'direction' => ['nullable', 'in:asc,desc'],
+        ]);
+
         $summary = $inventoryService->getShopInventorySummary($shop);
+        $filters = [
+            'q' => trim((string) ($validated['q'] ?? '')),
+            'stock' => $validated['stock'] ?? 'all',
+            'price_min' => $validated['price_min'] ?? null,
+            'price_max' => $validated['price_max'] ?? null,
+            'cost_min' => $validated['cost_min'] ?? null,
+            'cost_max' => $validated['cost_max'] ?? null,
+            'sort' => $validated['sort'] ?? 'product',
+            'direction' => $validated['direction'] ?? 'asc',
+        ];
+
+        $summary['all_products'] = $summary['all_products']
+            ->filter(function (Product $product) use ($filters): bool {
+                $inventory = $product->inventory;
+                $isControlled = $inventory?->track_inventory ?? false;
+
+                if ($filters['q'] !== '' && ! str_contains(strtolower($product->name), strtolower($filters['q']))) {
+                    return false;
+                }
+
+                if (match ($filters['stock']) {
+                    'low' => ! $isControlled || ! $inventory->isLowStock($product),
+                    'out' => ! $isControlled || $inventory->stock_quantity > 0,
+                    'available' => ! $isControlled || $inventory->stock_quantity <= 0 || $inventory->isLowStock($product),
+                    'untracked' => $isControlled,
+                    default => false,
+                }) {
+                    return false;
+                }
+
+                $price = (float) $product->price;
+                $cost = $isControlled && $inventory->cost_price !== null ? (float) $inventory->cost_price : null;
+
+                return ($filters['price_min'] === null || $price >= (float) $filters['price_min'])
+                    && ($filters['price_max'] === null || $price <= (float) $filters['price_max'])
+                    && ($filters['cost_min'] === null || ($cost !== null && $cost >= (float) $filters['cost_min']))
+                    && ($filters['cost_max'] === null || ($cost !== null && $cost <= (float) $filters['cost_max']));
+            })
+            ->sortBy(function (Product $product) use ($filters): float|string {
+                $inventory = $product->inventory;
+
+                return match ($filters['sort']) {
+                    'stock' => $inventory?->track_inventory ? $inventory->stock_quantity : -1,
+                    'sold' => $inventory?->track_inventory ? $inventory->sold_quantity : -1,
+                    'price' => (float) $product->price,
+                    'cost' => $inventory?->cost_price !== null ? (float) $inventory->cost_price : -1,
+                    default => strtolower($product->name),
+                };
+            }, SORT_REGULAR, $filters['direction'] === 'desc')
+            ->values();
 
         return view('seller.inventory.index', [
             'shop' => $shop,
             'summary' => $summary,
+            'filters' => $filters,
         ]);
     }
 

@@ -45,6 +45,46 @@ test('a verified seller can access their shop inventory dashboard', function () 
     $response->assertSee('RD$ 2,200'); // Margen unitario
 });
 
+test('seller can filter and sort the inventory product list', function () {
+    $user = User::factory()->create();
+    $shop = Shop::factory()->create(['user_id' => $user->id]);
+
+    $lowCost = Product::factory()->create(['shop_id' => $shop->id, 'name' => 'Producto económico', 'price' => 100]);
+    $highCost = Product::factory()->create(['shop_id' => $shop->id, 'name' => 'Producto premium', 'price' => 500]);
+    $available = Product::factory()->create(['shop_id' => $shop->id, 'name' => 'Producto disponible', 'price' => 300]);
+
+    ProductInventory::create(['product_id' => $lowCost->id, 'track_inventory' => true, 'cost_price' => 50, 'stock_quantity' => 2, 'low_stock_threshold' => 3]);
+    ProductInventory::create(['product_id' => $highCost->id, 'track_inventory' => true, 'cost_price' => 300, 'stock_quantity' => 1, 'low_stock_threshold' => 2]);
+    ProductInventory::create(['product_id' => $available->id, 'track_inventory' => true, 'cost_price' => 120, 'stock_quantity' => 10, 'low_stock_threshold' => 2]);
+
+    $lowStockResponse = $this->actingAs($user)->get(route('seller.shops.inventory.index', [
+        'shop' => $shop,
+        'stock' => 'low',
+        'sort' => 'price',
+        'direction' => 'desc',
+    ]));
+
+    $lowStockResponse
+        ->assertOk()
+        ->assertSeeInOrder(['Producto premium', 'Producto económico'])
+        ->assertViewHas('summary', fn (array $summary) => $summary['all_products']->pluck('name')->all() === [
+            'Producto premium',
+            'Producto económico',
+        ]);
+
+    $costResponse = $this->actingAs($user)->get(route('seller.shops.inventory.index', [
+        'shop' => $shop,
+        'cost_min' => 200,
+    ]));
+
+    $costResponse
+        ->assertOk()
+        ->assertSee('Producto premium')
+        ->assertViewHas('summary', fn (array $summary) => $summary['all_products']->pluck('name')->all() === [
+            'Producto premium',
+        ]);
+});
+
 test('inventory actions reject products without inventory control', function () {
     $user = User::factory()->create();
     $shop = Shop::factory()->create(['user_id' => $user->id]);
