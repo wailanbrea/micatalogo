@@ -757,7 +757,7 @@
 
             <div class="fixed inset-0 overflow-hidden">
                 <div class="absolute inset-0 overflow-hidden">
-                    <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+                    <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-0 sm:pl-10">
                         <div 
                             x-show="openCartDrawer"
                             x-transition:enter="transform transition ease-in-out duration-300"
@@ -766,7 +766,7 @@
                             x-transition:leave="transform transition ease-in-out duration-300"
                             x-transition:leave-start="translate-x-0"
                             x-transition:leave-end="translate-x-full"
-                            class="pointer-events-auto w-screen max-w-md bg-white shadow-2xl flex flex-col"
+                            class="pointer-events-auto w-screen max-w-full sm:max-w-md bg-white shadow-2xl flex flex-col h-full"
                         >
                             <!-- Drawer Header -->
                             <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
@@ -814,49 +814,51 @@
                                 <template x-if="cart.length > 0">
                                     <div class="space-y-2.5">
                                         <template x-for="item in cart" :key="item.id">
-                                            <div class="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-3">
-                                                <!-- Image -->
-                                                <div class="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-white">
-                                                    <template x-if="item.image">
-                                                        <img :src="item.image" :alt="item.name" class="h-full w-full object-cover">
-                                                    </template>
-                                                    <template x-if="!item.image">
-                                                        <div class="flex h-full w-full items-center justify-center text-slate-300">
-                                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="m3 16 5-5 4 4 3-3 6 6M5 21h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14Z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></svg>
-                                                        </div>
-                                                    </template>
-                                                </div>
-
-                                                <!-- Title & Unit Price -->
-                                                <div class="min-w-0 flex-1">
-                                                    <p class="text-xs font-bold text-slate-900 truncate" x-text="item.name"></p>
-                                                    <p class="text-[11px] font-semibold text-slate-500 tabular-nums whitespace-nowrap" x-text="'RD$ ' + item.price.toLocaleString('es-DO', { maximumFractionDigits: 0 }) + ' c/u'"></p>
-                                                </div>
-
-                                                <!-- Quantity controls & subtotal -->
-                                                <div class="flex items-center gap-2 shrink-0">
-                                                    <div class="flex items-center rounded-lg border border-slate-200 bg-white p-0.5">
-                                                        <button 
-                                                            type="button" 
-                                                            @click="updateCartQuantity(item.id, -1)" 
-                                                            class="h-5 w-5 flex items-center justify-center rounded text-xs font-bold text-slate-600 hover:bg-slate-100"
-                                                        >-</button>
-                                                        <span class="w-6 text-center text-xs font-black text-slate-900 tabular-nums" x-text="item.quantity"></span>
-                                                        <button 
-                                                            type="button" 
-                                                            @click="updateCartQuantity(item.id, 1)" 
-                                                            class="h-5 w-5 flex items-center justify-center rounded text-xs font-bold text-slate-600 hover:bg-slate-100"
-                                                        >+</button>
+                                            <div class="rounded-2xl border border-slate-100 bg-slate-50/70 p-3 space-y-2.5">
+                                                <!-- Fila superior: imagen, nombre, precio unitario y eliminar -->
+                                                <div class="flex items-start gap-3">
+                                                    <div class="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                                                        <template x-if="item.image">
+                                                            <img :src="item.image" :alt="item.name" class="h-full w-full object-cover">
+                                                        </template>
+                                                        <template x-if="!item.image">
+                                                            <div class="flex h-full w-full items-center justify-center text-slate-300">
+                                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="m3 16 5-5 4 4 3-3 6 6M5 21h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14Z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></svg>
+                                                            </div>
+                                                        </template>
                                                     </div>
-                                                    <span class="w-16 text-right text-xs font-extrabold text-slate-900 tabular-nums whitespace-nowrap" x-text="'RD$ ' + (item.quantity * item.price).toLocaleString('es-DO', { maximumFractionDigits: 0 })"></span>
+
+                                                    <div class="min-w-0 flex-1">
+                                                        <p class="text-xs font-bold text-slate-900 line-clamp-2 leading-snug" x-text="item.name"></p>
+                                                        <p class="text-[11px] font-semibold text-slate-500 tabular-nums whitespace-nowrap mt-0.5" x-text="'RD$ ' + item.price.toLocaleString('es-DO', { maximumFractionDigits: 0 }) + ' c/u'"></p>
+                                                    </div>
+
                                                     <button 
                                                         type="button" 
                                                         @click="removeFromCart(item.id)" 
-                                                        class="text-slate-400 hover:text-rose-600 p-1"
+                                                        class="text-slate-400 hover:text-rose-600 p-1 shrink-0 -mr-1 -mt-1 cursor-pointer"
                                                         title="Eliminar artículo"
                                                     >
-                                                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                                     </button>
+                                                </div>
+
+                                                <!-- Fila inferior: stepper y subtotal -->
+                                                <div class="flex items-center justify-between border-t border-slate-200/60 pt-2">
+                                                    <div class="flex items-center rounded-lg border border-slate-200 bg-white p-0.5 shadow-2xs">
+                                                        <button 
+                                                            type="button" 
+                                                            @click="updateCartQuantity(item.id, -1)" 
+                                                            class="h-6 w-6 flex items-center justify-center rounded text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                                                        >-</button>
+                                                        <span class="w-7 text-center text-xs font-black text-slate-900 tabular-nums" x-text="item.quantity"></span>
+                                                        <button 
+                                                            type="button" 
+                                                            @click="updateCartQuantity(item.id, 1)" 
+                                                            class="h-6 w-6 flex items-center justify-center rounded text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                                                        >+</button>
+                                                    </div>
+                                                    <span class="text-right text-xs sm:text-sm font-extrabold text-slate-900 tabular-nums whitespace-nowrap" x-text="'RD$ ' + (item.quantity * item.price).toLocaleString('es-DO', { maximumFractionDigits: 0 })"></span>
                                                 </div>
                                             </div>
                                         </template>
@@ -979,7 +981,7 @@
 
             <div class="fixed inset-0 overflow-hidden">
                 <div class="absolute inset-0 overflow-hidden">
-                    <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+                    <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-0 sm:pl-10">
                         <div 
                             x-show="openFilterDrawer"
                             x-transition:enter="transform transition ease-in-out duration-300"
@@ -988,7 +990,7 @@
                             x-transition:leave="transform transition ease-in-out duration-300"
                             x-transition:leave-start="translate-x-0"
                             x-transition:leave-end="translate-x-full"
-                            class="pointer-events-auto w-screen max-w-sm bg-white shadow-2xl flex flex-col"
+                            class="pointer-events-auto w-screen max-w-full sm:max-w-sm bg-white shadow-2xl flex flex-col h-full"
                         >
                             <!-- Drawer Header -->
                             <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
