@@ -83,7 +83,8 @@ class Product extends Model
     {
         return $this->hasOne(ProductImage::class)
             ->where('processing_status', ProductImageProcessingStatus::Ready)
-            ->orderBy('sort_order');
+            ->orderBy('sort_order')
+            ->orderBy('id');
     }
 
     public function getImageUrlAttribute(): ?string

@@ -29,7 +29,7 @@ class CatalogController extends Controller
             ->values();
 
         $products = $shop->products()
-            ->with(['inventory', 'sourceProduct'])
+            ->with(['inventory', 'sourceProduct', 'primaryImage'])
             ->orderBy('name')
             ->get()
             ->map(fn (Product $product) => $this->productPayload($product))
@@ -62,6 +62,8 @@ class CatalogController extends Controller
             'internal_code' => $product->product_code,
             'brand' => $product->brand,
             'description' => $product->description,
+            'image_url' => $product->primaryImage?->url,
+            'thumbnail_url' => $product->primaryImage?->thumbnail_url,
             'price' => $product->price,
             'currency' => $product->currency,
             'sale_unit' => $product->sale_unit,

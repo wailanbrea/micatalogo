@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Product;
+use App\Models\ProductImage;
 use App\Models\ProductInventory;
 use App\Models\Shop;
 use App\Models\ShopCategory;
@@ -32,6 +33,7 @@ test('a seller can retrieve a canonical catalog snapshot for their shop', functi
         'stock_quantity' => 8,
         'low_stock_threshold' => 3,
     ]);
+    $image = ProductImage::factory()->for($product)->create();
 
     $token = $user->createToken('BSPOS', ['catalog:read'])->plainTextToken;
 
@@ -45,7 +47,9 @@ test('a seller can retrieve a canonical catalog snapshot for their shop', functi
         ->assertJsonPath('products.0.category_id', (string) $category->id)
         ->assertJsonPath('products.0.internal_code', 'JAB-001')
         ->assertJsonPath('products.0.inventory.stock_quantity', 8)
-        ->assertJsonPath('products.0.inventory.cost_price', '125.00');
+        ->assertJsonPath('products.0.inventory.cost_price', '125.00')
+        ->assertJsonPath('products.0.image_url', $image->url)
+        ->assertJsonPath('products.0.thumbnail_url', $image->thumbnail_url);
 });
 
 test('a seller cannot retrieve another sellers catalog snapshot', function () {

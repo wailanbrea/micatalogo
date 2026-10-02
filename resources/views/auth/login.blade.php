@@ -1,157 +1,169 @@
-<x-layouts.app title="Iniciar sesión | MiCatalogo">
-    <main class="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        <!-- Ambient background soft lighting -->
-        <div class="pointer-events-none absolute -top-40 -left-40 h-96 w-96 rounded-full bg-blue-100/70 blur-[128px]"></div>
-        <div class="pointer-events-none absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-indigo-100/60 blur-[128px]"></div>
+<x-layouts.app title="Iniciar sesion | MiCatalogo">
+    <style>
+        :root {
+            --login-navy: #071B35;
+            --login-blue: #008CFF;
+            --login-blue-strong: #0568F5;
+            --login-blue-light: #49B5FF;
+            --login-background: #F5F7FA;
+            --login-text-secondary: #718096;
+            --login-border: #DCE6F2;
+        }
 
-        <div class="relative w-full max-w-md mx-auto">
-            <!-- Header & Brand Navigation -->
-            <div class="flex items-center justify-between mb-8">
-                <a class="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 text-xs font-semibold transition" href="{{ route('home') }}">
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                    <span>Volver al inicio</span>
-                </a>
-                <a class="flex items-center gap-2 group text-decoration-none" href="{{ route('home') }}">
-                    <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-sm font-black text-sm">
-                        M
-                    </div>
-                    <span class="text-base font-extrabold tracking-tight text-slate-900">
-                        Mi<span class="text-blue-600">Catalogo</span>
-                    </span>
-                </a>
-            </div>
+        .login-page {
+            align-items: center;
+            background: linear-gradient(145deg, #071B35 0%, #0B3263 34%, #008CFF 100%);
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+            padding: 48px 24px;
+            position: relative;
+        }
 
-            <!-- Elevated Auth Card -->
-            <div class="rounded-2xl border border-slate-200/90 bg-white p-7 sm:p-9 shadow-xl shadow-slate-200/60 backdrop-blur-sm">
-                <div>
-                    <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">Iniciar sesión</h1>
-                    <p class="mt-1.5 text-xs sm:text-sm text-slate-500">Ingresa tus credenciales para administrar tu vitrina digital.</p>
+        .login-shape { pointer-events: none; position: absolute; }
+        .login-shape-a { background: linear-gradient(135deg, #FFFFFF, #BEE4FF); bottom: -6vh; clip-path: polygon(0 0, 100% 70%, 72% 100%, 0 100%); height: 48vh; left: -18vw; width: 60vw; }
+        .login-shape-b { background: linear-gradient(140deg, #008CFF, #1675FF); clip-path: polygon(42% 0, 100% 0, 100% 75%, 0 100%); height: 55vh; right: -13vw; top: -4vh; width: 54vw; }
+        .login-shape-c { background: linear-gradient(135deg, #E7F5FF, #62BCFF); bottom: -10vh; clip-path: polygon(35% 0, 100% 36%, 100% 100%, 0 100%); height: 42vh; right: -9vw; width: 48vw; }
+        .login-shape-d { background: rgba(0, 140, 255, .52); clip-path: polygon(0 0, 100% 50%, 45% 100%, 0 70%); height: 33vh; left: -6vw; top: 28vh; width: 34vw; }
+
+        .login-wrapper { position: relative; width: min(650px, 100%); z-index: 1; }
+        .login-brand { align-items: center; color: white; display: flex; justify-content: center; margin-bottom: 30px; text-decoration: none; }
+        .login-brand-mark { height: 56px; margin-right: 14px; position: relative; width: 56px; }
+        .login-brand-mark::before, .login-brand-mark::after { border-radius: 5px; content: ''; height: 46px; position: absolute; transform: skewY(-22deg); width: 30px; }
+        .login-brand-mark::before { background: linear-gradient(180deg, #21C1FF, #008CFF); left: 4px; top: 5px; }
+        .login-brand-mark::after { background: linear-gradient(180deg, #1675FF, #005AE0); right: 4px; top: 1px; }
+        .login-brand-name { font-size: 42px; font-weight: 800; letter-spacing: -1.4px; line-height: 1; }
+        .login-brand-name span { color: var(--login-blue-light); }
+
+        .login-card { background: white; border: 1px solid rgba(255, 255, 255, .35); border-radius: 28px; box-shadow: 0 30px 70px rgba(7, 27, 53, .2); overflow: hidden; }
+        .login-card-header { align-items: center; background: linear-gradient(145deg, #071B35, #075CC6 58%, #008CFF); color: white; display: flex; flex-direction: column; min-height: 220px; overflow: hidden; padding: 54px 24px 86px; position: relative; text-align: center; }
+        .login-card-header::before { background: rgba(45, 173, 255, .46); bottom: -135px; content: ''; height: 250px; position: absolute; right: -60px; transform: rotate(38deg); width: 260px; }
+        .login-card-header::after { background: rgba(0, 140, 255, .48); bottom: -100px; content: ''; height: 150px; left: -130px; position: absolute; transform: rotate(25deg); width: 340px; }
+        .login-card-header h1, .login-card-header p { position: relative; z-index: 1; }
+        .login-card-header h1 { font-size: 42px; font-weight: 800; letter-spacing: -.8px; line-height: 1.1; margin: 0; }
+        .login-card-header p { color: rgba(255, 255, 255, .78); font-size: 18px; margin: 12px 0 0; }
+        .login-avatar { align-items: center; background: #E8F4FF; border: 9px solid white; border-radius: 999px; box-shadow: 0 10px 28px rgba(7, 27, 53, .15); display: flex; height: 110px; justify-content: center; left: 50%; position: absolute; top: 220px; transform: translate(-50%, -55px); width: 110px; z-index: 2; }
+        .login-avatar svg { color: var(--login-blue-strong); height: 52px; width: 52px; }
+        .login-body { padding: 90px 48px 34px; }
+        .login-field { margin-bottom: 20px; position: relative; }
+        .login-field input { background: #FBFCFE; border: 1px solid var(--login-border); border-radius: 16px; color: var(--login-navy); font-size: 16px; height: 64px; outline: none; padding: 0 58px; transition: border-color .2s ease, box-shadow .2s ease, background .2s ease; width: 100%; }
+        .login-field input:focus { background: white; border-color: var(--login-blue); box-shadow: 0 0 0 4px rgba(0, 140, 255, .12); }
+        .login-field-icon { color: #7B8DA6; height: 23px; left: 20px; position: absolute; top: 50%; transform: translateY(-50%); width: 23px; }
+        .login-password-toggle { align-items: center; background: transparent; border: 0; color: var(--login-text-secondary); cursor: pointer; display: flex; height: 44px; justify-content: center; position: absolute; right: 10px; top: 10px; width: 44px; }
+        .login-options { align-items: center; display: flex; gap: 18px; justify-content: space-between; margin: 6px 0 28px; }
+        .login-remember { align-items: center; color: var(--login-navy); cursor: pointer; display: flex; font-size: 14px; gap: 9px; }
+        .login-remember input { accent-color: var(--login-blue); height: 19px; width: 19px; }
+        .login-link { color: var(--login-blue-strong); font-size: 14px; font-weight: 700; text-decoration: none; }
+        .login-link:hover { text-decoration: underline; }
+        .login-submit { align-items: center; background: linear-gradient(100deg, #055EDD, #008CFF); border: 0; border-radius: 16px; box-shadow: 0 13px 27px rgba(0, 108, 255, .23); color: white; cursor: pointer; display: flex; font-size: 17px; font-weight: 700; gap: 15px; height: 64px; justify-content: center; transition: transform .2s ease, box-shadow .2s ease; width: 100%; }
+        .login-submit:hover { box-shadow: 0 17px 34px rgba(0, 108, 255, .29); transform: translateY(-2px); }
+        .login-divider { align-items: center; color: #8B9AAF; display: flex; font-size: 14px; gap: 15px; margin: 31px 0 25px; }
+        .login-divider::before, .login-divider::after { background: var(--login-border); content: ''; flex: 1; height: 1px; }
+        .login-activation { color: var(--login-text-secondary); font-size: 14px; text-align: center; }
+        .login-register { color: var(--login-text-secondary); font-size: 13px; margin-top: 12px; text-align: center; }
+        .login-secure { align-items: center; background: #F5F8FC; border-radius: 13px; color: #73839B; display: flex; font-size: 13px; font-weight: 500; gap: 8px; justify-content: center; margin-top: 30px; padding: 15px; }
+        .login-alert { border-radius: 12px; font-size: 14px; margin-bottom: 18px; padding: 13px 15px; }
+        .login-alert-error { background: #FFF0F2; border: 1px solid #FFD0D6; color: #B82237; }
+        .login-alert-success { background: #ECFDF5; border: 1px solid #A7F3D0; color: #047857; }
+        .login-field-error { color: #B82237; display: block; font-size: 13px; margin-top: 6px; }
+
+        @media (max-width: 640px) {
+            .login-page { padding: 28px 16px; }
+            .login-brand { margin-bottom: 22px; }
+            .login-brand-name { font-size: 33px; }
+            .login-brand-mark { height: 45px; width: 45px; }
+            .login-brand-mark::before, .login-brand-mark::after { height: 38px; width: 24px; }
+            .login-card-header { min-height: 180px; padding: 38px 20px 72px; }
+            .login-card-header h1 { font-size: 32px; }
+            .login-card-header p { font-size: 15px; }
+            .login-avatar { border-width: 7px; height: 92px; top: 180px; transform: translate(-50%, -46px); width: 92px; }
+            .login-avatar svg { height: 44px; width: 44px; }
+            .login-body { padding: 72px 20px 24px; }
+            .login-field input, .login-submit { height: 58px; }
+            .login-options { align-items: flex-start; flex-direction: column; }
+            .login-shape-a { width: 100vw; }
+            .login-shape-b { width: 85vw; }
+        }
+    </style>
+
+    <main class="login-page">
+        <div class="login-shape login-shape-a"></div>
+        <div class="login-shape login-shape-b"></div>
+        <div class="login-shape login-shape-c"></div>
+        <div class="login-shape login-shape-d"></div>
+
+        <div class="login-wrapper">
+            <a class="login-brand" href="{{ route('home') }}" aria-label="Ir al inicio de MiCatalogo">
+                <span class="login-brand-mark" aria-hidden="true"></span>
+                <span class="login-brand-name">Mi<span>Catalogo</span></span>
+            </a>
+
+            <section class="login-card" aria-labelledby="login-title">
+                <header class="login-card-header">
+                    <h1 id="login-title">Mi Cuenta</h1>
+                    <p>Accede a tu panel</p>
+                </header>
+
+                <div class="login-avatar" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-3.87 0-7 2.24-7 5v1h14v-1c0-2.76-3.13-5-7-5Z"/></svg>
                 </div>
 
-                @if (session('status'))
-                    <div class="mt-5 flex items-center gap-2.5 rounded-xl bg-emerald-50 p-3.5 text-xs font-medium text-emerald-800 border border-emerald-200/80">
-                        <svg class="h-4 w-4 shrink-0 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        <span>{{ session('status') }}</span>
-                    </div>
-                @endif
-
-                <form class="mt-6 space-y-4.5" method="POST" action="{{ url('/login') }}" x-data="{ showPassword: false }">
-                    @csrf
-                    
-                    <!-- Email Input -->
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700" for="email">
-                            Correo electrónico
-                        </label>
-                        <div class="relative mt-1.5">
-                            <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
-                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.206"/></svg>
-                            </span>
-                            <input 
-                                class="block w-full rounded-xl border border-slate-300 bg-slate-50/40 py-2.5 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 hover:bg-white focus:bg-white focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10 transition" 
-                                id="email" 
-                                name="email" 
-                                type="email" 
-                                value="{{ old('email') }}" 
-                                placeholder="tu@correo.com"
-                                required 
-                                autofocus 
-                                autocomplete="email">
-                        </div>
-                        @error('email') 
-                            <p class="mt-1.5 text-xs font-semibold text-red-600 flex items-center gap-1">
-                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                {{ $message }}
-                            </p> 
-                        @enderror
-                    </div>
-
-                    <!-- Password Input with Toggle -->
-                    <div>
-                        <div class="flex items-center justify-between">
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700" for="password">
-                                Contraseña
-                            </label>
-                            <a class="text-xs font-semibold text-blue-600 hover:text-blue-800 transition" href="{{ url('/forgot-password') }}">
-                                ¿Olvidaste tu contraseña?
-                            </a>
-                        </div>
-                        <div class="relative mt-1.5">
-                            <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
-                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                            </span>
-                            <input 
-                                class="block w-full rounded-xl border border-slate-300 bg-slate-50/40 py-2.5 pl-10 pr-10 text-sm text-slate-900 placeholder:text-slate-400 hover:bg-white focus:bg-white focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10 transition" 
-                                id="password" 
-                                name="password" 
-                                :type="showPassword ? 'text' : 'password'" 
-                                placeholder="••••••••"
-                                required 
-                                autocomplete="current-password">
-                            <button 
-                                type="button" 
-                                @click="showPassword = !showPassword" 
-                                class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
-                                aria-label="Alternar visibilidad de contraseña">
-                                <svg x-show="!showPassword" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                <svg x-show="showPassword" x-cloak class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
-                            </button>
-                        </div>
-                        @error('password') 
-                            <p class="mt-1.5 text-xs font-semibold text-red-600 flex items-center gap-1">
-                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                {{ $message }}
-                            </p> 
-                        @enderror
-                    </div>
-
-                    <!-- Turnstile Widget with neat container -->
-                    @if (config('services.turnstile.enabled'))
-                        <div class="pt-1">
-                            <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-2.5 flex justify-center">
-                                <div class="cf-turnstile" data-action="login" data-sitekey="{{ config('services.turnstile.site_key') }}"></div>
-                            </div>
-                            @error('cf-turnstile-response') 
-                                <p class="mt-1 text-xs font-semibold text-red-600">{{ $message }}</p> 
-                            @enderror
-                        </div>
+                <div class="login-body">
+                    @if (session('status'))
+                        <div class="login-alert login-alert-success">{{ session('status') }}</div>
                     @endif
 
-                    <!-- Remember Me -->
-                    <div class="flex items-center justify-between pt-1">
-                        <label class="flex items-center gap-2 text-xs font-medium text-slate-600 cursor-pointer select-none">
-                            <input class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600" name="remember" type="checkbox">
-                            <span>Recordar sesión en este dispositivo</span>
-                        </label>
+                    @if ($errors->any())
+                        <div class="login-alert login-alert-error">{{ $errors->first() }}</div>
+                    @endif
+
+                    <form method="POST" action="{{ url('/login') }}" x-data="{ showPassword: false }">
+                        @csrf
+
+                        <div class="login-field">
+                            <svg class="login-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+                            <input id="email" name="email" type="email" value="{{ old('email') }}" placeholder="Correo electronico" autocomplete="email" required autofocus>
+                            @error('email') <span class="login-field-error">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div class="login-field">
+                            <svg class="login-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+                            <input id="password" name="password" :type="showPassword ? 'text' : 'password'" placeholder="Contrasena" autocomplete="current-password" required>
+                            <button class="login-password-toggle" type="button" @click="showPassword = !showPassword" :aria-label="showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'">
+                                <svg x-show="!showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="23" height="23"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg>
+                                <svg x-show="showPassword" x-cloak viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="23" height="23"><path d="m3 3 18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.1A10.7 10.7 0 0 1 12 5c6 0 9.5 7 9.5 7a18.5 18.5 0 0 1-3.2 4.1M6.2 6.2C3.8 8 2.5 12 2.5 12s3.5 7 9.5 7c1 0 2-.2 2.9-.5"/></svg>
+                            </button>
+                            @error('password') <span class="login-field-error">{{ $message }}</span> @enderror
+                        </div>
+
+                        @if (config('services.turnstile.enabled'))
+                            <div class="mb-5 flex justify-center rounded-2xl border border-[#DCE6F2] bg-[#F5F8FC] p-3">
+                                <div class="cf-turnstile" data-action="login" data-sitekey="{{ config('services.turnstile.site_key') }}"></div>
+                            </div>
+                            @error('cf-turnstile-response') <span class="login-field-error">{{ $message }}</span> @enderror
+                        @endif
+
+                        <div class="login-options">
+                            <label class="login-remember">
+                                <input name="remember" type="checkbox" @checked(old('remember'))>
+                                <span>Recordarme en este dispositivo</span>
+                            </label>
+                            <a class="login-link" href="{{ url('/forgot-password') }}">Olvidaste tu contrasena?</a>
+                        </div>
+
+                        <button class="login-submit" type="submit">Iniciar sesion <span aria-hidden="true">&rarr;</span></button>
+                    </form>
+
+                    <div class="login-divider">o</div>
+                    <p class="login-activation">Tienes un codigo de activacion? <a class="login-link" href="{{ route('verification.notice') }}">Activalo aqui</a></p>
+                    <p class="login-register">Aun no tienes tu catalogo? <a class="login-link" href="{{ url('/register') }}">Crea tu tienda</a></p>
+                    <div class="login-secure">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8.2 7 10 4-1.8 7-5.5 7-10V6l-7-3Z"/><rect x="9" y="10" width="6" height="5" rx="1"/><path d="M10 10V8a2 2 0 0 1 4 0v2"/></svg>
+                        Acceso seguro cifrado
                     </div>
-
-                    <!-- Submit Button -->
-                    <button class="w-full rounded-xl bg-blue-600 py-3 px-4 text-sm font-bold text-white shadow-md shadow-blue-500/20 hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-600/20 active:scale-[0.99] transition duration-150 cursor-pointer" type="submit">
-                        Iniciar sesión
-                    </button>
-                </form>
-
-                <!-- Bottom Links -->
-                <div class="mt-7 pt-6 border-t border-slate-100 space-y-2.5 text-center">
-                    <p class="text-xs text-slate-500">
-                        ¿Tienes un código de activación pendiente?
-                        <a class="font-bold text-blue-600 hover:text-blue-800 transition ml-1" href="{{ route('verification.notice') }}">
-                            Activa tu cuenta aquí →
-                        </a>
-                    </p>
-                    <p class="text-xs text-slate-500">
-                        ¿Aún no tienes tu catálogo?
-                        <a class="font-bold text-blue-600 hover:text-blue-800 transition ml-1" href="{{ url('/register') }}">
-                            Crea tu tienda gratis aquí →
-                        </a>
-                    </p>
                 </div>
-            </div>
-
-            <!-- Institutional Micro Footer -->
-            <div class="mt-6 text-center text-[11px] text-slate-400">
-                <span>🔒 Acceso seguro cifrado · Diseñado para comercios y vendedores</span>
-            </div>
+            </section>
         </div>
     </main>
 
