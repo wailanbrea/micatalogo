@@ -2,13 +2,18 @@
     'shop',
     'activeTab' => 'products',
     'productCount' => null,
+    'product' => null,
 ])
+
+@php
+    $product = $product ?? request()->route('product');
+@endphp
 
 <!-- Store Workspace Context Header & Local Navigation Tabs -->
 <div class="mb-6 rounded-xl border border-slate-200 bg-white shadow-xs">
     <!-- Store Identity Row -->
     <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 p-4 sm:px-6">
-        <div class="space-y-0.5">
+        <div class="min-w-0 space-y-0.5">
             <div class="flex items-center gap-2.5">
                 @if ($shop->logo_url)
                     <img src="{{ $shop->logo_url }}" alt="{{ $shop->name }}" class="h-8 w-8 rounded-lg object-cover border border-slate-200 shadow-2xs shrink-0">
@@ -17,9 +22,9 @@
                         {{ strtoupper(substr($shop->name, 0, 1)) }}
                     </div>
                 @endif
-                <div>
-                    <h2 class="text-base font-bold text-slate-900 leading-tight">{{ $shop->name }}</h2>
-                    <p class="text-xs text-slate-500 font-mono">
+                <div class="min-w-0">
+                    <h2 class="truncate text-base font-bold text-slate-900 leading-tight">{{ $shop->name }}</h2>
+                    <p class="break-all text-xs text-slate-500 font-mono">
                         /tienda/{{ $shop->slug }} · +{{ $shop->whatsapp_country_code }} {{ $shop->whatsapp_number }}
                     </p>
                 </div>
@@ -62,12 +67,11 @@
             <svg class="h-4 w-4 shrink-0 {{ $activeTab === 'inventory' ? 'text-blue-600' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
             <span>Inventario</span>
             @php
-                $alertCount = \App\Models\ProductInventory::whereHas('product', fn($q) => $q->where('shop_id', $shop->id))
-                    ->where('track_inventory', true)
-                    ->where(function($q) {
-                        $q->whereColumn('stock_quantity', '<=', 'low_stock_threshold')
-                          ->orWhere('stock_quantity', '<=', 0);
-                    })
+                $alertCount = $shop->products()
+                    ->with(['inventory', 'sourceProduct.inventory'])
+                    ->get()
+                    ->filter(fn ($product) => $product->inventory?->track_inventory
+                        && ($product->inventory->stock_quantity <= 0 || $product->inventory->isLowStock($product)))
                     ->count();
             @endphp
             @if ($alertCount > 0)
@@ -117,4 +121,36 @@
             <span>Configuración</span>
         </a>
     </nav>
+
+    @if ($activeTab === 'inventory' && $product)
+        @php
+            $salesHistory = $product->inventoryMovements()
+                ->where('type', 'sale')
+                ->whereNotNull('unit_price')
+                ->get()
+                ->groupBy(fn ($movement) => $movement->created_at->format('Y-m-d'))
+                ->map(fn ($day) => $day->sum(fn ($movement) => abs((int) $movement->quantity) * (float) $movement->unit_price))
+                ->sortKeys();
+            $salesHistoryData = [
+                'labels' => $salesHistory->keys()->map(fn ($date) => \Carbon\Carbon::parse($date)->format('d/m'))->values()->all(),
+                'revenue' => $salesHistory->values()->map(fn ($value) => round((float) $value, 2))->values()->all(),
+            ];
+        @endphp
+        <div class="border-t border-slate-100 bg-slate-50/70 px-4 py-4 sm:px-6">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                    <p class="text-xs font-bold text-slate-900">Ingresos de {{ $product->name }}</p>
+                    <p class="text-[11px] text-slate-500">Historial de ventas por día</p>
+                </div>
+                <span class="text-xs font-black text-emerald-700">RD$ {{ number_format((float) $salesHistory->sum(), 0) }}</span>
+            </div>
+            @if ($salesHistory->isNotEmpty())
+                <div class="mt-3 h-44">
+                    <canvas data-sales-chart data-chart-metric="revenue" data-chart='@json($salesHistoryData)' aria-label="Ingresos históricos del producto"></canvas>
+                </div>
+            @else
+                <p class="mt-3 text-xs text-slate-400">Este producto todavía no tiene ventas registradas.</p>
+            @endif
+        </div>
+    @endif
 </div>

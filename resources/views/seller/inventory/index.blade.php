@@ -106,6 +106,29 @@
                 </div>
             </section>
 
+            @php
+                $salesChartData = [
+                    'labels' => $summary['top_selling_products']->map(fn ($item) => str($item->name)->limit(22)->toString())->values()->all(),
+                    'quantities' => $summary['top_selling_products']->map(fn ($item) => (int) $item->inventory->sold_quantity)->values()->all(),
+                ];
+            @endphp
+            <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <h2 class="text-sm font-bold text-slate-900">Productos más vendidos</h2>
+                        <p class="mt-1 text-xs text-slate-500">Unidades vendidas acumuladas por producto.</p>
+                    </div>
+                    <span class="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-bold text-blue-700">Top {{ $summary['top_selling_products']->count() }}</span>
+                </div>
+                <div class="mt-4 h-64 sm:h-72">
+                    @if ($summary['top_selling_products']->isNotEmpty())
+                        <canvas data-sales-chart data-chart='@json($salesChartData)' aria-label="Gráfica de productos más vendidos"></canvas>
+                    @else
+                        <div class="flex h-full items-center justify-center rounded-xl bg-slate-50 text-xs text-slate-400">Aún no hay ventas para graficar.</div>
+                    @endif
+                </div>
+            </section>
+
             <!-- Alertas Críticas y Ranking (Top 3 Cards) -->
             <div class="grid gap-5 md:grid-cols-3">
                 <!-- Productos Por Agotarse -->
@@ -126,15 +149,29 @@
                                     <span class="font-medium text-slate-800 truncate">{{ $item->name }}</span>
                                     <div class="flex items-center gap-2 shrink-0">
                                         <span class="font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                                            {{ $item->inventory->stock_quantity }} {{ $item->inventory->stock_quantity === 1 ? 'unidad' : 'unidades' }}
+                                            @if ($item->isDecant())
+                                                {{ number_format((int) ($item->sourceProduct?->inventory?->available_ml ?? 0)) }} ml fuente
+                                            @else
+                                                {{ $item->inventory->stock_quantity }} {{ $item->inventory->stock_quantity === 1 ? 'unidad' : 'unidades' }}
+                                            @endif
                                         </span>
-                                        <button
-                                            @click="openRestockModal('{{ $item->public_id }}', '{{ addslashes($item->name) }}', {{ $item->inventory->stock_quantity }})"
-                                            class="rounded bg-blue-50 px-2 py-1 text-[11px] font-bold text-blue-700 hover:bg-blue-100 transition"
-                                            title="Reponer stock"
-                                        >
-                                            + Reponer
-                                        </button>
+                                        @if ($item->isDecant() && $item->sourceProduct)
+                                            <a
+                                                href="{{ route('seller.shops.products.edit', [$shop, $item->sourceProduct]) }}"
+                                                class="rounded bg-blue-50 px-2 py-1 text-[11px] font-bold text-blue-700 hover:bg-blue-100 transition"
+                                                title="Editar botella fuente"
+                                            >
+                                                Fuente
+                                            </a>
+                                        @else
+                                            <button
+                                                @click="openRestockModal('{{ $item->public_id }}', '{{ addslashes($item->name) }}', {{ $item->inventory->stock_quantity }})"
+                                                class="rounded bg-blue-50 px-2 py-1 text-[11px] font-bold text-blue-700 hover:bg-blue-100 transition"
+                                                title="Reponer stock"
+                                            >
+                                                + Reponer
+                                            </button>
+                                        @endif
                                     </div>
                                 </li>
                             @empty
@@ -285,7 +322,7 @@
                                             <span class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-700">
                                                 <span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span> Agotado
                                             </span>
-                                        @elseif ($inv->stock_quantity <= $inv->low_stock_threshold)
+                                        @elseif ($inv->isLowStock($product))
                                             <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700">
                                                 <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span> Stock bajo
                                             </span>
@@ -299,10 +336,10 @@
                                     <!-- Stock Actual -->
                                     <td class="px-4 py-3.5 text-right whitespace-nowrap">
                                         @if ($isControlled)
-                                            <span class="font-mono text-base font-extrabold {{ $inv->stock_quantity <= 0 ? 'text-rose-600' : ($inv->stock_quantity <= $inv->low_stock_threshold ? 'text-amber-600' : 'text-slate-900') }}">
+                                            <span class="font-mono text-base font-extrabold {{ $inv->stock_quantity <= 0 ? 'text-rose-600' : ($inv->isLowStock($product) ? 'text-amber-600' : 'text-slate-900') }}">
                                                 {{ $inv->stock_quantity }}
                                             </span>
-                                            <span class="text-slate-400 text-xs block">mín: {{ $inv->low_stock_threshold }}</span>
+                                            <span class="text-slate-400 text-xs block">{{ $product->stockUnitLabel() }} · mín: {{ $inv->low_stock_threshold }}</span>
                                         @else
                                             <span class="text-xs text-slate-400 italic">Ilimitado</span>
                                         @endif
@@ -324,6 +361,23 @@
                                             <span class="font-mono text-xs font-semibold text-slate-700">
                                                 RD$ {{ number_format((float) $inv->cost_price, 0) }}
                                             </span>
+                                            @if (isset($summary['cost_recovery'][$product->id]))
+                                                @php
+                                                    $recovery = $summary['cost_recovery'][$product->id];
+                                                @endphp
+                                                @if ($recovery['covered'])
+                                                    <span class="mt-1 block text-[10px] font-bold text-emerald-700">
+                                                        Costo cubierto · +RD$ {{ number_format($recovery['difference'], 0) }}
+                                                    </span>
+                                                @else
+                                                    <span class="mt-1 block text-[10px] font-semibold text-amber-700">
+                                                        Faltan RD$ {{ number_format(abs($recovery['difference']), 0) }}
+                                                    </span>
+                                                @endif
+                                                <span class="block text-[10px] text-slate-400">
+                                                    Decants: RD$ {{ number_format($recovery['revenue'], 0) }} / botella: RD$ {{ number_format($recovery['cost'], 0) }}
+                                                </span>
+                                            @endif
                                         @else
                                             <span class="text-xs text-slate-400 italic">No fijado</span>
                                         @endif
@@ -351,7 +405,7 @@
                                             @if ($isControlled)
                                                 <!-- Registrar Venta -->
                                                 <button
-                                                    @click="openSaleModal('{{ $product->public_id }}', '{{ addslashes($product->name) }}', {{ $inv->stock_quantity }})"
+                                                    @click="openSaleModal(@js($product->public_id), @js($product->name), {{ $inv->stock_quantity }}, @js($product->sale_unit), {{ $product->volume_ml ?? 0 }}, {{ $product->sourceProduct?->inventory?->available_ml ?? 0 }})"
                                                     class="inline-flex items-center gap-1 rounded-md border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition {{ $inv->stock_quantity <= 0 ? 'opacity-50 cursor-not-allowed' : '' }}"
                                                     {{ $inv->stock_quantity <= 0 ? 'disabled' : '' }}
                                                     title="Registrar venta directa"
@@ -406,6 +460,39 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="mt-4 space-y-3 md:hidden">
+                    @forelse ($summary['all_products'] as $product)
+                        @php
+                            $inv = $product->inventory;
+                            $isControlled = $inv && $inv->track_inventory;
+                        @endphp
+                        <article class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <a href="{{ route('seller.shops.products.edit', [$shop, $product]) }}" class="font-bold text-slate-900 hover:text-blue-700">{{ $product->name }}</a>
+                                    <p class="mt-1 text-xs text-slate-500">RD$ {{ number_format((float) $product->price, 0) }}</p>
+                                </div>
+                                @if ($isControlled)
+                                    <span class="shrink-0 rounded-full px-2 py-1 text-[10px] font-bold {{ $inv->stock_quantity <= 0 ? 'bg-rose-100 text-rose-700' : ($inv->isLowStock($product) ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700') }}">
+                                        {{ $inv->stock_quantity <= 0 ? 'Agotado' : ($inv->isLowStock($product) ? 'Stock bajo' : 'Disponible') }}
+                                    </span>
+                                @endif
+                            </div>
+                            <div class="mt-3 grid grid-cols-2 gap-2 text-xs">
+                                <div class="rounded-lg bg-white p-2"><span class="block text-slate-400">Stock</span><strong class="text-slate-900">{{ $isControlled ? $inv->stock_quantity.' '.$product->stockUnitLabel() : 'Sin control' }}</strong></div>
+                                <div class="rounded-lg bg-white p-2"><span class="block text-slate-400">Vendidos</span><strong class="text-emerald-700">{{ $isControlled ? $inv->sold_quantity : '-' }}</strong></div>
+                            </div>
+                            @if ($isControlled)
+                                <div class="mt-3 flex flex-wrap gap-2">
+                                    <button type="button" @click="openSaleModal(@js($product->public_id), @js($product->name), {{ $inv->stock_quantity }}, @js($product->sale_unit), {{ $product->volume_ml ?? 0 }}, {{ $product->sourceProduct?->inventory?->available_ml ?? 0 }})" class="rounded-lg bg-emerald-600 px-3 py-2 text-[11px] font-bold text-white {{ $inv->stock_quantity <= 0 ? 'opacity-50' : '' }}" {{ $inv->stock_quantity <= 0 ? 'disabled' : '' }}>Registrar venta</button>
+                                    <a href="{{ route('seller.shops.inventory.movements', [$shop, $product]) }}" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-[11px] font-bold text-slate-700">Historial</a>
+                                </div>
+                            @endif
+                        </article>
+                    @empty
+                        <p class="rounded-xl border border-dashed border-slate-300 p-4 text-center text-xs text-slate-400">No hay productos para mostrar.</p>
+                    @endforelse
+                </div>
             </section>
 
             <!-- Bitácora Reciente de Movimientos de la Tienda -->
@@ -458,6 +545,16 @@
                                         </td>
                                         <td class="px-4 py-2 text-slate-500 italic">
                                             {{ $movement->notes ?: '-' }}
+                                            @if ($movement->invoice_id)
+                                                @php
+                                                    $invoicePdfUrl = \Illuminate\Support\Facades\URL::signedRoute('track.wa.shop', [$shop], ['invoice' => $movement->invoice_id]);
+                                                    $invoiceWhatsAppUrl = 'https://wa.me/'.$shop->whatsapp_country_code.$shop->whatsapp_number.'?text='.rawurlencode('Factura en PDF: '.$invoicePdfUrl);
+                                                @endphp
+                                                <span class="ml-2 inline-flex gap-2 not-italic">
+                                                    <a href="{{ $invoicePdfUrl }}" target="_blank" class="font-bold text-blue-700 hover:underline">Factura PDF</a>
+                                                    <a href="{{ $invoiceWhatsAppUrl }}" target="_blank" class="font-bold text-emerald-700 hover:underline">WhatsApp</a>
+                                                </span>
+                                            @endif
                                         </td>
                                     </tr>
                                 @endforeach
@@ -477,7 +574,7 @@
         >
             <div
                 @click.away="closeModals()"
-                class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl transition-all"
+                class="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl transition-all"
             >
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                     <div class="flex items-center gap-2">
@@ -495,7 +592,11 @@
                         <p class="text-xs font-semibold text-slate-500">Producto:</p>
                         <p class="text-sm font-bold text-slate-900" x-text="activeProductName"></p>
                         <p class="text-xs text-slate-500 mt-0.5">
-                            Stock disponible: <span class="font-bold text-slate-800" x-text="activeProductStock"></span> unidades
+                            Stock disponible: <span class="font-bold text-slate-800" x-text="activeProductStock"></span> <span x-text="activeProductUnitLabel"></span>
+                        </p>
+                        <p x-show="saleUnit === 'decant'" class="mt-1 text-xs text-blue-700">
+                            Botella fuente: <span class="font-bold" x-text="saleSourceAvailableMl"></span> ml disponibles.
+                            Esta venta descuenta <span class="font-bold" x-text="saleTotalMl"></span> ml.
                         </p>
                     </div>
 
@@ -561,7 +662,7 @@
         >
             <div
                 @click.away="closeModals()"
-                class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl transition-all"
+                class="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl transition-all"
             >
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                     <div class="flex items-center gap-2">
@@ -643,7 +744,7 @@
         >
             <div
                 @click.away="closeModals()"
-                class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl transition-all"
+                class="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl transition-all"
             >
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                     <div class="flex items-center gap-2">
@@ -713,6 +814,9 @@
                 activeProductId: '',
                 activeProductName: '',
                 activeProductStock: 0,
+                saleUnit: 'unit',
+                saleVolumeMl: 0,
+                saleSourceAvailableMl: 0,
                 saleQuantity: 1,
                 restockQuantity: 5,
                 adjustNewStock: 0,
@@ -727,11 +831,20 @@
                 get adjustUrl() {
                     return `${this.baseUrl}/${this.activeProductId}/inventario/ajuste`;
                 },
+                get activeProductUnitLabel() {
+                    return this.saleUnit === 'decant' ? 'decants' : 'unidades';
+                },
+                get saleTotalMl() {
+                    return this.saleQuantity * this.saleVolumeMl;
+                },
 
-                openSaleModal(productId, productName, stock) {
+                openSaleModal(productId, productName, stock, saleUnit, volumeMl, sourceAvailableMl) {
                     this.activeProductId = productId;
                     this.activeProductName = productName;
                     this.activeProductStock = stock;
+                    this.saleUnit = saleUnit;
+                    this.saleVolumeMl = volumeMl;
+                    this.saleSourceAvailableMl = sourceAvailableMl;
                     this.saleQuantity = 1;
                     this.isSaleModalOpen = true;
                 },

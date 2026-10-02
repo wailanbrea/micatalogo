@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Shop;
 use App\Services\InventoryService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -35,6 +36,40 @@ class SellerInventoryController extends Controller
             return back()->with('status', "Venta de {$validated['quantity']} unidad(es) de {$product->name} registrada exitosamente.");
         } catch (InvalidArgumentException $e) {
             return back()->withErrors(['quantity' => $e->getMessage()]);
+        }
+    }
+
+    public function checkout(Request $request, Shop $shop, InventoryService $inventoryService): JsonResponse
+    {
+        $validated = $request->validate([
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.product_id' => ['required', 'integer', 'distinct'],
+            'items.*.quantity' => ['required', 'integer', 'min:1', 'max:10000'],
+        ]);
+
+        $items = collect($validated['items'])
+            ->keyBy('product_id')
+            ->map(fn (array $item) => (int) $item['quantity']);
+        $products = $shop->products()->whereIn('id', $items->keys())->get()->keyBy('id');
+
+        if ($products->count() !== $items->count()) {
+            return response()->json(['message' => 'Uno o más productos no pertenecen a esta tienda.'], 422);
+        }
+
+        try {
+            $inventoryService->recordCartSales(
+                $items->map(fn (int $quantity, int $productId) => [
+                    'product' => $products->get($productId),
+                    'quantity' => $quantity,
+                ])->values()->all(),
+                $request->user()->id,
+            );
+
+            return response()->json([
+                'redirect' => route('seller.shops.inventory.index', $shop),
+            ]);
+        } catch (InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 
@@ -72,7 +107,7 @@ class SellerInventoryController extends Controller
 
     public function movements(Shop $shop, Product $product): View
     {
-        $movements = $product->inventoryMovements()->paginate(25);
+        $movements = $product->inventoryMovements()->with('invoice')->paginate(25);
 
         return view('seller.inventory.movements', [
             'shop' => $shop,

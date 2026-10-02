@@ -1,14 +1,23 @@
 # MiCatalogo
 
 MiCatalogo is a public product showcase for independent sellers. Visitors discover
-products and contact sellers through WhatsApp; the MVP has no cart, checkout, payments,
-or order processing.
+products, build a shared cart, and contact sellers through WhatsApp. Sellers can confirm
+the cart from their panel, atomically decrement inventory, and issue a stored invoice.
 
 ## Stack
 
 - Laravel 12, PHP 8.2, MariaDB 11.4
 - Blade, Livewire 4, Tailwind 4, Vite
 - Cloudflare Turnstile, optional Cloudflare R2 media storage
+
+## Commerce Flow
+
+- WhatsApp cart links reopen the selected products in the store catalog.
+- The seller-only checkout endpoint processes all cart lines in one database transaction.
+- A checkout creates one invoice with frozen product names, quantities, prices, and totals.
+- Invoice PDFs are served through signed links that can be opened or shared in WhatsApp.
+- Bottle and decant sales update milliliters, stock availability, cost recovery, and movement history.
+- The inventory dashboard includes responsive mobile cards, sales charts, and product revenue history.
 
 ## Local Setup
 
@@ -21,6 +30,8 @@ or order processing.
 
 ```powershell
 php artisan test
+php artisan test --filter=InventoryLiteTest
+composer test
 php .\vendor\bin\pint --test
 npm run build
 php .tools\composer\composer.phar audit

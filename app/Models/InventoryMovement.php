@@ -14,6 +14,7 @@ class InventoryMovement extends Model
 
     protected $fillable = [
         'product_id',
+        'invoice_id',
         'user_id',
         'type',
         'quantity',
@@ -45,6 +46,11 @@ class InventoryMovement extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function invoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class);
     }
 
     public function typeLabel(): string

@@ -3,6 +3,7 @@
 use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductModerationStatus;
 use App\Models\InventoryMovement;
+use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\ProductInventory;
 use App\Models\Shop;
@@ -116,6 +117,65 @@ test('recording a sale decrements stock, increments sold, and records movement',
     ]);
 });
 
+test('recording a sale persists a paid invoice with a price snapshot', function () {
+    $user = User::factory()->create();
+    $shop = Shop::factory()->create(['user_id' => $user->id]);
+    $product = Product::factory()->create([
+        'shop_id' => $shop->id,
+        'price' => 2750,
+    ]);
+
+    ProductInventory::create([
+        'product_id' => $product->id,
+        'track_inventory' => true,
+        'stock_quantity' => 4,
+        'sold_quantity' => 0,
+    ]);
+
+    $this->actingAs($user)->post(route('seller.shops.inventory.sale', [$shop, $product]), [
+        'quantity' => 2,
+    ])->assertRedirect();
+
+    $invoice = Invoice::query()->with('items')->sole();
+
+    expect($invoice->status)->toBe('paid')
+        ->and($invoice->shop_id)->toBe($shop->id)
+        ->and($invoice->items)->toHaveCount(1)
+        ->and((float) $invoice->total)->toBe(5500.0)
+        ->and((float) $invoice->items->first()->unit_price)->toBe(2750.0);
+
+    $this->assertDatabaseHas('inventory_movements', [
+        'product_id' => $product->id,
+        'invoice_id' => $invoice->id,
+    ]);
+});
+
+test('shared cart checkout creates one invoice for all product lines', function () {
+    $user = User::factory()->create();
+    $shop = Shop::factory()->create(['user_id' => $user->id]);
+    $firstProduct = Product::factory()->create(['shop_id' => $shop->id, 'price' => 1000]);
+    $secondProduct = Product::factory()->create(['shop_id' => $shop->id, 'price' => 1500]);
+
+    ProductInventory::create(['product_id' => $firstProduct->id, 'track_inventory' => true, 'stock_quantity' => 5, 'sold_quantity' => 0]);
+    ProductInventory::create(['product_id' => $secondProduct->id, 'track_inventory' => true, 'stock_quantity' => 5, 'sold_quantity' => 0]);
+
+    $response = $this->actingAs($user)->postJson(route('seller.shops.inventory.checkout', $shop), [
+        'items' => [
+            ['product_id' => $firstProduct->id, 'quantity' => 2],
+            ['product_id' => $secondProduct->id, 'quantity' => 1],
+        ],
+    ]);
+
+    $response->assertOk()->assertJsonPath('redirect', route('seller.shops.inventory.index', $shop));
+
+    $invoice = Invoice::query()->with('items')->sole();
+
+    expect($invoice->items)->toHaveCount(2)
+        ->and((float) $invoice->total)->toBe(3500.0)
+        ->and($firstProduct->fresh()->inventory->stock_quantity)->toBe(3)
+        ->and($secondProduct->fresh()->inventory->stock_quantity)->toBe(4);
+});
+
 test('recording a sale validates available stock and prevents overselling', function () {
     $user = User::factory()->create();
     $shop = Shop::factory()->create(['user_id' => $user->id]);
@@ -201,6 +261,104 @@ test('restocking increments stock and restores available status if out of stock'
         'stock_before' => 0,
         'stock_after' => 15,
     ]);
+});
+
+test('selling a decant deducts its milliliters from the source bottle', function () {
+    $user = User::factory()->create();
+    $shop = Shop::factory()->create(['user_id' => $user->id]);
+    $bottle = Product::factory()->create([
+        'shop_id' => $shop->id,
+        'name' => 'Perfume Original',
+        'sale_unit' => 'bottle',
+        'volume_ml' => 100,
+    ]);
+    $decant = Product::factory()->create([
+        'shop_id' => $shop->id,
+        'name' => 'Perfume Decant 5 ml',
+        'sale_unit' => 'decant',
+        'volume_ml' => 5,
+        'inventory_source_product_id' => $bottle->id,
+    ]);
+
+    ProductInventory::create([
+        'product_id' => $bottle->id,
+        'track_inventory' => true,
+        'stock_quantity' => 1,
+        'available_ml' => 100,
+        'low_stock_threshold' => 1,
+    ]);
+    $decantInventory = ProductInventory::create([
+        'product_id' => $decant->id,
+        'track_inventory' => true,
+        'stock_quantity' => 20,
+        'sold_quantity' => 0,
+        'low_stock_threshold' => 2,
+    ]);
+
+    $this->actingAs($user)->post(route('seller.shops.inventory.sale', [$shop, $decant]), [
+        'quantity' => 2,
+    ])->assertRedirect();
+
+    $decantInventory->refresh();
+    $bottle->refresh();
+
+    expect($decantInventory->stock_quantity)->toBe(18)
+        ->and($decantInventory->sold_quantity)->toBe(2)
+        ->and($bottle->inventory->available_ml)->toBe(90)
+        ->and($bottle->inventory->stock_quantity)->toBe(0);
+
+    $this->assertDatabaseHas('inventory_movements', [
+        'product_id' => $decant->id,
+        'type' => 'sale',
+        'quantity' => -2,
+        'stock_before' => 20,
+        'stock_after' => 18,
+    ]);
+});
+
+test('inventory reports when decant revenue covers the source bottle cost', function () {
+    $user = User::factory()->create();
+    $shop = Shop::factory()->create(['user_id' => $user->id]);
+    $bottle = Product::factory()->create([
+        'shop_id' => $shop->id,
+        'sale_unit' => 'bottle',
+        'volume_ml' => 100,
+    ]);
+    $decant = Product::factory()->create([
+        'shop_id' => $shop->id,
+        'sale_unit' => 'decant',
+        'volume_ml' => 5,
+        'price' => 50,
+        'inventory_source_product_id' => $bottle->id,
+    ]);
+
+    ProductInventory::create([
+        'product_id' => $bottle->id,
+        'track_inventory' => true,
+        'cost_price' => 300,
+        'stock_quantity' => 1,
+        'available_ml' => 100,
+        'low_stock_threshold' => 1,
+    ]);
+    ProductInventory::create([
+        'product_id' => $decant->id,
+        'track_inventory' => true,
+        'stock_quantity' => 20,
+        'sold_quantity' => 0,
+        'low_stock_threshold' => 3,
+    ]);
+
+    $this->actingAs($user)->post(route('seller.shops.inventory.sale', [$shop, $decant]), [
+        'quantity' => 10,
+    ])->assertRedirect();
+
+    $summary = app(InventoryService::class)->getShopInventorySummary($shop);
+    $recovery = $summary['cost_recovery'][$bottle->id];
+
+    expect($recovery['revenue'])->toBe(500.0)
+        ->and($recovery['cost'])->toBe(300.0)
+        ->and($recovery['covered'])->toBeTrue()
+        ->and($recovery['difference'])->toBe(200.0);
 });
 
 test('adjusting stock sets exact count without altering sold quantity', function () {

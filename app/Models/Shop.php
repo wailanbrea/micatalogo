@@ -15,7 +15,7 @@ class Shop extends Model
 {
     use HasFactory, HasPublicId, SoftDeletes;
 
-    protected $fillable = ['name', 'slug', 'description', 'logo_object_key', 'whatsapp_country_code', 'whatsapp_number', 'offers_shipping', 'instagram', 'status', 'discovery_enabled'];
+    protected $fillable = ['name', 'slug', 'description', 'logo_object_key', 'whatsapp_country_code', 'whatsapp_number', 'offers_shipping', 'instagram', 'status', 'discovery_enabled', 'product_limit'];
 
     protected $attributes = [
         'discovery_enabled' => false,
@@ -26,6 +26,7 @@ class Shop extends Model
         return [
             'offers_shipping' => 'boolean',
             'discovery_enabled' => 'boolean',
+            'product_limit' => 'integer',
         ];
     }
 
@@ -51,6 +52,11 @@ class Shop extends Model
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);
+    }
+
+    public function productLimit(): int
+    {
+        return $this->product_limit ?? (int) config('catalog.free.max_products_per_shop', 100);
     }
 
     public function dailyMetrics(): HasMany

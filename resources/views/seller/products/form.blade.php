@@ -32,7 +32,7 @@
                     </div>
                 @endif
 
-                <form class="mt-6 space-y-6" method="POST" action="{{ $product->exists ? route('seller.shops.products.update', [$shop, $product]) : route('seller.shops.products.store', $shop) }}" x-data="{ trackInventory: {{ old('track_inventory', $product->exists ? ($product->inventory?->track_inventory ?? false) : true) ? 'true' : 'false') }}">
+                <form class="mt-6 space-y-6" method="POST" action="{{ $product->exists ? route('seller.shops.products.update', [$shop, $product]) : route('seller.shops.products.store', $shop) }}" x-data="{ trackInventory: {{ old('track_inventory', $product->exists ? ($product->inventory?->track_inventory ?? false) : true) ? 'true' : 'false' }}, saleUnit: '{{ old('sale_unit', $product->sale_unit ?? 'unit') }}' }">
                     @csrf
                     @if ($product->exists)
                         @method('PUT')
@@ -42,6 +42,11 @@
                     <div>
                         <label class="block text-sm font-semibold text-slate-800" for="name">Nombre del producto *</label>
                         <input class="mt-1.5 w-full rounded-md border border-slate-300 px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="name" name="name" required type="text" value="{{ old('name', $product->name) }}" placeholder="Ej: Zapatillas Urbanas Pro">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-800" for="product_code">Código de producto / UPC</label>
+                        <input class="mt-1.5 w-full rounded-md border border-slate-300 px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="product_code" name="product_code" type="text" value="{{ old('product_code', $product->product_code) }}" placeholder="Opcional">
                     </div>
 
                     <!-- Precios: Venta y Costo (Contabilidad de Inventario) -->
@@ -65,6 +70,43 @@
                                 <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-slate-500">RD$</span>
                                 <input class="w-full rounded-md border border-slate-300 pl-12 pr-3 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="cost_price" name="cost_price" step="0.01" min="0" type="number" value="{{ old('cost_price', $product->inventory?->cost_price) }}" placeholder="0.00">
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Presentación y unidad de venta -->
+                    <div class="rounded-xl border border-blue-200 bg-blue-50/50 p-4 sm:p-5">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-900" for="sale_unit">¿Cómo se vende este producto?</label>
+                            <p class="mt-0.5 text-xs text-slate-600">Define si el inventario se cuenta por botella, ml o decant.</p>
+                        </div>
+                        <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <select class="w-full rounded-md border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="sale_unit" name="sale_unit" x-model="saleUnit">
+                                    <option value="unit">Unidad</option>
+                                    <option value="bottle">Botella completa</option>
+                                    <option value="ml">Por mililitro (ml)</option>
+                                    <option value="decant">Decant</option>
+                                </select>
+                            </div>
+
+                            <div x-show="saleUnit === 'bottle' || saleUnit === 'ml' || saleUnit === 'decant'" x-cloak>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700" for="volume_ml">Contenido en ml</label>
+                                <input class="mt-1.5 w-full rounded-md border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="volume_ml" name="volume_ml" type="number" min="1" max="100000" value="{{ old('volume_ml', $product->volume_ml) }}" :required="saleUnit === 'bottle' || saleUnit === 'ml' || saleUnit === 'decant'">
+                                <p class="mt-1 text-[11px] text-slate-500" x-text="saleUnit === 'ml' ? 'Capacidad inicial del recipiente para mostrar el nivel restante.' : (saleUnit === 'decant' ? 'Ejemplo: 5 ml por decant.' : 'Ejemplo: 100 ml la botella.')"></p>
+                            </div>
+                        </div>
+
+                        <div class="mt-4" x-show="saleUnit === 'decant'" x-cloak>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700" for="inventory_source_product_id">Botella fuente</label>
+                            <select class="mt-1.5 w-full rounded-md border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="inventory_source_product_id" name="inventory_source_product_id" :required="saleUnit === 'decant'">
+                                <option value="">Selecciona la botella que se descontará</option>
+                                @foreach ($sourceProducts as $sourceProduct)
+                                    <option value="{{ $sourceProduct->id }}" @selected(old('inventory_source_product_id', $product->inventory_source_product_id) == $sourceProduct->id)>
+                                        {{ $sourceProduct->name }}{{ $sourceProduct->volume_ml ? ' · '.$sourceProduct->volume_ml.' ml' : '' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="mt-1 text-[11px] text-slate-500">Cada venta de este decant descontará sus ml de la botella seleccionada.</p>
                         </div>
                     </div>
 
@@ -148,15 +190,16 @@
                         <div x-show="trackInventory" class="mt-4 grid gap-4 sm:grid-cols-2 pt-3 border-t border-slate-200/80">
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-700" for="stock_quantity">
-                                    {{ $product->exists ? 'Stock actual' : 'Stock inicial' }}
+                                    <span x-text="saleUnit === 'ml' ? 'Stock disponible (ml)' : (saleUnit === 'bottle' ? 'Botellas disponibles' : (saleUnit === 'decant' ? 'Decants disponibles' : '{{ $product->exists ? 'Stock actual' : 'Stock inicial' }}'))"></span>
                                 </label>
-                                <p class="text-[11px] text-slate-500">Unidades físicas disponibles para la venta.</p>
+                                <p class="text-[11px] text-slate-500" x-text="saleUnit === 'ml' ? 'Cantidad total de ml disponibles.' : (saleUnit === 'decant' ? 'Se calcula automáticamente según la botella fuente.' : 'Unidades físicas disponibles para la venta.')"></p>
                                 <input
                                     type="number"
                                     id="stock_quantity"
                                     name="stock_quantity"
                                     min="0"
                                     value="{{ old('stock_quantity', $product->inventory?->stock_quantity ?? 0) }}"
+                                    :disabled="saleUnit === 'decant'"
                                     class="mt-1.5 w-full rounded-md border border-slate-300 px-3.5 py-2 text-sm text-slate-900 font-mono font-bold focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
                                 >
                             </div>
@@ -184,6 +227,11 @@
                         <textarea class="mt-1.5 w-full rounded-md border border-slate-300 px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="description" name="description" rows="4" placeholder="Describe los detalles, tallas, variantes o especificaciones...">{{ old('description', $product->description) }}</textarea>
                     </div>
 
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-800" for="notes">Notas internas</label>
+                        <textarea class="mt-1.5 w-full rounded-md border border-slate-300 px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="notes" name="notes" rows="3" placeholder="Notas del inventario o información privada...">{{ old('notes', $product->notes) }}</textarea>
+                    </div>
+
                     <!-- Botones de Acción -->
                     <div class="flex items-center justify-end gap-3 border-t border-slate-200 pt-5">
                         <a class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" href="{{ route('seller.shops.products.index', $shop) }}">
@@ -195,6 +243,43 @@
                     </div>
                 </form>
             </section>
+
+            @if ($product->exists)
+                <section class="mt-6 rounded-xl border border-blue-200 bg-blue-50/50 p-6 shadow-sm sm:p-8">
+                    <div class="flex flex-wrap items-start justify-between gap-4 border-b border-blue-100 pb-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-900">Existencias</h2>
+                            <p class="mt-1 text-xs text-slate-600">Consulta y agrega unidades sin reemplazar el stock actual.</p>
+                        </div>
+                        @if ($product->inventory?->track_inventory)
+                            <a href="{{ route('seller.shops.inventory.movements', [$shop, $product]) }}" class="text-xs font-semibold text-blue-700 hover:text-blue-900">Ver movimientos</a>
+                        @endif
+                    </div>
+
+                    @if ($product->inventory?->track_inventory)
+                        <div class="mt-5 flex flex-wrap items-end gap-5">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Disponible ahora</p>
+                                <p class="mt-1 text-3xl font-black text-slate-900">{{ number_format($product->inventory->stock_quantity) }} <span class="text-sm font-semibold text-slate-500">unidades</span></p>
+                                <p class="mt-1 text-xs text-slate-500">{{ number_format($product->inventory->sold_quantity) }} vendidas · alerta en {{ $product->inventory->low_stock_threshold }}</p>
+                            </div>
+
+                            <form class="flex flex-1 flex-wrap items-end gap-3" method="POST" action="{{ route('seller.shops.inventory.restock', [$shop, $product]) }}">
+                                @csrf
+                                <div class="min-w-36 flex-1">
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700" for="restock_quantity">Agregar unidades</label>
+                                    <input class="mt-1.5 w-full rounded-md border border-slate-300 bg-white px-3.5 py-2 text-sm font-bold text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="restock_quantity" name="quantity" type="number" min="1" max="100000" value="1" required>
+                                </div>
+                                <button class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700" type="submit">Agregar al stock</button>
+                            </form>
+                        </div>
+                    @else
+                        <p class="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                            El control de inventario está desactivado. Actívalo arriba y guarda los cambios para comenzar a registrar existencias y reposiciones.
+                        </p>
+                    @endif
+                </section>
+            @endif
 
             @if ($product->exists)
                 <!-- Galería y Gestión de Imágenes -->

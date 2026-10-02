@@ -2,6 +2,17 @@
     $productUrl = url()->current();
     $waMessage = "Hola, me interesa \"{$product->name}\" que vi en MiCatalogo:\n{$productUrl}";
     $waUrl = "https://wa.me/{$shop->whatsapp_country_code}{$shop->whatsapp_number}?text=".rawurlencode($waMessage);
+    $isDecant = $product->isDecant();
+    $maxQuantity = $product->isInventoryTracked() ? max(1, (int) $product->inventory->stock_quantity) : 10000;
+    $decantOptionData = $decantOptions->map(fn ($decant) => [
+        'id' => $decant->public_id,
+        'name' => $decant->name,
+        'volume' => (int) $decant->volume_ml,
+        'price' => (float) $decant->price,
+        'stock' => (int) ($decant->inventory?->stock_quantity ?? 0),
+        'waUrl' => route('track.wa.product', [$shop, $decant]),
+    ])->all();
+    $selectedDecantId = $isDecant ? $product->public_id : ($decantOptions->first()?->public_id);
 @endphp
 
 <x-layouts.app :title="$product->name.' | '.$shop->name.' en MiCatalogo'">
@@ -48,7 +59,33 @@
             </div>
         </header>
 
-        <main class="mx-auto max-w-[1300px] px-4 py-6 sm:px-6 lg:px-8 pb-24 sm:pb-8">
+        <main
+            x-data="{
+                quantity: 1,
+                decantOptions: @js($decantOptionData),
+                selectedDecantId: @js($selectedDecantId),
+                get selectedDecant() {
+                    return this.decantOptions.find((option) => option.id === this.selectedDecantId) || null;
+                },
+                get quantityMax() {
+                    return this.selectedDecant ? Math.max(1, this.selectedDecant.stock) : {{ $maxQuantity }};
+                },
+                get totalMl() {
+                    return this.selectedDecant ? this.quantity * this.selectedDecant.volume : 0;
+                },
+                get totalPrice() {
+                    return this.selectedDecant ? this.quantity * this.selectedDecant.price : 0;
+                },
+                get whatsappUrl() {
+                    if (! this.selectedDecant) {
+                        return '{{ route('track.wa.product', [$shop, $product]) }}';
+                    }
+
+                    return `${this.selectedDecant.waUrl}?quantity=${this.quantity}`;
+                }
+            }"
+            class="mx-auto max-w-[1300px] px-4 py-6 sm:px-6 lg:px-8 pb-24 sm:pb-8"
+        >
             <!-- Breadcrumbs (Scoped to this Shop) -->
             <nav class="mb-5 flex items-center gap-2 text-xs text-slate-500 overflow-x-auto whitespace-nowrap" aria-label="Ruta de navegación">
                 <a class="font-bold text-blue-700 hover:text-blue-900 transition" href="{{ route('shops.show', $shop) }}">{{ $shop->name }}</a>
@@ -67,7 +104,7 @@
                     <div class="md:sticky md:top-20 space-y-3">
                         <div class="relative flex aspect-square items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-xs">
                             @if ($product->images->isNotEmpty())
-                                <img id="main-product-image" src="{{ $product->images->first()->url }}" alt="{{ $product->name }}" class="h-full w-full object-contain object-center transition duration-200">
+                                <img id="main-product-image" src="{{ $product->images->first()->url }}" alt="{{ $product->name }}" class="h-full w-full object-contain object-center transition duration-200" decoding="async" fetchpriority="high">
                             @else
                                 <svg class="h-24 w-24 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="m3 16 5-5 4 4 3-3 6 6M5 21h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2Z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></svg>
                             @endif
@@ -78,7 +115,7 @@
                             <div class="flex items-center gap-2 overflow-x-auto pb-1">
                                 @foreach ($product->images as $index => $img)
                                     <button class="gallery-thumb relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 bg-white transition cursor-pointer {{ $loop->first ? 'border-blue-600 ring-2 ring-blue-600/20' : 'border-slate-200 hover:border-slate-300' }}" data-index="{{ $index }}" data-src="{{ $img->url }}" onclick="selectGalleryImage(this, '{{ $img->url }}')" type="button">
-                                        <img src="{{ $img->url }}" alt="{{ $product->name }} foto {{ $loop->iteration }}" class="h-full w-full object-cover object-center">
+                                        <img src="{{ $img->url }}" alt="{{ $product->name }} foto {{ $loop->iteration }}" class="h-full w-full object-cover object-center" loading="lazy" decoding="async">
                                     </button>
                                 @endforeach
                             </div>
@@ -89,12 +126,12 @@
                 <!-- Col 2: Center Details (Mobile: full, Tablet: 6 cols, Desktop: 4 cols) -->
                 <div class="md:col-span-6 lg:col-span-4 flex flex-col space-y-4">
                     <!-- Store Link (Amazon Style "Visita la tienda...") -->
-                    <div class="flex items-center justify-between">
-                        <a class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 hover:underline" href="{{ route('shops.show', $shop) }}">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <a class="inline-flex min-w-0 max-w-full items-center gap-1.5 text-xs font-semibold text-blue-700 hover:underline" href="{{ route('shops.show', $shop) }}">
                             <span class="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-800">
                                 {{ str($shop->name)->substr(0, 1)->upper() }}
                             </span>
-                            <span>Visita la tienda {{ $shop->name }}</span>
+                            <span class="truncate">Visita la tienda {{ $shop->name }}</span>
                         </a>
                         <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
                             <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> Catálogo Verificado
@@ -106,9 +143,11 @@
                         {{ $product->name }}
                     </h1>
 
-                    @php($isUnavailable = $product->isInventoryTracked()
-                        ? $product->inventory->isOutOfStock()
-                        : $product->availability_status->value === 'out_of_stock')
+                    @php
+                        $isUnavailable = $product->isInventoryTracked()
+                            ? $product->inventory->isOutOfStock()
+                            : $product->availability_status->value === 'out_of_stock';
+                    @endphp
 
                     <!-- Stock / Availability Badge -->
                     <div>
@@ -117,9 +156,14 @@
                                 <span class="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700 border border-rose-200">
                                     <span class="h-2 w-2 rounded-full bg-rose-500"></span> No disponible por el momento
                                 </span>
-                            @elseif ($product->inventory->isLowStock())
+                            @elseif ($product->inventory->isLowStock($product))
                                 <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800 border border-amber-200">
-                                    <span class="h-2 w-2 rounded-full bg-amber-500"></span> ¡Últimas {{ $product->inventory->stock_quantity }} unidades!
+                                    <span class="h-2 w-2 rounded-full bg-amber-500"></span>
+                                    @if ($isDecant)
+                                        ¡Quedan {{ number_format((int) ($product->sourceProduct?->inventory?->available_ml ?? 0)) }} ml en la botella fuente!
+                                    @else
+                                        ¡Últimas {{ $product->inventory->stock_quantity }} unidades!
+                                    @endif
                                 </span>
                             @else
                                 <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 border border-emerald-200">
@@ -141,10 +185,12 @@
                         @endif
                     </div>
 
+                    <x-liquid-level :product="$product" storage-key="product-{{ $product->id }}-liquid" />
+
                     <!-- Price Block -->
                     <div class="border-y border-slate-200/80 py-3">
                         <div class="flex items-baseline gap-2">
-                            <span class="text-xs font-semibold text-slate-500">Precio:</span>
+                                <span class="text-xs font-semibold text-slate-500">{{ $isDecant ? 'Precio por decant:' : 'Precio:' }}</span>
                             <span class="text-3xl font-black tracking-tight text-slate-900">
                                 RD$ {{ number_format((float) $product->price, 0) }}
                             </span>
@@ -187,16 +233,17 @@
                 <div class="md:col-span-12 lg:col-span-3">
                     <div class="lg:sticky lg:top-20 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
                         <div class="space-y-1">
-                            <span class="text-xs text-slate-500">Total a pagar:</span>
-                            <p class="text-2xl font-black text-slate-900">
-                                RD$ {{ number_format((float) $product->price, 0) }}
-                            </p>
+                            <span class="text-xs text-slate-500" x-text="selectedDecant ? 'Precio por presentación:' : 'Total a pagar:'"></span>
+                            <p class="text-2xl font-black text-slate-900" x-text="selectedDecant ? 'RD$ ' + Number(totalPrice).toLocaleString('es-DO', { maximumFractionDigits: 0 }) : 'RD$ {{ number_format((float) $product->price, 0) }}'"></p>
+                            <p x-show="selectedDecant" class="text-[11px] font-medium text-slate-500" x-text="quantity + ' × RD$ ' + Number(selectedDecant.price).toLocaleString('es-DO', { maximumFractionDigits: 0 })"></p>
                         </div>
 
                         <!-- Availability & Delivery Line -->
                         <div class="space-y-1 text-xs">
-                            @if ($isUnavailable)
+                            @if ($isUnavailable && $decantOptions->isEmpty())
                                 <p class="font-bold text-rose-600">No disponible por el momento</p>
+                            @elseif ($isUnavailable && $decantOptions->isNotEmpty())
+                                <p class="font-bold text-emerald-700">✓ Decants disponibles para ordenar</p>
                             @else
                                 <p class="font-bold text-emerald-700">✓ En stock y listo para ordenar</p>
                             @endif
@@ -208,12 +255,37 @@
                             @endif
                         </div>
 
+                        @if ($decantOptions->isNotEmpty())
+                            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                <label class="text-xs font-bold text-slate-700" for="decant-presentation">Presentación del decant</label>
+                                <select id="decant-presentation" x-model="selectedDecantId" @change="quantity = 1" class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+                                    @foreach ($decantOptions as $decantOption)
+                                        <option value="{{ $decantOption->public_id }}">{{ $decantOption->volume_ml }} ml · RD$ {{ number_format((float) $decantOption->price, 0) }} · {{ $decantOption->inventory?->stock_quantity ?? 0 }} disponibles</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+
+                        @if ($decantOptions->isNotEmpty())
+                            <div class="rounded-xl border border-blue-100 bg-blue-50/60 p-3">
+                                <label class="text-xs font-bold text-slate-700" for="decant-quantity">Cantidad de decants</label>
+                                <div class="mt-2 flex items-center gap-2">
+                                    <button type="button" @click="quantity = Math.max(1, quantity - 1)" class="h-9 w-9 rounded-lg border border-blue-200 bg-white text-lg font-black text-slate-700">-</button>
+                                    <input id="decant-quantity" x-model.number="quantity" type="number" min="1" x-bind:max="quantityMax" class="h-9 w-16 rounded-lg border border-blue-200 bg-white text-center text-sm font-black text-slate-900" required>
+                                    <button type="button" @click="quantity = Math.min(quantityMax, quantity + 1)" class="h-9 w-9 rounded-lg border border-blue-200 bg-white text-lg font-black text-slate-700">+</button>
+                                </div>
+                                <p class="mt-2 text-[11px] text-slate-600">
+                                    <span x-text="totalMl"></span> ml total · máximo <span x-text="quantityMax"></span> decants disponibles.
+                                </p>
+                            </div>
+                        @endif
+
                         <!-- Primary CTA Button -->
                         <div>
-                            @if ($isUnavailable)
+                            @if ($isUnavailable && $decantOptions->isEmpty())
                                 <span class="flex w-full items-center justify-center rounded-xl bg-slate-200 px-5 py-3.5 text-sm font-bold text-slate-500">Producto no disponible</span>
                             @else
-                            <a class="flex w-full items-center justify-center gap-2.5 rounded-xl bg-emerald-600 px-5 py-3.5 text-sm font-bold text-white shadow-md transition duration-150 hover:bg-emerald-700 active:scale-[0.98] text-center" href="{{ route('track.wa.product', [$shop, $product]) }}" data-wa-target="{{ $waUrl }}" rel="noopener noreferrer" target="_blank">
+                            <a class="flex w-full items-center justify-center gap-2.5 rounded-xl bg-emerald-600 px-5 py-3.5 text-sm font-bold text-white shadow-md transition duration-150 hover:bg-emerald-700 active:scale-[0.98] text-center" x-bind:href="whatsappUrl" data-wa-target="{{ $waUrl }}" rel="noopener noreferrer" target="_blank">
                                 <svg class="h-5 w-5 fill-current shrink-0" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
                                 <span>Consultar por WhatsApp</span>
                             </a>
@@ -256,7 +328,7 @@
                 <div class="flex items-center gap-2.5 min-w-0">
                     <div class="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-slate-100 border border-slate-200">
                         @if ($product->images->isNotEmpty())
-                            <img src="{{ $product->images->first()->url }}" alt="{{ $product->name }}" class="h-full w-full object-cover">
+                            <img src="{{ $product->images->first()->url }}" alt="{{ $product->name }}" class="h-full w-full object-cover" loading="lazy" decoding="async">
                         @else
                             <div class="flex h-full w-full items-center justify-center text-slate-400">
                                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="m3 16 5-5 4 4 3-3 6 6M5 21h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2Z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></svg>
@@ -268,7 +340,7 @@
                         <p class="text-sm font-black text-emerald-700">RD$ {{ number_format((float) $product->price, 0) }}</p>
                     </div>
                 </div>
-                <a class="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm active:scale-95 text-center" href="{{ route('track.wa.product', [$shop, $product]) }}" data-wa-target="{{ $waUrl }}" rel="noopener noreferrer" target="_blank">
+                <a class="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm active:scale-95 text-center" x-bind:href="whatsappUrl" data-wa-target="{{ $waUrl }}" rel="noopener noreferrer" target="_blank">
                     <svg class="h-4 w-4 fill-current shrink-0" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
                     <span>WhatsApp</span>
                 </a>
@@ -291,7 +363,7 @@
                                 <a class="flex flex-1 flex-col" href="{{ route('products.show', [$shop, $related]) }}">
                                     <div class="relative aspect-square overflow-hidden bg-slate-100">
                                         @if ($related->images->isNotEmpty())
-                                            <img src="{{ $related->images->first()->url }}" alt="{{ $related->name }}" class="h-full w-full object-cover object-center group-hover:scale-105 transition duration-200" loading="lazy">
+                                            <img src="{{ $related->images->first()->url }}" alt="{{ $related->name }}" class="h-full w-full object-cover object-center group-hover:scale-105 transition duration-200" loading="lazy" decoding="async">
                                         @else
                                             <div class="flex h-full w-full items-center justify-center text-slate-400">
                                                 <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="m3 16 5-5 4 4 3-3 6 6M5 21h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2Z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></svg>

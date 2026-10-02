@@ -18,11 +18,37 @@ class Product extends Model
 {
     use HasFactory, HasPublicId, SoftDeletes;
 
-    protected $fillable = ['global_category_id', 'shop_category_id', 'name', 'slug', 'description', 'price', 'currency', 'availability_status', 'moderation_status', 'published_at'];
+    protected $fillable = [
+        'global_category_id',
+        'shop_category_id',
+        'name',
+        'product_code',
+        'slug',
+        'description',
+        'source_category',
+        'notes',
+        'source_created_at',
+        'source_key',
+        'price',
+        'currency',
+        'sale_unit',
+        'volume_ml',
+        'inventory_source_product_id',
+        'availability_status',
+        'moderation_status',
+        'published_at',
+    ];
 
     protected function casts(): array
     {
-        return ['price' => 'decimal:2', 'availability_status' => ProductAvailabilityStatus::class, 'moderation_status' => ProductModerationStatus::class, 'published_at' => 'datetime'];
+        return [
+            'price' => 'decimal:2',
+            'volume_ml' => 'integer',
+            'source_created_at' => 'datetime',
+            'availability_status' => ProductAvailabilityStatus::class,
+            'moderation_status' => ProductModerationStatus::class,
+            'published_at' => 'datetime',
+        ];
     }
 
     public function shop(): BelongsTo
@@ -71,6 +97,41 @@ class Product extends Model
     public function inventory(): HasOne
     {
         return $this->hasOne(ProductInventory::class);
+    }
+
+    public function sourceProduct(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'inventory_source_product_id');
+    }
+
+    public function decantProducts(): HasMany
+    {
+        return $this->hasMany(self::class, 'inventory_source_product_id');
+    }
+
+    public function isDecant(): bool
+    {
+        return $this->sale_unit === 'decant';
+    }
+
+    public function saleUnitLabel(): string
+    {
+        return match ($this->sale_unit) {
+            'bottle' => 'Botella completa',
+            'ml' => 'Mililitro',
+            'decant' => 'Decant',
+            default => 'Unidad',
+        };
+    }
+
+    public function stockUnitLabel(): string
+    {
+        return match ($this->sale_unit) {
+            'bottle' => 'botellas',
+            'ml' => 'ml',
+            'decant' => 'decants',
+            default => 'unidades',
+        };
     }
 
     public function inventoryMovements(): HasMany

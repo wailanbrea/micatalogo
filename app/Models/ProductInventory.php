@@ -15,6 +15,7 @@ class ProductInventory extends Model
         'track_inventory',
         'cost_price',
         'stock_quantity',
+        'available_ml',
         'sold_quantity',
         'low_stock_threshold',
     ];
@@ -25,6 +26,7 @@ class ProductInventory extends Model
             'track_inventory' => 'boolean',
             'cost_price' => 'decimal:2',
             'stock_quantity' => 'integer',
+            'available_ml' => 'integer',
             'sold_quantity' => 'integer',
             'low_stock_threshold' => 'integer',
         ];
@@ -40,11 +42,42 @@ class ProductInventory extends Model
         return $this->track_inventory && $this->stock_quantity <= 0;
     }
 
-    public function isLowStock(): bool
+    public function isLowStock(?Product $product = null): bool
     {
-        return $this->track_inventory
-            && $this->stock_quantity > 0
-            && $this->stock_quantity <= $this->low_stock_threshold;
+        if (! $this->track_inventory || $this->stock_quantity <= 0) {
+            return false;
+        }
+
+        $product ??= $this->product;
+        $lowByUnits = $this->stock_quantity <= $this->low_stock_threshold;
+
+        if (! $product || ! in_array($product->sale_unit, ['bottle', 'ml', 'decant'], true)) {
+            return $lowByUnits;
+        }
+
+        $sourceInventory = $this;
+        if ($product->isDecant()) {
+            $sourceInventory = $product->sourceProduct?->inventory;
+        }
+
+        if (! $sourceInventory) {
+            return $lowByUnits;
+        }
+
+        $availableMl = $sourceInventory->available_ml;
+        if ($availableMl === null && $sourceInventory->product) {
+            $sourceProduct = $sourceInventory->product;
+            $availableMl = match ($sourceProduct->sale_unit) {
+                'bottle' => $sourceProduct->volume_ml
+                    ? $sourceInventory->stock_quantity * $sourceProduct->volume_ml
+                    : null,
+                'ml' => $sourceInventory->stock_quantity,
+                default => null,
+            };
+        }
+
+        return $lowByUnits
+            || ($availableMl !== null && $availableMl <= (int) config('catalog.inventory.low_ml_alert_threshold', 200));
     }
 
     public function isAvailable(): bool

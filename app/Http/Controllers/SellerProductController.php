@@ -8,6 +8,7 @@ use App\Http\Requests\ProductRequest;
 use App\Models\GlobalCategory;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Models\ProductInventory;
 use App\Models\Shop;
 use App\Services\ImageProcessingService;
 use App\Services\MediaStorageService;
@@ -16,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class SellerProductController extends Controller
@@ -33,7 +35,7 @@ class SellerProductController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $maxProducts = (int) config('catalog.free.max_products_per_shop', 100);
+        $maxProducts = $shop->productLimit();
         $totalProducts = $shop->products()->count();
         $trashedCount = $shop->products()->onlyTrashed()->count();
 
@@ -55,6 +57,7 @@ class SellerProductController extends Controller
             'product' => new Product(['currency' => config('catalog.currency', 'DOP')]),
             'globalCategories' => GlobalCategory::query()->where('status', 'active')->orderBy('sort_order')->orderBy('name')->get(),
             'shopCategories' => $shop->categories()->where('status', 'active')->orderBy('name')->get(),
+            'sourceProducts' => $shop->products()->whereIn('sale_unit', ['bottle', 'ml'])->orderBy('name')->get(),
         ]);
     }
 
@@ -62,7 +65,7 @@ class SellerProductController extends Controller
     {
         $product = DB::transaction(function () use ($request, $shop): Product {
             $lockedShop = Shop::query()->lockForUpdate()->findOrFail($shop->id);
-            $max = (int) config('catalog.free.max_products_per_shop', 100);
+            $max = $lockedShop->productLimit();
 
             abort_if(
                 $lockedShop->products()->count() >= $max,
@@ -71,11 +74,14 @@ class SellerProductController extends Controller
             );
 
             $validated = $request->validated();
+            $validated['sale_unit'] ??= 'unit';
+            $this->validatePresentation($validated, $lockedShop);
             $inventoryData = [
                 'track_inventory' => (bool) ($validated['track_inventory'] ?? false),
                 'cost_price' => isset($validated['cost_price']) && $validated['cost_price'] !== '' ? $validated['cost_price'] : null,
                 'stock_quantity' => (int) ($validated['stock_quantity'] ?? 0),
                 'low_stock_threshold' => (int) ($validated['low_stock_threshold'] ?? 3),
+                'available_ml' => null,
             ];
 
             if ($inventoryData['track_inventory'] && $inventoryData['stock_quantity'] === 0) {
@@ -91,6 +97,9 @@ class SellerProductController extends Controller
             unset($attributes['track_inventory'], $attributes['cost_price'], $attributes['stock_quantity'], $attributes['low_stock_threshold']);
 
             $product = $lockedShop->products()->create($attributes);
+
+            $inventoryData['stock_quantity'] = $this->presentationStock($product, $inventoryData['stock_quantity']);
+            $inventoryData['available_ml'] = $this->availableMlForStock($product, $inventoryData['stock_quantity']);
 
             $product->inventory()->create($inventoryData);
 
@@ -123,6 +132,7 @@ class SellerProductController extends Controller
             'product' => $product,
             'globalCategories' => GlobalCategory::query()->where('status', 'active')->orderBy('sort_order')->orderBy('name')->get(),
             'shopCategories' => $shop->categories()->where('status', 'active')->orderBy('name')->get(),
+            'sourceProducts' => $shop->products()->whereKeyNot($product->id)->whereIn('sale_unit', ['bottle', 'ml'])->orderBy('name')->get(),
         ]);
     }
 
@@ -131,6 +141,13 @@ class SellerProductController extends Controller
         DB::transaction(function () use ($request, $shop, $product) {
             $product = Product::query()->lockForUpdate()->findOrFail($product->id);
             $validated = $request->validated();
+            $validated['sale_unit'] ??= $product->sale_unit ?: 'unit';
+            $this->validatePresentation($validated, $shop, $product);
+
+            $attributes = $this->attributes($validated, $shop, $product);
+            unset($attributes['track_inventory'], $attributes['cost_price'], $attributes['stock_quantity'], $attributes['low_stock_threshold']);
+            $presentation = clone $product;
+            $presentation->fill($attributes);
 
             $trackInventory = (bool) ($validated['track_inventory'] ?? false);
             $costPrice = isset($validated['cost_price']) && $validated['cost_price'] !== '' ? $validated['cost_price'] : null;
@@ -145,6 +162,7 @@ class SellerProductController extends Controller
                     'track_inventory' => $trackInventory,
                     'cost_price' => $costPrice,
                     'stock_quantity' => 0,
+                    'available_ml' => null,
                     'sold_quantity' => 0,
                     'low_stock_threshold' => $lowStockThreshold,
                 ]);
@@ -162,15 +180,26 @@ class SellerProductController extends Controller
                 $stockChanged = true;
             }
 
+            $newStock = $trackInventory
+                ? $this->presentationStock($presentation, $inventory->stock_quantity)
+                : $inventory->stock_quantity;
+            if ($newStock !== $inventory->stock_quantity) {
+                $inventory->stock_quantity = $newStock;
+                $stockChanged = true;
+            }
+
+            $inventory->available_ml = $this->availableMlForStock($presentation, $inventory->stock_quantity, $inventory, $product, $stockChanged);
+
             $inventory->save();
 
             if ($stockChanged) {
+                $stockDelta = $inventory->stock_quantity - $oldStock;
                 $product->inventoryMovements()->create([
                     'user_id' => $request->user()->id,
                     'type' => 'adjustment',
-                    'quantity' => $stockQuantity - $oldStock,
+                    'quantity' => $stockDelta,
                     'stock_before' => $oldStock,
-                    'stock_after' => $stockQuantity,
+                    'stock_after' => $inventory->stock_quantity,
                     'unit_price' => $product->price,
                     'unit_cost' => $costPrice,
                     'notes' => 'Ajuste manual desde edición de producto',
@@ -179,18 +208,14 @@ class SellerProductController extends Controller
             }
 
             if ($trackInventory) {
-                $validated['availability_status'] = $inventory->stock_quantity === 0
+                $attributes['availability_status'] = $inventory->stock_quantity === 0
                     ? ProductAvailabilityStatus::OutOfStock->value
                     : ProductAvailabilityStatus::Available->value;
             }
 
-            $attributes = $this->attributes($validated, $shop, $product);
-
             if (($attributes['moderation_status'] ?? null) === ProductModerationStatus::Active->value && ! $product->published_at) {
                 $attributes['published_at'] = now();
             }
-
-            unset($attributes['track_inventory'], $attributes['cost_price'], $attributes['stock_quantity'], $attributes['low_stock_threshold']);
 
             $product->update($attributes);
         });
@@ -276,5 +301,69 @@ class SellerProductController extends Controller
             'slug' => $slug,
             'currency' => config('catalog.currency', 'DOP'),
         ];
+    }
+
+    private function validatePresentation(array $input, Shop $shop, ?Product $product = null): void
+    {
+        if (($input['sale_unit'] ?? 'unit') !== 'decant') {
+            return;
+        }
+
+        $sourceId = (int) ($input['inventory_source_product_id'] ?? 0);
+        if ($product && $sourceId === $product->id) {
+            throw ValidationException::withMessages(['inventory_source_product_id' => 'Un producto no puede ser su propia botella fuente.']);
+        }
+
+        $source = $shop->products()->with('inventory')->find($sourceId);
+        if (! $source || ! in_array($source->sale_unit, ['bottle', 'ml'], true)) {
+            throw ValidationException::withMessages(['inventory_source_product_id' => 'Elige una botella o un producto medido en ml como fuente del decant.']);
+        }
+
+        if (! $source->volume_ml || ! $source->inventory?->track_inventory) {
+            throw ValidationException::withMessages(['inventory_source_product_id' => 'La botella fuente debe tener volumen en ml y control de inventario activo.']);
+        }
+    }
+
+    private function presentationStock(Product $product, int $requestedStock): int
+    {
+        if (! $product->isDecant()) {
+            return $requestedStock;
+        }
+
+        $source = $product->sourceProduct()->with('inventory')->first();
+        $availableMl = $this->availableMl($source, $source?->inventory);
+
+        return $availableMl === null || ! $product->volume_ml
+            ? 0
+            : intdiv($availableMl, $product->volume_ml);
+    }
+
+    private function availableMlForStock(Product $product, int $stock, ?ProductInventory $inventory = null, ?Product $previousProduct = null, bool $forceRecalculate = false): ?int
+    {
+        return match ($product->sale_unit) {
+            'bottle' => $forceRecalculate || $this->shouldRecalculateBottleMl($product, $inventory, $previousProduct)
+                ? $stock * (int) $product->volume_ml
+                : ($inventory?->available_ml ?? $stock * (int) $product->volume_ml),
+            'ml' => $stock,
+            default => null,
+        };
+    }
+
+    private function shouldRecalculateBottleMl(Product $product, ?ProductInventory $inventory, ?Product $previousProduct): bool
+    {
+        return ! $inventory || $inventory->available_ml === null || ! $previousProduct || $previousProduct->volume_ml !== $product->volume_ml;
+    }
+
+    private function availableMl(?Product $product, ?ProductInventory $inventory): ?int
+    {
+        if (! $product || ! $inventory || ! $inventory->track_inventory) {
+            return null;
+        }
+
+        return $inventory->available_ml ?? match ($product->sale_unit) {
+            'bottle' => $product->volume_ml ? $inventory->stock_quantity * $product->volume_ml : null,
+            'ml' => $inventory->stock_quantity,
+            default => null,
+        };
     }
 }

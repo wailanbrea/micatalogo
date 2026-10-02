@@ -33,8 +33,8 @@
             @endif
 
             <!-- Reports Table -->
-            <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
-                <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
+            <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-xs">
+                <table class="min-w-[820px] divide-y divide-slate-200 text-left text-xs">
                     <thead class="bg-slate-50 font-bold text-slate-600">
                         <tr>
                             <th class="px-4 py-3">Fecha</th>

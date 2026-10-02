@@ -1,16 +1,25 @@
+@php
+    $sharedCartData = $cartItems->map(fn ($cartProduct) => [
+        'name' => $cartProduct->name,
+        'productId' => $cartProduct->id,
+        'price' => (float) $cartProduct->price,
+        'quantity' => 1,
+    ])->values()->all();
+@endphp
+
 <x-layouts.app :title="$shop->name.' | Catálogo en MiCatalogo'">
     <div class="min-h-screen bg-[#F5F7FA] text-slate-800">
         <!-- Top Nav -->
         <header class="border-b border-slate-200 bg-white">
-            <div class="mx-auto flex max-w-[1400px] items-center justify-between px-4 py-3 sm:px-8">
-                <div class="flex items-center gap-3">
+            <div class="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-2 px-4 py-3 sm:px-8">
+                <div class="flex min-w-0 items-center gap-3">
                     <span class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">
                         <span class="h-2 w-2 rounded-full bg-emerald-500"></span> Vitrina Oficial
                     </span>
                     <span class="hidden sm:inline text-slate-300">|</span>
                     <span class="hidden sm:inline text-xs text-slate-500 font-medium">Powered by <a href="{{ route('home') }}" class="font-bold text-slate-700 hover:text-blue-600 transition">MiCatalogo</a></span>
                 </div>
-                <div class="flex items-center gap-2 sm:gap-3">
+                <div class="flex shrink-0 flex-wrap items-center justify-end gap-2 sm:gap-3">
                     @auth
                         @can('update', $shop)
                             <a class="rounded-md bg-blue-600 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-blue-700 transition shadow-2xs inline-flex items-center gap-1.5 shrink-0" href="{{ route('seller.shops.products.index', $shop) }}">
@@ -126,7 +135,127 @@
         </section>
 
         <!-- Main Content Area -->
-        <main class="mx-auto max-w-[1400px] px-4 py-6 sm:px-8 pb-24 sm:pb-8">
+        <main
+            x-data="{
+                selectedProducts: [],
+                cartItems: @js($sharedCartData),
+                checkoutBusy: false,
+                checkoutError: '',
+                toggleProduct(id) {
+                    this.selectedProducts = this.selectedProducts.includes(id)
+                        ? this.selectedProducts.filter((productId) => productId !== id)
+                        : [...this.selectedProducts, id];
+                },
+                get selectedCount() {
+                    return this.selectedProducts.length;
+                },
+                get cartTotal() {
+                    return this.cartItems.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+                },
+                async checkoutCart() {
+                    if (this.checkoutBusy) return;
+                    this.checkoutBusy = true;
+                    this.checkoutError = '';
+                    const token = document.querySelector('#shared-cart-form input[name=_token]').value;
+
+                    const response = await fetch('{{ route('seller.shops.inventory.checkout', $shop) }}', {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': token,
+                            },
+                            body: JSON.stringify({
+                                _token: token,
+                                items: this.cartItems.map((item) => ({
+                                    product_id: item.productId,
+                                    quantity: Math.max(1, Number(item.quantity) || 1),
+                                })),
+                            }),
+                        });
+                    const payload = await response.json().catch(() => ({}));
+
+                    if (! response.ok) {
+                        this.checkoutError = payload.message || 'No se pudo completar el cobro. Revisa el inventario.';
+                        this.checkoutBusy = false;
+                        return;
+                    }
+
+                    window.location.href = payload.redirect;
+                },
+                get selectedWhatsAppUrl() {
+                    const params = new URLSearchParams();
+                    this.selectedProducts.forEach((id) => params.append('products[]', id));
+                    return '{{ route('track.wa.shop', $shop) }}?' + params.toString();
+                }
+            }"
+            class="mx-auto max-w-[1400px] px-4 py-6 sm:px-8 pb-24 sm:pb-8"
+        >
+            @if ($cartItems->isNotEmpty())
+                <section class="mb-6 rounded-2xl border border-blue-200 bg-white p-5 shadow-lg ring-4 ring-blue-50">
+                    <div class="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4">
+                        <div>
+                            <p class="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-600">Carrito compartido por WhatsApp</p>
+                            <h2 class="mt-1 text-lg font-black text-slate-900">Productos de interés</h2>
+                            <p class="mt-1 text-xs text-slate-500">Confirma las cantidades y cobra solo cuando el cliente haya pagado.</p>
+                        </div>
+                        <span class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700"><span x-text="cartItems.length"></span> producto(s)</span>
+                    </div>
+                    <form id="shared-cart-form" @submit.prevent="checkoutCart" class="mt-4 space-y-3">
+                        @csrf
+                        @foreach ($cartItems as $index => $cartProduct)
+                            @php
+                                $cartInventory = $cartProduct->inventory;
+                                $cartMaxStock = $cartInventory?->track_inventory ? max(1, (int) $cartInventory->stock_quantity) : 10000;
+                            @endphp
+                            <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-3">
+                                <div class="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white">
+                                    @if ($cartProduct->images->isNotEmpty())
+                                        <img src="{{ $cartProduct->images->first()->url }}" alt="{{ $cartProduct->name }}" class="h-full w-full object-contain p-1" loading="lazy" decoding="async">
+                                    @else
+                                        <svg class="h-6 w-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="m3 16 5-5 4 4 3-3 6 6M5 21h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14Z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></svg>
+                                    @endif
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <a href="{{ route('products.show', [$shop, $cartProduct]) }}" class="text-sm font-bold text-slate-900 hover:text-blue-700">{{ $cartProduct->name }}</a>
+                                    <p class="text-[11px] text-slate-500">
+                                        {{ $cartProduct->isDecant() ? $cartProduct->volume_ml.' ml · ' : '' }}RD$ {{ number_format((float) $cartProduct->price, 0) }} c/u
+                                    </p>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <label for="shared-cart-quantity-{{ $index }}" class="text-[11px] font-semibold text-slate-500">Cantidad</label>
+                                    <input id="shared-cart-quantity-{{ $index }}" type="number" min="1" max="{{ $cartMaxStock }}" x-model.number="cartItems[{{ $index }}].quantity" class="w-16 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-center text-sm font-bold" required>
+                                    <span class="w-24 text-right text-sm font-black text-slate-900" x-text="'RD$ ' + Number(cartItems[{{ $index }}].quantity * cartItems[{{ $index }}].price).toLocaleString('es-DO', { maximumFractionDigits: 0 })"></span>
+                                </div>
+                            </div>
+                        @endforeach
+                        <div class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
+                            <div>
+                                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total a cobrar</span>
+                                <p class="text-2xl font-black text-slate-900" x-text="'RD$ ' + Number(cartTotal).toLocaleString('es-DO', { maximumFractionDigits: 0 })"></p>
+                            </div>
+                            @auth
+                                @can('update', $shop)
+                                    <button type="submit" :disabled="checkoutBusy" class="rounded-xl bg-emerald-600 px-4 py-3 text-xs font-black text-white hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-60">
+                                        <span x-show="!checkoutBusy">Cobrar y descontar inventario</span>
+                                        <span x-show="checkoutBusy">Procesando cobro...</span>
+                                    </button>
+                                @else
+                                    <p class="max-w-xs text-xs font-semibold text-slate-600">Solo el dueño de esta tienda puede confirmar el cobro.</p>
+                                @endcan
+                                @else
+                                    <div class="flex flex-wrap items-center justify-end gap-2">
+                                        <p class="max-w-xs text-xs font-semibold text-slate-600">Inicia sesión para confirmar el cobro y descontar inventario.</p>
+                                        <a href="{{ route('login') }}" class="rounded-xl bg-blue-600 px-4 py-3 text-xs font-black text-white hover:bg-blue-700">Iniciar sesión</a>
+                                    </div>
+                                @endauth
+                        </div>
+                        <p x-show="checkoutError" x-text="checkoutError" class="text-xs font-bold text-rose-700"></p>
+                    </form>
+                </section>
+            @endif
+
             <!-- Categories Filter Tabs (Strictly from this shop) -->
             @if ($categories->isNotEmpty())
                 <div class="mb-5">
@@ -293,11 +422,21 @@
             <!-- Product Grid -->
             <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
                 @forelse ($products as $product)
-                    <article class="group flex flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xs transition duration-200 hover:-translate-y-1 hover:border-slate-300 hover:shadow-md">
+                    <article class="group relative flex flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xs transition duration-200 hover:-translate-y-1 hover:border-slate-300 hover:shadow-md">
+                        <button
+                            type="button"
+                            @click.stop.prevent="toggleProduct(@js($product->public_id))"
+                            :class="selectedProducts.includes(@js($product->public_id)) ? 'border-blue-600 bg-blue-600 text-white' : 'border-white/80 bg-white/95 text-slate-700'"
+                            class="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-lg border px-2 py-1.5 text-[10px] font-bold shadow-sm transition"
+                            :aria-pressed="selectedProducts.includes(@js($product->public_id))"
+                        >
+                            <span x-show="selectedProducts.includes(@js($product->public_id))">✓</span>
+                            <span x-text="selectedProducts.includes(@js($product->public_id)) ? 'Seleccionado' : 'Seleccionar'"></span>
+                        </button>
                         <a class="flex flex-1 flex-col" href="{{ route('products.show', [$shop, $product]) }}">
                             <div class="relative aspect-square overflow-hidden bg-slate-100">
                                 @if ($product->images->isNotEmpty())
-                                    <img src="{{ $product->images->first()->url }}" alt="{{ $product->name }}" class="h-full w-full object-cover object-center transition duration-300 group-hover:scale-105" loading="lazy">
+                                    <img src="{{ $product->images->first()->url }}" alt="{{ $product->name }}" class="h-full w-full object-cover object-center transition duration-300 group-hover:scale-105" loading="lazy" decoding="async">
                                 @else
                                     <div class="flex h-full w-full items-center justify-center text-slate-400">
                                         <svg class="h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="m3 16 5-5 4 4 3-3 6 6M5 21h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2Zm5-12h.01" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></svg>
@@ -324,9 +463,14 @@
                                             <span class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-800">
                                                 <span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span> Agotado
                                             </span>
-                                        @elseif ($product->inventory->isLowStock())
+                                        @elseif ($product->inventory->isLowStock($product))
                                             <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-800">
-                                                <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span> ¡Últimas {{ $product->inventory->stock_quantity }} unid.!
+                                                <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                                                @if ($product->isDecant())
+                                                    ¡Quedan {{ number_format((int) ($product->sourceProduct?->inventory?->available_ml ?? 0)) }} ml en fuente!
+                                                @else
+                                                    ¡Últimas {{ $product->inventory->stock_quantity }} unid.!
+                                                @endif
                                             </span>
                                         @else
                                             <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-800">
@@ -374,6 +518,23 @@
                         @endif
                     </div>
                 @endforelse
+            </div>
+
+            <div
+                x-show="selectedCount > 0"
+                x-cloak
+                class="fixed inset-x-4 bottom-20 z-50 mx-auto flex max-w-xl items-center justify-between gap-3 rounded-2xl border border-blue-200 bg-slate-900 px-4 py-3 text-white shadow-2xl sm:inset-x-auto sm:bottom-5"
+            >
+                <div class="min-w-0">
+                    <p class="text-xs font-bold"><span x-text="selectedCount"></span> producto(s) seleccionado(s)</p>
+                    <p class="text-[11px] text-slate-300">Envíalos juntos al vendedor por WhatsApp.</p>
+                </div>
+                <div class="flex shrink-0 items-center gap-2">
+                    <button type="button" @click="selectedProducts = []" class="rounded-lg px-2.5 py-2 text-[11px] font-semibold text-slate-300 hover:bg-white/10">Limpiar</button>
+                    <a x-bind:href="selectedWhatsAppUrl" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-2 text-[11px] font-bold text-white hover:bg-emerald-600">
+                        WhatsApp
+                    </a>
+                </div>
             </div>
 
             <!-- Pagination -->

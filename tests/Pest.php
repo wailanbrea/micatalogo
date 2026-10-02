@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 /*
@@ -16,6 +18,17 @@ use Tests\TestCase;
 pest()->extend(TestCase::class)
  // ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
     ->in('Feature');
+
+beforeEach(function () {
+    Config::set([
+        'filesystems.disks.r2.key' => null,
+        'filesystems.disks.r2.secret' => null,
+        'filesystems.disks.r2.bucket' => null,
+        'filesystems.disks.r2.endpoint' => null,
+    ]);
+    Storage::forgetDisk('public');
+    Storage::forgetDisk('r2');
+});
 
 /*
 |--------------------------------------------------------------------------

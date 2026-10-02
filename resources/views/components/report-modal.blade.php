@@ -7,7 +7,7 @@
     </button>
 
     <div x-show="open" style="display: none;" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs" x-transition.opacity>
-        <div @click.away="open = false" class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl" x-transition.scale>
+        <div @click.away="open = false" class="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-xl" x-transition.scale>
             <div class="flex items-center justify-between">
                 <h3 class="text-base font-bold text-slate-900">Reportar contenido</h3>
                 <button type="button" @click="open = false" class="text-slate-400 hover:text-slate-600">✕</button>

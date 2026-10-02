@@ -24,11 +24,11 @@
 
 <!-- Main Unified Topbar -->
 <header class="border-b border-slate-200 bg-white sticky top-0 z-30 shadow-2xs">
-    <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 sm:px-6">
+    <div class="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-2.5 sm:px-6">
         <!-- Brand & Nav Links -->
-        <div class="flex items-center gap-4 sm:gap-6">
-            <a class="flex items-center gap-2 text-base font-black text-slate-900 hover:opacity-90 transition" href="{{ $isAdmin ? route('admin.dashboard') : route('seller.dashboard') }}">
-                <span>Mi<span class="text-blue-600">Catalogo</span></span>
+        <div class="flex min-w-0 items-center gap-2 sm:gap-6">
+            <a class="flex min-w-0 shrink items-center gap-2 text-base font-black text-slate-900 hover:opacity-90 transition" href="{{ $isAdmin ? route('admin.dashboard') : route('seller.dashboard') }}">
+                <span class="truncate">Mi<span class="text-blue-600">Catalogo</span></span>
                 @if ($isAdmin)
                     <span class="rounded bg-rose-100 px-1.5 py-0.5 text-[11px] font-bold text-rose-700">Admin</span>
                 @else
@@ -96,7 +96,7 @@
         </div>
 
         <!-- Right Side Actions & User Menu -->
-        <div class="flex items-center gap-3">
+        <div class="flex shrink-0 items-center gap-1.5 sm:gap-3">
             <!-- Ver Vitrina Pública -->
             <a 
                 class="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition" 
@@ -246,9 +246,14 @@
                 Categorías
             </a>
         @endif
-        <a class="px-2.5 py-1 rounded-md text-slate-500 hover:text-slate-900" href="{{ route('home') }}" target="_blank">
+            <a class="px-2.5 py-1 rounded-md text-slate-500 hover:text-slate-900" href="{{ route('home') }}" target="_blank">
             Vitrina ↗
         </a>
+            @if ($isAdmin)
+                <a class="px-2.5 py-1 rounded-md text-slate-500 hover:text-slate-900" href="{{ route('admin.users.index') }}">
+                    Usuarios
+                </a>
+            @endif
     </div>
 
     <!-- Contextual Breadcrumb Wayfinding Bar -->
@@ -271,4 +276,3 @@
         </div>
     @endif
 </header>
-

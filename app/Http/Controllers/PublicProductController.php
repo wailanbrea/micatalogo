@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ProductImageProcessingStatus;
 use App\Enums\ProductModerationStatus;
 use App\Models\Product;
 use App\Models\Shop;
@@ -17,12 +18,32 @@ class PublicProductController extends Controller
 
         $metricService->recordProductPageView($product, $request);
 
-        $product->loadMissing(['images' => fn ($query) => $query->orderBy('sort_order')->orderBy('id'), 'inventory']);
+        $readyImages = fn ($query) => $query
+            ->where('processing_status', ProductImageProcessingStatus::Ready)
+            ->orderBy('sort_order')
+            ->orderBy('id');
+
+        $product->loadMissing([
+            'images' => $readyImages,
+            'inventory',
+            'decantProducts.inventory',
+            'sourceProduct.inventory',
+            'sourceProduct.decantProducts.inventory',
+        ]);
+
+        $decantOptions = $product->isDecant()
+            ? ($product->sourceProduct?->decantProducts ?? collect())
+            : $product->decantProducts;
+        $decantOptions = $decantOptions
+            ->filter(fn (Product $decant) => $decant->moderation_status === ProductModerationStatus::Active
+                && (! $decant->inventory?->track_inventory || $decant->inventory->stock_quantity > 0))
+            ->sortBy('volume_ml')
+            ->values();
 
         $relatedQuery = $shop->products()
             ->where('id', '!=', $product->id)
             ->where('moderation_status', ProductModerationStatus::Active)
-            ->with(['images' => fn ($query) => $query->orderBy('sort_order')->orderBy('id'), 'inventory']);
+            ->with(['images' => $readyImages, 'inventory']);
 
         if ($product->shop_category_id) {
             $sameCategory = (clone $relatedQuery)
@@ -38,6 +59,6 @@ class PublicProductController extends Controller
             $relatedProducts = $relatedQuery->latest('id')->take(4)->get();
         }
 
-        return view('products.show', compact('shop', 'product', 'relatedProducts'));
+        return view('products.show', compact('shop', 'product', 'relatedProducts', 'decantOptions'));
     }
 }

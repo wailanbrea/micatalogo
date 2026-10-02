@@ -8,7 +8,7 @@
 
         <!-- Sticky Header -->
         <header class="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-200/80 shadow-xs transition-all">
-            <div class="h-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+            <div class="h-20 max-w-7xl mx-auto min-w-0 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-2 sm:gap-4">
                 <!-- Logo -->
                 <a class="flex items-center gap-2.5 group text-decoration-none" href="{{ route('home') }}">
                     <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 group-hover:bg-blue-700 transition-colors">
@@ -16,7 +16,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
                         </svg>
                     </div>
-                    <span class="text-xl font-extrabold tracking-tight text-slate-900">
+                    <span class="text-lg sm:text-xl font-extrabold tracking-tight text-slate-900">
                         Mi<span class="text-blue-600">Catalogo</span>
                     </span>
                 </a>
@@ -30,7 +30,7 @@
                 </nav>
 
                 <!-- Auth / Guest Actions -->
-                <div class="flex items-center gap-3">
+                <div class="flex shrink-0 items-center gap-1 sm:gap-3">
                     @auth
                         <!-- Authenticated Dropdown Menu -->
                         <div class="relative" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false" @click.outside="open = false">
@@ -114,11 +114,12 @@
                             </div>
                         </div>
                     @else
-                        <a class="text-sm font-semibold text-slate-700 hover:text-blue-600 px-3 py-1.5 transition-colors" href="{{ route('login') }}">
+                        <a class="hidden sm:inline-flex text-sm font-semibold text-slate-700 hover:text-blue-600 px-3 py-1.5 transition-colors" href="{{ route('login') }}">
                             Iniciar sesión
                         </a>
-                        <a class="inline-flex items-center justify-center bg-blue-600 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-md shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-98" href="{{ route('register') }}">
-                            Crear catálogo gratis
+                        <a class="inline-flex items-center justify-center bg-blue-600 text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-xl shadow-md shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-98 whitespace-nowrap" href="{{ route('register') }}">
+                            <span class="sm:hidden">Crear catálogo</span>
+                            <span class="hidden sm:inline">Crear catálogo gratis</span>
                         </a>
                     @endauth
                 </div>

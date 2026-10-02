@@ -4,6 +4,7 @@ use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductModerationStatus;
 use App\Models\GlobalCategory;
 use App\Models\Product;
+use App\Models\ProductInventory;
 use App\Models\Shop;
 use App\Models\ShopCategory;
 use App\Models\User;
@@ -154,4 +155,44 @@ test('a seller can delete and restore their product', function () {
         ->assertRedirect(route('seller.shops.products.index', $shop));
 
     expect($product->fresh()->trashed())->toBeFalse();
+});
+
+test('a seller can open the product edit form', function () {
+    $seller = User::factory()->create(['email_verified_at' => now()]);
+    $shop = Shop::factory()->for($seller)->create();
+    $product = Product::factory()->for($shop)->create();
+
+    $response = $this->actingAs($seller)->get(route('seller.shops.products.edit', [$shop, $product]));
+
+    $response->assertOk();
+    $response->assertSee('Editar producto');
+    $response->assertSee('Guardar cambios');
+});
+
+test('the product screens show available stock and allow adding units', function () {
+    $seller = User::factory()->create(['email_verified_at' => now()]);
+    $shop = Shop::factory()->for($seller)->create();
+    $product = Product::factory()->for($shop)->create();
+    ProductInventory::create([
+        'product_id' => $product->id,
+        'track_inventory' => true,
+        'stock_quantity' => 12,
+        'sold_quantity' => 3,
+        'low_stock_threshold' => 2,
+    ]);
+
+    $this->actingAs($seller)
+        ->get(route('seller.shops.products.index', $shop))
+        ->assertOk()
+        ->assertSee('Stock disponible')
+        ->assertSee('12')
+        ->assertSee('unidades');
+
+    $this->actingAs($seller)
+        ->get(route('seller.shops.products.edit', [$shop, $product]))
+        ->assertOk()
+        ->assertSee('Disponible ahora')
+        ->assertSee('Agregar unidades')
+        ->assertSee('Agregar al stock')
+        ->assertSee(route('seller.shops.inventory.restock', [$shop, $product]));
 });

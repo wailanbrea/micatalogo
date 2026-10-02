@@ -9,6 +9,10 @@ return [
         'max_images_per_product' => 3,
     ],
 
+    'inventory' => [
+        'low_ml_alert_threshold' => 200,
+    ],
+
     'uploads' => [
         'max_file_size_mb' => 10,
         'max_batch_files' => 30,

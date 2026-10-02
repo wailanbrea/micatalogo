@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\ProductAvailabilityStatus;
+use App\Enums\ProductImageProcessingStatus;
 use App\Enums\ProductModerationStatus;
 use App\Models\Shop;
 use App\Services\MetricRecordingService;
@@ -23,6 +24,26 @@ class PublicShopController extends Controller
         $maxPrice = $request->filled('max_price') && is_numeric($request->query('max_price')) ? (float) $request->query('max_price') : null;
         $stock = $request->query('stock');
         $sort = $request->query('sort', 'latest');
+        $cartIds = collect(explode(',', (string) $request->query('cart', '')))
+            ->filter(fn ($publicId) => $publicId !== '')
+            ->take(20)
+            ->values();
+        $readyImages = fn ($query) => $query
+            ->where('processing_status', ProductImageProcessingStatus::Ready)
+            ->orderBy('sort_order')
+            ->orderBy('id');
+
+        $cartProducts = $shop->products()
+            ->where('moderation_status', ProductModerationStatus::Active)
+            ->whereIn('public_id', $cartIds->all())
+            ->with(['images' => $readyImages, 'inventory', 'sourceProduct.inventory'])
+            ->get()
+            ->keyBy('public_id');
+
+        $cartItems = $cartIds
+            ->map(fn (string $publicId) => $cartProducts->get($publicId))
+            ->filter()
+            ->values();
 
         $categories = $shop->categories()
             ->orderBy('sort_order')
@@ -39,7 +60,11 @@ class PublicShopController extends Controller
 
         $productsQuery = $shop->products()
             ->where('moderation_status', ProductModerationStatus::Active)
-            ->with(['images' => fn ($query) => $query->orderBy('sort_order'), 'inventory']);
+            ->with([
+                'images' => $readyImages,
+                'inventory',
+                'sourceProduct.inventory',
+            ]);
 
         if ($selectedCategory) {
             $productsQuery->where('shop_category_id', $selectedCategory->id);
@@ -105,7 +130,8 @@ class PublicShopController extends Controller
             'maxPrice',
             'stock',
             'sort',
-            'hasActiveFilters'
+            'hasActiveFilters',
+            'cartItems'
         ));
     }
 }

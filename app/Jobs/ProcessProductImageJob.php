@@ -7,6 +7,7 @@ use App\Models\ProductImage;
 use App\Services\MediaStorageService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
@@ -32,7 +33,7 @@ class ProcessProductImageJob implements ShouldQueue
     {
         $productImage = ProductImage::with('product')->find($this->productImageId);
         if (! $productImage) {
-            Storage::disk('temp')->delete($this->tempPath);
+            $this->deleteTempFile(Storage::disk('temp'));
 
             return;
         }
@@ -95,7 +96,7 @@ class ProcessProductImageJob implements ShouldQueue
             ]);
 
             // 6. Purge temporary raw upload
-            $tempDisk->delete($this->tempPath);
+            $this->deleteTempFile($tempDisk);
         } catch (Throwable $e) {
             Log::error("Error procesando imagen de producto [{$this->productImageId}]: ".$e->getMessage(), [
                 'exception' => $e,
@@ -103,7 +104,7 @@ class ProcessProductImageJob implements ShouldQueue
             ]);
 
             $productImage->update(['processing_status' => ProductImageProcessingStatus::Failed]);
-            $tempDisk->delete($this->tempPath);
+            $this->deleteTempFile($tempDisk);
 
             throw $e;
         }
@@ -114,6 +115,19 @@ class ProcessProductImageJob implements ShouldQueue
         $productImage = ProductImage::find($this->productImageId);
         $productImage?->update(['processing_status' => ProductImageProcessingStatus::Failed]);
 
-        Storage::disk('temp')->delete($this->tempPath);
+        $this->deleteTempFile(Storage::disk('temp'));
+    }
+
+    private function deleteTempFile(Filesystem $tempDisk): void
+    {
+        try {
+            if ($tempDisk->exists($this->tempPath)) {
+                $tempDisk->delete($this->tempPath);
+            }
+        } catch (Throwable $e) {
+            Log::warning("No se pudo eliminar el archivo temporal de imagen [{$this->productImageId}]: ".$e->getMessage(), [
+                'tempPath' => $this->tempPath,
+            ]);
+        }
     }
 }

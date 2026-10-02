@@ -44,7 +44,7 @@
 
                 <!-- Filtros -->
                 <form class="mt-5 flex flex-wrap items-center gap-3" method="GET" action="{{ route('seller.shops.products.index', $shop) }}">
-                    <div class="min-w-64 flex-1">
+                    <div class="min-w-0 w-full flex-1 sm:min-w-64">
                         <label class="sr-only" for="q">Buscar producto</label>
                         <input class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="q" name="q" placeholder="Buscar por nombre..." type="search" value="{{ $search }}">
                     </div>
@@ -70,6 +70,7 @@
                                 <th class="px-4 py-3">Precio</th>
                                 <th class="px-4 py-3">Categoría</th>
                                 <th class="px-4 py-3">Disponibilidad</th>
+                                <th class="px-4 py-3">Stock disponible</th>
                                 <th class="px-4 py-3">Estado</th>
                                 <th class="px-4 py-3 text-right">Acciones</th>
                             </tr>
@@ -110,9 +111,15 @@
                                                 <span class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-700">
                                                     <i class="h-1.5 w-1.5 rounded-full bg-rose-500"></i> Agotado (0)
                                                 </span>
-                                            @elseif ($inv->stock_quantity <= $inv->low_stock_threshold)
+                                            @elseif ($inv->isLowStock($product))
                                                 <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-700">
-                                                    <i class="h-1.5 w-1.5 rounded-full bg-amber-500"></i> Stock bajo ({{ $inv->stock_quantity }})
+                                                    <i class="h-1.5 w-1.5 rounded-full bg-amber-500"></i>
+                                                    Stock bajo
+                                                    @if ($product->isDecant())
+                                                        ({{ number_format((int) ($product->sourceProduct?->inventory?->available_ml ?? 0)) }} ml fuente)
+                                                    @else
+                                                        ({{ $inv->stock_quantity }})
+                                                    @endif
                                                 </span>
                                             @else
                                                 <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
@@ -130,6 +137,14 @@
                                             <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
                                                 <i class="h-1.5 w-1.5 rounded-full bg-amber-500"></i> Agotado
                                             </span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-3.5 whitespace-nowrap">
+                                        @if ($product->inventory?->track_inventory)
+                                            <span class="font-mono font-bold text-slate-900">{{ number_format($product->inventory->stock_quantity) }}</span>
+                                            <span class="text-xs text-slate-500">{{ $product->stockUnitLabel() }}</span>
+                                        @else
+                                            <a class="text-xs font-semibold text-blue-700 hover:text-blue-900" href="{{ route('seller.shops.products.edit', [$shop, $product]) }}">Activar inventario</a>
                                         @endif
                                     </td>
                                     <td class="px-4 py-3.5 whitespace-nowrap">
@@ -151,7 +166,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td class="px-4 py-8 text-center text-slate-500" colspan="6">
+                                    <td class="px-4 py-8 text-center text-slate-500" colspan="7">
                                         No se encontraron productos en esta tienda.
                                     </td>
                                 </tr>

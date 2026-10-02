@@ -73,6 +73,7 @@ Route::middleware(['auth', 'verified'])->prefix('panel')->name('seller.')->group
         Route::get('/tiendas/{shop}/qr/imprimir', [SellerShopMetricController::class, 'print'])->name('shops.qr.print');
 
         Route::get('/tiendas/{shop}/inventario', [SellerInventoryController::class, 'index'])->name('shops.inventory.index');
+        Route::post('/tiendas/{shop}/inventario/cobro', [SellerInventoryController::class, 'checkout'])->name('shops.inventory.checkout');
         Route::post('/tiendas/{shop}/productos/{product}/inventario/venta', [SellerInventoryController::class, 'recordSale'])->middleware('can:update,product')->name('shops.inventory.sale');
         Route::post('/tiendas/{shop}/productos/{product}/inventario/reposicion', [SellerInventoryController::class, 'recordRestock'])->middleware('can:update,product')->name('shops.inventory.restock');
         Route::post('/tiendas/{shop}/productos/{product}/inventario/ajuste', [SellerInventoryController::class, 'adjustStock'])->middleware('can:update,product')->name('shops.inventory.adjustment');
