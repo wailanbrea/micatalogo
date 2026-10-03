@@ -37,15 +37,13 @@
         .login-brand-name span { color: var(--login-blue-light); }
 
         .login-card { background: white; border: 1px solid rgba(255, 255, 255, .35); border-radius: 28px; box-shadow: 0 30px 70px rgba(7, 27, 53, .2); overflow: hidden; }
-        .login-card-header { align-items: center; background: linear-gradient(145deg, #071B35, #075CC6 58%, #008CFF); color: white; display: flex; flex-direction: column; min-height: 220px; overflow: hidden; padding: 54px 24px 86px; position: relative; text-align: center; }
+        .login-card-header { align-items: center; background: linear-gradient(145deg, #071B35, #075CC6 58%, #008CFF); color: white; display: flex; flex-direction: column; min-height: 190px; overflow: hidden; padding: 48px 24px 42px; position: relative; text-align: center; }
         .login-card-header::before { background: rgba(45, 173, 255, .46); bottom: -135px; content: ''; height: 250px; position: absolute; right: -60px; transform: rotate(38deg); width: 260px; }
         .login-card-header::after { background: rgba(0, 140, 255, .48); bottom: -100px; content: ''; height: 150px; left: -130px; position: absolute; transform: rotate(25deg); width: 340px; }
         .login-card-header h1, .login-card-header p { position: relative; z-index: 1; }
         .login-card-header h1 { font-size: 42px; font-weight: 800; letter-spacing: -.8px; line-height: 1.1; margin: 0; }
         .login-card-header p { color: rgba(255, 255, 255, .78); font-size: 18px; margin: 12px 0 0; }
-        .login-avatar { align-items: center; background: #E8F4FF; border: 9px solid white; border-radius: 999px; box-shadow: 0 10px 28px rgba(7, 27, 53, .15); display: flex; height: 110px; justify-content: center; left: 50%; position: absolute; top: 220px; transform: translate(-50%, -55px); width: 110px; z-index: 2; }
-        .login-avatar svg { color: var(--login-blue-strong); height: 52px; width: 52px; }
-        .login-body { padding: 90px 48px 34px; }
+        .login-body { padding: 42px 48px 34px; }
         .login-field { margin-bottom: 20px; position: relative; }
         .login-field input { background: #FBFCFE; border: 1px solid var(--login-border); border-radius: 16px; color: var(--login-navy); font-size: 16px; height: 64px; outline: none; padding: 0 58px; transition: border-color .2s ease, box-shadow .2s ease, background .2s ease; width: 100%; }
         .login-field input:focus { background: white; border-color: var(--login-blue); box-shadow: 0 0 0 4px rgba(0, 140, 255, .12); }
@@ -58,8 +56,6 @@
         .login-link:hover { text-decoration: underline; }
         .login-submit { align-items: center; background: linear-gradient(100deg, #055EDD, #008CFF); border: 0; border-radius: 16px; box-shadow: 0 13px 27px rgba(0, 108, 255, .23); color: white; cursor: pointer; display: flex; font-size: 17px; font-weight: 700; gap: 15px; height: 64px; justify-content: center; transition: transform .2s ease, box-shadow .2s ease; width: 100%; }
         .login-submit:hover { box-shadow: 0 17px 34px rgba(0, 108, 255, .29); transform: translateY(-2px); }
-        .login-divider { align-items: center; color: #8B9AAF; display: flex; font-size: 14px; gap: 15px; margin: 31px 0 25px; }
-        .login-divider::before, .login-divider::after { background: var(--login-border); content: ''; flex: 1; height: 1px; }
         .login-activation { color: var(--login-text-secondary); font-size: 14px; text-align: center; }
         .login-register { color: var(--login-text-secondary); font-size: 13px; margin-top: 12px; text-align: center; }
         .login-secure { align-items: center; background: #F5F8FC; border-radius: 13px; color: #73839B; display: flex; font-size: 13px; font-weight: 500; gap: 8px; justify-content: center; margin-top: 30px; padding: 15px; }
@@ -74,12 +70,10 @@
             .login-brand-name { font-size: 33px; }
             .login-brand-mark { height: 45px; width: 45px; }
             .login-brand-mark::before, .login-brand-mark::after { height: 38px; width: 24px; }
-            .login-card-header { min-height: 180px; padding: 38px 20px 72px; }
+            .login-card-header { min-height: 170px; padding: 38px 20px 32px; }
             .login-card-header h1 { font-size: 32px; }
             .login-card-header p { font-size: 15px; }
-            .login-avatar { border-width: 7px; height: 92px; top: 180px; transform: translate(-50%, -46px); width: 92px; }
-            .login-avatar svg { height: 44px; width: 44px; }
-            .login-body { padding: 72px 20px 24px; }
+            .login-body { padding: 32px 20px 24px; }
             .login-field input, .login-submit { height: 58px; }
             .login-options { align-items: flex-start; flex-direction: column; }
             .login-shape-a { width: 100vw; }
@@ -104,10 +98,6 @@
                     <h1 id="login-title">Mi Cuenta</h1>
                     <p>Accede a tu panel</p>
                 </header>
-
-                <div class="login-avatar" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-3.87 0-7 2.24-7 5v1h14v-1c0-2.76-3.13-5-7-5Z"/></svg>
-                </div>
 
                 <div class="login-body">
                     @if (session('status'))
@@ -155,7 +145,6 @@
                         <button class="login-submit" type="submit">Iniciar sesion <span aria-hidden="true">&rarr;</span></button>
                     </form>
 
-                    <div class="login-divider">o</div>
                     <p class="login-activation">Tienes un codigo de activacion? <a class="login-link" href="{{ route('verification.notice') }}">Activalo aqui</a></p>
                     <p class="login-register">Aun no tienes tu catalogo? <a class="login-link" href="{{ url('/register') }}">Crea tu tienda</a></p>
                     <div class="login-secure">
