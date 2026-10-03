@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Enums\ProductImageProcessingStatus;
 use App\Models\Product;
+use App\Models\ProductImage;
 use App\Models\Shop;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -29,7 +31,7 @@ class CatalogController extends Controller
             ->values();
 
         $products = $shop->products()
-            ->with(['inventory', 'sourceProduct'])
+            ->with(['inventory', 'sourceProduct', 'images'])
             ->orderBy('name')
             ->get()
             ->map(fn (Product $product) => $this->productPayload($product))
@@ -53,6 +55,9 @@ class CatalogController extends Controller
     private function productPayload(Product $product): array
     {
         $inventory = $product->inventory;
+        $readyImage = $product->images->first(
+            fn (ProductImage $image): bool => $image->processing_status === ProductImageProcessingStatus::Ready
+        );
 
         return [
             'id' => $product->public_id,
@@ -62,6 +67,8 @@ class CatalogController extends Controller
             'internal_code' => $product->product_code,
             'brand' => $product->brand,
             'description' => $product->description,
+            'image_url' => $readyImage?->url,
+            'thumbnail_url' => $readyImage?->thumbnail_url,
             'price' => $product->price,
             'currency' => $product->currency,
             'sale_unit' => $product->sale_unit,
