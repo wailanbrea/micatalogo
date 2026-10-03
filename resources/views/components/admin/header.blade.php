@@ -265,7 +265,7 @@
                 </div>
             @endif
             <div class="border-t border-slate-100 pt-2">
-                <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Sistema</p>
+                <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Configuracion</p>
                 @if ($isAdmin)
                     <a class="block rounded-lg px-3 py-2 transition {{ $isAdminUsers ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.users.index') }}">Usuarios</a>
                 @endif
