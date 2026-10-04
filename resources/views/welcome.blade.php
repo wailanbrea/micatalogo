@@ -1024,17 +1024,80 @@
                 </div>
             </section>
 
-            <!-- 5. VENTAJAS (Grid de 6 cards) -->
-            <section class="mx-auto max-w-7xl px-4 py-12" id="planes">
-                <h2 class="text-3xl font-bold">Empieza gratis. Crece cuando lo necesites.</h2>
-                <div class="mt-6 grid gap-4 md:grid-cols-3">
-                    @foreach(config('catalog.plans') as $key => $limits)
-                    <article class="rounded-2xl border bg-white p-6"><h3 class="text-xl font-bold">{{ \App\Enums\UserPlan::from($key)->label() }}</h3><p class="mt-2">{{ $limits['max_products_per_shop'] }} productos · {{ $limits['max_images_per_product'] }} imágenes por producto · {{ $limits['max_active_shops'] }} tienda activa</p><p class="mt-3">Catálogo, WhatsApp, ventas, inventario y comprobantes PDF.</p>
-                        @if($key === 'pro')<p class="mt-3">Reglas de precio por margen y redondeo. Subidas automáticas opcionales; bajadas con aprobación.</p>@endif
-                        <p class="mt-3 font-semibold">{{ $key === 'free' ? 'RD$0 · Sin tarjeta' : 'Activación por el administrador. Consulta disponibilidad y condiciones.' }}</p>
-                    </article>
-                    @endforeach
-                </div><p class="mt-4 text-sm text-slate-500">No hay cobro automático de suscripciones. No se anuncian cuotas de almacenamiento o usuarios que el sistema no controle.</p>
+            <!-- 5. PLANES -->
+            @php
+                $planFeatures = [
+                    'Tu tienda + catálogo',
+                    'Ventas y facturación',
+                    'Control de inventario',
+                    'Reportes de ventas',
+                    'Cotizaciones',
+                    'Tu tienda online con pedidos por WhatsApp',
+                    'Pedidos',
+                    'Clientes y suplidores',
+                    'Funciona en tu celular y computadora',
+                ];
+                $planNames = [
+                    'free' => 'Básico',
+                    'premium' => 'Premium',
+                    'pro' => 'Pro',
+                ];
+            @endphp
+            <section class="w-full bg-[#f6f6f7] px-4 py-16 sm:px-6 lg:px-8 lg:py-24" id="planes">
+                <div class="mx-auto max-w-7xl">
+                    <div class="mx-auto max-w-2xl text-center">
+                        <span class="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">Planes claros y sin sorpresas</span>
+                        <h2 class="mt-3 text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">Empieza gratis. Crece cuando lo necesites.</h2>
+                        <p class="mt-4 text-sm leading-6 text-slate-600 sm:text-base">Elige las herramientas que necesitas para llevar tu catálogo y tus ventas con más control.</p>
+                    </div>
+
+                    <div class="mx-auto mt-10 grid max-w-6xl gap-5 lg:grid-cols-3 lg:items-stretch">
+                        @foreach(config('catalog.plans') as $key => $limits)
+                            @php
+                                $isPro = $key === 'pro';
+                                $isFree = $key === 'free';
+                                $features = $planFeatures;
+                                $features[] = number_format($limits['max_products_per_shop']) . ' productos incluidos';
+                                $features[] = $limits['max_images_per_product'] . ' imágenes por producto';
+                                if ($isPro) {
+                                    $features[] = 'Reglas de precio por margen y redondeo';
+                                    $features[] = 'Bajadas de precio con aprobación';
+                                }
+                            @endphp
+                            <article class="relative flex h-full flex-col rounded-2xl border {{ $isPro ? 'border-blue-600 shadow-[0_18px_45px_rgba(37,99,235,0.16)]' : 'border-slate-200 shadow-[0_8px_24px_rgba(15,23,42,0.06)]' }} bg-white p-7 sm:p-8">
+                                @if($isPro)
+                                    <span class="absolute -top-3 left-7 rounded-full bg-blue-600 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-white shadow-sm">Más completo</span>
+                                @endif
+                                <div class="flex items-start justify-between gap-4">
+                                    <div>
+                                        <h3 class="text-lg font-extrabold text-slate-950">{{ $planNames[$key] ?? \App\Enums\UserPlan::from($key)->label() }}</h3>
+                                        <p class="mt-1 text-xs font-medium text-slate-500">{{ $isFree ? 'Para comenzar sin costo' : ($isPro ? 'Para negocios en crecimiento' : 'Para operar con más capacidad') }}</p>
+                                    </div>
+                                    <span class="rounded-lg bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $limits['max_active_shops'] }} tienda</span>
+                                </div>
+
+                                <div class="mt-7 flex items-baseline gap-2 border-b border-slate-100 pb-6">
+                                    <span class="text-[2.65rem] font-black leading-none tracking-[-0.06em] text-slate-950">{{ $isFree ? 'RD$ 0' : 'Consultar' }}</span>
+                                    <span class="text-sm text-slate-500">{{ $isFree ? 'sin costo' : 'activación' }}</span>
+                                </div>
+
+                                <ul class="mt-6 flex-1 space-y-3.5 text-sm text-slate-700">
+                                    @foreach($features as $feature)
+                                        <li class="flex items-start gap-3 leading-5">
+                                            <svg class="mt-0.5 h-4 w-4 shrink-0 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m5 12 4 4L19 6"/></svg>
+                                            <span>{{ $feature }}</span>
+                                        </li>
+                                    @endforeach
+                                </ul>
+
+                                <a href="{{ route('register') }}" class="mt-8 inline-flex min-h-11 items-center justify-center rounded-xl border {{ $isPro ? 'border-blue-600 bg-blue-600 text-white hover:bg-blue-700' : 'border-slate-300 bg-white text-slate-900 hover:border-slate-900' }} px-4 py-3 text-sm font-extrabold transition-colors">
+                                    Crear cuenta
+                                </a>
+                            </article>
+                        @endforeach
+                    </div>
+                    <p class="mx-auto mt-6 max-w-3xl text-center text-xs leading-5 text-slate-500">No hay cobro automático de suscripciones. Las activaciones Premium y Pro se coordinan con el administrador. No se anuncian cuotas de almacenamiento o usuarios que el sistema no controle.</p>
+                </div>
             </section>
             <section class="mx-auto max-w-7xl px-4 py-10"><h2 class="text-3xl font-bold">Administra también desde Android</h2><p class="mt-3">Descarga tu catálogo y registra ventas desde el teléfono. Las ventas y nuevos abonos se envían cuando hay conexión; los conflictos requieren revisión. La administración completa y los reportes FIFO están en el panel web.</p><a class="mt-4 inline-flex rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white" href="{{ route('downloads.index') }}">Ver versión y descargar APK</a></section>
             <section class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24" id="ventajas">
