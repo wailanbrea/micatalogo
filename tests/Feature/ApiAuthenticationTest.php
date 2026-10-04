@@ -24,6 +24,18 @@ test('the Android update manifest is publicly available', function () {
         ->assertExactJson(config('bspos.android_update'));
 });
 
+test('the API rejects Android clients below the configured minimum version', function () {
+    config()->set('bspos.android_update.minimum_supported_version_code', 7);
+
+    $this->postJson('/api/v1/auth/login', [
+        'email' => 'old-client@example.com',
+        'password' => 'password',
+    ], ['X-MiCatalogo-Version-Code' => '6'])
+        ->assertStatus(426)
+        ->assertJsonPath('update_required', true)
+        ->assertJsonPath('minimum_supported_version_code', 7);
+});
+
 test('a verified active seller can connect BSPOS and retrieve only their shops', function () {
     $user = User::factory()->create(['email' => 'seller@example.com']);
     $shop = Shop::factory()->create(['user_id' => $user->id]);

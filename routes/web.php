@@ -9,6 +9,7 @@ use App\Http\Controllers\CatalogHomeController;
 use App\Http\Controllers\EmailVerificationCodeController;
 use App\Http\Controllers\ProductCatalogMediaController;
 use App\Http\Controllers\PublicOrderController;
+use App\Http\Controllers\PublicDownloadController;
 use App\Http\Controllers\PublicProductController;
 use App\Http\Controllers\PublicReportController;
 use App\Http\Controllers\PublicShopController;
@@ -43,6 +44,10 @@ Route::scopeBindings()->group(function () {
 Route::post('/reportar', [PublicReportController::class, 'store'])->middleware('throttle:report')->name('reports.store');
 Route::get('/soporte', [PublicSupportController::class, 'create'])->name('support.create');
 Route::post('/soporte', [PublicSupportController::class, 'store'])->middleware('throttle:report')->name('support.store');
+Route::get('/descargas', [PublicDownloadController::class, 'index'])->name('downloads.index');
+Route::get('/descargas/android/{versionCode}', [PublicDownloadController::class, 'android'])
+    ->whereNumber('versionCode')
+    ->name('downloads.android');
 
 Route::get('/email/verify', [EmailVerificationCodeController::class, 'show'])->name('verification.notice');
 Route::post('/email/verify-code', [EmailVerificationCodeController::class, 'verify'])->middleware('throttle:10,1')->name('verification.verify-code');

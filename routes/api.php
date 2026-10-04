@@ -12,9 +12,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
     Route::get('/app-updates/android', [AndroidUpdateController::class, 'show']);
-    Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
+    Route::post('/auth/login', [AuthController::class, 'login'])->middleware(['throttle:login', 'app.version']);
 
-    Route::middleware(['auth:sanctum', EnsureApiAccountIsActive::class])->group(function (): void {
+    Route::middleware(['auth:sanctum', EnsureApiAccountIsActive::class, 'app.version'])->group(function (): void {
         Route::get('/me', [AuthController::class, 'me']);
         Route::put('/me', [AuthController::class, 'update']);
         Route::get('/shops', [ShopController::class, 'index']);
