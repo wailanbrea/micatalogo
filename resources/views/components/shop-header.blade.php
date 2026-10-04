@@ -1,0 +1,220 @@
+@props([
+    'shop',
+    'activeTab' => 'products',
+    'productCount' => null,
+    'product' => null,
+])
+
+@php
+    $product = $product ?? request()->route('product');
+@endphp
+
+<!-- Store Workspace Context Header & Local Navigation Tabs -->
+<div class="mb-6 rounded-xl border border-slate-200 bg-white shadow-xs">
+    <!-- Store Identity Row -->
+    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 p-4 sm:px-6">
+        <div class="min-w-0 space-y-0.5">
+            <div class="flex items-center gap-2.5">
+                @if ($shop->logo_url)
+                    <img src="{{ $shop->logo_url }}" alt="{{ $shop->name }}" class="h-8 w-8 rounded-lg object-cover border border-slate-200 shadow-2xs shrink-0">
+                @else
+                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 font-black text-blue-700 text-sm shrink-0">
+                        {{ strtoupper(substr($shop->name, 0, 1)) }}
+                    </div>
+                @endif
+                <div class="min-w-0">
+                    <h2 class="truncate text-base font-bold text-slate-900 leading-tight">{{ $shop->name }}</h2>
+                    <p class="break-all text-xs text-slate-500 font-mono">
+                        /tienda/{{ $shop->slug }} · +{{ $shop->whatsapp_country_code }} {{ $shop->whatsapp_number }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <a 
+                href="{{ route('shops.show', $shop) }}" 
+                target="_blank" 
+                class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition"
+            >
+                <svg class="h-3.5 w-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                <span>Ver vitrina ↗</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Local Navigation Tabs -->
+    <nav wire:navigate:scroll class="hidden items-center gap-1 overflow-x-auto whitespace-nowrap px-4 text-xs font-semibold md:flex sm:px-6" aria-label="Navegación de la tienda">
+        <!-- Productos -->
+        <a 
+            href="{{ route('seller.shops.products.index', $shop) }}" 
+            wire:navigate.hover
+            class="flex items-center gap-1.5 py-3 px-3 border-b-2 transition {{ $activeTab === 'products' ? 'border-blue-600 text-blue-700 font-bold' : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300' }}"
+        >
+            <svg class="h-4 w-4 shrink-0 {{ $activeTab === 'products' ? 'text-blue-600' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            <span>Productos</span>
+            <span class="rounded-full bg-slate-100 px-1.5 py-0.2 text-[10px] text-slate-600 font-mono">
+                {{ $productCount ?? $shop->products()->count() }}
+            </span>
+        </a>
+
+        <!-- Inventario Lite -->
+        <a
+            href="{{ route('seller.shops.inventory.index', $shop) }}"
+            wire:navigate.hover
+            class="flex items-center gap-1.5 py-3 px-3 border-b-2 transition {{ $activeTab === 'inventory' ? 'border-blue-600 text-blue-700 font-bold' : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300' }}"
+        >
+            <svg class="h-4 w-4 shrink-0 {{ $activeTab === 'inventory' ? 'text-blue-600' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+            <span>Inventario</span>
+            @php
+                $alertCount = $shop->products()
+                    ->with(['inventory', 'sourceProduct.inventory'])
+                    ->get()
+                    ->filter(fn ($product) => $product->inventory?->track_inventory
+                        && ($product->inventory->stock_quantity <= 0 || $product->inventory->isLowStock($product)))
+                    ->count();
+            @endphp
+            @if ($alertCount > 0)
+                <span class="rounded-full bg-amber-100 px-1.5 py-0.2 text-[10px] font-bold text-amber-800 font-mono">
+                    {{ $alertCount }}
+                </span>
+            @endif
+        </a>
+
+        <a
+            href="{{ route('seller.shops.customers.index', $shop) }}"
+            wire:navigate.hover
+            class="flex items-center gap-1.5 py-3 px-3 border-b-2 transition {{ $activeTab === 'customers' ? 'border-blue-600 text-blue-700 font-bold' : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300' }}"
+        >
+            <svg class="h-4 w-4 shrink-0 {{ $activeTab === 'customers' ? 'text-blue-600' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-4-4h-1m-4 6H3v-2a4 4 0 014-4h6a4 4 0 014 4v2zM10 10a4 4 0 100-8 4 4 0 000 8z"/></svg>
+            <span>Clientes</span>
+            @if ($shop->customers()->where('balance', '>', 0)->exists())
+                <span class="rounded-full bg-amber-100 px-1.5 py-0.2 text-[10px] font-bold text-amber-800 font-mono">{{ $shop->customers()->where('balance', '>', 0)->count() }}</span>
+            @endif
+        </a>
+
+        <a
+            href="{{ route('seller.shops.sellers.index', $shop) }}"
+            wire:navigate.hover
+            class="flex items-center gap-1.5 py-3 px-3 border-b-2 transition {{ $activeTab === 'sellers' ? 'border-blue-600 text-blue-700 font-bold' : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300' }}"
+        >
+            <svg class="h-4 w-4 shrink-0 {{ $activeTab === 'sellers' ? 'text-blue-600' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-4-4h-1m-4 6H3v-2a4 4 0 014-4h6a4 4 0 014 4v2zM10 10a4 4 0 100-8 4 4 0 000 8z"/></svg>
+            <span>Vendedores</span>
+        </a>
+
+        <!-- Categorías -->
+        <a 
+            href="{{ route('seller.shops.categories.index', $shop) }}" 
+            wire:navigate.hover
+            class="flex items-center gap-1.5 py-3 px-3 border-b-2 transition {{ $activeTab === 'categories' ? 'border-blue-600 text-blue-700 font-bold' : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300' }}"
+        >
+            <svg class="h-4 w-4 shrink-0 {{ $activeTab === 'categories' ? 'text-blue-600' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+            <span>Categorías</span>
+        </a>
+
+        <!-- Subida Masiva -->
+        <a 
+            href="{{ route('seller.shops.products.bulk.create', $shop) }}" 
+            wire:navigate.hover
+            class="flex items-center gap-1.5 py-3 px-3 border-b-2 transition {{ $activeTab === 'bulk' ? 'border-blue-600 text-blue-700 font-bold' : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300' }}"
+        >
+            <svg class="h-4 w-4 shrink-0 {{ $activeTab === 'bulk' ? 'text-blue-600' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            <span>Subida masiva</span>
+        </a>
+
+        <!-- Métricas y Difusión -->
+        <a 
+            href="{{ route('seller.shops.metrics.index', $shop) }}" 
+            wire:navigate.hover
+            class="flex items-center gap-1.5 py-3 px-3 border-b-2 transition {{ $activeTab === 'metrics' ? 'border-blue-600 text-blue-700 font-bold' : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300' }}"
+        >
+            <svg class="h-4 w-4 shrink-0 {{ $activeTab === 'metrics' ? 'text-blue-600' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            <span>Métricas & QR</span>
+        </a>
+
+        <!-- Configuración -->
+        <a 
+            href="{{ route('seller.shops.edit', $shop) }}" 
+            wire:navigate.hover
+            class="flex items-center gap-1.5 py-3 px-3 border-b-2 transition {{ $activeTab === 'settings' ? 'border-blue-600 text-blue-700 font-bold' : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300' }}"
+        >
+            <svg class="h-4 w-4 shrink-0 {{ $activeTab === 'settings' ? 'text-blue-600' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <span>Configuración</span>
+        </a>
+    </nav>
+
+    <div class="relative border-t border-slate-100 bg-slate-50 md:hidden" x-data="{ open: false }">
+        <button
+            type="button"
+            @click="open = !open"
+            :aria-expanded="open"
+            aria-controls="mobile-shop-navigation"
+            class="flex w-full items-center justify-between px-4 py-3 text-left text-xs font-bold text-slate-700"
+        >
+            <span>Menu de tienda</span>
+            <svg class="h-4 w-4 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <nav
+            id="mobile-shop-navigation"
+            x-show="open"
+            x-cloak
+            @click.outside="open = false"
+            x-transition
+            class="absolute inset-x-0 top-full z-20 grid gap-2 border-t border-slate-200 bg-white p-3 text-sm font-semibold shadow-lg"
+            aria-label="Navegación contextual de la tienda"
+        >
+            <div>
+                <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Operacion</p>
+                <a wire:navigate href="{{ route('seller.shops.inventory.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'inventory' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Inventario</a>
+                <a wire:navigate href="{{ route('seller.shops.customers.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'customers' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Clientes y cobros</a>
+                <a wire:navigate href="{{ route('seller.shops.sellers.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'sellers' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Vendedores</a>
+            </div>
+            <div class="border-t border-slate-100 pt-2">
+                <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Catalogo</p>
+                <a wire:navigate href="{{ route('seller.shops.products.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'products' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Productos</a>
+                <a wire:navigate href="{{ route('seller.shops.categories.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'categories' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Categorías</a>
+                <a wire:navigate href="{{ route('seller.shops.products.bulk.create', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'bulk' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Subida masiva</a>
+            </div>
+            <div class="border-t border-slate-100 pt-2">
+                <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Analisis</p>
+                <a wire:navigate href="{{ route('seller.shops.metrics.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'metrics' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Métricas y QR</a>
+            </div>
+            <div class="border-t border-slate-100 pt-2">
+                <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Configuracion</p>
+                <a wire:navigate href="{{ route('seller.shops.edit', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'settings' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Configuración de tienda</a>
+            </div>
+        </nav>
+    </div>
+
+    @if ($activeTab === 'inventory' && $product)
+        @php
+            $salesHistory = $product->inventoryMovements()
+                ->where('type', 'sale')
+                ->whereNotNull('unit_price')
+                ->get()
+                ->groupBy(fn ($movement) => $movement->created_at->format('Y-m-d'))
+                ->map(fn ($day) => $day->sum(fn ($movement) => abs((int) $movement->quantity) * (float) $movement->unit_price))
+                ->sortKeys();
+            $salesHistoryData = [
+                'labels' => $salesHistory->keys()->map(fn ($date) => \Carbon\Carbon::parse($date)->format('d/m'))->values()->all(),
+                'revenue' => $salesHistory->values()->map(fn ($value) => round((float) $value, 2))->values()->all(),
+            ];
+        @endphp
+        <div class="border-t border-slate-100 bg-slate-50/70 px-4 py-4 sm:px-6">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                    <p class="text-xs font-bold text-slate-900">Ingresos de {{ $product->name }}</p>
+                    <p class="text-[11px] text-slate-500">Historial de ventas por día</p>
+                </div>
+                <span class="text-xs font-black text-emerald-700">RD$ {{ number_format((float) $salesHistory->sum(), 0) }}</span>
+            </div>
+            @if ($salesHistory->isNotEmpty())
+                <div class="mt-3 h-44">
+                    <canvas data-sales-chart data-chart-metric="revenue" data-chart='@json($salesHistoryData)' aria-label="Ingresos históricos del producto"></canvas>
+                </div>
+            @else
+                <p class="mt-3 text-xs text-slate-400">Este producto todavía no tiene ventas registradas.</p>
+            @endif
+        </div>
+    @endif
+</div>

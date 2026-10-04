@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\ProductImageProcessingStatus;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductInventory;
@@ -46,6 +47,8 @@ test('a seller can retrieve a canonical catalog snapshot for their shop', functi
         ->assertJsonPath('products.0.id', $product->public_id)
         ->assertJsonPath('products.0.category_id', (string) $category->id)
         ->assertJsonPath('products.0.internal_code', 'JAB-001')
+        ->assertJsonPath('products.0.image_url', $image->url)
+        ->assertJsonPath('products.0.thumbnail_url', $image->thumbnail_url)
         ->assertJsonPath('products.0.inventory.stock_quantity', 8)
         ->assertJsonPath('products.0.inventory.cost_price', '125.00')
         ->assertJsonPath('products.0.image_url', $image->url)
