@@ -26,7 +26,7 @@
 - Mobile inventory import API endpoints:
   - `POST /api/v1/shops/{shop}/inventory-import/preview`
   - `POST /api/v1/shops/{shop}/inventory-import`
-- Android `1.0.10` release with mandatory minimum version `11` published and verified.
+- Android `1.0.11` release with version code `12` published and verified; minimum supported version remains `11`.
 
 ## Verified
 
@@ -36,13 +36,12 @@
 - `npm run build`: passing.
 - Production migrations, cache rebuild, backup comparison, and smoke test: passing.
 - Production mobile inventory import routes deployed and route cache rebuilt.
-- Production Android manifest and download verified against the signed `1.0.10` artifact.
+- Production Android manifest and download verified against the signed `1.0.11` artifact.
 - R2 is not configured locally; media uses the local public fallback.
 
 ## Pending
 
 - Configure the production R2 bucket, restricted API token, custom media domain, and health check.
-- Recover the original Android release keystore and generate the next signed APK; do not use a new signing certificate.
 - Confirm the production queue worker and scheduler remain healthy after the release.
 
 ## Latest Production Release
