@@ -26,6 +26,7 @@ Route::prefix('v1')->group(function (): void {
             ->middleware('abilities:catalog:read')
             ->where('barcode', '[0-9 -]{8,32}');
         Route::post('/shops/{shop}/pos-sales', [PosSaleController::class, 'store'])->middleware('abilities:pos:write');
+        Route::post('/shops/{shop}/mobile-operations', [\App\Http\Controllers\Api\V1\MobileOperationController::class, 'store'])->middleware(['abilities:pos:write', 'throttle:60,1']);
         Route::get('/shops/{shop}/customers', [CustomerController::class, 'index'])->middleware('abilities:customers:read');
         Route::post('/shops/{shop}/customers', [CustomerController::class, 'store'])->middleware('abilities:customers:write');
         Route::get('/shops/{shop}/customers/{customer}', [CustomerController::class, 'show'])->middleware('abilities:customers:read');

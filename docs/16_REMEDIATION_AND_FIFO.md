@@ -51,3 +51,29 @@ del APK y archivos ajenos del VPS se conservaron.
 Fuentes Android actualizadas: `C:\Users\waila\AndroidStudioProjects\BSPOS-MiCatalogo`.
 Copia de fuentes sin credenciales ni artefactos de build:
 `C:\Users\waila\AndroidStudioProjects\BSPOS-MiCatalogo-Releases\source-1.0.8-20261004.tar.gz`.
+
+## Segunda etapa en desarrollo local — no publicada
+
+Se añadió la API `mobile-operations`, con identificador inmutable por operación,
+deduplicación transaccional, permisos por tienda y archivo reversible de productos.
+Las reposiciones conservan sus costos; los conteos rechazan saldos remotos cambiados.
+Las devoluciones de contado verifican la venta original, cantidades y monto cobrado,
+restauran el costo histórico vendido y descuentan el reembolso del reporte de ganancia.
+Incluyen el impuesto general de la factura sin convertirlo en ingreso.
+La migración `2026_10_14_000000` es aditiva y todavía no se aplicó al VPS.
+
+Android en desarrollo local usa Room 16 y una cola persistente de operaciones.
+Las ediciones y archivos en espera sobreviven a un catálogo remoto desactualizado;
+productos creados localmente conservan su identidad al descargarse desde el servidor.
+Ventas y operaciones se envían en orden por tienda. Un conflicto bloquea sus sucesoras;
+una respuesta sin el identificador de venta no confirma su envío.
+Validación Android: 43 pruebas unitarias y 76 instrumentadas, sin fallos.
+La API móvil tiene 6 pruebas con 52 aserciones; la suite web completa pasa con
+233 pruebas y 1,061 aserciones usando SQLite en memoria.
+
+Falta conectar por completo la selección de tienda al crear productos, la entrada de
+mercancía, conteos y devoluciones en las pantallas Android; añadir conciliación visible
+de conflictos, cobertura de stock compartido y pruebas de extremo a extremo.
+No publicar estos cambios bajo la versión 1.0.8 ni anunciar la sincronización general
+como terminada. La próxima publicación necesita nueva versión, firma verificada,
+backup de producción e identidades comparadas antes/después.

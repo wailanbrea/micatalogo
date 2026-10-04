@@ -219,6 +219,39 @@ class InventoryService
         });
     }
 
+    /** Restores returned goods at their sale's captured cost, never the latest cost. */
+    public function recordReturn(Product $product, int $quantity, ?int $costCents, ?int $userId, ?string $notes = null): InventoryMovement
+    {
+        if ($quantity <= 0 || ($costCents !== null && $costCents < 0)) throw new InvalidArgumentException('Devolución no válida.');
+        return DB::transaction(function () use ($product, $quantity, $costCents, $userId, $notes) {
+            $product = Product::withTrashed()->whereKey($product->id)->lockForUpdate()->firstOrFail();
+            $inventory = $product->inventory()->lockForUpdate()->firstOrFail();
+            $source = $product->isDecant() ? Product::withTrashed()->whereKey($product->inventory_source_product_id)->lockForUpdate()->firstOrFail() : $product;
+            $sourceInventory = $source->id === $product->id ? $inventory : $source->inventory()->lockForUpdate()->firstOrFail();
+            if (! $sourceInventory->track_inventory) throw new InvalidArgumentException('El inventario fuente no está controlado.');
+            $fifo = app(FifoCostService::class);
+            $fifo->initialize($source, $sourceInventory);
+            $canonical = $this->consumedMl($product, $quantity) ?? $quantity;
+            $available = $this->availableMl($source, $sourceInventory);
+            $before = $product->isDecant() ? intdiv((int) $available, $product->volume_ml) : $inventory->stock_quantity;
+            $fifo->receive($source, $canonical, $costCents, 'sale_return');
+            if ($available !== null) {
+                $sourceInventory->available_ml = $available + $canonical;
+                $sourceInventory->stock_quantity = $this->stockUnitsFromMl($source, $available + $canonical);
+            } else $sourceInventory->stock_quantity += $quantity;
+            $sourceInventory->save();
+            $inventory->sold_quantity = max(0, $inventory->sold_quantity - $quantity);
+            $inventory->save();
+            $this->syncAvailability($source, $sourceInventory->stock_quantity);
+            $this->syncDependentDecants($source);
+            $after = $product->isDecant() ? intdiv((int) $sourceInventory->available_ml, $product->volume_ml) : $sourceInventory->stock_quantity;
+            return InventoryMovement::create(['product_id' => $product->id, 'type' => 'return', 'quantity' => $quantity,
+                'stock_before' => $before, 'stock_after' => $after, 'unit_price' => null,
+                'unit_cost' => $costCents === null ? null : $costCents / (100 * $quantity), 'total_cost_cents' => $costCents,
+                'user_id' => $userId, 'notes' => $notes ?: 'Devolución con costo de venta original', 'created_at' => now()]);
+        });
+    }
+
     /**
      * Adjust physical stock to an exact count.
      *

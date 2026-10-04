@@ -1,0 +1,121 @@
+<?php
+
+use App\Models\InventoryLot;
+use App\Models\Invoice;
+use App\Models\MobileOperation;
+use App\Models\Product;
+use App\Models\ProductInventory;
+use App\Models\Shop;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
+uses(RefreshDatabase::class);
+
+function mobileFixture(): array
+{
+    $user = User::factory()->create();
+    $shop = Shop::factory()->create(['user_id' => $user->id]);
+    $product = Product::factory()->create(['shop_id' => $shop->id, 'price' => 250, 'sale_unit' => 'unit']);
+    ProductInventory::create(['product_id' => $product->id, 'track_inventory' => true, 'stock_quantity' => 5, 'cost_price' => 100]);
+    return [$user, $shop, $product, $user->createToken('test', ['pos:write'])->plainTextToken];
+}
+
+test('mobile refund includes global invoice tax without turning it into profit', function () {
+    [$user, $shop, $product, $token] = mobileFixture();
+    $saleUuid = (string) Str::uuid();
+    $this->withToken($token)->postJson('/api/v1/shops/'.$shop->public_id.'/pos-sales', [
+        'client_sale_uuid' => $saleUuid, 'payment_status' => 'paid', 'tax' => '45.00',
+        'items' => [['product_id' => $product->public_id, 'quantity' => 1, 'unit_price' => '250.00']],
+    ])->assertCreated()->assertJsonPath('total', '295.00');
+    $this->withToken($token)->postJson('/api/v1/shops/'.$shop->public_id.'/mobile-operations', [
+        'client_operation_uuid' => (string) Str::uuid(), 'type' => 'return', 'client_sale_uuid' => $saleUuid,
+        'items' => [['product_id' => $product->public_id, 'quantity' => 1, 'refund_price' => '295.00', 'restock' => true]],
+    ])->assertCreated()->assertJsonPath('total', '295.00');
+    expect((float) DB::table('invoice_return_items')->value('tax_refund'))->toBe(45.0)
+        ->and($product->fresh()->inventory->gross_profit)->toBe(0.0);
+});
+
+test('mobile receipts are idempotent and preserve old FIFO lots', function () {
+    [$user, $shop, $product, $token] = mobileFixture();
+    $url = '/api/v1/shops/'.$shop->public_id.'/mobile-operations';
+    $payload = ['client_operation_uuid' => (string) Str::uuid(), 'type' => 'restock', 'product_id' => $product->public_id, 'quantity' => 2, 'unit_cost' => '300.00'];
+    $this->withToken($token)->postJson($url, $payload)->assertCreated()->assertJsonPath('stock', 7);
+    $this->withToken($token)->postJson($url, $payload)->assertCreated()->assertJsonPath('stock', 7);
+    expect(InventoryLot::count())->toBe(2)->and(MobileOperation::count())->toBe(1)
+        ->and((int) InventoryLot::oldest('id')->first()->received_cost_cents)->toBe(50000);
+    $payload['quantity'] = 3;
+    $this->withToken($token)->postJson($url, $payload)->assertStatus(409);
+    expect($product->fresh()->inventory->stock_quantity)->toBe(7);
+});
+
+test('mobile product creation and edits are scoped and keep offers meaningful', function () {
+    [$user, $shop, $product, $token] = mobileFixture();
+    $url = '/api/v1/shops/'.$shop->public_id.'/mobile-operations';
+    $id = (string) Str::ulid();
+    $create = ['client_operation_uuid' => (string) Str::uuid(), 'type' => 'product_upsert', 'product_id' => $id,
+        'name' => 'Producto móvil', 'price' => '45.00', 'cost_price' => '20.00', 'category_name' => 'Accesorios', 'internal_code' => '000123'];
+    $this->withToken($token)->postJson($url, $create)->assertCreated()->assertJsonPath('product_id', $id);
+    $this->withToken($token)->postJson($url, $create)->assertCreated();
+    expect($shop->products()->count())->toBe(2)->and($shop->categories()->count())->toBe(1);
+    $product->update(['sale_price' => 200]);
+    $edit = ['client_operation_uuid' => (string) Str::uuid(), 'type' => 'product_upsert', 'product_id' => $product->public_id,
+        'name' => 'Nuevo nombre', 'expected_price' => '200.00', 'price' => '180.00'];
+    $this->withToken($token)->postJson($url, $edit)->assertCreated()->assertJsonPath('price', '180.00');
+    expect((float) $product->fresh()->price)->toBe(250.0);
+    $edit['client_operation_uuid'] = (string) Str::uuid();
+    $this->withToken($token)->postJson($url, $edit)->assertStatus(409);
+    $other = Shop::factory()->create();
+    $this->withToken($token)->postJson('/api/v1/shops/'.$other->public_id.'/mobile-operations', $create)->assertNotFound();
+});
+
+test('mobile archive is reversible and adjustment rejects stale inventory', function () {
+    [$user, $shop, $product, $token] = mobileFixture();
+    $url = '/api/v1/shops/'.$shop->public_id.'/mobile-operations';
+    $adjust = ['client_operation_uuid' => (string) Str::uuid(), 'type' => 'adjustment', 'product_id' => $product->public_id,
+        'stock' => 10, 'expected_stock' => 4, 'notes' => 'Conteo físico'];
+    $this->withToken($token)->postJson($url, $adjust)->assertStatus(409);
+    expect($product->fresh()->inventory->stock_quantity)->toBe(5)->and(MobileOperation::count())->toBe(0);
+    $archive = ['client_operation_uuid' => (string) Str::uuid(), 'type' => 'product_archive', 'product_id' => $product->public_id];
+    $this->withToken($token)->postJson($url, $archive)->assertCreated();
+    $this->withToken($token)->postJson($url, $archive)->assertCreated();
+    expect(Product::withTrashed()->find($product->id)->trashed())->toBeTrue()->and(ProductInventory::count())->toBe(1);
+});
+
+test('mobile returns restore original sold cost not the latest receipt cost and cannot duplicate', function () {
+    [$user, $shop, $product, $token] = mobileFixture();
+    $saleUuid = (string) Str::uuid();
+    $this->withToken($token)->postJson('/api/v1/shops/'.$shop->public_id.'/pos-sales', ['client_sale_uuid' => $saleUuid,
+        'payment_status' => 'paid', 'items' => [['product_id' => $product->public_id, 'quantity' => 2, 'unit_price' => '250.00']]])->assertCreated();
+    app(\App\Services\InventoryService::class)->recordRestock($product, 2, null, $user->id, 300);
+    $url = '/api/v1/shops/'.$shop->public_id.'/mobile-operations';
+    $refund = ['client_operation_uuid' => (string) Str::uuid(), 'type' => 'return', 'client_sale_uuid' => $saleUuid,
+        'items' => [['product_id' => $product->public_id, 'quantity' => 1, 'refund_price' => '250.00', 'restock' => true]]];
+    $this->withToken($token)->postJson($url, $refund)->assertCreated()->assertJsonPath('total', '250.00');
+    $this->withToken($token)->postJson($url, $refund)->assertCreated();
+    expect(DB::table('invoice_returns')->count())->toBe(1)->and((int) DB::table('invoice_return_items')->value('total_cost_cents'))->toBe(10000)
+        ->and($product->fresh()->inventory->stock_quantity)->toBe(6)
+        ->and($product->fresh()->inventory->inventory_value)->toBe(1000.0)
+        ->and((float) $product->fresh()->inventory->cost_price)->toBe(300.0);
+    expect($product->fresh()->inventory->gross_profit)->toBe(150.0);
+    $report = app(\App\Http\Controllers\SellerBusinessController::class)->index(\Illuminate\Http\Request::create('/'), $shop)->getData();
+    expect((float) $report['total'])->toBe(250.0)
+        ->and((float) $report['products']->first()->revenue)->toBe(250.0)
+        ->and((float) $report['products']->first()->known_cost)->toBe(100.0);
+    $refund['client_operation_uuid'] = (string) Str::uuid();
+    $refund['items'][0]['quantity'] = 2;
+    $this->withToken($token)->postJson($url, $refund)->assertUnprocessable();
+    expect(DB::table('invoice_returns')->count())->toBe(1)->and($product->fresh()->inventory->stock_quantity)->toBe(6);
+});
+
+test('mobile return cannot refund more than the discounted amount originally charged', function () {
+    [$user, $shop, $product, $token] = mobileFixture();
+    $saleUuid = (string) Str::uuid();
+    $this->withToken($token)->postJson('/api/v1/shops/'.$shop->public_id.'/pos-sales', ['client_sale_uuid' => $saleUuid,
+        'payment_status' => 'paid', 'discount' => '50.00', 'items' => [['product_id' => $product->public_id, 'quantity' => 1, 'unit_price' => '250.00']]])->assertCreated();
+    $this->withToken($token)->postJson('/api/v1/shops/'.$shop->public_id.'/mobile-operations', [
+        'client_operation_uuid' => (string) Str::uuid(), 'type' => 'return', 'client_sale_uuid' => $saleUuid,
+        'items' => [['product_id' => $product->public_id, 'quantity' => 1, 'refund_price' => '250.00', 'restock' => true]]])->assertUnprocessable();
+    expect(DB::table('invoice_returns')->count())->toBe(0)->and($product->fresh()->inventory->stock_quantity)->toBe(4);
+});
