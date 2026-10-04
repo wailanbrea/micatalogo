@@ -26,7 +26,7 @@ automáticos ni precios comerciales inventados. No se siembra producción.
 
 ## Pendientes que no deben anunciarse como terminados
 
-La app sincroniza catálogo/clientes, ventas y nuevos abonos. Sigue pendiente la
+La APK publicada sincroniza catálogo/clientes, ventas y nuevos abonos. Sigue pendiente la
 cola bidireccional general de productos, compras/reposiciones y devoluciones.
 Los cambios locales de esos módulos no se publican en la tienda; su gestión remota
 se realiza desde el panel web. Los costos locales Android siguen siendo estimados:
@@ -62,7 +62,7 @@ restauran el costo histórico vendido y descuentan el reembolso del reporte de g
 Incluyen el impuesto general de la factura sin convertirlo en ingreso.
 La migración `2026_10_14_000000` es aditiva y todavía no se aplicó al VPS.
 
-Android en desarrollo local usa Room 16 y una cola persistente de operaciones.
+Android en desarrollo local usa Room 17 y una cola persistente de operaciones.
 Las ediciones y archivos en espera sobreviven a un catálogo remoto desactualizado;
 productos creados localmente conservan su identidad al descargarse desde el servidor.
 Ventas y operaciones se envían en orden por tienda. Un conflicto bloquea sus sucesoras;
@@ -87,8 +87,44 @@ reversión por saldo obsoleto, costo por entrada, botella parcial con decants y 
 de conteo en mililitros aunque las botellas enteras no cambien. Estas comprobaciones
 no sustituyen las pruebas visuales ni de extremo a extremo previas a publicar.
 
-Falta conectar devoluciones en Android; añadir conciliación visible de conflictos,
-permisos de edición en las pantallas, fotos de producto y pruebas de extremo a extremo.
+### Devoluciones y controles adicionales verificados localmente
+
+Las devoluciones de contado ya se conectaron en Android. Caja, documento, stock y
+operación remota comparten transacción. Las cantidades no pueden superar lo vendido;
+el reembolso exacto incluye descuentos e impuestos y conserva los centavos entre
+devoluciones parciales. Restituir un decant recompone los mililitros de su botella
+y sus presentaciones, sin sustituir el costo actual por el costo histórico devuelto.
+Un fallo por falta de caja abierta no deja documento, movimiento ni operación pendiente.
+
+Room 17 añade importes exactos de devolución e instantáneas de unidad, volumen y
+botella de origen a las líneas de venta; no reconstruye esos datos en ventas antiguas.
+La migración web `2026_10_15_000000` captura también la botella de origen en las
+nuevas facturas. Devoluciones antiguas de decants sin ese dato requieren conciliación
+para restituir mercancía; el reembolso sin restitución no inventa un origen.
+
+Las nuevas ventas Android envían la presentación capturada. La API devuelve
+`presentation_conflict` si cambió, antes de consumir inventario. Los clientes anteriores
+siguen funcionando sin estos campos. Un reintento de una venta ya aceptada conserva
+su respuesta original aunque el producto haya cambiado posteriormente.
+
+Ajustes muestra ventas, operaciones y abonos pendientes, su estado, motivo e
+identificador. Reintentar mantiene la instantánea y el UUID: no equivale a resolver
+un conflicto de precio o stock. Las pantallas de catálogo e inventario solo permiten
+editar productos remotos de propietarios/administradores; el servidor vuelve a
+comprobar permisos. Una venta con reintento futuro mantiene el trabajo de fondo
+pendiente; un bloqueo no genera reintentos automáticos interminables.
+
+Validación actual: **238 pruebas web / 1,113 aserciones; 50 unitarias y 83 instrumentadas
+Android**, sin fallos. Android se probó solamente en `emulator-5554`. No se ejecutaron
+pruebas ni migraciones nuevas en producción durante esta tanda.
+
+Falta completar la resolución explícita de conflictos (la lista y el reintento no bastan),
+fotos de producto, descarga automática del precio Pro después de confirmar una entrada
+y pruebas visuales/de extremo a extremo. También debe probarse y corregirse el orden
+causal cuando dos eventos tienen la misma marca temporal; ordenar solo por fecha no
+garantiza ese caso. Los costos locales siguen siendo estimaciones hasta la asignación
+FIFO del servidor. No presentar estos puntos como terminados.
+
 No publicar estos cambios bajo la versión 1.0.8 ni anunciar la sincronización general
 como terminada. La próxima publicación necesita nueva versión, firma verificada,
 backup de producción e identidades comparadas antes/después.

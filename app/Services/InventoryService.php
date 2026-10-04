@@ -444,6 +444,7 @@ class InventoryService
                 'product_code' => $product->product_code,
                 'sale_unit' => $product->sale_unit,
                 'volume_ml' => $product->volume_ml,
+                'inventory_source_product_id' => $product->inventory_source_product_id,
                 'quantity' => $quantity,
                 'unit_price' => $unitPrice,
                 'line_total' => $lineTotal,

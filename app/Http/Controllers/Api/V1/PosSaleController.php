@@ -35,6 +35,9 @@ class PosSaleController extends Controller
             'items.*.unit_price' => ['required', 'decimal:0,2', 'min:0'],
             'items.*.discount' => ['sometimes', 'decimal:0,2', 'min:0'],
             'items.*.tax' => ['sometimes', 'decimal:0,2', 'min:0'],
+            'items.*.expected_sale_unit' => ['nullable', 'in:unit,bottle,decant'],
+            'items.*.expected_volume_ml' => ['nullable', 'integer', 'min:1'],
+            'items.*.expected_source_product_id' => ['nullable', 'ulid'],
         ]);
         $payloadHash = hash('sha256', json_encode($validated, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION));
 
@@ -66,6 +69,19 @@ class PosSaleController extends Controller
                 }
 
                 foreach ($validated['items'] as $item) {
+                    $product = $products[$item['product_id']];
+                    // Older clients omit presentation hints; new clients capture all three
+                    // together so a null source also means "no linked bottle".
+                    if (isset($item['expected_sale_unit']) && (
+                        $item['expected_sale_unit'] !== ($product->sale_unit ?: 'unit')
+                        || ($item['expected_volume_ml'] ?? null) !== $product->volume_ml
+                        || ($item['expected_source_product_id'] ?? null) !== $product->sourceProduct?->public_id
+                    )) {
+                        return response()->json([
+                            'message' => 'Cambió la presentación o la botella de origen. Concilia la venta antes de enviarla.',
+                            'reason' => 'presentation_conflict',
+                        ], 409);
+                    }
                     if ($this->toCents($item['unit_price']) !== $this->toCents($products[$item['product_id']]->currentPrice())) {
                         return response()->json([
                             'message' => 'The submitted price no longer matches the catalog.',

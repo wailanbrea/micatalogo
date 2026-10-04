@@ -11,6 +11,33 @@ use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
+test('new POS clients reject a changed decant presentation before consuming shared stock', function () {
+    [$user, $shop, $source] = posSaleFixture(stock: 1, price: 250);
+    $source->update(['sale_unit' => 'bottle', 'volume_ml' => 100]);
+    $source->inventory->update(['available_ml' => 100]);
+    $decant = Product::factory()->create(['shop_id' => $shop->id, 'price' => 10,
+        'sale_unit' => 'decant', 'volume_ml' => 5, 'inventory_source_product_id' => $source->id]);
+    ProductInventory::create(['product_id' => $decant->id, 'track_inventory' => true, 'stock_quantity' => 20]);
+    $payload = posSalePayload((string) Str::uuid(), $decant, 2, '10.00');
+    $payload['items'][0] += ['expected_sale_unit' => 'decant', 'expected_volume_ml' => 5,
+        'expected_source_product_id' => $source->public_id];
+    $token = $user->createToken('BSPOS', ['pos:write'])->plainTextToken;
+    $url = '/api/v1/shops/'.$shop->public_id.'/pos-sales';
+    foreach (['volume_ml' => 6, 'inventory_source_product_id' => null, 'sale_unit' => 'unit'] as $field => $value) {
+        $original = $decant->getAttribute($field);
+        $decant->update([$field => $value]);
+        $this->withToken($token)->postJson($url, $payload)->assertConflict()->assertJsonPath('reason', 'presentation_conflict');
+        expect(Invoice::count())->toBe(0)->and(InventoryMovement::count())->toBe(0)
+            ->and($source->fresh()->inventory->available_ml)->toBe(100);
+        $decant->update([$field => $original]);
+    }
+    $this->withToken($token)->postJson($url, $payload)->assertCreated();
+    expect($source->fresh()->inventory->available_ml)->toBe(90);
+    $decant->update(['volume_ml' => 6]);
+    $this->withToken($token)->postJson($url, $payload)->assertCreated();
+    expect(Invoice::count())->toBe(1)->and($source->fresh()->inventory->available_ml)->toBe(90);
+});
+
 test('a POS sale uses the pos channel, requested payment status, and decrements stock', function () {
     [$user, $shop, $product] = posSaleFixture(stock: 5, price: 300);
     $product->update([

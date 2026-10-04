@@ -17,7 +17,8 @@ class MobileOperationController extends Controller
         if ($type === 'return') {
             $rules += ['client_sale_uuid' => ['required', 'uuid'], 'items' => ['required', 'array', 'min:1', 'max:100'],
                 'items.*.product_id' => ['required', 'ulid', 'distinct'], 'items.*.quantity' => ['required', 'integer', 'min:1', 'max:10000'],
-                'items.*.refund_price' => ['required', 'decimal:0,2', 'min:0', 'max:1000000000'], 'items.*.restock' => ['required', 'boolean']];
+                'items.*.refund_price' => ['required', 'decimal:0,2', 'min:0', 'max:1000000000'],
+                'items.*.refund_total' => ['sometimes', 'decimal:0,2', 'min:0', 'max:10000000000000'], 'items.*.restock' => ['required', 'boolean']];
         } else {
             $rules['product_id'] = ['required', 'ulid'];
             if ($type === 'product_upsert') $rules += ['name' => ['sometimes', 'required', 'string', 'max:255'],

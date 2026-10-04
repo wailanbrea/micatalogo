@@ -117,6 +117,10 @@ class MobileOperationService
         // full amount across all lines and subsequent partial returns.
         $globalTax = (int) round((float) $invoice->tax * 100);
         $weights = $rows->mapWithKeys(fn($item) => [$item->id => max(0, (int) round((float) $item->line_total * 100) - (int) $item->general_discount_cents)]);
+        if ($weights->sum() === 0) {
+            $weights = $rows->mapWithKeys(fn($item) => [$item->id => (int) round((float) $item->line_total * 100)]);
+            if ($weights->sum() === 0) $weights = $rows->mapWithKeys(fn($item) => [$item->id => (int) $item->quantity]);
+        }
         $weightTotal = $weights->sum();
         $taxShares = [];
         $cumulativeWeight = $allocatedTax = 0;
@@ -133,10 +137,19 @@ class MobileOperationService
             $product = $shop->products()->withTrashed()->where('public_id', $line['product_id'])->firstOrFail();
             $item = $invoiceItems->get((string) $product->id);
             if (! $item) throw new InvalidArgumentException('La línea no pertenece a la venta.', 422);
+            if ($line['restock'] && ($item->sale_unit !== $product->sale_unit ||
+                in_array($item->sale_unit, ['bottle', 'ml', 'decant'], true) && (
+                    $item->volume_ml !== $product->volume_ml ||
+                    (string) $item->inventory_source_product_id !== (string) $product->inventory_source_product_id ||
+                    $item->sale_unit === 'decant' && $item->inventory_source_product_id === null
+                ))) {
+                throw new InvalidArgumentException('La presentación o fuente cambió desde la venta; concilia el inventario antes de reintegrar.', 422);
+            }
             $oldQty = (int) DB::table('invoice_return_items')->where('invoice_item_id', $item->id)->sum('quantity');
             $qty = $line['quantity'];
             if ($oldQty + $qty > $item->quantity) throw new InvalidArgumentException('La devolución supera las unidades vendidas.', 422);
-            $refundCents = (int) round((float) $line['refund_price'] * 100) * $qty;
+            $refundCents = isset($line['refund_total']) ? (int) round((float) $line['refund_total'] * 100)
+                : (int) round((float) $line['refund_price'] * 100) * $qty;
             $chargedCents = (int) round((float) $item->line_total * 100) - (int) $item->general_discount_cents + $taxShares[$item->id];
             $maxRefund = intdiv($chargedCents * ($oldQty + $qty), $item->quantity) - intdiv($chargedCents * $oldQty, $item->quantity);
             if ($refundCents > $maxRefund) throw new InvalidArgumentException('El reembolso supera lo cobrado por esas unidades.', 422);

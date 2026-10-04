@@ -134,3 +134,68 @@ test('mobile return cannot refund more than the discounted amount originally cha
         'items' => [['product_id' => $product->public_id, 'quantity' => 1, 'refund_price' => '250.00', 'restock' => true]]])->assertUnprocessable();
     expect(DB::table('invoice_returns')->count())->toBe(0)->and($product->fresh()->inventory->stock_quantity)->toBe(4);
 });
+
+test('mobile partial returns conserve discounted cents and remain replay safe', function () {
+    [$user, $shop, $product, $token] = mobileFixture();
+    $saleUuid = (string) Str::uuid();
+    $this->withToken($token)->postJson('/api/v1/shops/'.$shop->public_id.'/pos-sales', [
+        'client_sale_uuid' => $saleUuid, 'payment_status' => 'paid', 'discount' => '0.01',
+        'items' => [['product_id' => $product->public_id, 'quantity' => 3, 'unit_price' => '250.00']],
+    ])->assertCreated()->assertJsonPath('total', '749.99');
+    $url = '/api/v1/shops/'.$shop->public_id.'/mobile-operations';
+    $first = ['client_operation_uuid' => (string) Str::uuid(), 'type' => 'return', 'client_sale_uuid' => $saleUuid,
+        'items' => [['product_id' => $product->public_id, 'quantity' => 1, 'refund_price' => '249.99', 'refund_total' => '249.99', 'restock' => true]]];
+    $this->withToken($token)->postJson($url, $first)->assertCreated()->assertJsonPath('total', '249.99');
+    $this->withToken($token)->postJson($url, $first)->assertCreated();
+    $second = $first;
+    $second['client_operation_uuid'] = (string) Str::uuid();
+    $second['items'][0] = ['product_id' => $product->public_id, 'quantity' => 2, 'refund_price' => '250.00', 'refund_total' => '500.00', 'restock' => true];
+    $this->withToken($token)->postJson($url, $second)->assertCreated()->assertJsonPath('total', '500.00');
+    expect(round((float) DB::table('invoice_returns')->sum('total'), 2))->toBe(749.99)
+        ->and($product->fresh()->inventory->stock_quantity)->toBe(5)
+        ->and($product->fresh()->inventory->gross_profit)->toBe(0.0);
+    $second['client_operation_uuid'] = (string) Str::uuid();
+    $this->withToken($token)->postJson($url, $second)->assertUnprocessable();
+    expect(DB::table('invoice_returns')->count())->toBe(2);
+});
+
+test('mobile decant returns restore shared ml and reject changed source or presentation', function () {
+    [$user, $shop, $source, $token] = mobileFixture();
+    $source->update(['sale_unit' => 'bottle', 'volume_ml' => 100]);
+    $source->inventory->update(['stock_quantity' => 1, 'available_ml' => 100]);
+    $decant = Product::factory()->create(['shop_id' => $shop->id, 'price' => 10, 'sale_unit' => 'decant', 'volume_ml' => 5,
+        'inventory_source_product_id' => $source->id]);
+    ProductInventory::create(['product_id' => $decant->id, 'track_inventory' => true, 'stock_quantity' => 20]);
+    $saleUuid = (string) Str::uuid();
+    $this->withToken($token)->postJson('/api/v1/shops/'.$shop->public_id.'/pos-sales', [
+        'client_sale_uuid' => $saleUuid, 'payment_status' => 'paid',
+        'items' => [['product_id' => $decant->public_id, 'quantity' => 2, 'unit_price' => '10.00']],
+    ])->assertCreated();
+    $item = Invoice::first()->items()->first();
+    expect((int) $item->inventory_source_product_id)->toBe($source->id);
+    $url = '/api/v1/shops/'.$shop->public_id.'/mobile-operations';
+    $refund = ['client_operation_uuid' => (string) Str::uuid(), 'type' => 'return', 'client_sale_uuid' => $saleUuid,
+        'items' => [['product_id' => $decant->public_id, 'quantity' => 1, 'refund_price' => '10.00', 'restock' => true]]];
+    $decant->update(['volume_ml' => 6]);
+    $this->withToken($token)->postJson($url, $refund)->assertUnprocessable();
+    expect(DB::table('invoice_returns')->count())->toBe(0)->and($source->fresh()->inventory->available_ml)->toBe(90);
+    $decant->update(['volume_ml' => 5]);
+    $this->withToken($token)->postJson($url, $refund)->assertCreated();
+    expect($source->fresh()->inventory->available_ml)->toBe(95)
+        ->and($decant->fresh()->inventory->stock_quantity)->toBe(19)
+        ->and((int) DB::table('invoice_return_items')->value('total_cost_cents'))->toBe(500);
+});
+
+test('fully discounted invoices still refund global tax exactly', function () {
+    [$user, $shop, $product, $token] = mobileFixture();
+    $saleUuid = (string) Str::uuid();
+    $this->withToken($token)->postJson('/api/v1/shops/'.$shop->public_id.'/pos-sales', [
+        'client_sale_uuid' => $saleUuid, 'payment_status' => 'paid', 'discount' => '250.00', 'tax' => '0.01',
+        'items' => [['product_id' => $product->public_id, 'quantity' => 1, 'unit_price' => '250.00']],
+    ])->assertCreated()->assertJsonPath('total', '0.01');
+    $this->withToken($token)->postJson('/api/v1/shops/'.$shop->public_id.'/mobile-operations', [
+        'client_operation_uuid' => (string) Str::uuid(), 'type' => 'return', 'client_sale_uuid' => $saleUuid,
+        'items' => [['product_id' => $product->public_id, 'quantity' => 1, 'refund_price' => '0.00', 'refund_total' => '0.01', 'restock' => true]],
+    ])->assertCreated()->assertJsonPath('total', '0.01');
+    expect((float) DB::table('invoice_return_items')->value('tax_refund'))->toBe(0.01);
+});

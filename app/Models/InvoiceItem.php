@@ -17,6 +17,7 @@ class InvoiceItem extends Model
         'product_code',
         'sale_unit',
         'volume_ml',
+        'inventory_source_product_id',
         'quantity',
         'unit_price',
         'line_total',
@@ -30,6 +31,8 @@ class InvoiceItem extends Model
     {
         return [
             'quantity' => 'integer',
+            'volume_ml' => 'integer',
+            'inventory_source_product_id' => 'integer',
             'unit_price' => 'decimal:2',
             'line_total' => 'decimal:2',
         ];
