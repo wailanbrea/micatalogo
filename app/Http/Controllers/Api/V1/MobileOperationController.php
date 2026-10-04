@@ -28,6 +28,7 @@ class MobileOperationController extends Controller
             if ($type === 'restock') $rules += ['quantity' => ['required', 'integer', 'min:1', 'max:1000000'], 'unit_cost' => ['required', 'decimal:0,2', 'min:0', 'max:1000000000']];
             if ($type === 'adjustment') $rules += ['stock' => ['required', 'integer', 'min:0', 'max:1000000'], 'expected_stock' => ['required', 'integer', 'min:0'], 'notes' => ['required', 'string', 'max:1000']];
             if ($type === 'adjustment') $rules['notes'] = ['required', 'string', 'max:1000'];
+            if ($type === 'adjustment') $rules['expected_available_ml'] = ['sometimes', 'integer', 'min:0'];
         }
         $data = $request->validate($rules);
         try { return response()->json($service->apply($shop, $request->user(), $data), 201); }

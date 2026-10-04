@@ -83,6 +83,21 @@ test('mobile archive is reversible and adjustment rejects stale inventory', func
     expect(Product::withTrashed()->find($product->id)->trashed())->toBeTrue()->and(ProductInventory::count())->toBe(1);
 });
 
+test('mobile bottle count detects decant sales even when whole bottle stock is unchanged', function () {
+    [$user, $shop, $product, $token] = mobileFixture();
+    $product->update(['sale_unit' => 'bottle', 'volume_ml' => 100]);
+    $product->inventory->update(['stock_quantity' => 5, 'available_ml' => 550]);
+    $url = '/api/v1/shops/'.$shop->public_id.'/mobile-operations';
+    $payload = ['client_operation_uuid' => (string) Str::uuid(), 'type' => 'adjustment',
+        'product_id' => $product->public_id, 'expected_stock' => 5, 'expected_available_ml' => 590,
+        'stock' => 4, 'notes' => 'Conteo de botellas'];
+    $this->withToken($token)->postJson($url, $payload)->assertStatus(409);
+    expect($product->fresh()->inventory->available_ml)->toBe(550)->and(MobileOperation::count())->toBe(0);
+    $payload['expected_available_ml'] = 550;
+    $this->withToken($token)->postJson($url, $payload)->assertCreated()->assertJsonPath('stock', 4);
+    expect($product->fresh()->inventory->available_ml)->toBe(400);
+});
+
 test('mobile returns restore original sold cost not the latest receipt cost and cannot duplicate', function () {
     [$user, $shop, $product, $token] = mobileFixture();
     $saleUuid = (string) Str::uuid();

@@ -71,9 +71,24 @@ Validación Android: 43 pruebas unitarias y 76 instrumentadas, sin fallos.
 La API móvil tiene 6 pruebas con 52 aserciones; la suite web completa pasa con
 233 pruebas y 1,061 aserciones usando SQLite en memoria.
 
-Falta conectar por completo la selección de tienda al crear productos, la entrada de
-mercancía, conteos y devoluciones en las pantallas Android; añadir conciliación visible
-de conflictos, cobertura de stock compartido y pruebas de extremo a extremo.
+Ya están conectados localmente el selector de tienda para crear productos, entradas
+con costo decimal y conteos físicos. La lista de tiendas tiene caché por cuenta para
+trabajar sin conexión; la autorización definitiva permanece en el servidor.
+Producto nuevo y saldo inicial se guardan juntos. Movimiento, actualización del costo
+estimado y operación pendiente comparten transacción: un saldo desactualizado revierte
+todo. Una entrada de botella conserva sus mililitros parciales y actualiza sus decants
+con una sola operación remota. Los conteos verifican también el saldo en mililitros,
+porque vender decants puede no cambiar el número de botellas enteras.
+Los costos y precios aceptan centavos sin truncarlos. La interfaz de entradas/conteos
+dirige al inventario fuente en lugar de modificar un decant de forma independiente.
+Validación actual de esta etapa: 234 pruebas web / 1,067 aserciones; 44 unitarias
+y 78 instrumentadas Android, sin fallos. Pruebas añadidas: entrada + cola atómicas,
+reversión por saldo obsoleto, costo por entrada, botella parcial con decants y conflicto
+de conteo en mililitros aunque las botellas enteras no cambien. Estas comprobaciones
+no sustituyen las pruebas visuales ni de extremo a extremo previas a publicar.
+
+Falta conectar devoluciones en Android; añadir conciliación visible de conflictos,
+permisos de edición en las pantallas, fotos de producto y pruebas de extremo a extremo.
 No publicar estos cambios bajo la versión 1.0.8 ni anunciar la sincronización general
 como terminada. La próxima publicación necesita nueva versión, firma verificada,
 backup de producción e identidades comparadas antes/después.

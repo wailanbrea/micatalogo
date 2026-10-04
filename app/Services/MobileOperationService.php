@@ -92,6 +92,9 @@ class MobileOperationService
             } elseif ($data['type'] === 'adjustment') {
                 $inventory = $product->inventory()->lockForUpdate()->firstOrFail();
                 if ($inventory->stock_quantity !== $data['expected_stock']) throw new InvalidArgumentException('El stock cambió; vuelve a contar antes de ajustar.', 409);
+                if (isset($data['expected_available_ml']) && $inventory->available_ml !== $data['expected_available_ml']) {
+                    throw new InvalidArgumentException('Los mililitros disponibles cambiaron; vuelve a contar antes de ajustar.', 409);
+                }
                 app(InventoryService::class)->adjustStock($product, $data['stock'], $data['notes'], $user->id);
             }
         }
