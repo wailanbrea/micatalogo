@@ -30,7 +30,7 @@
 
 ## Verified
 
-- `php vendor/bin/pest --compact`: 249 tests, 1,197 assertions (100% passing).
+- `php vendor/bin/pest`: 250 tests, 1,200 assertions (100% passing).
 - Android `gradlew testDebugUnitTest`: passing. Instrumented tests require an emulator
   reset because the existing installed APK has a different signing certificate.
 - `npm run build`: passing.
@@ -42,7 +42,7 @@
 ## Pending
 
 - Configure the production R2 bucket, restricted API token, custom media domain, and health check.
-- Create the release Git commit after reviewing all changed and untracked files.
+- Recover the original Android release keystore and generate the next signed APK; do not use a new signing certificate.
 - Confirm the production queue worker and scheduler remain healthy after the release.
 
 ## Latest Production Release
