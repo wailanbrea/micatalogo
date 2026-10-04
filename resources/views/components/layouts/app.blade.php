@@ -40,7 +40,15 @@
 
         @livewireStyles
     </head>
-    <body>
+    @php
+        $isPanelLayout = auth()->check() && request()->is('panel*', 'admin*');
+    @endphp
+
+    <body @class(['bg-slate-50', 'md:pl-80' => $isPanelLayout])>
+        @if ($isPanelLayout)
+            <x-admin.sidebar />
+        @endif
+
         {{ $slot }}
 
         @livewireScripts

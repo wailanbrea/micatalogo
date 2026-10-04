@@ -27,6 +27,7 @@ class ProductRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'min:2', 'max:255'],
             'product_code' => ['nullable', 'string', 'max:100'],
+            'barcode' => ['nullable', 'string', 'regex:/^[0-9][0-9\s-]{7,31}$/'],
             'brand' => ['nullable', 'string', 'max:120'],
             'slug' => ['nullable', 'string', 'min:2', 'max:255'],
             'description' => ['nullable', 'string', 'max:5000'],

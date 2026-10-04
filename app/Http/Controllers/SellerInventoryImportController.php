@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductModerationStatus;
+use App\Jobs\ResolveProductCatalogMediaJob;
 use App\Models\AttributeDefinition;
 use App\Models\GlobalCategory;
 use App\Models\Shop;
+use App\Services\CatalogMediaService;
 use App\Services\InventoryImportService;
+use App\Services\PlanLimitsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,17 +20,18 @@ use Illuminate\View\View;
 
 class SellerInventoryImportController extends Controller
 {
-    public function create(Shop $shop): View
+    public function create(Shop $shop, PlanLimitsService $limits): View
     {
         return view('seller.products.import', [
             'shop' => $shop,
+            'quota' => $limits->shopQuota($shop),
             'rows' => [],
             'validRows' => 0,
             'invalidRows' => 0,
         ]);
     }
 
-    public function preview(Request $request, Shop $shop, InventoryImportService $importer): View
+    public function preview(Request $request, Shop $shop, InventoryImportService $importer, PlanLimitsService $limits): View
     {
         $request->validate([
             'file' => ['required', 'file', 'mimes:csv,txt,xlsx', 'max:10240'],
@@ -37,13 +41,14 @@ class SellerInventoryImportController extends Controller
 
         return view('seller.products.import', [
             'shop' => $shop,
+            'quota' => $limits->shopQuota($shop),
             'rows' => $rows,
             'validRows' => collect($rows)->where('valid', true)->count(),
             'invalidRows' => collect($rows)->where('valid', false)->count(),
         ]);
     }
 
-    public function store(Request $request, Shop $shop): RedirectResponse
+    public function store(Request $request, Shop $shop, PlanLimitsService $limits, CatalogMediaService $catalogMedia): RedirectResponse
     {
         $request->validate(['rows' => ['required', 'json']]);
         $rows = json_decode($request->string('rows')->value(), true);
@@ -56,11 +61,11 @@ class SellerInventoryImportController extends Controller
             throw ValidationException::withMessages(['rows' => 'Corrige las filas marcadas antes de importar.']);
         }
 
-        DB::transaction(function () use ($shop, $rows): void {
+        $productIds = [];
+
+        DB::transaction(function () use ($shop, $rows, $limits, $catalogMedia, &$productIds): void {
             $lockedShop = Shop::query()->lockForUpdate()->findOrFail($shop->id);
-            if ($lockedShop->products()->count() + $rows->count() > $lockedShop->productLimit()) {
-                throw ValidationException::withMessages(['rows' => 'La importación supera el límite de productos de esta tienda.']);
-            }
+            $limits->assertCanAddProducts($lockedShop, $rows->count(), 'rows');
 
             $categories = $lockedShop->categories()->get()->keyBy(fn ($category) => Str::lower(Str::ascii($category->name)));
             $globalCategories = GlobalCategory::query()->where('status', 'active')->get()->keyBy(fn ($category) => Str::lower(Str::ascii($category->name)));
@@ -75,6 +80,7 @@ class SellerInventoryImportController extends Controller
                 $product = $lockedShop->products()->create([
                     'name' => trim((string) $row['name']),
                     'product_code' => $row['product_code'] ?? null,
+                    'barcode' => $catalogMedia->normalizeBarcode($row['barcode'] ?? null),
                     'brand' => $row['brand'] ?? null,
                     'slug' => $slug,
                     'description' => $row['description'] ?? null,
@@ -87,6 +93,8 @@ class SellerInventoryImportController extends Controller
                     'moderation_status' => ProductModerationStatus::Active,
                     'published_at' => now(),
                 ]);
+
+                $productIds[] = $product->id;
 
                 $product->inventory()->create([
                     'track_inventory' => $trackInventory,
@@ -113,6 +121,10 @@ class SellerInventoryImportController extends Controller
                 }
             }
         });
+
+        foreach ($productIds as $productId) {
+            ResolveProductCatalogMediaJob::dispatch($productId)->afterCommit();
+        }
 
         return to_route('seller.shops.products.index', $shop)->with('status', "Se importaron {$rows->count()} productos después de validar el archivo.");
     }

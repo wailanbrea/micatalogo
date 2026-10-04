@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\UserPlan;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class AdminUserController extends Controller
@@ -62,7 +64,23 @@ class AdminUserController extends Controller
             ? UserStatus::Suspended
             : UserStatus::Active;
 
-        $user->update(['status' => $newStatus]);
+        DB::transaction(function () use ($newStatus, $user): void {
+            $attributes = ['status' => $newStatus];
+
+            if ($newStatus === UserStatus::Suspended) {
+                // A suspension must invalidate every existing way to access the account.
+                $attributes['remember_token'] = null;
+                $user->tokens()->delete();
+
+                if (config('session.driver') === 'database') {
+                    DB::table(config('session.table', 'sessions'))
+                        ->where('user_id', $user->getAuthIdentifier())
+                        ->delete();
+                }
+            }
+
+            $user->forceFill($attributes)->save();
+        });
 
         $message = $newStatus === UserStatus::Suspended
             ? "El usuario «{$user->name}» ha sido suspendido y ya no podrá iniciar sesión."
@@ -86,5 +104,24 @@ class AdminUserController extends Controller
         $roleName = $newRole === UserRole::Admin ? 'Administrador' : 'Vendedor';
 
         return back()->with('status', "El rol de «{$user->name}» se actualizó a {$roleName}.");
+    }
+
+    public function updatePlan(Request $request, User $user): RedirectResponse
+    {
+        $validated = $request->validate(['plan' => ['required', 'in:free,premium']]);
+        $newPlan = UserPlan::from($validated['plan']);
+
+        if ($newPlan === UserPlan::Free && $user->shops()->where('status', 'active')->get()->contains(
+            fn ($shop): bool => $shop->products()->count() > (int) config('catalog.plans.free.max_products_per_shop', 100)
+        )) {
+            return back()->with('error', "No se puede cambiar a Gratis: {$user->name} tiene una tienda activa con más de 100 productos. No se eliminó ningún producto.");
+        }
+
+        $user->update([
+            'plan' => $newPlan,
+            'plan_expires_at' => null,
+        ]);
+
+        return back()->with('status', "El usuario «{$user->name}» ahora tiene el plan {$newPlan->label()}.");
     }
 }

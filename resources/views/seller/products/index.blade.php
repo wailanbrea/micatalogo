@@ -24,12 +24,12 @@
                     <div>
                         <h1 class="text-2xl font-bold text-slate-900">Productos</h1>
                         <p class="mt-1 text-sm text-slate-600">
-                            {{ $totalProducts }} de {{ $maxProducts }} productos en tu plan gratuito
+                            {{ $totalProducts }} de {{ $maxProducts }} productos en tu plan {{ $shop->planLabel() }}
                         </p>
                     </div>
 
                     @if ($totalProducts < $maxProducts)
-                        <div class="flex items-center gap-2">
+                        <div class="flex flex-wrap items-center justify-end gap-2">
                             <a class="rounded-md border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 shadow-xs hover:bg-indigo-100" href="{{ route('seller.shops.products.import.create', $shop) }}">
                                 Importar CSV/XLSX
                             </a>

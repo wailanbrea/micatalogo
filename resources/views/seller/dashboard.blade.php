@@ -4,6 +4,116 @@
 
     <main class="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-7xl">
+            @if (auth()->user()?->isAdmin() && !($viewAll ?? false) && $shops->isEmpty())
+                <section
+                    class="mb-6 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 text-white shadow-lg"
+                    x-data="{
+                        step: 1,
+                        timer: null,
+                        start() {
+                            this.timer = setInterval(() => { this.step = this.step === 4 ? 1 : this.step + 1 }, 4500);
+                        },
+                        stop() {
+                            clearInterval(this.timer);
+                            this.timer = null;
+                        },
+                        goTo(step) {
+                            this.step = step;
+                            this.stop();
+                            this.start();
+                        }
+                    }"
+                    x-init="start()"
+                    @mouseenter="stop()"
+                    @mouseleave="start()"
+                >
+                    <div class="grid gap-8 p-6 sm:p-8 lg:grid-cols-[1fr_1.05fr] lg:items-center lg:p-10">
+                        <div>
+                            <div class="inline-flex items-center gap-2 rounded-full border border-blue-400/30 bg-blue-400/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-blue-200">
+                                <span class="h-2 w-2 animate-pulse rounded-full bg-blue-300"></span>
+                                Guía de inicio
+                            </div>
+                            <h2 class="mt-4 max-w-lg text-2xl font-black tracking-tight sm:text-3xl">Tu vitrina comienza con una tienda.</h2>
+                            <p class="mt-3 max-w-xl text-sm leading-6 text-slate-300">En pocos minutos tendrás un enlace para mostrar tus productos y recibir pedidos por WhatsApp.</p>
+                            <a class="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-950/40 transition hover:bg-blue-400" href="{{ route('seller.shops.create') }}">
+                                Crear mi tienda
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6 6 6-6 6"/></svg>
+                            </a>
+                        </div>
+
+                        <div class="rounded-2xl border border-white/10 bg-white/[0.06] p-4 sm:p-5">
+                            <div class="mb-4 flex items-center justify-between gap-3">
+                                <p class="text-xs font-bold text-slate-300">Así empiezas</p>
+                                <p class="text-xs font-semibold text-blue-200"><span x-text="step"></span> de 4</p>
+                            </div>
+
+                            <div class="min-h-44">
+                                <div x-show="step === 1" x-cloak x-transition:enter="transition duration-300 ease-out" x-transition:enter-start="translate-x-3 opacity-0" x-transition:enter-end="translate-x-0 opacity-100">
+                                    <div class="flex items-start gap-4">
+                                        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-500 text-lg font-black">01</span>
+                                        <div>
+                                            <p class="text-lg font-bold">Crea tu tienda</p>
+                                            <p class="mt-1 text-sm leading-6 text-slate-300">Ponle nombre a tu negocio y define el enlace que compartirás con tus clientes.</p>
+                                        </div>
+                                    </div>
+                                    <div class="mt-6 rounded-xl border border-white/10 bg-slate-900/70 p-3 text-xs text-slate-400">
+                                        <span class="mb-2 block h-2 w-24 rounded bg-slate-700"></span>
+                                        <span class="block h-8 rounded border border-blue-400/40 bg-blue-400/10"></span>
+                                    </div>
+                                </div>
+
+                                <div x-show="step === 2" x-cloak x-transition:enter="transition duration-300 ease-out" x-transition:enter-start="translate-x-3 opacity-0" x-transition:enter-end="translate-x-0 opacity-100">
+                                    <div class="flex items-start gap-4">
+                                        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-lg font-black">02</span>
+                                        <div>
+                                            <p class="text-lg font-bold">Conecta tu WhatsApp</p>
+                                            <p class="mt-1 text-sm leading-6 text-slate-300">Agrega el número donde quieres recibir las consultas y pedidos de tus clientes.</p>
+                                        </div>
+                                    </div>
+                                    <div class="mt-6 flex items-center gap-3 rounded-xl border border-emerald-300/20 bg-emerald-400/10 p-3 text-xs text-emerald-100">
+                                        <span class="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-400/20 text-base">W</span>
+                                        WhatsApp directo a tu negocio
+                                    </div>
+                                </div>
+
+                                <div x-show="step === 3" x-cloak x-transition:enter="transition duration-300 ease-out" x-transition:enter-start="translate-x-3 opacity-0" x-transition:enter-end="translate-x-0 opacity-100">
+                                    <div class="flex items-start gap-4">
+                                        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-lg font-black">03</span>
+                                        <div>
+                                            <p class="text-lg font-bold">Sube tus productos</p>
+                                            <p class="mt-1 text-sm leading-6 text-slate-300">Añade fotos, precios y disponibilidad para que tu catálogo esté listo para vender.</p>
+                                        </div>
+                                    </div>
+                                    <div class="mt-6 flex gap-2 rounded-xl border border-amber-300/20 bg-amber-400/10 p-3">
+                                        <span class="h-12 w-12 rounded-lg bg-white/15"></span>
+                                        <span class="h-12 w-12 rounded-lg bg-white/10"></span>
+                                        <span class="h-12 w-12 rounded-lg bg-white/5"></span>
+                                    </div>
+                                </div>
+
+                                <div x-show="step === 4" x-cloak x-transition:enter="transition duration-300 ease-out" x-transition:enter-start="translate-x-3 opacity-0" x-transition:enter-end="translate-x-0 opacity-100">
+                                    <div class="flex items-start gap-4">
+                                        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-500 text-lg font-black">04</span>
+                                        <div>
+                                            <p class="text-lg font-bold">Comparte tu vitrina</p>
+                                            <p class="mt-1 text-sm leading-6 text-slate-300">Copia tu enlace y envíalo por WhatsApp, Instagram o donde tus clientes ya te conocen.</p>
+                                        </div>
+                                    </div>
+                                    <div class="mt-6 rounded-xl border border-violet-300/20 bg-violet-400/10 px-3 py-3 text-xs text-violet-100">micatalogo.bsolutions.dev/tienda/tu-negocio</div>
+                                </div>
+                            </div>
+
+                            <div class="mt-5 grid grid-cols-4 gap-2" aria-label="Pasos de la guía">
+                                <button class="h-1.5 rounded-full transition" :class="step === 1 ? 'bg-blue-400' : 'bg-white/15'" type="button" aria-label="Paso 1" @click="goTo(1)"></button>
+                                <button class="h-1.5 rounded-full transition" :class="step === 2 ? 'bg-emerald-400' : 'bg-white/15'" type="button" aria-label="Paso 2" @click="goTo(2)"></button>
+                                <button class="h-1.5 rounded-full transition" :class="step === 3 ? 'bg-amber-400' : 'bg-white/15'" type="button" aria-label="Paso 3" @click="goTo(3)"></button>
+                                <button class="h-1.5 rounded-full transition" :class="step === 4 ? 'bg-violet-400' : 'bg-white/15'" type="button" aria-label="Paso 4" @click="goTo(4)"></button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            @endif
+
             <!-- Header Card -->
             <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
                 @if (session('status'))
@@ -183,8 +293,8 @@
                 <!-- Store Cards List -->
                 <div class="mt-6 space-y-3">
                     @forelse ($shops as $shop)
-                        <article class="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:shadow-xs">
-                            <div class="flex items-center gap-3.5">
+                        <article class="grid gap-5 rounded-xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:shadow-xs xl:grid-cols-2 xl:items-start">
+                            <div class="flex min-w-0 items-start gap-3.5">
                                 @if ($shop->logo_url)
                                     <img src="{{ $shop->logo_url }}" alt="{{ $shop->name }}" class="h-10 w-10 shrink-0 rounded-xl object-cover border border-slate-200 shadow-2xs">
                                 @else
@@ -192,7 +302,7 @@
                                         {{ strtoupper(substr($shop->name, 0, 1)) }}
                                     </div>
                                 @endif
-                                <div class="space-y-1">
+                                <div class="min-w-0 flex-1 space-y-1">
                                     <div class="flex flex-wrap items-center gap-2">
                                         <h2 class="text-base font-bold text-slate-900">{{ $shop->name }}</h2>
                                     
@@ -216,25 +326,36 @@
 
                                     <!-- Owner Email (in View All mode) -->
                                     @if (($viewAll ?? false) && $shop->user)
-                                        <span class="rounded bg-slate-100 px-2 py-0.5 text-[10px] text-slate-600 font-mono border border-slate-200" title="Vendedor responsable">
+                                        <span class="break-all rounded bg-slate-100 px-2 py-0.5 text-[10px] text-slate-600 font-mono border border-slate-200" title="Vendedor responsable">
                                             👤 {{ $shop->user->name }} ({{ $shop->user->email }})
                                         </span>
                                     @endif
                                 </div>
 
                                 <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                                    <span class="font-mono text-slate-600">/tienda/{{ $shop->slug }}</span>
+                                    <span class="break-all font-mono text-slate-600">/tienda/{{ $shop->slug }}</span>
                                     <span>·</span>
-                                    <a class="hover:text-emerald-700 transition font-medium" href="https://wa.me/{{ $shop->whatsapp_country_code }}{{ $shop->whatsapp_number }}" target="_blank">
+                                    <a class="break-all font-medium transition hover:text-emerald-700" href="https://wa.me/{{ $shop->whatsapp_country_code }}{{ $shop->whatsapp_number }}" target="_blank">
                                         WhatsApp: +{{ $shop->whatsapp_country_code }} {{ $shop->whatsapp_number }}
                                     </a>
                                 </div>
+
+                                @if (($viewAll ?? false) && auth()->user()?->isAdmin())
+                                    <div class="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-semibold">
+                                        <span class="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-amber-800">
+                                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12z"/></svg>
+                                            {{ number_format((float) ($shop->storage_mb ?? 0), 2) }} MB usados
+                                        </span>
+                                        <span class="text-slate-400">{{ number_format((int) ($shop->storage_image_count ?? 0)) }} imágenes</span>
+                                    </div>
+                                @endif
+                            </div>
                             </div>
 
                             <!-- Action Buttons -->
-                            <div class="flex flex-wrap items-center gap-2 text-xs sm:shrink-0">
+                            <div class="flex min-w-0 w-full flex-wrap items-center gap-2 text-xs xl:justify-end">
                                 <a 
-                                    class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 font-bold text-blue-700 hover:bg-blue-100 transition shadow-2xs" 
+                                    class="whitespace-nowrap rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 font-bold text-blue-700 shadow-2xs transition hover:bg-blue-100"
                                     href="{{ route('shops.show', $shop) }}" 
                                     target="_blank"
                                     title="Ver catálogo público"
@@ -243,7 +364,7 @@
                                 </a>
 
                                 <a 
-                                    class="rounded-lg bg-blue-600 px-3 py-1.5 font-bold text-white shadow-2xs hover:bg-blue-700 transition" 
+                                    class="whitespace-nowrap rounded-lg bg-blue-600 px-3 py-1.5 font-bold text-white shadow-2xs transition hover:bg-blue-700"
                                     href="{{ route('seller.shops.products.index', $shop) }}"
                                     wire:navigate.hover
                                 >
@@ -251,7 +372,7 @@
                                 </a>
 
                                 <a
-                                    class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 font-semibold text-amber-800 hover:bg-amber-100 transition shadow-2xs"
+                                    class="whitespace-nowrap rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 font-semibold text-amber-800 shadow-2xs transition hover:bg-amber-100"
                                     href="{{ route('seller.shops.inventory.index', $shop) }}"
                                     wire:navigate.hover
                                 >
@@ -259,7 +380,7 @@
                                 </a>
 
                                 <a 
-                                    class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs" 
+                                    class="whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 shadow-2xs transition hover:bg-slate-50"
                                     href="{{ route('seller.shops.products.bulk.create', $shop) }}"
                                     wire:navigate.hover
                                 >
@@ -267,7 +388,7 @@
                                 </a>
 
                                 <a 
-                                    class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs" 
+                                    class="whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 shadow-2xs transition hover:bg-slate-50"
                                     href="{{ route('seller.shops.categories.index', $shop) }}"
                                     wire:navigate.hover
                                 >
@@ -275,7 +396,7 @@
                                 </a>
 
                                 <a 
-                                    class="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 font-bold text-indigo-700 hover:bg-indigo-100 transition shadow-2xs inline-flex items-center gap-1.5" 
+                                    class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 font-bold text-indigo-700 shadow-2xs transition hover:bg-indigo-100"
                                     href="{{ route('seller.shops.metrics.index', $shop) }}"
                                     wire:navigate.hover
                                     title="Ver métricas de visitas, contactos WhatsApp y código QR"
@@ -285,11 +406,11 @@
                                 </a>
 
                                 <a 
-                                    class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs" 
+                                    class="whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 shadow-2xs transition hover:bg-slate-50"
                                     href="{{ route('seller.shops.edit', $shop) }}"
                                     wire:navigate.hover
                                 >
-                                    Configuración
+                                    Editar tienda
                                 </a>
 
                                 @if (($viewAll ?? false) && auth()->user()?->isAdmin())
@@ -297,7 +418,7 @@
                                         @csrf
                                         <button 
                                             type="submit" 
-                                            class="rounded-lg border px-3 py-1.5 font-bold transition shadow-2xs cursor-pointer {{ $shop->status === 'active' ? 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100' : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100' }}"
+                                            class="whitespace-nowrap rounded-lg border px-3 py-1.5 font-bold transition shadow-2xs cursor-pointer {{ $shop->status === 'active' ? 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100' : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100' }}"
                                         >
                                             {{ $shop->status === 'active' ? 'Suspender' : 'Activar' }}
                                         </button>

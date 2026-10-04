@@ -3,18 +3,17 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Enums\ProductImageProcessingStatus;
 use App\Models\Product;
-use App\Models\ProductImage;
 use App\Models\Shop;
+use App\Services\PlanLimitsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class CatalogController extends Controller
 {
-    public function show(Request $request, Shop $shop): JsonResponse
+    public function show(Request $request, Shop $shop, PlanLimitsService $limits): JsonResponse
     {
-        abort_unless($request->user()->ownsShop($shop), 404);
+        abort_unless($request->user()->canSellAtShop($shop), 404);
 
         $categories = $shop->categories()
             ->orderBy('sort_order')
@@ -31,7 +30,7 @@ class CatalogController extends Controller
             ->values();
 
         $products = $shop->products()
-            ->with(['inventory', 'sourceProduct', 'images'])
+            ->with(['inventory', 'sourceProduct', 'primaryImage'])
             ->orderBy('name')
             ->get()
             ->map(fn (Product $product) => $this->productPayload($product))
@@ -42,6 +41,7 @@ class CatalogController extends Controller
                 'id' => $shop->public_id,
                 'name' => $shop->name,
                 'slug' => $shop->slug,
+                'quota' => $limits->shopQuota($shop, $products->count()),
             ],
             'categories' => $categories,
             'products' => $products,
@@ -55,9 +55,6 @@ class CatalogController extends Controller
     private function productPayload(Product $product): array
     {
         $inventory = $product->inventory;
-        $readyImage = $product->images->first(
-            fn (ProductImage $image): bool => $image->processing_status === ProductImageProcessingStatus::Ready
-        );
 
         return [
             'id' => $product->public_id,
@@ -67,8 +64,8 @@ class CatalogController extends Controller
             'internal_code' => $product->product_code,
             'brand' => $product->brand,
             'description' => $product->description,
-            'image_url' => $readyImage?->url,
-            'thumbnail_url' => $readyImage?->thumbnail_url,
+            'image_url' => $product->primaryImage?->url,
+            'thumbnail_url' => $product->primaryImage?->thumbnail_url,
             'price' => $product->price,
             'currency' => $product->currency,
             'sale_unit' => $product->sale_unit,

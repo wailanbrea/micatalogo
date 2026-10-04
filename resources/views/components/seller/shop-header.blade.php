@@ -10,9 +10,12 @@
 @endphp
 
 <!-- Store Workspace Context Header & Local Navigation Tabs -->
-<div class="mb-6 rounded-xl border border-slate-200 bg-white shadow-xs">
+<div class="relative border-b border-slate-200 bg-white md:hidden">
+    {{-- Desktop identity and tabs moved to the shared sidebar. Keeping them out of
+         the Blade render avoids loading inventory for navigation that is hidden. --}}
+    {{--
     <!-- Store Identity Row -->
-    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 p-4 sm:px-6">
+    <div class="hidden">
         <div class="min-w-0 space-y-0.5">
             <div class="flex items-center gap-2.5">
                 @if ($shop->logo_url)
@@ -44,7 +47,7 @@
     </div>
 
     <!-- Local Navigation Tabs -->
-    <nav wire:navigate:scroll class="flex items-center gap-1 overflow-x-auto whitespace-nowrap px-4 sm:px-6 text-xs font-semibold" aria-label="Navegación de la tienda">
+    <nav wire:navigate:scroll class="hidden" aria-label="Navegación de la tienda">
         <!-- Productos -->
         <a 
             href="{{ route('seller.shops.products.index', $shop) }}" 
@@ -79,6 +82,27 @@
                     {{ $alertCount }}
                 </span>
             @endif
+        </a>
+
+        <a
+            href="{{ route('seller.shops.customers.index', $shop) }}"
+            wire:navigate.hover
+            class="flex items-center gap-1.5 py-3 px-3 border-b-2 transition {{ $activeTab === 'customers' ? 'border-blue-600 text-blue-700 font-bold' : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300' }}"
+        >
+            <svg class="h-4 w-4 shrink-0 {{ $activeTab === 'customers' ? 'text-blue-600' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-4-4h-1m-4 6H3v-2a4 4 0 014-4h6a4 4 0 014 4v2zM10 10a4 4 0 100-8 4 4 0 000 8z"/></svg>
+            <span>Clientes</span>
+            @if ($shop->customers()->where('balance', '>', 0)->exists())
+                <span class="rounded-full bg-amber-100 px-1.5 py-0.2 text-[10px] font-bold text-amber-800 font-mono">{{ $shop->customers()->where('balance', '>', 0)->count() }}</span>
+            @endif
+        </a>
+
+        <a
+            href="{{ route('seller.shops.sellers.index', $shop) }}"
+            wire:navigate.hover
+            class="flex items-center gap-1.5 py-3 px-3 border-b-2 transition {{ $activeTab === 'sellers' ? 'border-blue-600 text-blue-700 font-bold' : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300' }}"
+        >
+            <svg class="h-4 w-4 shrink-0 {{ $activeTab === 'sellers' ? 'text-blue-600' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-4-4h-1m-4 6H3v-2a4 4 0 014-4h6a4 4 0 014 4v2zM10 10a4 4 0 100-8 4 4 0 000 8z"/></svg>
+            <span>Vendedores</span>
         </a>
 
         <!-- Categorías -->
@@ -121,6 +145,50 @@
             <span>Configuración</span>
         </a>
     </nav>
+    --}}
+
+    <div class="relative" x-data="{ open: false }">
+        <button
+            type="button"
+            @click="open = !open"
+            :aria-expanded="open"
+            aria-controls="mobile-shop-navigation"
+            class="flex w-full items-center justify-between px-4 py-3 text-left text-xs font-bold text-slate-700"
+        >
+            <span>Menu de tienda</span>
+            <svg class="h-4 w-4 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <nav
+            id="mobile-shop-navigation"
+            x-show="open"
+            x-cloak
+            @click.outside="open = false"
+            x-transition
+            class="absolute inset-x-0 top-full z-20 grid gap-2 border-t border-slate-200 bg-white p-3 text-sm font-semibold shadow-lg"
+            aria-label="Navegación contextual de la tienda"
+        >
+            <div>
+                <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Operacion</p>
+                <a wire:navigate href="{{ route('seller.shops.inventory.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'inventory' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Inventario</a>
+                <a wire:navigate href="{{ route('seller.shops.customers.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'customers' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Clientes y cobros</a>
+                <a wire:navigate href="{{ route('seller.shops.sellers.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'sellers' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Vendedores</a>
+            </div>
+            <div class="border-t border-slate-100 pt-2">
+                <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Catalogo</p>
+                <a wire:navigate href="{{ route('seller.shops.products.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'products' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Productos</a>
+                <a wire:navigate href="{{ route('seller.shops.categories.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'categories' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Categorías</a>
+                <a wire:navigate href="{{ route('seller.shops.products.bulk.create', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'bulk' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Subida masiva</a>
+            </div>
+            <div class="border-t border-slate-100 pt-2">
+                <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Analisis</p>
+                <a wire:navigate href="{{ route('seller.shops.metrics.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'metrics' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Métricas y QR</a>
+            </div>
+            <div class="border-t border-slate-100 pt-2">
+                <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Configuracion</p>
+                <a wire:navigate href="{{ route('seller.shops.edit', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'settings' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Configuración de tienda</a>
+            </div>
+        </nav>
+    </div>
 
     @if ($activeTab === 'inventory' && $product)
         @php

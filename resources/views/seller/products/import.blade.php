@@ -28,7 +28,7 @@
                     <form method="POST" action="{{ route('seller.shops.products.import.preview', $shop) }}" enctype="multipart/form-data" class="rounded-xl border border-dashed border-indigo-300 bg-indigo-50/40 p-6">
                         @csrf
                         <label for="inventory-file" class="block text-sm font-bold text-slate-900">Archivo de inventario</label>
-                        <p class="mt-1 text-xs text-slate-500">Columnas reconocidas: nombre, código, categoría, marca, precio, costo, stock, notas y atributos.</p>
+                         <p class="mt-1 text-xs text-slate-500">Columnas reconocidas: nombre, código, barcode/EAN/GTIN, categoría, marca, precio, costo, stock, notas y atributos.</p>
                         <input id="inventory-file" name="file" type="file" accept=".csv,.txt,.xlsx" required class="mt-4 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-indigo-600 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-white">
                         <button type="submit" class="mt-4 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-xs hover:bg-indigo-700">Previsualizar archivo</button>
                     </form>
@@ -40,18 +40,59 @@
                     </aside>
                 </div>
 
+                <div class="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                    <p class="font-black text-slate-900">Cupo de productos</p>
+                    <p class="mt-1">Esta tienda tiene <strong>{{ $quota['product_count'] }}</strong> de <strong>{{ $quota['product_limit'] }}</strong> productos permitidos por su plan.</p>
+                    <p class="mt-1">Puedes importar hasta <strong>{{ $quota['products_remaining'] }}</strong> productos más.</p>
+                </div>
+
+                <section class="mt-6 rounded-xl border border-blue-200 bg-blue-50/60 p-5 sm:p-6">
+                    <div class="flex items-start gap-3">
+                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-black text-white">i</span>
+                        <div class="min-w-0">
+                            <h2 class="text-base font-black text-slate-900">¿Tu archivo tiene otro formato?</h2>
+                            <p class="mt-1 text-sm leading-6 text-slate-600">Puedes pedirle a ChatGPT que lo adapte antes de subirlo.</p>
+                        </div>
+                    </div>
+                    <p class="mt-4 text-sm leading-6 text-slate-800"><strong>Recomendado: conviértelo a Excel <code>.xlsx</code> para evitar problemas de codificación.</strong></p>
+                    <p class="mt-4 text-sm font-bold text-slate-800">Copia este mensaje:</p>
+                    <blockquote class="mt-3 space-y-4 rounded-lg border-l-4 border-blue-400 bg-white p-4 text-sm leading-6 text-slate-700 sm:p-5">
+                        <p>Convierte este archivo al formato compatible con MiCatalogo.</p>
+                        <p>Crea preferiblemente un archivo Excel <code>.xlsx</code> listo para descargar.</p>
+                        <p>Usa exactamente estas columnas y en este orden:</p>
+                        <code class="block break-words rounded-md bg-slate-50 p-3 text-xs">nombre, sku, marca, categoria, descripcion, precio, costo, stock, notas, atributos</code>
+                        <p>Reglas obligatorias:</p>
+                        <ul class="list-disc space-y-2 pl-5">
+                            <li>La primera fila debe contener exactamente esos encabezados, sin espacios adicionales ni caracteres ocultos.</li>
+                            <li>No agregues BOM ni caracteres invisibles al encabezado <code>nombre</code>.</li>
+                            <li>Conserva correctamente tildes, ñ y demás caracteres Unicode. No deben aparecer textos dañados como <code>Ã±</code>, <code>Ã¡</code>, <code>ï»¿</code> u otros similares.</li>
+                            <li><code>nombre</code> y <code>precio</code> son obligatorios.</li>
+                            <li>Si un dato no existe, deja la celda vacía. No inventes información.</li>
+                            <li><code>sku</code> debe guardarse como texto, aunque contenga solamente números, para no perder ceros iniciales ni precisión.</li>
+                            <li><code>precio</code>, <code>costo</code> y <code>stock</code> deben guardarse como valores numéricos cuando existan.</li>
+                            <li>No cambies nombres de productos, marcas o categorías salvo para corregir errores claros de codificación.</li>
+                            <li>No agregues filas explicativas, títulos, comentarios ni texto fuera de la tabla.</li>
+                            <li>Antes de entregar el archivo, valida que el encabezado sea exactamente <code>nombre</code> y no <code>ï»¿nombre</code>.</li>
+                        </ul>
+                        <p>Si no puedes generar <code>.xlsx</code>, genera un archivo <code>.csv</code> codificado en <strong>UTF-8 sin BOM</strong>, usando exactamente las mismas columnas y reglas.</p>
+                        <p>Devuelve únicamente el archivo final listo para importar en MiCatalogo.</p>
+                    </blockquote>
+                </section>
+
                 @if ($rows !== [])
                     <div class="mt-8 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
                         <div>
                             <h2 class="text-lg font-black text-slate-900">Vista previa</h2>
-                            <p class="text-xs text-slate-500">{{ count($rows) }} filas encontradas · <span class="font-bold text-emerald-700">{{ $validRows }} listas</span> · <span class="font-bold text-rose-700">{{ $invalidRows }} necesitan revisión</span></p>
+                            <p class="text-xs text-slate-500">{{ count($rows) }} filas encontradas · <span class="font-bold text-emerald-700">{{ $validRows }} listas</span> · <span class="font-bold text-rose-700">{{ $invalidRows }} necesitan revisión</span> · {{ $quota['products_remaining'] }} disponibles en el cupo</p>
                         </div>
-                        @if ($validRows > 0)
+                        @if ($validRows > 0 && $validRows <= $quota['products_remaining'])
                             <form method="POST" action="{{ route('seller.shops.products.import.store', $shop) }}">
                                 @csrf
                                 <input type="hidden" name="rows" value="{{ json_encode(collect($rows)->where('valid', true)->values()->all(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) }}">
                                 <button type="submit" class="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-xs hover:bg-emerald-700">Importar {{ $validRows }} productos válidos</button>
                             </form>
+                        @elseif ($validRows > $quota['products_remaining'])
+                            <span class="rounded-lg bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">El archivo supera el cupo disponible</span>
                         @endif
                     </div>
 

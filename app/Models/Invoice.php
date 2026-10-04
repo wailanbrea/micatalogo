@@ -13,11 +13,16 @@ class Invoice extends Model
 
     protected $fillable = [
         'shop_id',
+        'customer_id',
         'user_id',
+        'salesperson_id',
         'invoice_number',
         'status',
         'channel',
         'currency',
+        'commission_type',
+        'commission_value',
+        'commission_amount',
         'subtotal',
         'total',
         'issued_at',
@@ -28,6 +33,8 @@ class Invoice extends Model
         return [
             'subtotal' => 'decimal:2',
             'total' => 'decimal:2',
+            'commission_value' => 'decimal:2',
+            'commission_amount' => 'decimal:2',
             'issued_at' => 'datetime',
         ];
     }
@@ -40,6 +47,16 @@ class Invoice extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
+    public function salesperson(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'salesperson_id');
     }
 
     public function items(): HasMany

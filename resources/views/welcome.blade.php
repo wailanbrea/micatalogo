@@ -32,6 +32,7 @@
 
                 <!-- Auth / Guest Actions -->
                 <div class="flex shrink-0 items-center gap-1 sm:gap-3">
+                    <a class="inline-flex items-center justify-center rounded-lg px-2 py-1.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-50 sm:px-3 sm:text-sm" href="{{ route('support.create') }}">Soporte</a>
                     @auth
                         <!-- Authenticated Dropdown Menu -->
                         <div class="relative" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false" @click.outside="open = false">

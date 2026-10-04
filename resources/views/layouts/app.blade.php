@@ -36,7 +36,7 @@
 
         @livewireStyles
     </head>
-    <body>
+    <body @class(['bg-slate-50', 'md:pl-72' => auth()->check() && request()->is('panel*', 'admin*')])>
         {{ $slot }}
 
         @livewireScripts

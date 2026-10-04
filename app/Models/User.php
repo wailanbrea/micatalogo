@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\UserPlan;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Notifications\VerifyEmailCodeNotification;
@@ -31,6 +32,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'role',
         'password',
         'email_verified_at',
+        'plan',
+        'plan_expires_at',
     ];
 
     /**
@@ -56,12 +59,19 @@ class User extends Authenticatable implements MustVerifyEmail
             'status' => UserStatus::class,
             'role' => UserRole::class,
             'password' => 'hashed',
+            'plan' => UserPlan::class,
+            'plan_expires_at' => 'datetime',
         ];
     }
 
     public function shops(): HasMany
     {
         return $this->hasMany(Shop::class);
+    }
+
+    public function shopSellerAssignments(): HasMany
+    {
+        return $this->hasMany(ShopSeller::class);
     }
 
     public function isAdmin(): bool
@@ -72,6 +82,24 @@ class User extends Authenticatable implements MustVerifyEmail
     public function ownsShop(Shop $shop): bool
     {
         return $this->id === $shop->user_id;
+    }
+
+    public function canSellAtShop(Shop $shop): bool
+    {
+        return $this->ownsShop($shop) || $this->shopSellerAssignments()
+            ->where('shop_id', $shop->id)
+            ->where('is_active', true)
+            ->exists();
+    }
+
+    public function isPremium(): bool
+    {
+        return $this->plan === UserPlan::Premium && (! $this->plan_expires_at || $this->plan_expires_at->isFuture());
+    }
+
+    public function planLabel(): string
+    {
+        return ($this->plan instanceof UserPlan ? $this->plan : UserPlan::Free)->label();
     }
 
     public function sendEmailVerificationNotification(): void

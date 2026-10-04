@@ -7,11 +7,11 @@ use App\Enums\ProductModerationStatus;
 use App\Models\GlobalCategory;
 use App\Models\Shop;
 use App\Services\ImageProcessingService;
+use App\Services\PlanLimitsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class SellerBulkProductController extends Controller
@@ -35,7 +35,7 @@ class SellerBulkProductController extends Controller
         ));
     }
 
-    public function store(Request $request, Shop $shop, ImageProcessingService $imageService): RedirectResponse
+    public function store(Request $request, Shop $shop, ImageProcessingService $imageService, PlanLimitsService $limits): RedirectResponse
     {
         $request->validate([
             'products' => ['required', 'array', 'min:1', 'max:30'],
@@ -50,17 +50,13 @@ class SellerBulkProductController extends Controller
         $batch = $request->input('products', []);
         $createdCount = 0;
 
-        DB::transaction(function () use ($shop, $request, $batch, $imageService, &$createdCount) {
+        DB::transaction(function () use ($shop, $request, $batch, $imageService, $limits, &$createdCount) {
             $lockedShop = Shop::whereKey($shop->getKey())->lockForUpdate()->firstOrFail();
             $currentCount = $lockedShop->products()->count();
             $batchCount = count($batch);
             $maxLimit = $lockedShop->productLimit();
 
-            if ($currentCount + $batchCount > $maxLimit) {
-                throw ValidationException::withMessages([
-                    'products' => "La subida de {$batchCount} productos supera el límite de {$maxLimit} productos por tienda (tienes {$currentCount}).",
-                ]);
-            }
+            $limits->assertCanAddProducts($lockedShop, $batchCount);
 
             foreach ($batch as $index => $itemData) {
                 $slug = $this->resolveProductSlug($lockedShop, $itemData['name']);

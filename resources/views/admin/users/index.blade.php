@@ -117,6 +117,7 @@
                         <tr>
                             <th class="px-4 py-3.5">Usuario</th>
                             <th class="px-4 py-3.5">Rol</th>
+                            <th class="px-4 py-3.5">Plan</th>
                             <th class="px-4 py-3.5">Tiendas</th>
                             <th class="px-4 py-3.5">Verificación</th>
                             <th class="px-4 py-3.5">Registro / Acceso</th>
@@ -156,6 +157,17 @@
                                             Vendedor
                                         </span>
                                     @endif
+                                </td>
+
+                                <!-- Shops -->
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <form method="POST" action="{{ route('admin.users.update-plan', $user) }}" class="flex items-center gap-1.5">
+                                        @csrf
+                                        <select name="plan" class="rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-700" onchange="this.form.submit()" @disabled($user->id === auth()->id())>
+                                            <option value="free" @selected($user->plan?->value === 'free')>Gratis</option>
+                                            <option value="premium" @selected($user->plan?->value === 'premium')>Premium</option>
+                                        </select>
+                                    </form>
                                 </td>
 
                                 <!-- Shops -->
@@ -246,7 +258,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="p-8 text-center text-slate-400 text-xs">
+                                <td colspan="8" class="p-8 text-center text-slate-400 text-xs">
                                     No se encontraron usuarios con los filtros seleccionados.
                                 </td>
                             </tr>

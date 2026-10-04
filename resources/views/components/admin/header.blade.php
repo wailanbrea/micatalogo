@@ -9,6 +9,7 @@
     $user = auth()->user();
     $isAdmin = $user?->isAdmin() ?? false;
     $openReportsCount = $isAdmin ? \App\Models\Report::where('status', 'open')->count() : 0;
+    $openSupportCount = $isAdmin ? \App\Models\SupportRequest::where('status', 'open')->count() : 0;
     
     // Active route detections
     $isViewAllShops = request()->routeIs('seller.dashboard') && request('view') === 'all';
@@ -18,8 +19,13 @@
         || request()->routeIs('seller.categories.*');
     $isAdminDashboard = request()->routeIs('admin.dashboard');
     $isAdminReports = request()->routeIs('admin.reports.*');
+    $isAdminSupport = request()->routeIs('admin.support.*');
     $isAdminCategories = request()->routeIs('admin.categories.*');
     $isAdminUsers = request()->routeIs('admin.users.*');
+    $activeShop = request()->route('shop');
+    $activeShop = $activeShop instanceof \App\Models\Shop ? $activeShop : null;
+    $dashboardUrl = $isAdmin ? route('admin.dashboard') : route('seller.dashboard');
+    $isDashboard = $isAdmin ? $isAdminDashboard : request()->routeIs('seller.dashboard') && request('view') !== 'all';
 @endphp
 
 <!-- Main Unified Topbar -->
@@ -36,70 +42,13 @@
                 @endif
             </a>
 
-            <!-- Desktop Navigation Menu -->
-            <nav class="hidden md:flex md:items-center md:gap-1 text-xs font-semibold">
-                <!-- Mis Tiendas -->
-                <a 
-                    class="px-3 py-1.5 rounded-lg transition {{ $isMyShops ? 'bg-blue-600 text-white shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}" 
-                    href="{{ route('seller.dashboard') }}"
-                >
-                    Mis tiendas
-                </a>
-
-                @if ($isAdmin)
-                    <!-- Todas las Tiendas (Admin) -->
-                    <a 
-                        class="px-3 py-1.5 rounded-lg transition {{ $isViewAllShops ? 'bg-blue-600 text-white shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}" 
-                        href="{{ route('seller.dashboard', ['view' => 'all']) }}"
-                    >
-                        Todas las tiendas
-                    </a>
-
-                    <!-- Dashboard Admin -->
-                    <a 
-                        class="px-3 py-1.5 rounded-lg transition {{ $isAdminDashboard ? 'bg-blue-600 text-white shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}" 
-                        href="{{ route('admin.dashboard') }}"
-                    >
-                        Dashboard Admin
-                    </a>
-
-                    <!-- Reportes -->
-                    <a 
-                        class="px-3 py-1.5 rounded-lg transition inline-flex items-center gap-1.5 {{ $isAdminReports ? 'bg-blue-600 text-white shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}" 
-                        href="{{ route('admin.reports.index') }}"
-                    >
-                        <span>Reportes</span>
-                        @if ($openReportsCount > 0)
-                            <span class="rounded-full {{ $isAdminReports ? 'bg-white text-rose-600' : 'bg-rose-500 text-white' }} px-1.5 py-0.2 text-[10px] font-bold">
-                                {{ $openReportsCount }}
-                            </span>
-                        @endif
-                    </a>
-
-                    <!-- Categorías Globales -->
-                    <a 
-                        class="px-3 py-1.5 rounded-lg transition {{ $isAdminCategories ? 'bg-blue-600 text-white shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}" 
-                        href="{{ route('admin.categories.index') }}"
-                    >
-                        Categorías globales
-                    </a>
-
-                    <!-- Usuarios -->
-                    <a 
-                        class="px-3 py-1.5 rounded-lg transition {{ $isAdminUsers ? 'bg-blue-600 text-white shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}" 
-                        href="{{ route('admin.users.index') }}"
-                    >
-                        Usuarios
-                    </a>
-                @endif
-            </nav>
         </div>
 
         <!-- Right Side Actions & User Menu -->
         <div class="flex shrink-0 items-center gap-1.5 sm:gap-3">
             <!-- Ver Vitrina Pública -->
             <a 
-                class="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition" 
+                class="hidden" 
                 href="{{ route('home') }}" 
                 target="_blank" 
                 title="Abrir vitrina pública principal en una nueva pestaña"
@@ -109,6 +58,17 @@
             </a>
 
             @if ($user)
+                <span class="hidden text-right leading-tight sm:block">
+                    <span class="block text-[10px] text-slate-400">Hola, {{ str($user->name)->explode(' ')->first() }}</span>
+                    <span class="block text-xs font-bold text-slate-800">Mi cuenta</span>
+                </span>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-rose-50">Salir</button>
+                </form>
+            @endif
+
+            @if (false && $user)
                 <!-- Amazon-style User Account Dropdown -->
                 <div class="relative" x-data="{ open: false }">
                     <button 
@@ -222,38 +182,88 @@
         </div>
     </div>
 
-    <!-- Mobile Navigation Sub-bar (Always Visible on Small Screens) -->
-    <div class="flex md:hidden border-t border-slate-100 px-3 py-1.5 bg-slate-50 items-center gap-1 overflow-x-auto whitespace-nowrap text-xs font-semibold">
-        <a class="px-2.5 py-1 rounded-md transition {{ $isMyShops ? 'bg-blue-600 text-white font-bold' : 'text-slate-600 hover:text-slate-900' }}" href="{{ route('seller.dashboard') }}">
-            Mis tiendas
-        </a>
-        @if ($isAdmin)
-            <a class="px-2.5 py-1 rounded-md transition {{ $isViewAllShops ? 'bg-blue-600 text-white font-bold' : 'text-slate-600 hover:text-slate-900' }}" href="{{ route('seller.dashboard', ['view' => 'all']) }}">
-                Todas las tiendas
-            </a>
-            <a class="px-2.5 py-1 rounded-md transition {{ $isAdminDashboard ? 'bg-blue-600 text-white font-bold' : 'text-slate-600 hover:text-slate-900' }}" href="{{ route('admin.dashboard') }}">
-                Dashboard
-            </a>
-            <a class="px-2.5 py-1 rounded-md transition inline-flex items-center gap-1 {{ $isAdminReports ? 'bg-blue-600 text-white font-bold' : 'text-slate-600 hover:text-slate-900' }}" href="{{ route('admin.reports.index') }}">
-                Reportes
-                @if ($openReportsCount > 0)
-                    <span class="rounded-full {{ $isAdminReports ? 'bg-white text-rose-600' : 'bg-rose-500 text-white' }} px-1 text-[10px]">
-                        {{ $openReportsCount }}
-                    </span>
-                @endif
-            </a>
-            <a class="px-2.5 py-1 rounded-md transition {{ $isAdminCategories ? 'bg-blue-600 text-white font-bold' : 'text-slate-600 hover:text-slate-900' }}" href="{{ route('admin.categories.index') }}">
-                Categorías
-            </a>
-        @endif
-            <a class="px-2.5 py-1 rounded-md text-slate-500 hover:text-slate-900" href="{{ route('home') }}" target="_blank">
-            Vitrina ↗
-        </a>
-            @if ($isAdmin)
-                <a class="px-2.5 py-1 rounded-md text-slate-500 hover:text-slate-900" href="{{ route('admin.users.index') }}">
-                    Usuarios
-                </a>
+    <!-- Mobile navigation is intentionally on demand, leaving workspace actions unobstructed. -->
+    <div class="relative border-t border-slate-100 bg-slate-50" x-data="{ open: false }">
+        <button
+            type="button"
+            @click="open = !open"
+            :aria-expanded="open"
+            aria-controls="mobile-panel-navigation"
+            class="flex w-full items-center justify-between px-4 py-2.5 text-xs font-bold text-slate-700"
+        >
+            <span>Menú</span>
+            <svg class="h-4 w-4 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <nav
+            id="mobile-panel-navigation"
+            x-show="open"
+            x-cloak
+            @click.outside="open = false"
+            x-transition
+            class="absolute inset-x-0 top-full z-40 grid gap-1 border-b border-slate-200 bg-white p-3 text-sm font-semibold shadow-lg"
+            aria-label="Navegación principal"
+        >
+            <div>
+                <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Inicio</p>
+                <a class="block rounded-lg px-3 py-2 transition {{ $isDashboard ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ $dashboardUrl }}">Dashboard</a>
+                <a class="block rounded-lg px-3 py-2 transition {{ $isMyShops ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.dashboard') }}">Mis tiendas</a>
+                <a class="block rounded-lg px-3 py-2 text-slate-700 transition hover:bg-slate-100" href="{{ route('seller.shops.create') }}">Crear tienda</a>
+            </div>
+            @if ($activeShop)
+                <div class="border-t border-slate-100 pt-2">
+                    <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Operacion</p>
+                    <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.inventory.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.inventory.index', $activeShop) }}">Inventario</a>
+                    <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.customers.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.customers.index', $activeShop) }}">Clientes y cobros</a>
+                    @if ($isAdmin || $user->ownsShop($activeShop))
+                        <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.sellers.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.sellers.index', $activeShop) }}">Vendedores</a>
+                    @endif
+                </div>
+                <div class="border-t border-slate-100 pt-2">
+                    <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Catalogo</p>
+                    <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.products.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.products.index', $activeShop) }}">Productos</a>
+                    <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.categories.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.categories.index', $activeShop) }}">Categorías</a>
+                    <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.products.bulk.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.products.bulk.create', $activeShop) }}">Subida masiva</a>
+                    <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.products.import.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.products.import.create', $activeShop) }}">Importar inventario</a>
+                </div>
+                <div class="border-t border-slate-100 pt-2">
+                    <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Analisis</p>
+                    <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.metrics.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.metrics.index', $activeShop) }}">Métricas y QR</a>
+                </div>
+                <div class="border-t border-slate-100 pt-2">
+                    <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Configuracion</p>
+                    <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.edit') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.edit', $activeShop) }}">Configuración de tienda</a>
+                </div>
             @endif
+            @if ($isAdmin)
+                <div class="border-t border-slate-100 pt-2">
+                    <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-rose-500">Administracion</p>
+                    <a class="block rounded-lg px-3 py-2 transition {{ $isViewAllShops ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.dashboard', ['view' => 'all']) }}">Todas las tiendas</a>
+                    <a class="block rounded-lg px-3 py-2 transition {{ $isAdminDashboard ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.dashboard') }}">Dashboard</a>
+                    <a class="flex items-center justify-between rounded-lg px-3 py-2 transition {{ $isAdminReports ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.reports.index') }}">
+                        <span>Reportes</span>
+                        @if ($openReportsCount > 0)
+                            <span class="rounded-full {{ $isAdminReports ? 'bg-white text-rose-600' : 'bg-rose-500 text-white' }} px-1.5 py-0.5 text-[10px]">{{ $openReportsCount }}</span>
+                            @endif
+                        </a>
+                    <a class="flex items-center justify-between rounded-lg px-3 py-2 transition {{ $isAdminSupport ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.support.index') }}">
+                        <span>Soporte</span>
+                        @if ($openSupportCount > 0)
+                            <span class="rounded-full {{ $isAdminSupport ? 'bg-white text-blue-600' : 'bg-blue-500 text-white' }} px-1.5 py-0.5 text-[10px]">{{ $openSupportCount }}</span>
+                        @endif
+                    </a>
+                    <a class="block rounded-lg px-3 py-2 transition {{ $isAdminCategories ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.categories.index') }}">Categorías globales</a>
+                    <a class="block rounded-lg px-3 py-2 transition {{ $isAdminUsers ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.users.index') }}">Usuarios</a>
+                </div>
+            @endif
+            <div class="border-t border-slate-100 pt-2">
+                <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Acciones</p>
+                <a class="block rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100" href="{{ route('home') }}" target="_blank">Ver vitrina publica</a>
+                <form class="border-t border-slate-100 pt-2" method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button class="block w-full rounded-lg px-3 py-2 text-left text-rose-600 hover:bg-rose-50" type="submit">Cerrar sesión</button>
+                </form>
+            </div>
+        </nav>
     </div>
 
     <!-- Contextual Breadcrumb Wayfinding Bar -->

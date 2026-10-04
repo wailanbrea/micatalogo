@@ -8,6 +8,7 @@ use App\Models\Shop;
 use App\Models\User;
 use App\Services\ImageProcessingService;
 use App\Services\MediaStorageService;
+use App\Services\PlanLimitsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -89,13 +90,14 @@ class SellerShopController extends Controller
         return view('seller.shops.form', ['shop' => new Shop]);
     }
 
-    public function store(StoreShopRequest $request, ImageProcessingService $imageService, MediaStorageService $mediaStorage): RedirectResponse
+    public function store(StoreShopRequest $request, ImageProcessingService $imageService, MediaStorageService $mediaStorage, PlanLimitsService $limits): RedirectResponse
     {
-        $shop = DB::transaction(function () use ($request): Shop {
+        $shop = DB::transaction(function () use ($request, $limits): Shop {
             $user = User::query()->lockForUpdate()->findOrFail($request->user()->id);
             $activeShops = $user->shops()->where('status', 'active')->count();
 
-            abort_if($activeShops >= config('catalog.free.max_active_shops'), 422, 'Tu plan gratuito ya tiene una tienda activa.');
+            $limit = $limits->activeShopLimit($user);
+            abort_if($activeShops >= $limit, 422, "Tu plan {$limits->planFor($user)->label()} permite {$limit} tienda activa.");
 
             return $user->shops()->create($this->attributes($request->validated()));
         });

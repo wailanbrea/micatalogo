@@ -36,7 +36,7 @@ class AuthController extends Controller
         }
 
         $user->forceFill(['last_login_at' => now()])->save();
-        $token = $user->createToken($validated['device_name'] ?? 'BSPOS', ['catalog:read', 'pos:write'])->plainTextToken;
+        $token = $user->createToken($validated['device_name'] ?? 'BSPOS', ['catalog:read', 'pos:write', 'customers:read', 'customers:write'])->plainTextToken;
 
         return response()->json([
             'access_token' => $token,
@@ -51,7 +51,7 @@ class AuthController extends Controller
     }
 
     /**
-     * @return array{id: string, name: string, email: string}
+     * @return array{id: string, name: string, email: string, role: string}
      */
     private function userPayload(User $user): array
     {
@@ -59,6 +59,7 @@ class AuthController extends Controller
             'id' => (string) $user->id,
             'name' => $user->name,
             'email' => $user->email,
+            'role' => $user->role->value,
         ];
     }
 }

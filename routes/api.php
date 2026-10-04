@@ -1,19 +1,32 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\AndroidUpdateController;
 use App\Http\Controllers\Api\V1\CatalogController;
+use App\Http\Controllers\Api\V1\CatalogMediaController;
+use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\PosSaleController;
 use App\Http\Controllers\Api\V1\ShopController;
 use App\Http\Middleware\EnsureApiAccountIsActive;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
+    Route::get('/app-updates/android', [AndroidUpdateController::class, 'show']);
     Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
 
     Route::middleware(['auth:sanctum', EnsureApiAccountIsActive::class])->group(function (): void {
         Route::get('/me', [AuthController::class, 'me']);
         Route::get('/shops', [ShopController::class, 'index']);
         Route::get('/shops/{shop}/catalog', [CatalogController::class, 'show']);
+        Route::get('/catalog/media/{barcode}', [CatalogMediaController::class, 'show'])
+            ->middleware('throttle:catalog-media')
+            ->middleware('abilities:catalog:read')
+            ->where('barcode', '[0-9 -]{8,32}');
         Route::post('/shops/{shop}/pos-sales', [PosSaleController::class, 'store'])->middleware('abilities:pos:write');
+        Route::get('/shops/{shop}/customers', [CustomerController::class, 'index'])->middleware('abilities:customers:read');
+        Route::post('/shops/{shop}/customers', [CustomerController::class, 'store'])->middleware('abilities:customers:write');
+        Route::get('/shops/{shop}/customers/{customer}', [CustomerController::class, 'show'])->middleware('abilities:customers:read');
+        Route::post('/shops/{shop}/customers/{customer}/payments', [CustomerController::class, 'payment'])->middleware('abilities:customers:write');
+        Route::post('/shops/{shop}/customers/{customer}/adjustments', [CustomerController::class, 'adjustment'])->middleware('abilities:customers:write');
     });
 });

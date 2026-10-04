@@ -27,6 +27,11 @@ class ShopPolicy
         return $user->ownsShop($shop);
     }
 
+    public function sell(User $user, Shop $shop): bool
+    {
+        return $user->canSellAtShop($shop);
+    }
+
     public function delete(User $user, Shop $shop): bool
     {
         return $user->ownsShop($shop);

@@ -12,7 +12,7 @@
                 </span>
                 Instagram
             </a>
-            <a class="text-sm font-semibold text-slate-300 transition hover:text-blue-400" href="mailto:contacto@bsolutions.dev">contacto@bsolutions.dev</a>
+            <div class="flex items-center gap-4 text-sm font-semibold"><a class="text-slate-300 transition hover:text-blue-400" href="{{ route('support.create') }}">Soporte</a><a class="text-slate-300 transition hover:text-blue-400" href="mailto:contacto@bsolutions.dev">contacto@bsolutions.dev</a></div>
         </div>
 
         <div class="mt-10 flex flex-col gap-3 border-t border-slate-700 pt-5 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">

@@ -36,5 +36,12 @@ class AppServiceProvider extends ServiceProvider
 
             return Limit::perMinutes($minutes, $maxAttempts)->by($request->ip());
         });
+
+        RateLimiter::for('catalog-media', function (Request $request) {
+            $maxAttempts = (int) config('catalog.rate_limits.account.catalog_media.max_attempts', 30);
+            $minutes = max(1, (int) ceil(((int) config('catalog.rate_limits.account.catalog_media.decay_seconds', 60)) / 60));
+
+            return Limit::perMinutes($minutes, $maxAttempts)->by(($request->user()?->id ?? 'guest').':'.$request->ip());
+        });
     }
 }

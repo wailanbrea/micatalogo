@@ -70,6 +70,13 @@ class MediaStorageService
         return "products/{$publicId}/{$variant}-{$hash}.webp";
     }
 
+    public function buildCatalogProductObjectKey(int $catalogProductId, string $variant, string $checksum): string
+    {
+        $hash = substr($checksum, 0, 16);
+
+        return "catalog-products/{$catalogProductId}/{$variant}-{$hash}.webp";
+    }
+
     public function buildShopLogoObjectKey(string $publicId, string $checksum): string
     {
         $hash = substr($checksum, 0, 16);
