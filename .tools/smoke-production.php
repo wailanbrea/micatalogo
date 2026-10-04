@@ -1,0 +1,23 @@
+<?php
+
+if (PHP_SAPI !== 'cli') { exit(1); }
+require dirname(__DIR__).'/vendor/autoload.php';
+$app = require dirname(__DIR__).'/bootstrap/app.php';
+$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+if (! $app->environment('production')) { throw new RuntimeException('Production only.'); }
+$shop = App\Models\Shop::where('slug', 'bsolutions-dev')->firstOrFail();
+Illuminate\Support\Facades\Auth::guard()->setUser($shop->user);
+$request = Illuminate\Http\Request::create('/panel/tiendas/'.$shop->public_id.'/negocio', 'GET');
+$request->setUserResolver(fn() => $shop->user);
+$route = new Illuminate\Routing\Route('GET', 'panel/tiendas/{shop}/negocio', fn() => null);
+$route->bind($request);
+$route->setParameter('shop', $shop);
+$request->setRouteResolver(fn() => $route);
+$app->instance('request', $request);
+$html = app(App\Http\Controllers\SellerBusinessController::class)->index($request, $shop)->render();
+$checks = ['business_render' => str_contains($html, 'Ventas y ganancia por producto'),
+    'fifo_table' => Illuminate\Support\Facades\Schema::hasTable('inventory_lots'),
+    'invoice_cost_column' => Illuminate\Support\Facades\Schema::hasColumn('invoice_items', 'total_cost_cents'),
+    'apk_hash' => hash_equals(config('bspos.android_update.apk_sha256'), hash_file('sha256', public_path('downloads/bspos-1.0.8.apk')))];
+echo json_encode($checks, JSON_PRETTY_PRINT);
+exit(in_array(false, $checks, true) ? 1 : 0);
