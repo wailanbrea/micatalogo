@@ -16,6 +16,13 @@
                 <div class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-800"><ul class="list-disc space-y-1 pl-5">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
             @endif
 
+            <div class="grid gap-3 sm:grid-cols-4">
+                <div class="rounded-xl border border-slate-200 bg-white p-4"><p class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Plan</p><p class="mt-1 text-lg font-black text-slate-900">{{ $quota['plan_label'] }}</p></div>
+                <div class="rounded-xl border border-slate-200 bg-white p-4"><p class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Usuarios</p><p class="mt-1 text-lg font-black text-slate-900">{{ $quota['user_count'] }} / {{ $quota['user_limit'] }}</p></div>
+                <div class="rounded-xl border border-slate-200 bg-white p-4"><p class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Vendedores</p><p class="mt-1 text-lg font-black text-slate-900">{{ $quota['seller_count'] }} / {{ $quota['seller_limit'] }}</p></div>
+                <div class="rounded-xl border border-slate-200 bg-white p-4"><p class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Productos</p><p class="mt-1 text-lg font-black text-slate-900">{{ $quota['product_count'] }} / {{ $quota['product_limit'] }}</p></div>
+            </div>
+
             <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
                 <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6">
                     <div class="border-b border-slate-100 pb-5"><h1 class="text-xl font-bold text-slate-900">Vendedores y comisiones</h1><p class="mt-1 text-xs text-slate-500">Cada venta conserva la comisión configurada cuando fue registrada.</p></div>
@@ -60,9 +67,28 @@
                         <div><label class="text-xs font-bold text-slate-700">Correo del vendedor</label><input name="email" type="email" required value="{{ old('email') }}" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></div>
                         <div><label class="text-xs font-bold text-slate-700">Modalidad</label><select name="commission_type" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"><option value="percentage" @selected(old('commission_type') === 'percentage')>Porcentaje de venta</option><option value="fixed" @selected(old('commission_type') === 'fixed')>Monto fijo por venta</option></select></div>
                         <div><label class="text-xs font-bold text-slate-700">Valor</label><input name="commission_value" type="number" min="0.01" step="0.01" required value="{{ old('commission_value') }}" placeholder="Ej.: 5.00" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"><p class="mt-1 text-[11px] text-slate-500">Para porcentaje, escribe 5 para 5%. Para monto fijo, escribe el valor en RD$.</p></div>
-                        <button class="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-700">Enviar invitación</button>
-                    </form>
-                </aside>
+                         <button class="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-700" @disabled(!$quota['can_add_sellers'])>Enviar invitación</button>
+                         @if (!$quota['can_add_sellers'])<p class="text-xs font-semibold text-amber-700">Límite alcanzado. Vendedores adicionales: US$ {{ number_format($quota['additional_seat_price_usd'], 2) }}/mes.</p>@endif
+                     </form>
+                     <div class="mt-8 border-t border-slate-100 pt-5">
+                         <h2 class="text-base font-bold text-slate-900">Usuarios administrativos</h2>
+                         <p class="mt-1 text-xs text-slate-500">{{ $quota['user_count'] }} de {{ $quota['user_limit'] }} incluidos. Adicional: US$ {{ number_format($quota['additional_seat_price_usd'], 2) }}/mes.</p>
+                         <div class="mt-3 space-y-2">
+                             @forelse ($members as $member)
+                                 <div class="flex items-center justify-between gap-2 rounded-lg bg-slate-50 p-2 text-xs">
+                                     <span class="min-w-0 truncate font-semibold text-slate-700">{{ $member->user->email }}</span>
+                                     @if ($member->is_active)<form method="POST" action="{{ route('seller.shops.members.destroy', [$shop, $member]) }}">@csrf @method('DELETE')<button class="font-bold text-rose-700 hover:underline">Desactivar</button></form>@endif
+                                 </div>
+                             @empty
+                                 <p class="text-xs text-slate-500">El propietario es el único usuario administrativo.</p>
+                             @endforelse
+                         </div>
+                         <form method="POST" action="{{ route('seller.shops.members.store', $shop) }}" class="mt-4 space-y-3">@csrf
+                             <label class="block text-xs font-bold text-slate-700">Correo del usuario<input name="email" type="email" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></label>
+                             <button class="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-900 hover:border-slate-900" @disabled(!$quota['can_add_users'])>Invitar usuario administrativo</button>
+                         </form>
+                     </div>
+                 </aside>
             </div>
 
             <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6"><div class="border-b border-slate-100 pb-5"><h2 class="text-lg font-bold text-slate-900">Historial de ventas y ganancias</h2><p class="mt-1 text-xs text-slate-500">Sólo muestra ventas realizadas por vendedores asignados.</p></div><div class="mt-4 overflow-x-auto"><table class="w-full text-left text-sm"><thead class="text-xs uppercase tracking-wide text-slate-500"><tr><th class="pb-3 pr-4">Fecha</th><th class="pb-3 pr-4">Vendedor</th><th class="pb-3 pr-4">Factura</th><th class="pb-3 pr-4">Venta</th><th class="pb-3">Ganancia</th></tr></thead><tbody class="divide-y divide-slate-100">@forelse ($sales as $sale)<tr><td class="py-3 pr-4 text-slate-600">{{ $sale->issued_at->format('d/m/Y H:i') }}</td><td class="py-3 pr-4 font-semibold text-slate-900">{{ $sale->salesperson->name }}</td><td class="py-3 pr-4 font-mono text-xs text-slate-600">{{ $sale->invoice_number }}</td><td class="py-3 pr-4 font-semibold">RD$ {{ number_format((float) $sale->total, 2) }}</td><td class="py-3 font-black text-emerald-700">RD$ {{ number_format((float) $sale->commission_amount, 2) }} <span class="text-[10px] font-medium text-slate-500">({{ $sale->commission_type === 'percentage' ? $sale->commission_value.'%' : 'fijo' }})</span></td></tr>@empty<tr><td colspan="5" class="py-10 text-center text-slate-500">Aún no hay ventas de vendedores.</td></tr>@endforelse</tbody></table></div><div class="mt-5">{{ $sales->links() }}</div></section>

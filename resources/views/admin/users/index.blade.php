@@ -165,9 +165,12 @@
                                         @csrf
                                         <select name="plan" class="rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-700" onchange="this.form.submit()" @disabled($user->id === auth()->id())>
                                             <option value="free" @selected($user->plan?->value === 'free')>Gratis</option>
-                                            <option value="premium" @selected($user->plan?->value === 'premium')>Premium</option>
+                                            <option value="premium" @selected($user->plan?->value === 'premium')>Básico</option>
                                             <option value="pro" @selected($user->plan?->value === 'pro')>Pro</option>
+                                            <option value="custom" @selected($user->plan?->value === 'custom')>Personalizado</option>
                                         </select>
+                                        <input name="additional_user_seats" type="number" min="0" max="1000" value="{{ $user->additional_user_seats }}" title="Usuarios adicionales" class="w-12 rounded border border-slate-200 px-1 py-1 text-[10px]" onchange="this.form.submit()" @disabled($user->id === auth()->id())>
+                                        <input name="additional_seller_seats" type="number" min="0" max="1000" value="{{ $user->additional_seller_seats }}" title="Vendedores adicionales" class="w-12 rounded border border-slate-200 px-1 py-1 text-[10px]" onchange="this.form.submit()" @disabled($user->id === auth()->id())>
                                     </form>
                                 </td>
 

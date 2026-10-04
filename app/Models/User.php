@@ -34,6 +34,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at',
         'plan',
         'plan_expires_at',
+        'additional_user_seats',
+        'additional_seller_seats',
     ];
 
     /**
@@ -61,6 +63,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
             'plan' => UserPlan::class,
             'plan_expires_at' => 'datetime',
+            'additional_user_seats' => 'integer',
+            'additional_seller_seats' => 'integer',
         ];
     }
 
@@ -74,6 +78,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(ShopSeller::class);
     }
 
+    public function shopMemberships(): HasMany
+    {
+        return $this->hasMany(ShopMember::class);
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === UserRole::Admin;
@@ -82,6 +91,14 @@ class User extends Authenticatable implements MustVerifyEmail
     public function ownsShop(Shop $shop): bool
     {
         return $this->id === $shop->user_id;
+    }
+
+    public function isActiveShopMember(Shop $shop): bool
+    {
+        return $this->shopMemberships()
+            ->where('shop_id', $shop->id)
+            ->where('is_active', true)
+            ->exists();
     }
 
     public function ownsAnyShop(): bool
@@ -96,6 +113,13 @@ class User extends Authenticatable implements MustVerifyEmail
             ->exists();
     }
 
+    public function hasActiveShopMembership(): bool
+    {
+        return $this->shopMemberships()
+            ->where('is_active', true)
+            ->exists();
+    }
+
     public function isAssignedSellerOnly(): bool
     {
         return ! $this->isAdmin() && ! $this->ownsAnyShop() && $this->hasActiveShopAssignment();
@@ -103,7 +127,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function canSellAtShop(Shop $shop): bool
     {
-        return $this->ownsShop($shop) || $this->shopSellerAssignments()
+        return $this->ownsShop($shop) || $this->isActiveShopMember($shop) || $this->shopSellerAssignments()
             ->where('shop_id', $shop->id)
             ->where('is_active', true)
             ->exists();

@@ -24,6 +24,8 @@ class MobileOperationController extends Controller
             if ($type === 'product_upsert') $rules += ['name' => ['sometimes', 'required', 'string', 'max:255'],
                 'internal_code' => ['nullable', 'string', 'max:120'], 'barcode' => ['nullable', 'regex:/^[0-9]{8,14}$/'],
                 'description' => ['nullable', 'string', 'max:10000'], 'category_name' => ['nullable', 'string', 'max:100'],
+                'image_base64' => ['sometimes', 'string', 'max:699052'],
+                'image_sha256' => ['required_with:image_base64', 'regex:/^[a-f0-9]{64}$/'],
                 'price' => ['sometimes', 'decimal:0,2', 'min:0', 'max:1000000000'], 'expected_price' => ['sometimes', 'decimal:0,2', 'min:0'],
                 'cost_price' => ['nullable', 'decimal:0,2', 'min:0', 'max:1000000000'], 'minimum_stock' => ['sometimes', 'integer', 'min:0', 'max:1000000']];
             if ($type === 'restock') $rules += ['quantity' => ['required', 'integer', 'min:1', 'max:1000000'], 'unit_cost' => ['required', 'decimal:0,2', 'min:0', 'max:1000000000']];

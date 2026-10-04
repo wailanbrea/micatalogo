@@ -33,7 +33,7 @@ test('creation and restoration cannot exceed the plan quota', function (UserPlan
     $this->actingAs($seller)->post(route('seller.shops.products.restore', [$shop, $trashed->id]))->assertRedirect();
     expect($shop->products()->count())->toBe($limit)->and($trashed->fresh()->trashed())->toBeFalse();
 })->with([
-    'free product 101' => [UserPlan::Free, 100],
+    'free product 251' => [UserPlan::Free, 250],
     'premium product 501' => [UserPlan::Premium, 500],
 ]);
 
@@ -56,12 +56,27 @@ test('API exposes current effective quota and excludes trashed products', functi
     $seller->update(['plan_expires_at' => now()->subDay()]);
     $this->withToken($token)->getJson('/api/v1/shops')->assertOk()
         ->assertJsonPath('0.quota.plan', 'free')
-        ->assertJsonPath('0.quota.product_limit', 100);
+        ->assertJsonPath('0.quota.product_limit', 250);
+});
+
+test('the full-access account uses the custom plan limits', function () {
+    $owner = User::factory()->create([
+        'email' => 'wailandkey@gmail.com',
+        'plan' => UserPlan::Custom,
+    ]);
+    $shop = Shop::factory()->for($owner)->create();
+
+    $quota = app(\App\Services\PlanLimitsService::class)->shopQuota($shop);
+
+    expect($quota['plan'])->toBe('custom')
+        ->and($quota['product_limit'])->toBe(1_000_000)
+        ->and($quota['user_limit'])->toBe(100)
+        ->and($quota['seller_limit'])->toBe(100);
 });
 
 test('CSV import rejects the whole batch when it would exceed quota', function () {
-    config()->set('catalog.free.max_products_per_shop', 2);
-    $seller = User::factory()->create();
+    config()->set('catalog.plans.pro.max_products_per_shop', 2);
+    $seller = User::factory()->create(['plan' => UserPlan::Pro]);
     $shop = Shop::factory()->for($seller)->create();
     Product::factory()->for($shop)->create();
     $rows = [
@@ -91,8 +106,8 @@ test('an administrator sees the import option and current product quota', functi
         ->assertOk()
         ->assertSee('Esta tienda tiene')
         ->assertSee('2')
-        ->assertSee('100')
-        ->assertSee('98');
+        ->assertSee('250')
+        ->assertSee('248');
 
     $this->actingAs($admin)
         ->get(route('seller.shops.inventory.index', $shop))

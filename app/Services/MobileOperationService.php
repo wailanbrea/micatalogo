@@ -82,6 +82,7 @@ class MobileOperationService
             }
             $product->save();
             if (isset($data['minimum_stock'])) $product->inventory?->update(['low_stock_threshold' => $data['minimum_stock']]);
+            if (isset($data['image_base64'])) $this->productImage($shop, $product, $data);
         } else {
             abort_unless($product && ! $product->trashed(), 404);
             if ($data['type'] === 'product_archive') {
@@ -100,6 +101,39 @@ class MobileOperationService
         }
         return ['product_id' => $product->public_id, 'price' => number_format($product->fresh()->currentPrice(), 2, '.', ''),
             'stock' => $product->inventory?->fresh()?->stock_quantity];
+    }
+
+    private function productImage(Shop $shop, Product $product, array $data): void
+    {
+        $bytes = base64_decode($data['image_base64'], true);
+        $info = $bytes === false ? false : @getimagesizefromstring($bytes);
+        if ($bytes === false || strlen($bytes) > 512 * 1024 || ! $info ||
+            ! in_array($info['mime'] ?? '', ['image/jpeg', 'image/png', 'image/webp', 'image/avif'], true) ||
+            $info[0] * $info[1] > (int) config('catalog.uploads.max_input_pixels', 60_000_000) ||
+            ! hash_equals($data['image_sha256'], hash('sha256', $bytes))) {
+            throw ValidationException::withMessages(['image_base64' => 'La foto no es válida o cambió durante el envío.']);
+        }
+        $derivatives = app(ImageDerivativeService::class);
+        try { $rendered = $derivatives->render($bytes); }
+        catch (\Throwable $error) {
+            throw ValidationException::withMessages(['image_base64' => 'No se pudo procesar la foto.']);
+        }
+        $existing = $product->images()->where('checksum_sha256', $rendered['checksum'])->first();
+        if (! $existing) {
+            abort_if($product->images()->count() >= app(PlanLimitsService::class)->imageLimit($shop), 422,
+                'Tu plan alcanzó el límite de fotos. Gestiona las anteriores en el panel; no se borran automáticamente.');
+            $media = app(MediaStorageService::class);
+            $main = $media->buildProductObjectKey($product->public_id, 'main', $rendered['checksum']);
+            $thumb = $media->buildProductObjectKey($product->public_id, 'thumb', $rendered['checksum']);
+            $derivatives->store($rendered, $main, $thumb, $media);
+            $existing = $product->images()->create(['object_key' => $main, 'thumbnail_object_key' => $thumb,
+                'checksum_sha256' => $rendered['checksum'], 'mime_type' => 'image/webp',
+                'width' => $rendered['width'], 'height' => $rendered['height'], 'size_bytes' => $rendered['size_bytes'],
+                'sort_order' => 0, 'processing_status' => \App\Enums\ProductImageProcessingStatus::Ready]);
+        }
+        // Promote the chosen photo without deleting or replacing an older object.
+        $product->images()->whereKeyNot($existing->id)->increment('sort_order');
+        $existing->update(['sort_order' => 0]);
     }
 
     private function refund(Shop $shop, User $user, array $data, MobileOperation $operation): array

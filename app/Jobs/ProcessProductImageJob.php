@@ -78,7 +78,9 @@ class ProcessProductImageJob implements ShouldQueue
             ]);
 
             $productImage->update(['processing_status' => ProductImageProcessingStatus::Failed]);
-            $this->deleteTempFile($tempDisk);
+
+            // Keep the upload for the next queue attempt. failed() cleans it up
+            // only after all attempts are exhausted; deleting it here made retries fail.
 
             throw $e;
         }

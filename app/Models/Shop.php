@@ -89,6 +89,11 @@ class Shop extends Model
         return $this->hasMany(ShopSeller::class);
     }
 
+    public function members(): HasMany
+    {
+        return $this->hasMany(ShopMember::class);
+    }
+
     public function productLimit(): int
     {
         return app(PlanLimitsService::class)->productLimit($this);

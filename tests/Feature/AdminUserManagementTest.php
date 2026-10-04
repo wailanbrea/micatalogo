@@ -171,13 +171,13 @@ class AdminUserManagementTest extends TestCase
         ]);
         $seller = User::factory()->create(['plan' => UserPlan::Premium, 'email_verified_at' => now()]);
         $shop = Shop::factory()->for($seller)->create();
-        Product::factory()->count(101)->for($shop)->create();
+        Product::factory()->count(251)->for($shop)->create();
 
         $response = $this->actingAs($admin)->post(route('admin.users.update-plan', $seller), ['plan' => 'free']);
 
         $response->assertRedirect()->assertSessionHas('error');
         $this->assertSame(UserPlan::Premium, $seller->fresh()->plan);
-        $this->assertSame(101, $shop->products()->count());
+        $this->assertSame(251, $shop->products()->count());
     }
 
     public function test_admin_dashboard_displays_consolidated_global_metrics_and_users(): void

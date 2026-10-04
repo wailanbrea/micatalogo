@@ -62,7 +62,7 @@ restauran el costo histórico vendido y descuentan el reembolso del reporte de g
 Incluyen el impuesto general de la factura sin convertirlo en ingreso.
 La migración `2026_10_14_000000` es aditiva y todavía no se aplicó al VPS.
 
-Android en desarrollo local usa Room 17 y una cola persistente de operaciones.
+Android en desarrollo local usa Room 19 y una cola persistente de operaciones.
 Las ediciones y archivos en espera sobreviven a un catálogo remoto desactualizado;
 productos creados localmente conservan su identidad al descargarse desde el servidor.
 Ventas y operaciones se envían en orden por tienda. Un conflicto bloquea sus sucesoras;
@@ -118,12 +118,41 @@ Validación actual: **238 pruebas web / 1,113 aserciones; 50 unitarias y 83 inst
 Android**, sin fallos. Android se probó solamente en `emulator-5554`. No se ejecutaron
 pruebas ni migraciones nuevas en producción durante esta tanda.
 
-Falta completar la resolución explícita de conflictos (la lista y el reintento no bastan),
-fotos de producto, descarga automática del precio Pro después de confirmar una entrada
-y pruebas visuales/de extremo a extremo. También debe probarse y corregirse el orden
-causal cuando dos eventos tienen la misma marca temporal; ordenar solo por fecha no
-garantiza ese caso. Los costos locales siguen siendo estimaciones hasta la asignación
-FIFO del servidor. No presentar estos puntos como terminados.
+### Secuencia causal, precios posconfirmación y fotos — siguiente tanda local
+
+Room 18 añade una secuencia única compartida entre ventas y operaciones, asignada
+al registrarlas en la misma transacción. El envío no depende ya de fechas iguales o
+anteriores introducidas por el usuario. Las ventas heredadas conservan el orden por
+fecha e inserción; la APK publicada no tenía operaciones en la segunda cola.
+
+Room 19 guarda una descarga pendiente de catálogo junto con cada confirmación.
+El trabajo de fondo y el envío manual descargan después precios/costos/existencias;
+una entrada con precio Pro recalculado ya no requiere una importación manual adicional.
+Los errores conservan la solicitud y se muestran en Ajustes. Cada solicitud lleva una
+revisión: una descarga antigua no puede borrar una solicitud más reciente. Los eventos
+registrados o confirmados mientras una descarga está en curso quedan protegidos para
+que ese catálogo desactualizado no revierta sus datos locales.
+
+Las fotos elegidas se copian en el momento de registrar el cambio, con orientación,
+fondo blanco para transparencia, límite de 512 KiB y hash SHA-256. La cola conserva
+esos bytes aunque se modifique o desaparezca el archivo original. La API comprueba
+hash/formato/tamaño, genera derivados WebP y promueve la foto elegida sin borrar las
+anteriores. Se respetan los límites del plan, las ediciones son atómicas y los
+reintentos no duplican imágenes. Se reutiliza ImageDerivativeService.
+Los trabajos de imagen web esperan al commit y conservan el temporal tras un fallo
+transitorio; limpiarlo antes impedía el siguiente intento.
+
+Validación de esta tanda: 242 pruebas web / 1,136 aserciones; 50 unitarias y 88
+instrumentadas Android en emulador,
+incluida actualización real de esquema 15 → 19 que conserva IDs, solicitudes y
+costos históricos. Las pruebas incluyen fechas empatadas/anteriores, lectura fallida,
+confirmación durante descarga, foto inmutable y reversión cuando no se puede leer.
+No equivalen a prueba visual ni a un flujo completo contra el servidor publicado.
+
+Falta completar la resolución explícita de conflictos (la lista y el reintento no
+bastan) y las pruebas visuales/de extremo a extremo antes de publicar web y nueva APK.
+Los costos locales siguen siendo estimaciones hasta la asignación FIFO del servidor.
+No presentar estos puntos como terminados.
 
 No publicar estos cambios bajo la versión 1.0.8 ni anunciar la sincronización general
 como terminada. La próxima publicación necesita nueva versión, firma verificada,

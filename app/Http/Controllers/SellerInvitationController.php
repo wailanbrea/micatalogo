@@ -25,6 +25,7 @@ class SellerInvitationController extends Controller
         return view('auth.activate-seller-invitation', [
             'seller' => $user,
             'shop' => $shop,
+            'isManager' => $shop->members()->where('user_id', $user->id)->where('is_active', true)->exists(),
             'activationUrl' => $request->fullUrl(),
         ]);
     }
@@ -56,6 +57,10 @@ class SellerInvitationController extends Controller
     {
         abort_unless($request->hasValidSignature(), 403);
         abort_unless(hash_equals($hash, sha1($user->getEmailForVerification())), 403);
-        abort_unless($shop->sellers()->where('user_id', $user->id)->where('is_active', true)->exists(), 404);
+        abort_unless(
+            $shop->sellers()->where('user_id', $user->id)->where('is_active', true)->exists()
+                || $shop->members()->where('user_id', $user->id)->where('is_active', true)->exists(),
+            404
+        );
     }
 }

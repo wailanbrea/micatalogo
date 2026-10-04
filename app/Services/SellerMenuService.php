@@ -50,7 +50,7 @@ class SellerMenuService
 
     public function canManage(Shop $shop, User $user): bool
     {
-        return $user->isAdmin() || $user->ownsShop($shop);
+        return $user->isAdmin() || $user->ownsShop($shop) || $user->isActiveShopMember($shop);
     }
 
     /** @return list<string> */

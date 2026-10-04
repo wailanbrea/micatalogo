@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\UserPlan;
 use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductImageProcessingStatus;
 use App\Enums\ProductModerationStatus;
@@ -22,19 +23,19 @@ class SellerBulkProductTest extends TestCase
 
     public function test_a_verified_seller_can_access_bulk_upload_screen(): void
     {
-        $seller = User::factory()->create();
+        $seller = User::factory()->create(['plan' => UserPlan::Pro]);
         $shop = Shop::factory()->create(['user_id' => $seller->id]);
 
         $response = $this->actingAs($seller)->get("/panel/tiendas/{$shop->public_id}/subida-masiva");
 
         $response->assertOk();
         $response->assertSee('Subida Masiva de Productos');
-        $response->assertSee('100 cupos libres de 100');
+        $response->assertSee('1500 cupos libres de 1500');
     }
 
     public function test_a_seller_can_batch_upload_products_without_images(): void
     {
-        $seller = User::factory()->create();
+        $seller = User::factory()->create(['plan' => UserPlan::Pro]);
         $shop = Shop::factory()->create(['user_id' => $seller->id]);
         $category = ShopCategory::factory()->create(['shop_id' => $shop->id, 'name' => 'Ropa']);
 
@@ -85,7 +86,7 @@ class SellerBulkProductTest extends TestCase
         Queue::fake();
         Storage::fake('temp');
 
-        $seller = User::factory()->create();
+        $seller = User::factory()->create(['plan' => UserPlan::Pro]);
         $shop = Shop::factory()->create(['user_id' => $seller->id]);
 
         $file1 = UploadedFile::fake()->image('polo.jpg', 600, 600);
@@ -127,15 +128,15 @@ class SellerBulkProductTest extends TestCase
         Queue::assertPushed(ProcessProductImageJob::class, 2);
     }
 
-    public function test_bulk_upload_enforces_free_product_limit(): void
+    public function test_free_accounts_can_use_bulk_import_with_their_product_quota(): void
     {
         $seller = User::factory()->create();
         $shop = Shop::factory()->create(['user_id' => $seller->id]);
 
-        // Create 99 existing products
+        // Create products below the 250-product free quota.
         Product::factory()->count(99)->create(['shop_id' => $shop->id]);
 
-        // Attempt to upload 2 products (would reach 101, exceeding max 100)
+        // Upload 2 products without bypassing the configured quota.
         $payload = [
             'products' => [
                 ['name' => 'Producto Excedente 1', 'price' => '500'],
@@ -146,15 +147,15 @@ class SellerBulkProductTest extends TestCase
         $response = $this->actingAs($seller)
             ->post("/panel/tiendas/{$shop->public_id}/subida-masiva", $payload);
 
-        $response->assertSessionHasErrors('products');
-        $this->assertEquals(99, $shop->products()->count());
+        $response->assertRedirect();
+        $this->assertEquals(101, $shop->products()->count());
     }
 
     public function test_bulk_upload_uses_the_configured_product_quota(): void
     {
-        config()->set('catalog.free.max_products_per_shop', 2);
+        config()->set('catalog.plans.pro.max_products_per_shop', 2);
 
-        $seller = User::factory()->create();
+        $seller = User::factory()->create(['plan' => UserPlan::Pro]);
         $shop = Shop::factory()->create(['user_id' => $seller->id]);
         Product::factory()->count(2)->create(['shop_id' => $shop->id]);
 

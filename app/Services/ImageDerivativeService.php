@@ -44,10 +44,14 @@ class ImageDerivativeService
     {
         $disk = $mediaStorage->disk();
         if (! $disk->exists($mainKey)) {
-            $disk->put($mainKey, $derivatives['main_bytes'], 'public');
+            if (! $disk->put($mainKey, $derivatives['main_bytes'], 'public')) {
+                throw new \RuntimeException('No se pudo guardar la imagen principal.');
+            }
         }
         if (! $disk->exists($thumbKey)) {
-            $disk->put($thumbKey, $derivatives['thumb_bytes'], 'public');
+            if (! $disk->put($thumbKey, $derivatives['thumb_bytes'], 'public')) {
+                throw new \RuntimeException('No se pudo guardar la miniatura.');
+            }
         }
     }
 }

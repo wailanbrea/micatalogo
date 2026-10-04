@@ -1027,20 +1027,49 @@
             <!-- 5. PLANES -->
             @php
                 $planFeatures = [
-                    'Tu tienda + catálogo',
-                    'Ventas y facturación',
-                    'Control de inventario',
-                    'Reportes de ventas',
-                    'Cotizaciones',
-                    'Tu tienda online con pedidos por WhatsApp',
-                    'Pedidos',
-                    'Clientes y suplidores',
-                    'Funciona en tu celular y computadora',
+                    'free' => [
+                        'Catálogo público',
+                        'Pedidos por WhatsApp',
+                        'Inventario básico',
+                    ],
+                    'premium' => [
+                        'Tu tienda + catálogo',
+                        'Ventas y facturación',
+                        'Control de inventario',
+                        'Reportes de ventas',
+                        'Cotizaciones',
+                        'Tu tienda online con pedidos por WhatsApp',
+                        'Clientes y suplidores',
+                        'Funciona en tu celular y computadora',
+                    ],
+                    'pro' => [
+                        'Todo lo de Básico',
+                        '3 tiendas gestionadas desde un solo panel',
+                        'Crédito a clientes con interés',
+                        'Precios al detalle y al por mayor',
+                        'Importaciones por carga',
+                        'Gestión de gastos',
+                        'División de ganancias entre socios',
+                        'Automatización de precios',
+                    ],
+                    'custom' => [
+                        'Todo lo de Pro',
+                        'Tienda en tu propio dominio',
+                        'Varias tiendas',
+                        'Soporte prioritario',
+                    ],
                 ];
                 $planNames = [
-                    'free' => 'Básico',
-                    'premium' => 'Premium',
+                    'free' => 'Gratis',
+                    'premium' => 'Básico',
                     'pro' => 'Pro',
+                    'custom' => 'Personalizado',
+                ];
+                $planSubtitles = [
+                    'free' => 'Para comenzar sin costo',
+                    'premium' => 'Para negocios pequeños con equipo',
+                    'pro' => 'Para negocios con fuerza de ventas',
+                    'custom' => 'Para operaciones a medida',
                 ];
             @endphp
             <section class="w-full bg-[#f6f6f7] px-4 py-16 sm:px-6 lg:px-8 lg:py-24" id="planes">
@@ -1056,12 +1085,18 @@
                             @php
                                 $isPro = $key === 'pro';
                                 $isFree = $key === 'free';
-                                $features = $planFeatures;
-                                $features[] = number_format($limits['max_products_per_shop']) . ' productos incluidos';
-                                $features[] = $limits['max_images_per_product'] . ' imágenes por producto';
-                                if ($isPro) {
-                                    $features[] = 'Reglas de precio por margen y redondeo';
-                                    $features[] = 'Bajadas de precio con aprobación';
+                                $isCustom = $key === 'custom';
+                                $features = $planFeatures[$key] ?? [];
+                                if ($isCustom) {
+                                    $features[] = 'Productos, imágenes, usuarios y vendedores a medida';
+                                } else {
+                                    $features[] = number_format($limits['max_products_per_shop']) . ' productos incluidos';
+                                    $features[] = $limits['max_images_per_product'] . ' imágenes por producto';
+                                    $features[] = $limits['max_users'] . ' usuarios incluidos';
+                                    $features[] = $limits['max_sellers'] . ' vendedores incluidos';
+                                }
+                                if (in_array($key, ['premium', 'pro'], true)) {
+                                    $features[] = 'Usuarios o vendedores adicionales por US$ 5/mes';
                                 }
                             @endphp
                             <article class="relative flex h-full flex-col rounded-2xl border {{ $isPro ? 'border-blue-600 shadow-[0_18px_45px_rgba(37,99,235,0.16)]' : 'border-slate-200 shadow-[0_8px_24px_rgba(15,23,42,0.06)]' }} bg-white p-7 sm:p-8">
@@ -1071,14 +1106,14 @@
                                 <div class="flex items-start justify-between gap-4">
                                     <div>
                                         <h3 class="text-lg font-extrabold text-slate-950">{{ $planNames[$key] ?? \App\Enums\UserPlan::from($key)->label() }}</h3>
-                                        <p class="mt-1 text-xs font-medium text-slate-500">{{ $isFree ? 'Para comenzar sin costo' : ($isPro ? 'Para negocios en crecimiento' : 'Para operar con más capacidad') }}</p>
+                                        <p class="mt-1 text-xs font-medium text-slate-500">{{ $planSubtitles[$key] }}</p>
                                     </div>
-                                    <span class="rounded-lg bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $limits['max_active_shops'] }} tienda</span>
+                                    <span class="rounded-lg bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $isCustom ? 'Varias tiendas' : $limits['max_active_shops'].' '.($limits['max_active_shops'] === 1 ? 'tienda' : 'tiendas') }}</span>
                                 </div>
 
                                 <div class="mt-7 flex items-baseline gap-2 border-b border-slate-100 pb-6">
-                                    <span class="text-[2.65rem] font-black leading-none tracking-[-0.06em] text-slate-950">{{ $isFree ? 'RD$ 0' : 'Consultar' }}</span>
-                                    <span class="text-sm text-slate-500">{{ $isFree ? 'sin costo' : 'activación' }}</span>
+                                    <span class="text-[2.65rem] font-black leading-none tracking-[-0.06em] text-slate-950">{{ $isFree ? 'RD$ 0' : ($isCustom ? 'A medida' : 'US$ '.number_format((float) $limits['price_usd'], 2)) }}</span>
+                                    <span class="text-sm text-slate-500">{{ $isFree ? 'sin costo' : ($isCustom ? 'contacto' : 'por mes') }}</span>
                                 </div>
 
                                 <ul class="mt-6 flex-1 space-y-3.5 text-sm text-slate-700">
@@ -1090,13 +1125,21 @@
                                     @endforeach
                                 </ul>
 
-                                <a href="{{ route('register') }}" class="mt-8 inline-flex min-h-11 items-center justify-center rounded-xl border {{ $isPro ? 'border-blue-600 bg-blue-600 text-white hover:bg-blue-700' : 'border-slate-300 bg-white text-slate-900 hover:border-slate-900' }} px-4 py-3 text-sm font-extrabold transition-colors">
-                                    Crear cuenta
+                                <a href="{{ $isCustom ? 'mailto:contacto@bsolutions.dev?subject=Plan%20Personalizado%20MiCatalogo' : route('register') }}" class="mt-8 inline-flex min-h-11 items-center justify-center rounded-xl border {{ $isPro ? 'border-blue-600 bg-blue-600 text-white hover:bg-blue-700' : 'border-slate-300 bg-white text-slate-900 hover:border-slate-900' }} px-4 py-3 text-sm font-extrabold transition-colors">
+                                    {{ $isCustom ? 'Contactar' : 'Crear cuenta' }}
                                 </a>
                             </article>
                         @endforeach
                     </div>
-                    <p class="mx-auto mt-6 max-w-3xl text-center text-xs leading-5 text-slate-500">No hay cobro automático de suscripciones. Las activaciones Premium y Pro se coordinan con el administrador. No se anuncian cuotas de almacenamiento o usuarios que el sistema no controle.</p>
+                    <p class="mx-auto mt-6 max-w-3xl text-center text-xs leading-5 text-slate-500">Los usuarios o vendedores adicionales cuestan US$ 5 al mes. La facturación electrónica está disponible a solicitud del cliente. No se anuncian cuotas de almacenamiento o usuarios que el sistema no controle.</p>
+                    <div class="mx-auto mt-6 max-w-3xl rounded-2xl border border-blue-200 bg-blue-50 p-5 text-center">
+                        <h3 class="text-base font-black text-slate-950">Facturación electrónica a solicitud del cliente</h3>
+                        <p class="mt-1 text-sm text-slate-600">Contáctanos para conocer disponibilidad, requisitos y precio.</p>
+                        <div class="mt-3 flex flex-wrap justify-center gap-3 text-sm font-bold">
+                            <a class="text-blue-700 hover:underline" href="mailto:contacto@bsolutions.dev">contacto@bsolutions.dev</a>
+                            <a class="text-blue-700 hover:underline" href="https://wa.me/18298144525?text=Hola%2C%20quiero%20informacion%20sobre%20facturacion%20electronica">WhatsApp 829-814-4525</a>
+                        </div>
+                    </div>
                 </div>
             </section>
             <section class="mx-auto max-w-7xl px-4 py-10"><h2 class="text-3xl font-bold">Administra también desde Android</h2><p class="mt-3">Descarga tu catálogo y registra ventas desde el teléfono. Las ventas y nuevos abonos se envían cuando hay conexión; los conflictos requieren revisión. La administración completa y los reportes FIFO están en el panel web.</p><a class="mt-4 inline-flex rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white" href="{{ route('downloads.index') }}">Ver versión y descargar APK</a></section>

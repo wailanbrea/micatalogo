@@ -14,19 +14,17 @@ class ShopPolicy
 
     public function view(User $user, Shop $shop): bool
     {
-        return $user->ownsShop($shop);
+        return $user->ownsShop($shop) || $user->isActiveShopMember($shop);
     }
 
     public function create(User $user): bool
     {
-        return $user->isAdmin() || ! $user->shopSellerAssignments()
-            ->where('is_active', true)
-            ->exists();
+        return $user->isAdmin() || (! $user->hasActiveShopAssignment() && ! $user->hasActiveShopMembership());
     }
 
     public function update(User $user, Shop $shop): bool
     {
-        return $user->ownsShop($shop);
+        return $user->ownsShop($shop) || $user->isActiveShopMember($shop);
     }
 
     public function sell(User $user, Shop $shop): bool

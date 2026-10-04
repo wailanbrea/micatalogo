@@ -336,7 +336,7 @@
                         <?php
                             $visibleMenus = app(\App\Services\SellerMenuService::class)->forUser($shop, auth()->user());
                             $canSeeMenu = fn (string $key): bool => in_array($key, $visibleMenus, true);
-                            $canManageShop = auth()->user()->isAdmin() || auth()->user()->ownsShop($shop);
+                            $canManageShop = app(\App\Services\SellerMenuService::class)->canManage($shop, auth()->user());
                         ?>
                         <article class="grid gap-5 rounded-xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:shadow-xs xl:grid-cols-2 xl:items-start">
                             <div class="flex min-w-0 items-start gap-3.5">

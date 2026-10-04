@@ -72,7 +72,7 @@ class ImageProcessingService
             'processing_status' => ProductImageProcessingStatus::Pending,
         ]);
 
-        ProcessProductImageJob::dispatch($productImage->id, $tempPath);
+        ProcessProductImageJob::dispatch($productImage->id, $tempPath)->afterCommit();
 
         return $productImage;
     }

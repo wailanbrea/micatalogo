@@ -5,28 +5,57 @@ return [
 
     'plans' => [
         'free' => [
+            'display_name' => 'Gratis',
+            'price_usd' => 0,
             'max_active_shops' => 1,
-            'max_products_per_shop' => 100,
-            'max_images_per_product' => 3,
+            'max_products_per_shop' => 250,
+            'max_images_per_product' => 1,
+            'max_users' => 1,
+            'max_sellers' => 1,
+            'features' => ['catalog', 'whatsapp_orders', 'basic_inventory', 'bulk_import'],
         ],
         'premium' => [
+            'display_name' => 'Básico',
+            'price_usd' => 8,
             'max_active_shops' => 1,
             'max_products_per_shop' => 500,
             'max_images_per_product' => 3,
+            'max_users' => 3,
+            'max_sellers' => 3,
+            'features' => ['catalog', 'whatsapp_orders', 'inventory', 'sales', 'invoicing', 'reports', 'quotes', 'customers', 'android', 'bulk_import'],
         ],
         'pro' => [
-            'max_active_shops' => 1,
+            'display_name' => 'Pro',
+            'price_usd' => 15,
+            'max_active_shops' => 3,
             'max_products_per_shop' => 1500,
-            'max_images_per_product' => 8,
+            'max_images_per_product' => 3,
+            'max_users' => 5,
+            'max_sellers' => 5,
+            'features' => ['catalog', 'whatsapp_orders', 'inventory', 'sales', 'invoicing', 'reports', 'quotes', 'customers', 'android', 'credit_interest', 'wholesale_pricing', 'bulk_import', 'expenses', 'profit_sharing', 'automatic_pricing'],
+        ],
+        'custom' => [
+            'display_name' => 'Personalizado',
+            'price_usd' => null,
+            'max_active_shops' => 10,
+            'max_products_per_shop' => 1000000,
+            'max_images_per_product' => 3,
+            'max_users' => 100,
+            'max_sellers' => 100,
+            'features' => ['custom_domain', 'multiple_shops', 'priority_support'],
         ],
     ],
 
     // Legacy keys remain available for existing tests and deployments.
     'free' => [
         'max_active_shops' => 1,
-        'max_products_per_shop' => 100,
-        'max_images_per_product' => 3,
+        'max_products_per_shop' => 250,
+        'max_images_per_product' => 1,
+        'max_users' => 1,
+        'max_sellers' => 1,
     ],
+
+    'additional_seat_price_usd' => 5,
 
     'inventory' => [
         'low_ml_alert_threshold' => 200,

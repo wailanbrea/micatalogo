@@ -26,6 +26,9 @@ class ShopController extends Controller
         if (! $request->user()->isAdmin()) {
             $query->where(function ($query) use ($request): void {
                 $query->where('user_id', $request->user()->id)
+                    ->orWhereHas('members', fn ($members) => $members
+                        ->where('user_id', $request->user()->id)
+                        ->where('is_active', true))
                     ->orWhereHas('sellers', fn ($sellers) => $sellers
                         ->where('user_id', $request->user()->id)
                         ->where('is_active', true));
@@ -74,7 +77,7 @@ class ShopController extends Controller
         ]);
     }
 
-    public function storeSeller(Request $request, Shop $shop, SellerMenuService $menus): JsonResponse
+    public function storeSeller(Request $request, Shop $shop, SellerMenuService $menus, PlanLimitsService $limits): JsonResponse
     {
         abort_unless($menus->canManage($shop, $request->user()), 403);
 
@@ -86,6 +89,11 @@ class ShopController extends Controller
         $email = Str::lower(trim($validated['email']));
         $seller = User::query()->where('email', $email)->first();
         $wasInvited = ! $seller;
+        $assignment = $shop->sellers()->firstOrNew(['user_id' => $seller?->id]);
+
+        if (! $assignment->exists || ! $assignment->is_active) {
+            $limits->assertCanAddSeller($shop);
+        }
 
         if (! $seller) {
             $seller = User::create([

@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\AndroidUpdateController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\CatalogMediaController;
 use App\Http\Controllers\Api\V1\CustomerController;
+use App\Http\Controllers\Api\V1\InventoryImportController;
 use App\Http\Controllers\Api\V1\PosSaleController;
 use App\Http\Controllers\Api\V1\ShopController;
 use App\Http\Middleware\EnsureApiAccountIsActive;
@@ -21,6 +22,8 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/shops/{shop}/sellers', [ShopController::class, 'storeSeller']);
         Route::put('/shops/{shop}/sellers/{seller}/menus', [ShopController::class, 'updateSellerMenus']);
         Route::get('/shops/{shop}/catalog', [CatalogController::class, 'show']);
+        Route::post('/shops/{shop}/inventory-import/preview', [InventoryImportController::class, 'preview']);
+        Route::post('/shops/{shop}/inventory-import', [InventoryImportController::class, 'store']);
         Route::get('/catalog/media/{barcode}', [CatalogMediaController::class, 'show'])
             ->middleware('throttle:catalog-media')
             ->middleware('abilities:catalog:read')

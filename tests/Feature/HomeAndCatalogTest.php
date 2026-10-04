@@ -20,6 +20,13 @@ test('homepage renders seller landing page and never displays cross-store produc
     $response->assertSee('Administra productos, ventas, inventario y comprobantes');
     $response->assertSee('Vitrina 100% Aislada');
     $response->assertSee('Pedidos por WhatsApp');
+    $response->assertSee('250 productos incluidos');
+    $response->assertSee('US$ 8.00');
+    $response->assertSee('US$ 15.00');
+    $response->assertSee('3 tiendas gestionadas desde un solo panel');
+    $response->assertSee('Facturación electrónica a solicitud del cliente');
+    $response->assertSee('mailto:contacto@bsolutions.dev', false);
+    $response->assertSee('https://wa.me/18298144525', false);
     $response->assertSee('Descarga');
     $response->assertSee(route('downloads.index'));
 

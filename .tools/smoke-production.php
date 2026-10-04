@@ -20,7 +20,7 @@ $html = app(App\Http\Controllers\SellerBusinessController::class)->index($reques
 $checks = ['business_render' => str_contains($html, 'Ventas y ganancia por producto'),
     'fifo_table' => Illuminate\Support\Facades\Schema::hasTable('inventory_lots'),
     'invoice_cost_column' => Illuminate\Support\Facades\Schema::hasColumn('invoice_items', 'total_cost_cents'),
-    'apk_hash' => hash_equals(config('bspos.android_update.apk_sha256'), hash_file('sha256', public_path('downloads/bspos-1.0.8.apk')))];
+    'apk_hash' => hash_equals(config('bspos.android_update.apk_sha256'), hash_file('sha256', public_path('downloads/bspos-1.0.10-auth-import.apk')))];
 echo json_encode($checks, JSON_PRETTY_PRINT);
 exit(in_array(false, $checks, true) ? 1 : 0);
 } catch (Throwable $error) {

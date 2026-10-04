@@ -2,8 +2,13 @@
 
 - A free account may have at most one active shop.
 - A shop slug is globally unique; a product slug is unique within its shop.
-- Default limits: 100 products per shop, 3 images per product, 10 MB per file, and
-  30 files per bulk upload batch.
+- Plan limits are 250 products and 1 image per product for Gratis, 500 products and
+  3 images per product for Básico, and 1,500 products and 3 images per product for Pro.
+  Gratis and Básico allow 1 active shop; Pro allows 3 active shops managed from the
+  seller's unified panel.
+- Included access is 1 user and 1 seller for Gratis, 3 users and 3 sellers for Básico,
+  and 5 users and 5 sellers for Pro. Additional users or sellers cost US$5/month.
+- Upload limits are 10 MB per file and 30 files per bulk upload batch.
 - Product availability is available or out_of_stock.
 - Product moderation is draft, active, pending_review, or suspended.
 - Suspended content is never public.
@@ -27,4 +32,3 @@
   a shared marketplace directory.
 - Discovery Flag: `shops.discovery_enabled` defaults to `false`. External discovery is
   opt-in only.
-

@@ -7,15 +7,59 @@ use App\Models\Product;
 use App\Models\ProductInventory;
 use App\Models\Shop;
 use App\Models\User;
+use App\Enums\UserPlan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
+test('mobile photos are immutable idempotent and promoted without deleting previous media', function () {
+    \Illuminate\Support\Facades\Storage::fake('public');
+    \Illuminate\Support\Facades\Storage::fake('r2');
+    [$user, $shop, $product, $token] = mobileFixture();
+    $old = \App\Models\ProductImage::factory()->for($product)->create(['sort_order' => 0]);
+    $file = \Illuminate\Http\UploadedFile::fake()->image('movil.jpg', 40, 50);
+    $bytes = file_get_contents($file->getRealPath());
+    $payload = ['client_operation_uuid' => (string) Str::uuid(), 'type' => 'product_upsert',
+        'product_id' => $product->public_id, 'image_base64' => base64_encode($bytes), 'image_sha256' => hash('sha256', $bytes)];
+    $url = '/api/v1/shops/'.$shop->public_id.'/mobile-operations';
+    $this->withToken($token)->postJson($url, $payload)->assertCreated();
+    $this->withToken($token)->postJson($url, $payload)->assertCreated();
+    expect($product->images()->count())->toBe(2)->and($old->fresh()->sort_order)->toBe(1);
+    $new = $product->images()->whereKeyNot($old->id)->first();
+    expect($new->processing_status)->toBe(\App\Enums\ProductImageProcessingStatus::Ready)
+        ->and($new->sort_order)->toBe(0);
+    app(\App\Services\MediaStorageService::class)->disk()->assertExists($new->object_key);
+    $payload['client_operation_uuid'] = (string) Str::uuid();
+    $this->withToken($token)->postJson($url, $payload)->assertCreated();
+    expect($product->images()->count())->toBe(2);
+    $payload['client_operation_uuid'] = (string) Str::uuid();
+    $payload['name'] = 'No debe guardarse';
+    $payload['image_sha256'] = str_repeat('0', 64);
+    $this->withToken($token)->postJson($url, $payload)->assertUnprocessable();
+    expect($product->fresh()->name)->not->toBe('No debe guardarse')->and($product->images()->count())->toBe(2);
+});
+
+test('mobile photos enforce plan quota without deleting media or applying partial edits', function () {
+    \Illuminate\Support\Facades\Storage::fake('public');
+    \Illuminate\Support\Facades\Storage::fake('r2');
+    [$user, $shop, $product, $token] = mobileFixture();
+    \App\Models\ProductImage::factory()->for($product)->count(app(\App\Services\PlanLimitsService::class)->imageLimit($shop))->create();
+    $before = $product->images()->pluck('id')->all();
+    $file = \Illuminate\Http\UploadedFile::fake()->image('foto.jpg', 40, 40);
+    $bytes = file_get_contents($file->getRealPath());
+    $this->withToken($token)->postJson('/api/v1/shops/'.$shop->public_id.'/mobile-operations', [
+        'client_operation_uuid' => (string) Str::uuid(), 'type' => 'product_upsert', 'product_id' => $product->public_id,
+        'name' => 'Edición rechazada', 'image_base64' => base64_encode($bytes), 'image_sha256' => hash('sha256', $bytes),
+    ])->assertUnprocessable();
+    expect($product->images()->pluck('id')->all())->toBe($before)->and($product->fresh()->name)->not->toBe('Edición rechazada')
+        ->and(MobileOperation::count())->toBe(0);
+});
+
 function mobileFixture(): array
 {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['plan' => UserPlan::Premium]);
     $shop = Shop::factory()->create(['user_id' => $user->id]);
     $product = Product::factory()->create(['shop_id' => $shop->id, 'price' => 250, 'sale_unit' => 'unit']);
     ProductInventory::create(['product_id' => $product->id, 'track_inventory' => true, 'stock_quantity' => 5, 'cost_price' => 100]);

@@ -4,7 +4,7 @@
             <a class="text-sm font-black tracking-tight text-slate-950" href="{{ route('home') }}">Mi<span class="text-blue-600">Catalogo</span></a>
             <p class="mt-6 text-sm font-semibold text-blue-700">Invitación para {{ $shop->name }}</p>
             <h1 class="mt-1 text-2xl font-black tracking-tight text-slate-950">Crea tu contraseña</h1>
-            <p class="mt-3 text-sm leading-6 text-slate-600">Confirma tu acceso como vendedor con <strong>{{ $seller->email }}</strong>. Luego podrás iniciar sesión desde la web o BSPOS.</p>
+            <p class="mt-3 text-sm leading-6 text-slate-600">Confirma tu acceso como {{ $isManager ? 'usuario administrativo' : 'vendedor' }} con <strong>{{ $seller->email }}</strong>. Luego podrás iniciar sesión desde la web o BSPOS.</p>
 
             <form method="POST" action="{{ $activationUrl }}" class="mt-7 space-y-5">
                 @csrf

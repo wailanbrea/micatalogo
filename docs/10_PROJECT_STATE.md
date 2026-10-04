@@ -2,9 +2,9 @@
 
 ## Snapshot
 
-- Date: 2026-10-02
-- Commit: `fbfc7da` plus the advanced storefront work in the current release.
-- Phase: release validation and VPS deployment.
+- Date: 2026-10-04
+- Commit: `2da3505` plus the advanced storefront and plan-limit work in the current working tree.
+- Phase: plan-limit and account-plan release deployed and production smoke-verified; Pro supports 3 active shops.
 - Local runtime: Laravel 12.69.2, PHP 8.2.33, MariaDB 11.4.12.
 
 ## Completed
@@ -20,21 +20,38 @@
 - Migration `add_discovery_enabled_to_shops_table` executed and `Shop` model configured.
 - Public orders with WhatsApp order numbers, dynamic product attributes and public filters.
 - CSV/XLSX inventory import with a validation preview before persistence.
+- Commercial plans with product, image, user, seller, feature, and additional-seat limits.
+- Administrative shop members, seller/user quota enforcement, and Android quota presentation.
+- Android inventory import flow with CSV/XLSX preview, quota validation, confirmation, and catalog refresh.
+- Mobile inventory import API endpoints:
+  - `POST /api/v1/shops/{shop}/inventory-import/preview`
+  - `POST /api/v1/shops/{shop}/inventory-import`
+- Android `1.0.10` release with mandatory minimum version `11` published and verified.
 
 ## Verified
 
-- `php artisan test`: 137 tests, 540 assertions (100% passing).
-- `php .\vendor\bin\pint --test`: passing.
+- `php vendor/bin/pest --compact`: 249 tests, 1,197 assertions (100% passing).
+- Android `gradlew testDebugUnitTest`: passing. Instrumented tests require an emulator
+  reset because the existing installed APK has a different signing certificate.
 - `npm run build`: passing.
+- Production migrations, cache rebuild, backup comparison, and smoke test: passing.
+- Production mobile inventory import routes deployed and route cache rebuilt.
+- Production Android manifest and download verified against the signed `1.0.10` artifact.
 - R2 is not configured locally; media uses the local public fallback.
 
 ## Pending
 
 - Configure the production R2 bucket, restricted API token, custom media domain, and health check.
-- Create the initial Git commit after reviewing all untracked files.
-- Run the production release checklist with the `bsolutions-infra` procedure: backup
-  verification, environment validation, build, migrations, queue worker, scheduler,
-  smoke tests, and rollback verification.
+- Create the release Git commit after reviewing all changed and untracked files.
+- Confirm the production queue worker and scheduler remain healthy after the release.
+
+## Latest Production Release
+
+- Target: `bsolutions-vps`, `C:\\xampp\\htdocs\\micatalogo`.
+- Backup: `C:\\xampp\\backups\\micatalogo\\2026-10-04-mobile-auth-import`.
+- Backup SHA-256: `aca71b47528d93cd74cd5faa486c0772ebd2263ad2712172bc3e89ceb19f8e20`.
+- Before/after identifiers matched for users, shops, products, orders, and invoices.
+- Pending migrations applied without destructive operations; all migrations are now marked `Ran`.
 
 ## Security Notes
 

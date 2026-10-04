@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\URL;
 
 class SellerInvitationNotification extends Notification
 {
-    public function __construct(private readonly Shop $shop)
+    public function __construct(private readonly Shop $shop, private readonly string $accessType = 'vendedor')
     {
     }
 
@@ -31,9 +31,9 @@ class SellerInvitationNotification extends Notification
         );
 
         return (new MailMessage)
-            ->subject("Te invitaron a vender en {$this->shop->name}")
-            ->greeting('Hola, '.(str($notifiable->name)->explode(' ')->first() ?: 'Vendedor').'!')
-            ->line("Te invitaron como vendedor de {$this->shop->name} en MiCatalogo.")
+            ->subject("Te invitaron a {$this->accessType} en {$this->shop->name}")
+            ->greeting('Hola, '.(str($notifiable->name)->explode(' ')->first() ?: 'Usuario').'!')
+            ->line("Te invitaron como {$this->accessType} de {$this->shop->name} en MiCatalogo.")
             ->line('Confirma tu correo y crea tu contraseña para activar tu acceso.')
             ->action('Crear contraseña y activar acceso', $activationUrl)
             ->line('Después podrás iniciar sesión desde la web o la aplicación BSPOS.')

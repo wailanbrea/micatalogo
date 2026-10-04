@@ -8,6 +8,7 @@ use App\Models\ShopSeller;
 use App\Models\User;
 use App\Notifications\SellerInvitationNotification;
 use App\Services\SellerMenuService;
+use App\Services\PlanLimitsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -19,6 +20,8 @@ class SellerManagementController extends Controller
     public function index(Shop $shop): View
     {
         $sellers = $shop->sellers()->with('user')->orderByDesc('is_active')->orderBy('created_at')->get();
+        $members = $shop->members()->with('user')->orderByDesc('is_active')->orderBy('created_at')->get();
+        $quota = app(\App\Services\PlanLimitsService::class)->shopQuota($shop);
         $stats = Invoice::query()
             ->where('shop_id', $shop->id)
             ->whereNotNull('salesperson_id')
@@ -33,15 +36,20 @@ class SellerManagementController extends Controller
             ->latest('issued_at')
             ->paginate(20);
 
-        return view('seller.sellers.index', compact('shop', 'sellers', 'stats', 'sales'));
+        return view('seller.sellers.index', compact('shop', 'sellers', 'members', 'quota', 'stats', 'sales'));
     }
 
-    public function store(Request $request, Shop $shop, SellerMenuService $menus): RedirectResponse
+    public function store(Request $request, Shop $shop, SellerMenuService $menus, PlanLimitsService $limits): RedirectResponse
     {
         $validated = $this->validateSeller($request);
         $email = Str::lower(trim($validated['email']));
         $seller = User::query()->where('email', $email)->first();
         $wasInvited = ! $seller;
+        $assignment = $shop->sellers()->firstOrNew(['user_id' => $seller?->id]);
+
+        if (! $assignment->exists || ! $assignment->is_active) {
+            $limits->assertCanAddSeller($shop);
+        }
 
         if (! $seller) {
             $seller = User::create([

@@ -16,8 +16,10 @@ use Illuminate\View\View;
 
 class SellerBulkProductController extends Controller
 {
-    public function create(Shop $shop): View
+    public function create(Shop $shop, PlanLimitsService $limits): View
     {
+        $limits->assertFeature($shop->user, 'bulk_import');
+
         $usedQuota = $shop->products()->count();
         $maxQuota = $shop->productLimit();
         $remainingQuota = max(0, $maxQuota - $usedQuota);
@@ -37,6 +39,8 @@ class SellerBulkProductController extends Controller
 
     public function store(Request $request, Shop $shop, ImageProcessingService $imageService, PlanLimitsService $limits): RedirectResponse
     {
+        $limits->assertFeature($shop->user, 'bulk_import');
+
         $request->validate([
             'products' => ['required', 'array', 'min:1', 'max:30'],
             'products.*.name' => ['required', 'string', 'max:120'],

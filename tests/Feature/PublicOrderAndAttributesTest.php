@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\ProductAttributeValue;
 use App\Models\Shop;
 use App\Models\User;
+use App\Enums\UserPlan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
@@ -109,7 +110,7 @@ class PublicOrderAndAttributesTest extends TestCase
 
     public function test_csv_inventory_import_requires_preview_and_imports_valid_rows(): void
     {
-        $seller = User::factory()->create();
+        $seller = User::factory()->create(['plan' => UserPlan::Pro]);
         $shop = Shop::factory()->create(['user_id' => $seller->id, 'slug' => 'importacion-demo']);
         $csv = "nombre,codigo,categoria,marca,precio,stock,atributos\nHawas Ice,HW-01,,Rasasi,2800,12,Concentración=EDP;Presentación=100 ml\nFila incompleta,, ,,,0,\n";
 

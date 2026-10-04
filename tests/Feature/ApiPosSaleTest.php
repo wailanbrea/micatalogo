@@ -11,6 +11,17 @@ use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
+test('presentation hints retain sales directly measured in milliliters', function () {
+    [$user, $shop, $product] = posSaleFixture(stock: 5, price: 250);
+    $product->update(['sale_unit' => 'ml']);
+    $product->inventory->update(['available_ml' => 5]);
+    $payload = posSalePayload((string) Str::uuid(), $product, 2, '250.00');
+    $payload['items'][0]['expected_sale_unit'] = 'ml';
+    $this->withToken($user->createToken('BSPOS', ['pos:write'])->plainTextToken)
+        ->postJson('/api/v1/shops/'.$shop->public_id.'/pos-sales', $payload)->assertCreated();
+    expect($product->fresh()->inventory->available_ml)->toBe(3);
+});
+
 test('new POS clients reject a changed decant presentation before consuming shared stock', function () {
     [$user, $shop, $source] = posSaleFixture(stock: 1, price: 250);
     $source->update(['sale_unit' => 'bottle', 'volume_ml' => 100]);

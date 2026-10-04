@@ -14,6 +14,25 @@ use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
+test('a transient image processing failure retains the upload for its successful retry', function () {
+    Queue::fake();
+    Storage::fake('temp');
+    Storage::fake('public');
+    Storage::fake('r2');
+    $product = Product::factory()->create();
+    $image = app(\App\Services\ImageProcessingService::class)->storeTempAndDispatch($product,
+        UploadedFile::fake()->image('retry.jpg', 80, 80));
+    $path = substr($image->object_key, strlen('temp/'));
+    $job = new ProcessProductImageJob($image->id, $path);
+    $broken = \Mockery::mock(\App\Services\ImageDerivativeService::class);
+    $broken->shouldReceive('render')->once()->andThrow(new \RuntimeException('Transient processing failure'));
+    expect(fn () => $job->handle(app(MediaStorageService::class), $broken))->toThrow(\RuntimeException::class);
+    Storage::disk('temp')->assertExists($path);
+    $job->handle(app(MediaStorageService::class), app(\App\Services\ImageDerivativeService::class));
+    expect($image->fresh()->processing_status)->toBe(ProductImageProcessingStatus::Ready);
+    Storage::disk('temp')->assertMissing($path);
+});
+
 test('a seller can upload an image for their product and job is dispatched', function () {
     Queue::fake();
     Storage::fake('temp');

@@ -75,6 +75,37 @@ test('a premium seller uses the premium shop quota', function () {
     expect(Shop::ownedBy($seller)->count())->toBe(2);
 });
 
+test('a pro seller can manage three shops from one panel and cannot create a fourth', function () {
+    $seller = User::factory()->create(['plan' => UserPlan::Pro]);
+
+    foreach (['Casa Norte', 'Casa Centro', 'Casa Sur'] as $name) {
+        $this->actingAs($seller)
+            ->post(route('seller.shops.store'), shopPayload(['name' => $name]))
+            ->assertRedirect();
+    }
+
+    $fourthResponse = $this->actingAs($seller)
+        ->post(route('seller.shops.store'), shopPayload(['name' => 'Casa Este']));
+
+    $fourthResponse->assertStatus(422);
+    expect(Shop::ownedBy($seller)->where('status', 'active')->count())->toBe(3);
+
+    $shops = Shop::ownedBy($seller)->orderBy('name')->get();
+    $dashboard = $this->actingAs($seller)->get(route('seller.dashboard'));
+
+    $dashboard->assertOk()
+        ->assertSee('Tus tiendas')
+        ->assertSee('3 tiendas');
+
+    foreach ($shops as $shop) {
+        $dashboard->assertSee($shop->name)
+            ->assertSee(route('shops.show', $shop), false)
+            ->assertSee(route('seller.shops.products.index', $shop), false)
+            ->assertSee(route('seller.shops.inventory.index', $shop), false)
+            ->assertSee(route('seller.shops.edit', $shop), false);
+    }
+});
+
 test('a seller cannot edit another sellers shop', function () {
     $seller = User::factory()->create();
     $shop = Shop::factory()->create();

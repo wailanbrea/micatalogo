@@ -23,6 +23,7 @@ use App\Http\Controllers\SellerManagementController;
 use App\Http\Controllers\SellerProductController;
 use App\Http\Controllers\SellerShopController;
 use App\Http\Controllers\SellerShopMetricController;
+use App\Http\Controllers\ShopMemberController;
 use App\Http\Controllers\ShopCategoryController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\WhatsAppRedirectController;
@@ -100,6 +101,8 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
         Route::post('/tiendas/{shop}/vendedores', [SellerManagementController::class, 'store'])->name('shops.sellers.store');
         Route::patch('/tiendas/{shop}/vendedores/{seller}', [SellerManagementController::class, 'update'])->name('shops.sellers.update');
         Route::delete('/tiendas/{shop}/vendedores/{seller}', [SellerManagementController::class, 'destroy'])->name('shops.sellers.destroy');
+        Route::post('/tiendas/{shop}/usuarios', [ShopMemberController::class, 'store'])->name('shops.members.store');
+        Route::delete('/tiendas/{shop}/usuarios/{member}', [ShopMemberController::class, 'destroy'])->name('shops.members.destroy');
         Route::post('/tiendas/{shop}/categorias', [ShopCategoryController::class, 'store'])->name('shops.categories.store');
         Route::put('/tiendas/{shop}/categorias/{category}', [ShopCategoryController::class, 'update'])->middleware('can:update,category')->name('shops.categories.update');
         Route::delete('/tiendas/{shop}/categorias/{category}', [ShopCategoryController::class, 'destroy'])->middleware('can:delete,category')->name('shops.categories.destroy');

@@ -28,7 +28,10 @@ class SellerShopController extends Controller
             : Shop::query()
                 ->where(function ($query) use ($user): void {
                     $query->where('user_id', $user->id)
-                        ->orWhereHas('sellers', fn ($sellers) => $sellers
+                         ->orWhereHas('members', fn ($members) => $members
+                             ->where('user_id', $user->id)
+                             ->where('is_active', true))
+                         ->orWhereHas('sellers', fn ($sellers) => $sellers
                             ->where('user_id', $user->id)
                             ->where('is_active', true));
                 })

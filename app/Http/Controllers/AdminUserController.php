@@ -108,18 +108,24 @@ class AdminUserController extends Controller
 
     public function updatePlan(Request $request, User $user): RedirectResponse
     {
-        $validated = $request->validate(['plan' => ['required', 'in:free,premium,pro']]);
+        $validated = $request->validate([
+            'plan' => ['required', 'in:free,premium,pro,custom'],
+            'additional_user_seats' => ['nullable', 'integer', 'min:0', 'max:1000'],
+            'additional_seller_seats' => ['nullable', 'integer', 'min:0', 'max:1000'],
+        ]);
         $newPlan = UserPlan::from($validated['plan']);
 
         if ($newPlan === UserPlan::Free && $user->shops()->where('status', 'active')->get()->contains(
             fn ($shop): bool => $shop->products()->count() > (int) config('catalog.plans.free.max_products_per_shop', 100)
         )) {
-            return back()->with('error', "No se puede cambiar a Gratis: {$user->name} tiene una tienda activa con más de 100 productos. No se eliminó ningún producto.");
+            return back()->with('error', "No se puede cambiar a Gratis: {$user->name} tiene una tienda activa con más de ".config('catalog.plans.free.max_products_per_shop')." productos. No se eliminó ningún producto.");
         }
 
         $user->update([
             'plan' => $newPlan,
             'plan_expires_at' => null,
+            'additional_user_seats' => (int) ($validated['additional_user_seats'] ?? 0),
+            'additional_seller_seats' => (int) ($validated['additional_seller_seats'] ?? 0),
         ]);
 
         return back()->with('status', "El usuario «{$user->name}» ahora tiene el plan {$newPlan->label()}.");
