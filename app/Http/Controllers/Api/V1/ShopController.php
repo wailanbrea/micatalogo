@@ -23,17 +23,17 @@ class ShopController extends Controller
             ->withCount('products')
             ->orderBy('name');
 
-        if (! $request->user()->isAdmin()) {
-            $query->where(function ($query) use ($request): void {
-                $query->where('user_id', $request->user()->id)
-                    ->orWhereHas('members', fn ($members) => $members
-                        ->where('user_id', $request->user()->id)
-                        ->where('is_active', true))
-                    ->orWhereHas('sellers', fn ($sellers) => $sellers
-                        ->where('user_id', $request->user()->id)
-                        ->where('is_active', true));
-            });
-        }
+        // The mobile client has no global shop selector. Keep platform admins
+        // scoped to shops they can operate instead of returning every tenant.
+        $query->where(function ($query) use ($request): void {
+            $query->where('user_id', $request->user()->id)
+                ->orWhereHas('members', fn ($members) => $members
+                    ->where('user_id', $request->user()->id)
+                    ->where('is_active', true))
+                ->orWhereHas('sellers', fn ($sellers) => $sellers
+                    ->where('user_id', $request->user()->id)
+                    ->where('is_active', true));
+        });
 
         $shops = $query->get(['id', 'user_id', 'public_id', 'name', 'slug'])
             ->map(function ($shop) use ($limits, $menus, $request): array {

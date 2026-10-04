@@ -190,6 +190,20 @@ test('the API identifies an administrator role', function () {
         ->assertJsonPath('role', 'admin');
 });
 
+test('the mobile shops endpoint keeps administrators scoped to their accessible shops', function () {
+    $admin = User::factory()->admin()->create();
+    $owned = Shop::factory()->for($admin)->create(['name' => 'Owned shop']);
+    $otherOwner = User::factory()->create();
+    Shop::factory()->for($otherOwner)->create(['name' => 'Other shop']);
+    $token = $admin->createToken('BSPOS', ['catalog:read'])->plainTextToken;
+
+    $this->withToken($token)
+        ->getJson('/api/v1/shops')
+        ->assertOk()
+        ->assertJsonCount(1)
+        ->assertJsonPath('0.id', $owned->public_id);
+});
+
 test('an authenticated user can update their profile', function () {
     $user = User::factory()->create(['email' => 'profile@example.com']);
     $token = $user->createToken('profile-test')->plainTextToken;
