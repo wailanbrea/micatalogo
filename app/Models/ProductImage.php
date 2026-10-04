@@ -12,7 +12,7 @@ class ProductImage extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['object_key', 'thumbnail_object_key', 'mime_type', 'width', 'height', 'size_bytes', 'checksum_sha256', 'sort_order', 'processing_status'];
+    protected $fillable = ['source', 'catalog_product_image_id', 'object_key', 'thumbnail_object_key', 'mime_type', 'width', 'height', 'size_bytes', 'checksum_sha256', 'sort_order', 'processing_status'];
 
     protected function casts(): array
     {
@@ -22,6 +22,11 @@ class ProductImage extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function catalogProductImage(): BelongsTo
+    {
+        return $this->belongsTo(CatalogProductImage::class);
     }
 
     public function getUrlAttribute(): string

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Services\MediaStorageService;
+use App\Services\PlanLimitsService;
 use App\Traits\HasPublicId;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -78,9 +79,29 @@ class Shop extends Model
         return $this->hasMany(Order::class);
     }
 
+    public function customers(): HasMany
+    {
+        return $this->hasMany(Customer::class);
+    }
+
+    public function sellers(): HasMany
+    {
+        return $this->hasMany(ShopSeller::class);
+    }
+
     public function productLimit(): int
     {
-        return $this->product_limit ?? (int) config('catalog.free.max_products_per_shop', 100);
+        return app(PlanLimitsService::class)->productLimit($this);
+    }
+
+    public function imageLimit(): int
+    {
+        return app(PlanLimitsService::class)->imageLimit($this);
+    }
+
+    public function planLabel(): string
+    {
+        return $this->user->planLabel();
     }
 
     public function dailyMetrics(): HasMany

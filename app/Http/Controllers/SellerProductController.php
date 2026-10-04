@@ -5,14 +5,17 @@ namespace App\Http\Controllers;
 use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductModerationStatus;
 use App\Http\Requests\ProductRequest;
+use App\Jobs\ResolveProductCatalogMediaJob;
 use App\Models\AttributeDefinition;
 use App\Models\GlobalCategory;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductInventory;
 use App\Models\Shop;
+use App\Services\CatalogMediaService;
 use App\Services\ImageProcessingService;
 use App\Services\MediaStorageService;
+use App\Services\PlanLimitsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -63,11 +66,11 @@ class SellerProductController extends Controller
         ]);
     }
 
-    public function store(ProductRequest $request, Shop $shop): RedirectResponse
+    public function store(ProductRequest $request, Shop $shop, PlanLimitsService $limits, CatalogMediaService $catalogMedia): RedirectResponse
     {
-        $product = DB::transaction(function () use ($request, $shop): Product {
+        $product = DB::transaction(function () use ($request, $shop, $limits, $catalogMedia): Product {
             $lockedShop = Shop::query()->lockForUpdate()->findOrFail($shop->id);
-            $max = $lockedShop->productLimit();
+            $max = $limits->productLimit($lockedShop);
 
             abort_if(
                 $lockedShop->products()->count() >= $max,
@@ -76,6 +79,7 @@ class SellerProductController extends Controller
             );
 
             $validated = $request->validated();
+            $validated['barcode'] = $catalogMedia->normalizeBarcode($validated['barcode'] ?? null);
             $validated['sale_unit'] ??= 'unit';
             $this->validatePresentation($validated, $lockedShop);
             $inventoryData = [
@@ -124,12 +128,16 @@ class SellerProductController extends Controller
             return $product;
         });
 
+        if ($product->barcode) {
+            ResolveProductCatalogMediaJob::dispatch($product->id)->afterCommit();
+        }
+
         return to_route('seller.shops.products.index', $shop)->with('status', 'Producto creado exitosamente.');
     }
 
     public function edit(Shop $shop, Product $product): View
     {
-        $product->loadMissing(['inventory', 'attributeValues.attributeDefinition']);
+        $product->loadMissing(['inventory', 'attributeValues.attributeDefinition', 'catalogProduct.images']);
 
         return view('seller.products.form', [
             'shop' => $shop,
@@ -141,15 +149,22 @@ class SellerProductController extends Controller
         ]);
     }
 
-    public function update(ProductRequest $request, Shop $shop, Product $product): RedirectResponse
+    public function update(ProductRequest $request, Shop $shop, Product $product, CatalogMediaService $catalogMedia): RedirectResponse
     {
+        $catalogProductId = $product->catalog_product_id;
+        $barcode = $catalogMedia->normalizeBarcode($request->validated()['barcode'] ?? null);
+
         DB::transaction(function () use ($request, $shop, $product) {
             $product = Product::query()->lockForUpdate()->findOrFail($product->id);
             $validated = $request->validated();
+            $validated['barcode'] = app(CatalogMediaService::class)->normalizeBarcode($validated['barcode'] ?? null);
             $validated['sale_unit'] ??= $product->sale_unit ?: 'unit';
             $this->validatePresentation($validated, $shop, $product);
 
             $attributes = $this->attributes($validated, $shop, $product);
+            if ($product->barcode !== $validated['barcode']) {
+                $attributes['catalog_product_id'] = null;
+            }
             unset($attributes['track_inventory'], $attributes['cost_price'], $attributes['stock_quantity'], $attributes['low_stock_threshold'], $attributes['attributes']);
             $presentation = clone $product;
             $presentation->fill($attributes);
@@ -226,6 +241,10 @@ class SellerProductController extends Controller
             $this->syncProductAttributes($product, $validated, $shop);
         });
 
+        if ($barcode && ($barcode !== $product->barcode || ! $catalogProductId)) {
+            ResolveProductCatalogMediaJob::dispatch($product->id)->afterCommit();
+        }
+
         return to_route('seller.shops.products.index', $shop)->with('status', 'Producto actualizado.');
     }
 
@@ -236,26 +255,30 @@ class SellerProductController extends Controller
         return to_route('seller.shops.products.index', $shop)->with('status', 'Producto enviado a la papelera.');
     }
 
-    public function restore(Request $request, Shop $shop, int|string $product): RedirectResponse
+    public function restore(Request $request, Shop $shop, int|string $product, PlanLimitsService $limits): RedirectResponse
     {
-        $productModel = $shop->products()->onlyTrashed()
-            ->where(fn ($q) => $q->where('public_id', $product)->orWhere('id', $product))
-            ->firstOrFail();
+        DB::transaction(function () use ($shop, $product, $limits): void {
+            $lockedShop = Shop::query()->lockForUpdate()->findOrFail($shop->id);
+            $productModel = $lockedShop->products()->onlyTrashed()
+                ->where(fn ($q) => $q->where('public_id', $product)->orWhere('id', $product))
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        Gate::authorize('restore', $productModel);
-
-        $productModel->restore();
+            Gate::authorize('restore', $productModel);
+            $limits->assertCanAddProducts($lockedShop, 1);
+            $productModel->restore();
+        });
 
         return to_route('seller.shops.products.index', $shop)->with('status', 'Producto restaurado.');
     }
 
-    public function uploadImage(Request $request, Shop $shop, Product $product, ImageProcessingService $imageService): RedirectResponse
+    public function uploadImage(Request $request, Shop $shop, Product $product, ImageProcessingService $imageService, PlanLimitsService $limits): RedirectResponse
     {
-        $maxImages = (int) config('catalog.free.max_images_per_product', 3);
+        $maxImages = $limits->imageLimit($shop);
         abort_if(
             $product->images()->count() >= $maxImages,
             422,
-            "Tu plan gratuito permite un máximo de {$maxImages} imágenes por producto."
+            "Tu plan {$shop->planLabel()} permite un máximo de {$maxImages} imágenes por producto."
         );
 
         $request->validate([
@@ -273,10 +296,10 @@ class SellerProductController extends Controller
         abort_unless($image->product_id === $product->id && $product->shop_id === $shop->id, 404);
 
         $mediaDisk = $mediaStorage->disk();
-        if ($image->object_key && $mediaDisk->exists($image->object_key)) {
+        if ($image->source !== 'catalog' && $image->object_key && $mediaDisk->exists($image->object_key)) {
             $mediaDisk->delete($image->object_key);
         }
-        if ($image->thumbnail_object_key && $mediaDisk->exists($image->thumbnail_object_key)) {
+        if ($image->source !== 'catalog' && $image->thumbnail_object_key && $mediaDisk->exists($image->thumbnail_object_key)) {
             $mediaDisk->delete($image->thumbnail_object_key);
         }
 

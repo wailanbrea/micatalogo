@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
 
 class AuthController extends Controller
@@ -36,7 +37,7 @@ class AuthController extends Controller
         }
 
         $user->forceFill(['last_login_at' => now()])->save();
-        $token = $user->createToken($validated['device_name'] ?? 'BSPOS', ['catalog:read', 'pos:write'])->plainTextToken;
+        $token = $user->createToken($validated['device_name'] ?? 'BSPOS', ['catalog:read', 'pos:write', 'customers:read', 'customers:write'])->plainTextToken;
 
         return response()->json([
             'access_token' => $token,
@@ -50,8 +51,24 @@ class AuthController extends Controller
         return response()->json($this->userPayload($request->user()));
     }
 
+    public function update(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:120'],
+            'email' => ['required', 'email:rfc', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+        ]);
+
+        $user->forceFill([
+            'name' => trim($validated['name']),
+            'email' => Str::lower(trim($validated['email'])),
+        ])->save();
+
+        return response()->json($this->userPayload($user->fresh()));
+    }
+
     /**
-     * @return array{id: string, name: string, email: string}
+     * @return array{id: string, name: string, email: string, role: string}
      */
     private function userPayload(User $user): array
     {
@@ -59,6 +76,7 @@ class AuthController extends Controller
             'id' => (string) $user->id,
             'name' => $user->name,
             'email' => $user->email,
+            'role' => $user->role->value,
         ];
     }
 }

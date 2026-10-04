@@ -24,6 +24,8 @@ class Product extends Model
         'shop_category_id',
         'name',
         'product_code',
+        'barcode',
+        'catalog_product_id',
         'brand',
         'slug',
         'description',
@@ -77,6 +79,11 @@ class Product extends Model
     public function images(): HasMany
     {
         return $this->hasMany(ProductImage::class);
+    }
+
+    public function catalogProduct(): BelongsTo
+    {
+        return $this->belongsTo(CatalogProduct::class);
     }
 
     public function primaryImage(): HasOne

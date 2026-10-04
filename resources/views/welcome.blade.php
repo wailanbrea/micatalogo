@@ -26,12 +26,13 @@
                     <a class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" href="#ejemplos">Ejemplos</a>
                     <a class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" href="#como-funciona">Cómo funciona</a>
                     <a class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" href="#ventajas">Ventajas</a>
-                    <a class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" href="#inventario">Inventario</a>
+                    <a class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" href="#descarga">Descarga</a>
                     <a class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" href="#preguntas-frecuentes">Preguntas frecuentes</a>
                 </nav>
 
                 <!-- Auth / Guest Actions -->
                 <div class="flex shrink-0 items-center gap-1 sm:gap-3">
+                    <a class="inline-flex items-center justify-center rounded-lg px-2 py-1.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-50 sm:px-3 sm:text-sm" href="{{ route('support.create') }}">Soporte</a>
                     @auth
                         <!-- Authenticated Dropdown Menu -->
                         <div class="relative" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false" @click.outside="open = false">
@@ -1108,6 +1109,45 @@
                 </div>
             </section>
 
+            <!-- 8. DESCARGAS ANDROID -->
+            @php($androidUpdate = config('bspos.android_update', []))
+            <section class="w-full bg-white border-y border-slate-200/80 py-16 lg:py-24 scroll-mt-20" id="descarga">
+                <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex flex-col items-center gap-3 text-center">
+                        <span class="text-xs font-bold text-blue-600 uppercase tracking-widest bg-blue-50 border border-blue-100 px-3 py-1 rounded-full">Actualizaciones</span>
+                        <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Descarga MiCatalogo para Android</h2>
+                        <p class="max-w-2xl text-base leading-relaxed text-slate-600">Descarga la aplicación y mantente al día con las nuevas versiones disponibles.</p>
+                    </div>
+
+                    <div class="mt-10 rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm sm:p-7">
+                        <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Versión Android disponible</p>
+                                <h3 class="mt-1 text-xl font-black text-slate-900">MiCatalogo {{ $androidUpdate['version_name'] ?: 'Próximamente' }}</h3>
+                                <p class="mt-1 text-sm text-slate-500">Actualización del {{ $androidUpdate['release_date'] }}</p>
+                                @if ($androidUpdate['release_notes'])
+                                    <p class="mt-3 text-sm leading-6 text-slate-600">{{ $androidUpdate['release_notes'] }}</p>
+                                @endif
+                            </div>
+                            @if ($androidUpdate['apk_url'])
+                                <a href="{{ $androidUpdate['apk_url'] }}" class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700" download>
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14a2 2 0 0 0 2-2v-2M3 17v2a2 2 0 0 0 2 2"/></svg>
+                                    Descargar APK Android
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="mt-8 flex flex-col items-center gap-3 text-center text-slate-500">
+                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100" aria-hidden="true">
+                            <svg class="h-8 w-8" viewBox="0 0 48 48" fill="none"><path d="M7 6.8c-.6.5-1 1.4-1 2.6v29.2c0 1.2.4 2.1 1 2.6L28.2 24 7 6.8Z" fill="#34A853"/><path d="m7 6.8 26.7 15.4L28.2 24 7 6.8Z" fill="#FBBC04"/><path d="M7 41.2 33.7 25.8 28.2 24 7 41.2Z" fill="#EA4335"/><path d="m33.7 25.8 6.1-3.5c1.6-.9 1.6-2.2 0-3.1L33.7 15.7 28.2 24l5.5 1.8Z" fill="#4285F4"/></svg>
+                        </div>
+                        <p class="font-bold text-slate-700">Próximamente en Play Store</p>
+                        <p class="text-sm">Estamos preparando la publicación oficial para que puedas instalarla desde Google Play.</p>
+                    </div>
+                </div>
+            </section>
+
             <!-- 8. AISLAMIENTO DEL CATÁLOGO (Espacio propio de marca) -->
             <section class="w-full bg-slate-100/70 border-y border-slate-200/80 py-16 lg:py-24">
                 <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center gap-6"
@@ -1329,6 +1369,7 @@
                         <ul class="flex flex-col gap-2 text-xs text-slate-600">
                             <li><a class="hover:text-blue-600 transition-colors" href="#como-funciona">Cómo funciona</a></li>
                             <li><a class="hover:text-blue-600 transition-colors" href="#ventajas">Ventajas</a></li>
+                            <li><a class="hover:text-blue-600 transition-colors" href="#descarga">Descarga</a></li>
                             <li><a class="hover:text-blue-600 transition-colors" href="{{ route('register') }}">Crear catálogo</a></li>
                         </ul>
                     </div>

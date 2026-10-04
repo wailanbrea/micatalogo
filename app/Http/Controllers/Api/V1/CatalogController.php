@@ -5,14 +5,15 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Shop;
+use App\Services\PlanLimitsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class CatalogController extends Controller
 {
-    public function show(Request $request, Shop $shop): JsonResponse
+    public function show(Request $request, Shop $shop, PlanLimitsService $limits): JsonResponse
     {
-        abort_unless($request->user()->ownsShop($shop), 404);
+        abort_unless($request->user()->canSellAtShop($shop), 404);
 
         $categories = $shop->categories()
             ->orderBy('sort_order')
@@ -40,6 +41,7 @@ class CatalogController extends Controller
                 'id' => $shop->public_id,
                 'name' => $shop->name,
                 'slug' => $shop->slug,
+                'quota' => $limits->shopQuota($shop, $products->count()),
             ],
             'categories' => $categories,
             'products' => $products,
@@ -60,6 +62,7 @@ class CatalogController extends Controller
             'source_product_id' => $product->sourceProduct?->public_id,
             'name' => $product->name,
             'internal_code' => $product->product_code,
+            'barcode' => $product->barcode,
             'brand' => $product->brand,
             'description' => $product->description,
             'image_url' => $product->primaryImage?->url,

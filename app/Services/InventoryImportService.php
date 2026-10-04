@@ -139,6 +139,7 @@ class InventoryImportService
             'line' => $line,
             'name' => $name,
             'product_code' => $this->first($data, ['codigo', 'sku', 'product code', 'code']) ?: null,
+            'barcode' => $this->first($data, ['barcode', 'ean', 'gtin', 'upc', 'codigo de barras', 'codigo barras']) ?: null,
             'brand' => $this->first($data, ['marca', 'brand']) ?: null,
             'category' => $this->first($data, ['categoria', 'categoria interna', 'category']) ?: null,
             'description' => $this->first($data, ['descripcion', 'description']) ?: null,

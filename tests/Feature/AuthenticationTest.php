@@ -119,6 +119,25 @@ test('an active account can sign in', function () {
     $this->assertAuthenticatedAs($user);
 });
 
+test('remember me persists a recaller cookie for web login', function () {
+    $user = User::factory()->create([
+        'status' => UserStatus::Active,
+        'password' => Hash::make('password'),
+        'remember_token' => null,
+    ]);
+    $recallerName = $this->app['auth']->guard()->getRecallerName();
+
+    $this->post('/login', [
+        'email' => $user->email,
+        'password' => 'password',
+        'remember' => 'on',
+    ])
+        ->assertRedirect('/panel')
+        ->assertCookie($recallerName);
+
+    expect($user->fresh()->remember_token)->not->toBeNull();
+});
+
 test('an admin can sign in and is redirected to admin dashboard', function () {
     $user = User::factory()->admin()->create([
         'status' => UserStatus::Active,
@@ -137,4 +156,18 @@ test('the seller panel requires a verified account', function () {
     $this->actingAs(User::factory()->unverified()->create())
         ->get('/panel')
         ->assertRedirect('/email/verify');
+});
+
+test('a seller does not see admin navigation', function () {
+    $seller = User::factory()->create([
+        'status' => UserStatus::Active,
+    ]);
+
+    $this->actingAs($seller)
+        ->get('/panel')
+        ->assertOk()
+        ->assertSee('Guía para administradores de tienda')
+        ->assertDontSee('Administración')
+        ->assertDontSee('Usuarios del sistema')
+        ->assertSee('Vendedor');
 });

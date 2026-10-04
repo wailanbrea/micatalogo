@@ -25,5 +25,8 @@ Thumbs.db
 /.playwright-mcp
 /.tools/composer/composer.phar
 /graphify-out
+/.ofb-deploy
+/production-*-requests.txt
+/public/downloads/*.apk
 /pantalla principal diseno
 landing-*.png

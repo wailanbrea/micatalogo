@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Shop;
 use App\Services\InventoryService;
+use App\Services\PlanLimitsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,7 +14,7 @@ use InvalidArgumentException;
 
 class SellerInventoryController extends Controller
 {
-    public function index(Request $request, Shop $shop, InventoryService $inventoryService): View
+    public function index(Request $request, Shop $shop, InventoryService $inventoryService, PlanLimitsService $limits): View
     {
         $validated = $request->validate([
             'q' => ['nullable', 'string', 'max:120'],
@@ -82,6 +83,7 @@ class SellerInventoryController extends Controller
             'shop' => $shop,
             'summary' => $summary,
             'filters' => $filters,
+            'quota' => $limits->shopQuota($shop),
         ]);
     }
 

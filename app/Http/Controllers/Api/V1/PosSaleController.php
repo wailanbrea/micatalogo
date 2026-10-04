@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\PosSaleUpload;
 use App\Models\Product;
 use App\Models\Shop;
+use App\Services\CustomerAccountService;
 use App\Services\InventoryService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -16,13 +18,15 @@ use InvalidArgumentException;
 
 class PosSaleController extends Controller
 {
-    public function store(Request $request, Shop $shop, InventoryService $inventoryService): JsonResponse
+    public function store(Request $request, Shop $shop, InventoryService $inventoryService, CustomerAccountService $customerAccountService): JsonResponse
     {
-        abort_unless($request->user()->ownsShop($shop), 404);
+        abort_unless($request->user()->canSellAtShop($shop), 404);
 
         $validated = $request->validate([
             'client_sale_uuid' => ['required', 'uuid'],
             'payment_status' => ['required', 'in:paid,partial,pending'],
+            'customer_id' => ['nullable', 'ulid'],
+            'credit_amount' => ['nullable', 'decimal:0,2', 'min:0'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'ulid'],
             'items.*.quantity' => ['required', 'integer', 'min:1', 'max:10000'],
@@ -31,7 +35,7 @@ class PosSaleController extends Controller
         $payloadHash = hash('sha256', json_encode($validated, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION));
 
         try {
-            return DB::transaction(function () use ($shop, $validated, $payloadHash, $inventoryService, $request): JsonResponse {
+            return DB::transaction(function () use ($shop, $validated, $payloadHash, $inventoryService, $customerAccountService, $request): JsonResponse {
                 $existing = PosSaleUpload::query()
                     ->with('invoice')
                     ->where('shop_id', $shop->id)
@@ -66,6 +70,31 @@ class PosSaleController extends Controller
                     }
                 }
 
+                $creditAmount = $validated['credit_amount'] ?? '0.00';
+                $creditCents = $this->toCents($creditAmount);
+                $totalCents = collect($validated['items'])->sum(fn (array $item): int => $this->toCents($products[$item['product_id']]->currentPrice()) * (int) $item['quantity']);
+                $customer = null;
+                if (! empty($validated['customer_id'])) {
+                    $customer = Customer::query()
+                        ->where('shop_id', $shop->id)
+                        ->where('public_id', $validated['customer_id'])
+                        ->lockForUpdate()
+                        ->first();
+                    if (! $customer) {
+                        return response()->json(['message' => 'The customer does not belong to this shop.'], 422);
+                    }
+                }
+                if ($creditCents > 0 && ! $customer) {
+                    return response()->json(['message' => 'A customer is required to register credit.'], 422);
+                }
+                if ($creditCents > $totalCents) {
+                    return response()->json(['message' => 'Credit cannot exceed the sale total.'], 422);
+                }
+
+                $paymentStatus = $creditCents === 0
+                    ? $validated['payment_status']
+                    : ($creditCents === $totalCents ? 'pending' : 'partial');
+
                 $upload = PosSaleUpload::create([
                     'shop_id' => $shop->id,
                     'client_sale_uuid' => $validated['client_sale_uuid'],
@@ -80,9 +109,16 @@ class PosSaleController extends Controller
                     $sales,
                     $request->user()->id,
                     'pos',
-                    $validated['payment_status'],
+                    $paymentStatus,
                 );
                 $invoice = Invoice::query()->findOrFail($movements[0]->invoice_id);
+
+                if ($customer) {
+                    $invoice->customer()->associate($customer)->save();
+                }
+                if ($creditCents > 0) {
+                    $customerAccountService->recordInvoiceCharge($customer, $invoice, $creditAmount, $request->user()->id);
+                }
 
                 $upload->invoice()->associate($invoice);
                 $upload->save();
@@ -90,10 +126,17 @@ class PosSaleController extends Controller
                 return response()->json($this->successPayload($upload, $invoice), 201);
             });
         } catch (InvalidArgumentException $exception) {
-            if ($exception->getCode() === 409) {
+            if ($exception->getCode() === 409 && str_starts_with($exception->getMessage(), 'Stock insuficiente')) {
                 return response()->json([
                     'message' => 'Insufficient remote stock.',
                     'reason' => 'stock_conflict',
+                ], 409);
+            }
+
+            if ($exception->getCode() === 409) {
+                return response()->json([
+                    'message' => $exception->getMessage(),
+                    'reason' => 'credit_limit',
                 ], 409);
             }
 

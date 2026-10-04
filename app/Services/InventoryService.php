@@ -8,6 +8,7 @@ use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\ProductInventory;
 use App\Models\Shop;
+use App\Models\ShopSeller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -377,7 +378,37 @@ class InventoryService
 
         $invoice->update(['subtotal' => $total, 'total' => $total]);
 
+        $this->applySalespersonCommission($invoice, $shopId, $userId, $total);
+
         return $invoice;
+    }
+
+    private function applySalespersonCommission(Invoice $invoice, int $shopId, ?int $userId, float $total): void
+    {
+        if (! $userId) {
+            return;
+        }
+
+        $seller = ShopSeller::query()
+            ->where('shop_id', $shopId)
+            ->where('user_id', $userId)
+            ->where('is_active', true)
+            ->first();
+
+        if (! $seller) {
+            return;
+        }
+
+        $amount = $seller->commission_type === 'percentage'
+            ? round($total * ((float) $seller->commission_value / 100), 2)
+            : (float) $seller->commission_value;
+
+        $invoice->update([
+            'salesperson_id' => $userId,
+            'commission_type' => $seller->commission_type,
+            'commission_value' => $seller->commission_value,
+            'commission_amount' => $amount,
+        ]);
     }
 
     private function consumedMl(Product $product, int $quantity): ?int

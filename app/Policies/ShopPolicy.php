@@ -19,12 +19,19 @@ class ShopPolicy
 
     public function create(User $user): bool
     {
-        return true;
+        return $user->isAdmin() || ! $user->shopSellerAssignments()
+            ->where('is_active', true)
+            ->exists();
     }
 
     public function update(User $user, Shop $shop): bool
     {
         return $user->ownsShop($shop);
+    }
+
+    public function sell(User $user, Shop $shop): bool
+    {
+        return $user->canSellAtShop($shop);
     }
 
     public function delete(User $user, Shop $shop): bool

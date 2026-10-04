@@ -2,6 +2,7 @@
 
 use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductModerationStatus;
+use App\Enums\UserPlan;
 use App\Models\GlobalCategory;
 use App\Models\Product;
 use App\Models\ProductInventory;
@@ -113,6 +114,25 @@ test('a seller cannot exceed the free limit of products per shop', function () {
 
     $response->assertStatus(422);
     expect($shop->products()->count())->toBe(2);
+});
+
+test('a premium shop allows 500 products without changing existing products', function () {
+    $seller = User::factory()->create(['plan' => UserPlan::Premium]);
+    $shop = Shop::factory()->for($seller)->create();
+    Product::factory()->count(499)->for($shop)->sequence(fn ($sequence) => [
+        'name' => 'Producto existente '.$sequence->index,
+        'slug' => 'producto-existente-'.$sequence->index,
+    ])->create();
+
+    $response = $this->actingAs($seller)->post(route('seller.shops.products.store', $shop), [
+        'name' => 'Producto 500',
+        'price' => 500,
+        'availability_status' => ProductAvailabilityStatus::Available->value,
+        'moderation_status' => ProductModerationStatus::Active->value,
+    ]);
+
+    $response->assertRedirect();
+    expect($shop->products()->count())->toBe(500);
 });
 
 test('a seller can update their product', function () {

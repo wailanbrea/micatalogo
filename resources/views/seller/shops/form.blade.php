@@ -18,7 +18,7 @@
                 <x-seller.shop-header :shop="$shop" activeTab="settings" />
             @endif
 
-            <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-xs sm:p-8">
+            <section class="mx-auto w-full max-w-5xl rounded-xl border border-slate-200 bg-white p-6 shadow-xs sm:p-8">
                 <h1 class="text-2xl font-bold text-slate-900">{{ $shop->exists ? 'Edita tu tienda' : 'Crea tu tienda' }}</h1>
                 <p class="mt-2 text-sm text-slate-600">Tu catalogo mostrara este nombre y enviara las consultas al WhatsApp indicado.</p>
 
@@ -31,25 +31,25 @@
                     @if ($shop->exists) @method('PUT') @endif
                     <div>
                         <label class="text-sm font-medium text-slate-700" for="name">Nombre de la tienda</label>
-                        <input class="mt-1.5 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-600 focus:ring-blue-600" id="name" name="name" type="text" value="{{ old('name', $shop->name) }}" required autofocus>
+                        <input class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-600 focus:ring-blue-600" id="name" name="name" type="text" value="{{ old('name', $shop->name) }}" required autofocus>
                         @error('name') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                     </div>
 
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div>
                             <label class="text-sm font-medium text-slate-700" for="address">Ubicación o dirección (opcional)</label>
-                            <input class="mt-1.5 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-600 focus:ring-blue-600" id="address" name="address" type="text" value="{{ old('address', $shop->address) }}" placeholder="Santo Domingo, RD">
+                            <input class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-600 focus:ring-blue-600" id="address" name="address" type="text" value="{{ old('address', $shop->address) }}" placeholder="Santo Domingo, RD">
                             @error('address') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <div>
                             <label class="text-sm font-medium text-slate-700" for="maps_url">Enlace de Google Maps (opcional)</label>
-                            <input class="mt-1.5 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-600 focus:ring-blue-600" id="maps_url" name="maps_url" type="url" value="{{ old('maps_url', $shop->maps_url) }}" placeholder="https://maps.google.com/...">
+                            <input class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-600 focus:ring-blue-600" id="maps_url" name="maps_url" type="url" value="{{ old('maps_url', $shop->maps_url) }}" placeholder="https://maps.google.com/...">
                             @error('maps_url') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
                     </div>
                     <div>
                         <label class="text-sm font-medium text-slate-700" for="slug">Enlace personalizado</label>
-                        <div class="mt-1.5 flex rounded-md shadow-sm"><span class="inline-flex items-center rounded-l-md border border-r-0 border-slate-300 bg-slate-50 px-3 text-sm text-slate-500">/tienda/</span><input class="block min-w-0 flex-1 rounded-r-md border-slate-300 focus:border-blue-600 focus:ring-blue-600" id="slug" name="slug" type="text" value="{{ old('slug', $shop->slug) }}" placeholder="mi-tienda"></div>
+                        <div class="mt-1.5 flex min-w-0 rounded-lg shadow-sm"><span class="inline-flex shrink-0 items-center rounded-l-lg border border-r-0 border-slate-300 bg-slate-50 px-3 text-sm text-slate-500">/tienda/</span><input class="block min-w-0 flex-1 rounded-r-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:border-blue-600 focus:ring-blue-600" id="slug" name="slug" type="text" value="{{ old('slug', $shop->slug) }}" placeholder="mi-tienda"></div>
                         <p class="mt-1 text-xs text-slate-500">Si lo dejas vacio, lo generaremos con el nombre.</p>
                         @error('slug') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                     </div>
@@ -61,8 +61,8 @@
                                 <p class="mt-0.5 text-xs text-slate-500">Estos colores se aplican a tu vitrina pública.</p>
                             </div>
                             <div class="flex items-center gap-2">
-                                <input class="h-9 w-12 cursor-pointer rounded border border-slate-300 bg-white p-1" id="primary_color" name="primary_color" type="color" value="{{ old('primary_color', $shop->primary_color ?: '#1d4ed8') }}">
-                                <input class="h-9 w-12 cursor-pointer rounded border border-slate-300 bg-white p-1" id="secondary_color" name="secondary_color" type="color" value="{{ old('secondary_color', $shop->secondary_color ?: '#0f172a') }}">
+                                <input class="h-10 w-14 cursor-pointer rounded-lg border border-slate-300 bg-white p-1" id="primary_color" name="primary_color" type="color" value="{{ old('primary_color', $shop->primary_color ?: '#1d4ed8') }}">
+                                <input class="h-10 w-14 cursor-pointer rounded-lg border border-slate-300 bg-white p-1" id="secondary_color" name="secondary_color" type="color" value="{{ old('secondary_color', $shop->secondary_color ?: '#0f172a') }}">
                             </div>
                         </div>
                         @error('primary_color') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
@@ -82,12 +82,12 @@
                                 <span>Eliminar portada actual</span>
                             </label>
                         @endif
-                        <input type="file" id="cover" name="cover" accept="image/jpeg,image/png,image/webp,image/avif" class="mt-3 text-xs text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-blue-600 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white hover:file:bg-blue-700 cursor-pointer">
+                        <input type="file" id="cover" name="cover" accept="image/jpeg,image/png,image/webp,image/avif" class="mt-3 block w-full max-w-full text-xs text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-blue-600 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-blue-700 cursor-pointer">
                         @error('cover') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label class="text-sm font-medium text-slate-700" for="description">Descripcion</label>
-                        <textarea class="mt-1.5 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-600 focus:ring-blue-600" id="description" name="description" rows="4">{{ old('description', $shop->description) }}</textarea>
+                        <textarea class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-600 focus:ring-blue-600" id="description" name="description" rows="4">{{ old('description', $shop->description) }}</textarea>
                         @error('description') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                     </div>
 
@@ -112,7 +112,7 @@
                                 id="logo" 
                                 name="logo" 
                                 accept="image/jpeg,image/png,image/webp,image/avif"
-                                class="text-xs text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-blue-600 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white hover:file:bg-blue-700 cursor-pointer"
+                                class="block w-full max-w-full text-xs text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-blue-600 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-blue-700 cursor-pointer"
                             >
                         </div>
                         @error('logo') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
@@ -121,21 +121,52 @@
                     <div class="grid gap-5 sm:grid-cols-2">
                         <div>
                             <label class="text-sm font-medium text-slate-700" for="whatsapp_country_code">Codigo de pais</label>
-                            <input class="mt-1.5 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-600 focus:ring-blue-600" id="whatsapp_country_code" name="whatsapp_country_code" type="text" inputmode="numeric" value="{{ old('whatsapp_country_code', $shop->whatsapp_country_code ?: '1') }}" required>
+                            <input class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-600 focus:ring-blue-600" id="whatsapp_country_code" name="whatsapp_country_code" type="text" inputmode="numeric" value="{{ old('whatsapp_country_code', $shop->whatsapp_country_code ?: '1') }}" required>
                             @error('whatsapp_country_code') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <div>
                             <label class="text-sm font-medium text-slate-700" for="whatsapp_number">Numero de WhatsApp</label>
-                            <input class="mt-1.5 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-600 focus:ring-blue-600" id="whatsapp_number" name="whatsapp_number" type="tel" inputmode="numeric" value="{{ old('whatsapp_number', $shop->whatsapp_number) }}" required>
+                            <input class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-600 focus:ring-blue-600" id="whatsapp_number" name="whatsapp_number" type="tel" inputmode="numeric" value="{{ old('whatsapp_number', $shop->whatsapp_number) }}" required>
                             @error('whatsapp_number') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
                     </div>
                     <div>
                         <label class="text-sm font-medium text-slate-700" for="instagram">Instagram (opcional)</label>
-                        <input class="mt-1.5 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-600 focus:ring-blue-600" id="instagram" name="instagram" type="text" value="{{ old('instagram', $shop->instagram) }}" placeholder="mi.tienda">
+                        <input class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-600 focus:ring-blue-600" id="instagram" name="instagram" type="text" value="{{ old('instagram', $shop->instagram) }}" placeholder="mi.tienda">
                         @error('instagram') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                     </div>
                     <label class="flex items-center gap-3 rounded-md border border-slate-200 p-4 text-sm text-slate-700"><input name="offers_shipping" type="hidden" value="0"><input class="rounded border-slate-300 text-blue-600 focus:ring-blue-600" name="offers_shipping" type="checkbox" value="1" @checked(old('offers_shipping', $shop->offers_shipping))><span><strong class="block text-slate-900">Ofrecemos envio</strong>Indica si esta tienda puede enviar productos.</span></label>
+
+                    @if ($shop->exists && auth()->user()?->isAdmin())
+                        <section class="rounded-xl border border-rose-200 bg-rose-50/50 p-4">
+                            <div>
+                                <p class="text-sm font-bold text-slate-900">Controles del owner</p>
+                                <p class="mt-0.5 text-xs text-slate-600">Estos campos solo aparecen para el owner del sistema.</p>
+                            </div>
+                            <div class="mt-4 grid gap-4 sm:grid-cols-3">
+                                <div>
+                                    <label class="text-sm font-medium text-slate-700" for="status">Estado</label>
+                                    <select class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-600 focus:ring-blue-600" id="status" name="status">
+                                        <option value="active" @selected(old('status', $shop->status) === 'active')>Activa</option>
+                                        <option value="suspended" @selected(old('status', $shop->status) === 'suspended')>Suspendida</option>
+                                    </select>
+                                    @error('status') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                                </div>
+                                <div>
+                                    <label class="text-sm font-medium text-slate-700" for="product_limit">Límite de productos</label>
+                                    <input class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-600 focus:ring-blue-600" id="product_limit" name="product_limit" type="number" min="0" max="1000000" value="{{ old('product_limit', $shop->product_limit) }}" placeholder="Según el plan">
+                                    @error('product_limit') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                                </div>
+                                <label class="flex items-center gap-3 rounded-md border border-rose-200 bg-white px-3 py-2.5 text-sm text-slate-700 sm:mt-6">
+                                    <input name="discovery_enabled" type="hidden" value="0">
+                                    <input class="rounded border-slate-300 text-rose-600 focus:ring-rose-500" name="discovery_enabled" type="checkbox" value="1" @checked(old('discovery_enabled', $shop->discovery_enabled))>
+                                    <span><strong class="block text-slate-900">Descubrimiento público</strong><span class="text-xs text-slate-500">Permitir mostrarla en búsquedas.</span></span>
+                                </label>
+                            </div>
+                            @error('discovery_enabled') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                        </section>
+                    @endif
+
                     @if ($shop->exists)
                         <a class="inline-block text-sm font-semibold text-blue-700 hover:underline" href="{{ route('seller.shops.categories.index', $shop) }}">Gestionar categorias internas →</a>
                     @endif

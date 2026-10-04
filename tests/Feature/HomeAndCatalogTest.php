@@ -20,6 +20,9 @@ test('homepage renders seller landing page and never displays cross-store produc
     $response->assertSee('Comparte un solo enlace con tus clientes');
     $response->assertSee('Vitrina 100% Aislada');
     $response->assertSee('Pedidos por WhatsApp');
+    $response->assertSee('Descarga MiCatalogo para Android');
+    $response->assertSee('Próximamente en Play Store');
+    $response->assertSee('href="#descarga"', false);
 
     // Verify home does NOT leak or promote specific products or stores
     $response->assertDontSee('CRM WhatsApp Multiagente');

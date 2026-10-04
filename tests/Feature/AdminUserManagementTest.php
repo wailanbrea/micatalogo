@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Enums\UserPlan;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
+use App\Models\Product;
 use App\Models\Shop;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -92,12 +94,16 @@ class AdminUserManagementTest extends TestCase
         $user = User::factory()->create([
             'status' => UserStatus::Active,
             'email_verified_at' => now(),
+            'remember_token' => 'remember-me',
         ]);
+        $user->createToken('BSPOS');
 
         // Suspender
         $response = $this->actingAs($admin)->post(route('admin.users.toggle-status', $user));
         $response->assertRedirect();
         $this->assertEquals(UserStatus::Suspended, $user->fresh()->status);
+        $this->assertNull($user->fresh()->remember_token);
+        $this->assertCount(0, $user->fresh()->tokens);
 
         // Reactivar
         $response2 = $this->actingAs($admin)->post(route('admin.users.toggle-status', $user));
@@ -141,6 +147,37 @@ class AdminUserManagementTest extends TestCase
         $response2 = $this->actingAs($admin)->post(route('admin.users.toggle-role', $user));
         $response2->assertRedirect();
         $this->assertEquals(UserRole::Seller, $user->fresh()->role);
+    }
+
+    public function test_an_admin_can_assign_premium_plan(): void
+    {
+        $admin = User::factory()->create([
+            'role' => UserRole::Admin,
+            'email_verified_at' => now(),
+        ]);
+        $seller = User::factory()->create(['email_verified_at' => now()]);
+
+        $response = $this->actingAs($admin)->post(route('admin.users.update-plan', $seller), ['plan' => 'premium']);
+
+        $response->assertRedirect();
+        $this->assertSame(UserPlan::Premium, $seller->fresh()->plan);
+    }
+
+    public function test_admin_cannot_downgrade_a_user_with_more_than_free_products(): void
+    {
+        $admin = User::factory()->create([
+            'role' => UserRole::Admin,
+            'email_verified_at' => now(),
+        ]);
+        $seller = User::factory()->create(['plan' => UserPlan::Premium, 'email_verified_at' => now()]);
+        $shop = Shop::factory()->for($seller)->create();
+        Product::factory()->count(101)->for($shop)->create();
+
+        $response = $this->actingAs($admin)->post(route('admin.users.update-plan', $seller), ['plan' => 'free']);
+
+        $response->assertRedirect()->assertSessionHas('error');
+        $this->assertSame(UserPlan::Premium, $seller->fresh()->plan);
+        $this->assertSame(101, $shop->products()->count());
     }
 
     public function test_admin_dashboard_displays_consolidated_global_metrics_and_users(): void

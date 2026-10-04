@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\SecurityHeadersMiddleware;
+use App\Http\Middleware\EnsureSellerMenuAccess;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -17,7 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Cloudflare and Apache terminate TLS before forwarding requests to PHP.
         $middleware->trustProxies(at: '*');
-        $middleware->alias(['abilities' => CheckAbilities::class]);
+        $middleware->alias([
+            'abilities' => CheckAbilities::class,
+            'menu' => EnsureSellerMenuAccess::class,
+        ]);
         $middleware->append(SecurityHeadersMiddleware::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

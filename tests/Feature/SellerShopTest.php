@@ -1,7 +1,12 @@
 <?php
 
+use App\Enums\UserPlan;
+use App\Models\Product;
+use App\Models\ProductImage;
 use App\Models\Shop;
+use App\Models\ShopSeller;
 use App\Models\User;
+use App\Services\PlanLimitsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -58,6 +63,18 @@ test('a seller cannot create a second active free shop', function () {
     expect(Shop::ownedBy($seller)->count())->toBe(1);
 });
 
+test('a premium seller uses the premium shop quota', function () {
+    config()->set('catalog.plans.premium.max_active_shops', 2);
+    $seller = User::factory()->create(['plan' => UserPlan::Premium]);
+    Shop::factory()->for($seller)->create();
+
+    $this->actingAs($seller)
+        ->post(route('seller.shops.store'), shopPayload(['name' => 'Otra tienda']))
+        ->assertRedirect();
+
+    expect(Shop::ownedBy($seller)->count())->toBe(2);
+});
+
 test('a seller cannot edit another sellers shop', function () {
     $seller = User::factory()->create();
     $shop = Shop::factory()->create();
@@ -106,6 +123,23 @@ test('seller dashboard filters shops by search term', function () {
         ->assertSee('Búsqueda:');
 });
 
+test('new sellers see the animated store setup guide', function () {
+    $seller = User::factory()->create();
+
+    $this->actingAs($seller)
+        ->get(route('seller.dashboard'))
+        ->assertOk()
+        ->assertSee('Guía para administradores de tienda')
+        ->assertDontSee('Guía para vendedores')
+        ->assertSee('Crear mi tienda');
+
+    Shop::factory()->for($seller)->create();
+
+    $this->actingAs($seller)
+        ->get(route('seller.dashboard'))
+        ->assertDontSee('Guía para administradores de tienda');
+});
+
 test('admin can filter all shops by status and shipping', function () {
     $admin = User::factory()->admin()->create();
     $activeShop = Shop::factory()->create(['name' => 'Tienda Activa Con Envio', 'status' => 'active', 'offers_shipping' => true]);
@@ -129,6 +163,47 @@ test('admin can filter all shops by status and shipping', function () {
         ->assertDontSee('Tienda Suspendida');
 });
 
+test('admin sees exact product image storage for every shop in all shops view', function () {
+    $admin = User::factory()->admin()->create();
+    $shop = Shop::factory()->create(['name' => 'Tienda con almacenamiento']);
+    $product = Product::factory()->for($shop)->create();
+    ProductImage::factory()->for($product)->create(['size_bytes' => 5 * 1024 * 1024]);
+
+    $this->actingAs($admin)
+        ->get(route('seller.dashboard', ['view' => 'all']))
+        ->assertOk()
+        ->assertSee('5.00 MB usados')
+        ->assertSee('1 imágenes');
+});
+
+test('admin can edit owner-only shop fields', function () {
+    $admin = User::factory()->admin()->create();
+    $shop = Shop::factory()->create([
+        'status' => 'active',
+        'discovery_enabled' => false,
+        'product_limit' => null,
+    ]);
+
+    $this->actingAs($admin)
+        ->put(route('seller.shops.update', $shop), shopPayload([
+            'name' => $shop->name,
+            'slug' => $shop->slug,
+            'status' => 'suspended',
+            'discovery_enabled' => 1,
+            'product_limit' => 500,
+        ]))
+        ->assertRedirect(route('seller.shops.edit', $shop));
+
+    $this->assertDatabaseHas('shops', [
+        'id' => $shop->id,
+        'status' => 'suspended',
+        'discovery_enabled' => 1,
+        'product_limit' => 500,
+    ]);
+
+    expect(app(PlanLimitsService::class)->productLimit($shop->fresh()))->toBe(500);
+});
+
 test('seller dashboard renders unified persistent navigation and account dropdown', function () {
     $seller = User::factory()->create(['name' => 'Juan Perez', 'email' => 'juan@example.com']);
     $shop = Shop::factory()->for($seller)->create(['name' => 'Tienda Juan']);
@@ -138,10 +213,81 @@ test('seller dashboard renders unified persistent navigation and account dropdow
     $response->assertOk()
         ->assertSee('Mis tiendas')
         ->assertSee('Hola, Juan')
-        ->assertSee('Mi Cuenta')
-        ->assertSee('juan@example.com')
-        ->assertSee('Vendedor')
+        ->assertSee('Mi cuenta')
+        ->assertSee('Salir')
+        ->assertSee('Configuración')
+        ->assertSee('Vendedores')
+        ->assertDontSee('Usuarios del sistema')
+        ->assertDontSee('Reportes')
         ->assertSee(route('seller.shops.inventory.index', $shop));
+});
+
+test('an assigned seller can see the shop catalog and selling entry without owner menus', function () {
+    $owner = User::factory()->create();
+    $seller = User::factory()->create(['name' => 'Vendedor asignado']);
+    $shop = Shop::factory()->for($owner)->create(['name' => 'Tienda asignada']);
+    ShopSeller::create([
+        'shop_id' => $shop->id,
+        'user_id' => $seller->id,
+        'commission_type' => 'percentage',
+        'commission_value' => 5,
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($seller)
+        ->get(route('seller.dashboard'))
+         ->assertOk()
+         ->assertSee('Tienda asignada')
+         ->assertSee('Guía para vendedores')
+         ->assertDontSee('Guía para administradores de tienda')
+         ->assertSee('Vender')
+         ->assertSee('Productos')
+         ->assertDontSee('Mis tiendas')
+         ->assertDontSee('Configuración')
+         ->assertDontSee('Vendedores')
+         ->assertDontSee('Editar tienda')
+        ->assertDontSee('Crear tienda');
+
+    $this->actingAs($seller)
+        ->get(route('seller.shops.products.index', $shop))
+        ->assertOk();
+
+    $this->actingAs($seller)
+        ->get(route('seller.shops.sellers.index', $shop))
+        ->assertForbidden();
+
+    $this->actingAs($seller)
+        ->get(route('seller.shops.edit', $shop))
+        ->assertForbidden();
+
+    $this->actingAs($seller)
+        ->get(route('seller.shops.products.create', $shop))
+        ->assertForbidden();
+
+    $this->actingAs($seller)
+        ->get(route('seller.shops.create'))
+        ->assertForbidden();
+});
+
+test('a shop administrator cannot access platform owner routes', function () {
+    $shopAdministrator = User::factory()->create();
+    Shop::factory()->for($shopAdministrator)->create();
+
+    $this->actingAs($shopAdministrator)
+        ->get(route('admin.dashboard'))
+        ->assertForbidden();
+
+    $this->actingAs($shopAdministrator)
+        ->get(route('admin.reports.index'))
+        ->assertForbidden();
+
+    $this->actingAs($shopAdministrator)
+        ->get(route('admin.support.index'))
+        ->assertForbidden();
+
+    $this->actingAs($shopAdministrator)
+        ->get(route('admin.users.index'))
+        ->assertForbidden();
 });
 
 test('a seller can upload a shop logo which is converted to WebP and stored', function () {

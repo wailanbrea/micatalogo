@@ -13,7 +13,13 @@ Public routes:
 - `POST /reportar`: Content moderation reporting.
 - `GET /sitemap.xml`: XML sitemap with home, active shops, and active products.
 
-No public REST API, GraphQL API, or WhatsApp Business API is planned for the MVP.
+The protected REST API under `/api/v1` is available to verified seller clients through
+Sanctum. No GraphQL API or WhatsApp Business API is part of the MVP.
+
+Protected catalog media route:
+
+- `GET /api/v1/catalog/media/{barcode}`: resolves and returns cached Open Beauty Facts
+  product metadata and locally stored images. It requires `catalog:read` and is rate limited.
 
 Verified seller routes:
 
@@ -28,4 +34,3 @@ Verified seller routes:
 
 Shop route binding uses its slug for public storefronts and ULID `public_id` for
 seller/admin operations; update and deletion routes enforce policies through `can` middleware.
-

@@ -45,8 +45,15 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-semibold text-slate-800" for="product_code">Código de producto / UPC</label>
+                        <label class="block text-sm font-semibold text-slate-800" for="product_code">Código interno / SKU</label>
                         <input class="mt-1.5 w-full rounded-md border border-slate-300 px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="product_code" name="product_code" type="text" value="{{ old('product_code', $product->product_code) }}" placeholder="Opcional">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-800" for="barcode">Barcode / EAN / GTIN</label>
+                        <input class="mt-1.5 w-full rounded-md border border-slate-300 px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="barcode" name="barcode" type="text" inputmode="numeric" value="{{ old('barcode', $product->barcode) }}" placeholder="Ej: 7501234567890">
+                        <p class="mt-1 text-xs text-slate-500">Se usa para consultar Open Beauty Facts. No reemplaza tu SKU interno.</p>
+                        @error('barcode') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                     </div>
 
                     <div>
@@ -345,7 +352,7 @@
                             <div>
                                 <h2 class="text-lg font-bold text-slate-900">Fotos del producto</h2>
                                 <p class="mt-1 text-xs text-slate-500">
-                                    {{ $product->images->count() }} de {{ config('catalog.free.max_images_per_product', 3) }} fotos permitidas en el plan gratuito.
+                                    {{ $product->images->count() }} de {{ $shop->imageLimit() }} fotos permitidas en el plan {{ $shop->planLabel() }}.
                                 </p>
                             </div>
                             <span class="rounded bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">WebP optimizado</span>
@@ -407,6 +414,49 @@
                         </p>
                     @endif
                 </section>
+
+                @if ($product->barcode)
+                    <section class="mt-6 rounded-xl border border-emerald-200 bg-emerald-50/50 p-6 shadow-sm sm:p-8">
+                        <div class="flex flex-wrap items-start justify-between gap-4">
+                            <div>
+                                <h2 class="text-lg font-bold text-slate-900">Biblioteca Open Beauty Facts</h2>
+                                <p class="mt-1 text-xs text-slate-600">Consulta datos e imágenes por barcode. Nada reemplaza tus fotos manuales.</p>
+                            </div>
+                            <form method="POST" action="{{ route('seller.shops.products.catalog-media.resolve', [$shop, $product]) }}">
+                                @csrf
+                                <button class="rounded-md bg-emerald-700 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-800" type="submit">Consultar ahora</button>
+                            </form>
+                        </div>
+
+                        @if ($product->catalogProduct)
+                            <div class="mt-4 rounded-lg border border-emerald-100 bg-white p-4 text-sm">
+                                <p class="font-bold text-slate-900">{{ $product->catalogProduct->name ?: 'Producto encontrado' }}</p>
+                                <p class="mt-1 text-xs text-slate-500">Estado: {{ $product->catalogProduct->lookup_status }} · Última consulta: {{ $product->catalogProduct->last_lookup_at?->diffForHumans() ?: 'pendiente' }}</p>
+                                @if ($product->catalogProduct->last_error)
+                                    <p class="mt-2 text-xs text-amber-700">{{ $product->catalogProduct->last_error }}</p>
+                                @endif
+                            </div>
+                            @if ($product->catalogProduct->images->where('processing_status', 'ready')->isNotEmpty())
+                                <div class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
+                                    @foreach ($product->catalogProduct->images->where('processing_status', 'ready') as $catalogImage)
+                                        <div class="overflow-hidden rounded-lg border border-emerald-100 bg-white">
+                                            <img class="aspect-square w-full object-cover" src="{{ $catalogImage->thumbnail_url }}" alt="Imagen externa de {{ $product->name }}">
+                                            <div class="p-3">
+                                                <p class="text-[11px] text-slate-500">{{ $catalogImage->license ?: 'Licencia no informada por el proveedor' }}</p>
+                                                <form class="mt-2" method="POST" action="{{ route('seller.shops.products.catalog-media.use', [$shop, $product, $catalogImage->id]) }}">
+                                                    @csrf
+                                                    <button class="w-full rounded-md border border-emerald-200 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-50" type="submit">Agregar sin reemplazar</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        @else
+                            <p class="mt-4 rounded-lg border border-dashed border-emerald-200 bg-white p-4 text-xs text-slate-600">Aún no hay resultado local. La consulta se ejecuta en segundo plano cuando haya un worker activo.</p>
+                        @endif
+                    </section>
+                @endif
             @endif
         </div>
     </main>

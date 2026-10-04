@@ -8,7 +8,10 @@
 @php
     $user = auth()->user();
     $isAdmin = $user?->isAdmin() ?? false;
+    $isAssignedSellerOnly = $user?->isAssignedSellerOnly() ?? false;
+    $canManageShops = ! $isAssignedSellerOnly;
     $openReportsCount = $isAdmin ? \App\Models\Report::where('status', 'open')->count() : 0;
+    $openSupportCount = $isAdmin ? \App\Models\SupportRequest::where('status', 'open')->count() : 0;
     
     // Active route detections
     $isViewAllShops = request()->routeIs('seller.dashboard') && request('view') === 'all';
@@ -18,8 +21,17 @@
         || request()->routeIs('seller.categories.*');
     $isAdminDashboard = request()->routeIs('admin.dashboard');
     $isAdminReports = request()->routeIs('admin.reports.*');
+    $isAdminSupport = request()->routeIs('admin.support.*');
     $isAdminCategories = request()->routeIs('admin.categories.*');
     $isAdminUsers = request()->routeIs('admin.users.*');
+    $activeShop = request()->route('shop');
+    $activeShop = $activeShop instanceof \App\Models\Shop ? $activeShop : null;
+    $visibleMenus = $activeShop && $user
+        ? app(\App\Services\SellerMenuService::class)->forUser($activeShop, $user)
+        : [];
+    $canSeeMenu = fn (string $key): bool => ! $activeShop || in_array($key, $visibleMenus, true);
+    $dashboardUrl = $isAdmin ? route('admin.dashboard') : route('seller.dashboard');
+    $isDashboard = $isAdmin ? $isAdminDashboard : request()->routeIs('seller.dashboard') && request('view') !== 'all';
 @endphp
 
 <!-- Main Unified Topbar -->
@@ -36,70 +48,13 @@
                 @endif
             </a>
 
-            <!-- Desktop Navigation Menu -->
-            <nav class="hidden md:flex md:items-center md:gap-1 text-xs font-semibold">
-                <!-- Mis Tiendas -->
-                <a 
-                    class="px-3 py-1.5 rounded-lg transition {{ $isMyShops ? 'bg-blue-600 text-white shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}" 
-                    href="{{ route('seller.dashboard') }}"
-                >
-                    Mis tiendas
-                </a>
-
-                @if ($isAdmin)
-                    <!-- Todas las Tiendas (Admin) -->
-                    <a 
-                        class="px-3 py-1.5 rounded-lg transition {{ $isViewAllShops ? 'bg-blue-600 text-white shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}" 
-                        href="{{ route('seller.dashboard', ['view' => 'all']) }}"
-                    >
-                        Todas las tiendas
-                    </a>
-
-                    <!-- Dashboard Admin -->
-                    <a 
-                        class="px-3 py-1.5 rounded-lg transition {{ $isAdminDashboard ? 'bg-blue-600 text-white shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}" 
-                        href="{{ route('admin.dashboard') }}"
-                    >
-                        Dashboard Admin
-                    </a>
-
-                    <!-- Reportes -->
-                    <a 
-                        class="px-3 py-1.5 rounded-lg transition inline-flex items-center gap-1.5 {{ $isAdminReports ? 'bg-blue-600 text-white shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}" 
-                        href="{{ route('admin.reports.index') }}"
-                    >
-                        <span>Reportes</span>
-                        @if ($openReportsCount > 0)
-                            <span class="rounded-full {{ $isAdminReports ? 'bg-white text-rose-600' : 'bg-rose-500 text-white' }} px-1.5 py-0.2 text-[10px] font-bold">
-                                {{ $openReportsCount }}
-                            </span>
-                        @endif
-                    </a>
-
-                    <!-- Categorías Globales -->
-                    <a 
-                        class="px-3 py-1.5 rounded-lg transition {{ $isAdminCategories ? 'bg-blue-600 text-white shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}" 
-                        href="{{ route('admin.categories.index') }}"
-                    >
-                        Categorías globales
-                    </a>
-
-                    <!-- Usuarios -->
-                    <a 
-                        class="px-3 py-1.5 rounded-lg transition {{ $isAdminUsers ? 'bg-blue-600 text-white shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}" 
-                        href="{{ route('admin.users.index') }}"
-                    >
-                        Usuarios
-                    </a>
-                @endif
-            </nav>
         </div>
 
         <!-- Right Side Actions & User Menu -->
         <div class="flex shrink-0 items-center gap-1.5 sm:gap-3">
             <!-- Ver Vitrina Pública -->
             <a 
-                class="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition" 
+                class="hidden"
                 href="{{ route('home') }}" 
                 target="_blank" 
                 title="Abrir vitrina pública principal en una nueva pestaña"
@@ -109,6 +64,17 @@
             </a>
 
             @if ($user)
+                <span class="hidden text-right leading-tight sm:block">
+                    <span class="block text-[10px] text-slate-400">Hola, {{ str($user->name)->explode(' ')->first() }}</span>
+                    <span class="block text-xs font-bold text-slate-800">Mi cuenta</span>
+                </span>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-rose-50">Salir</button>
+                </form>
+            @endif
+
+            @if (false && $user)
                 <!-- Amazon-style User Account Dropdown -->
                 <div class="relative" x-data="{ open: false }">
                     <button 
@@ -153,14 +119,18 @@
                             <div class="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                                 Gestión de Catálogos
                             </div>
+                            @if ($canManageShops)
                             <a href="{{ route('seller.dashboard') }}" class="flex items-center gap-2 rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100 transition {{ $isMyShops ? 'font-bold text-blue-700 bg-blue-50/50' : '' }}">
                                 <svg class="h-4 w-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                                 <span>Mis tiendas</span>
                             </a>
+                            @endif
+                            @if ($canManageShops && ($isAdmin || ! $user->hasActiveShopAssignment()))
                             <a href="{{ route('seller.shops.create') }}" class="flex items-center gap-2 rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100 transition">
                                 <svg class="h-4 w-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                                 <span>+ Crear nueva tienda</span>
                             </a>
+                            @endif
                             @if ($primaryShop = $user?->shops()->first())
                                 <a href="{{ route('seller.shops.metrics.index', $primaryShop) }}" class="flex items-center gap-2 rounded-lg px-3 py-2 text-indigo-700 hover:bg-indigo-50 transition">
                                     <svg class="h-4 w-4 text-indigo-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
@@ -231,7 +201,7 @@
             aria-controls="mobile-panel-navigation"
             class="flex w-full items-center justify-between px-4 py-2.5 text-xs font-bold text-slate-700"
         >
-            <span>Menu</span>
+            <span>Menú</span>
             <svg class="h-4 w-4 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
         <nav
@@ -245,31 +215,82 @@
         >
             <div>
                 <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Inicio</p>
-                <a class="block rounded-lg px-3 py-2 transition {{ $isMyShops ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.dashboard') }}">Mis tiendas</a>
+                <a class="block rounded-lg px-3 py-2 transition {{ $isDashboard ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ $dashboardUrl }}">Dashboard</a>
+                @if ($canManageShops)
+                    <a class="block rounded-lg px-3 py-2 transition {{ $isMyShops ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.dashboard') }}">Mis tiendas</a>
+                @endif
+                @if ($canManageShops && ($isAdmin || ! $user->hasActiveShopAssignment()))
+                    <a class="block rounded-lg px-3 py-2 text-slate-700 transition hover:bg-slate-100" href="{{ route('seller.shops.create') }}">Crear tienda</a>
+                @endif
             </div>
-            @if ($isAdmin)
+            @if ($activeShop)
+                <div class="border-t border-slate-100 pt-2">
+                    <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Operacion</p>
+                    @if ($canSeeMenu('sales'))
+                        <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.inventory.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.inventory.index', $activeShop) }}">Vender</a>
+                    @endif
+                    @if ($canSeeMenu('inventory'))
+                        <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.inventory.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.inventory.index', $activeShop) }}">Inventario</a>
+                    @endif
+                    @if ($canSeeMenu('customers'))
+                        <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.customers.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.customers.index', $activeShop) }}">Clientes y cobros</a>
+                    @endif
+                    @if ($isAdmin || $user->ownsShop($activeShop))
+                        <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.sellers.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.sellers.index', $activeShop) }}">Vendedores</a>
+                    @endif
+                </div>
                 <div class="border-t border-slate-100 pt-2">
                     <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Catalogo</p>
-                    <a class="block rounded-lg px-3 py-2 transition {{ $isViewAllShops ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.dashboard', ['view' => 'all']) }}">Todas las tiendas</a>
-                    <a class="block rounded-lg px-3 py-2 transition {{ $isAdminCategories ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.categories.index') }}">Categorías</a>
+                    @if ($canSeeMenu('products'))
+                        <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.products.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.products.index', $activeShop) }}">Productos</a>
+                        <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.categories.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.categories.index', $activeShop) }}">Categorías</a>
+                        @if ($user->isAdmin() || $user->ownsShop($activeShop))
+                            <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.products.bulk.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.products.bulk.create', $activeShop) }}">Subida masiva</a>
+                            <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.products.import.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.products.import.create', $activeShop) }}">Importar inventario</a>
+                        @endif
+                    @endif
                 </div>
                 <div class="border-t border-slate-100 pt-2">
                     <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Analisis</p>
+                    @if ($canSeeMenu('metrics'))
+                        <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.metrics.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.metrics.index', $activeShop) }}">Métricas y QR</a>
+                    @endif
+                </div>
+                <div class="border-t border-slate-100 pt-2">
+                    <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Configuracion</p>
+                    @if ($canSeeMenu('shop_settings') && ($isAdmin || $user->ownsShop($activeShop)))
+                        <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.edit') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.edit', $activeShop) }}">Configuración de tienda</a>
+                    @endif
+                </div>
+            @endif
+            @if ($isAdmin)
+                <div class="border-t border-slate-100 pt-2">
+                    <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-rose-500">Administracion</p>
+                    <a class="block rounded-lg px-3 py-2 transition {{ $isViewAllShops ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.dashboard', ['view' => 'all']) }}">Todas las tiendas</a>
                     <a class="block rounded-lg px-3 py-2 transition {{ $isAdminDashboard ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.dashboard') }}">Dashboard</a>
                     <a class="flex items-center justify-between rounded-lg px-3 py-2 transition {{ $isAdminReports ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.reports.index') }}">
                         <span>Reportes</span>
                         @if ($openReportsCount > 0)
                             <span class="rounded-full {{ $isAdminReports ? 'bg-white text-rose-600' : 'bg-rose-500 text-white' }} px-1.5 py-0.5 text-[10px]">{{ $openReportsCount }}</span>
+                            @endif
+                        </a>
+                    <a class="flex items-center justify-between rounded-lg px-3 py-2 transition {{ $isAdminSupport ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.support.index') }}">
+                        <span>Soporte</span>
+                        @if ($openSupportCount > 0)
+                            <span class="rounded-full {{ $isAdminSupport ? 'bg-white text-blue-600' : 'bg-blue-500 text-white' }} px-1.5 py-0.5 text-[10px]">{{ $openSupportCount }}</span>
                         @endif
                     </a>
+                    <a class="block rounded-lg px-3 py-2 transition {{ $isAdminCategories ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.categories.index') }}">Categorías globales</a>
+                    <a class="block rounded-lg px-3 py-2 transition {{ $isAdminUsers ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.users.index') }}">Usuarios</a>
                 </div>
             @endif
             <div class="border-t border-slate-100 pt-2">
-                <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Configuracion</p>
-                @if ($isAdmin)
-                    <a class="block rounded-lg px-3 py-2 transition {{ $isAdminUsers ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.users.index') }}">Usuarios</a>
-                @endif
+                <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Acciones</p>
                 <a class="block rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100" href="{{ route('home') }}" target="_blank">Ver vitrina publica</a>
+                <form class="border-t border-slate-100 pt-2" method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button class="block w-full rounded-lg px-3 py-2 text-left text-rose-600 hover:bg-rose-50" type="submit">Cerrar sesión</button>
+                </form>
             </div>
         </nav>
     </div>

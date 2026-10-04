@@ -263,7 +263,18 @@
                             Registra ventas rápidas, reposiciones de mercancía y ajustes de inventario físico.
                         </p>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex flex-wrap items-center justify-end gap-2">
+                        @can('update', $shop)
+                            @if ($quota['products_remaining'] > 0)
+                                <a href="{{ route('seller.shops.products.import.create', $shop) }}" class="rounded-md border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-xs font-semibold text-indigo-700 shadow-xs hover:bg-indigo-100 transition">
+                                    Cargar inventario
+                                </a>
+                            @else
+                                <span class="rounded-md bg-amber-50 px-3.5 py-2 text-xs font-semibold text-amber-800">
+                                    Límite de productos alcanzado
+                                </span>
+                            @endif
+                        @endcan
                         <a href="{{ route('seller.shops.products.create', $shop) }}" class="rounded-md bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-blue-700 transition">
                             + Agregar Producto
                         </a>
@@ -458,12 +469,12 @@
 
                                     <!-- Acciones Rápidas -->
                                     <td class="px-4 py-3.5 text-right whitespace-nowrap">
-                                        <div class="flex items-center justify-end gap-1.5">
+                                        <div class="grid grid-cols-2 gap-1.5">
                                             @if ($isControlled)
                                                 <!-- Registrar Venta -->
                                                 <button
                                                     @click="openSaleModal(@js($product->public_id), @js($product->name), {{ $inv->stock_quantity }}, @js($product->sale_unit), {{ $product->volume_ml ?? 0 }}, {{ $product->sourceProduct?->inventory?->available_ml ?? 0 }})"
-                                                    class="inline-flex items-center gap-1 rounded-md border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition {{ $inv->stock_quantity <= 0 ? 'opacity-50 cursor-not-allowed' : '' }}"
+                                                    class="inline-flex items-center justify-center gap-1 rounded-md border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition {{ $inv->stock_quantity <= 0 ? 'opacity-50 cursor-not-allowed' : '' }}"
                                                     {{ $inv->stock_quantity <= 0 ? 'disabled' : '' }}
                                                     title="Registrar venta directa"
                                                 >
@@ -473,7 +484,7 @@
                                                 <!-- Reponer -->
                                                 <button
                                                     @click="openRestockModal('{{ $product->public_id }}', '{{ addslashes($product->name) }}', {{ $inv->stock_quantity }})"
-                                                    class="inline-flex items-center gap-1 rounded-md border border-blue-300 bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-800 hover:bg-blue-100 transition"
+                                                    class="inline-flex items-center justify-center gap-1 rounded-md border border-blue-300 bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-800 hover:bg-blue-100 transition"
                                                     title="Reponer unidades al stock"
                                                 >
                                                     + Reponer
@@ -491,7 +502,7 @@
                                                 <!-- Historial de Movimientos -->
                                                 <a
                                                     href="{{ route('seller.shops.inventory.movements', [$shop, $product]) }}"
-                                                    class="rounded-md border border-slate-200 bg-white p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition"
+                                                    class="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition"
                                                     title="Ver bitácora de movimientos"
                                                 >
                                                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>

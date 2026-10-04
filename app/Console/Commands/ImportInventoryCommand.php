@@ -5,14 +5,18 @@ namespace App\Console\Commands;
 use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductImageProcessingStatus;
 use App\Enums\ProductModerationStatus;
+use App\Jobs\ResolveProductCatalogMediaJob;
 use App\Models\GlobalCategory;
 use App\Models\Product;
 use App\Models\Shop;
+use App\Services\CatalogMediaService;
+use App\Services\PlanLimitsService;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class ImportInventoryCommand extends Command
@@ -25,7 +29,7 @@ class ImportInventoryCommand extends Command
 
     protected $description = 'Importa un inventario JSON de forma idempotente y auditable';
 
-    public function handle(): int
+    public function handle(PlanLimitsService $limits, CatalogMediaService $catalogMedia): int
     {
         try {
             $payload = json_decode(File::get($this->argument('file')), true, 512, JSON_THROW_ON_ERROR);
@@ -51,6 +55,21 @@ class ImportInventoryCommand extends Command
 
         $source = (string) $this->option('source');
         $dryRun = (bool) $this->option('dry-run');
+        $sourceKeys = $rows->map(fn (array $row): string => "{$source}:".(int) ($row['source_row'] ?? 0))->values();
+        $existingSourceKeys = Product::withTrashed()
+            ->where('shop_id', $shop->id)
+            ->whereIn('source_key', $sourceKeys)
+            ->pluck('source_key');
+        $newProductCount = $sourceKeys->diff($existingSourceKeys)->count();
+
+        try {
+            $limits->assertCanAddProducts($shop, $newProductCount);
+        } catch (ValidationException $exception) {
+            $this->error($exception->validator->errors()->first('products'));
+
+            return self::FAILURE;
+        }
+
         $categoryNames = $rows
             ->pluck('category')
             ->filter(fn ($category) => is_string($category) && trim($category) !== '')
@@ -98,7 +117,7 @@ class ImportInventoryCommand extends Command
             }
 
             try {
-                DB::transaction(function () use ($shop, $row, $source, $sourceKey, $shopCategories, $globalBeautyCategory, &$stats) {
+                DB::transaction(function () use ($shop, $row, $source, $sourceKey, $shopCategories, $globalBeautyCategory, $catalogMedia, &$stats) {
                     $product = Product::withTrashed()
                         ->where('shop_id', $shop->id)
                         ->where('source_key', $sourceKey)
@@ -125,6 +144,7 @@ class ImportInventoryCommand extends Command
                     $attributes = [
                         'name' => $name,
                         'product_code' => $row['product_code'] !== null ? trim((string) $row['product_code']) : null,
+                        'barcode' => $catalogMedia->normalizeBarcode($row['barcode'] ?? null),
                         'slug' => $product?->slug ?? $this->resolveSlug($shop, $name),
                         'description' => null,
                         'source_category' => $sourceCategory,
@@ -177,6 +197,10 @@ class ImportInventoryCommand extends Command
 
                     $stats[$wasExisting ? 'updated' : 'created']++;
                     $stats[$hasReadyImage ? 'images_confirmed' : 'images_pending']++;
+
+                    if ($product->barcode) {
+                        ResolveProductCatalogMediaJob::dispatch($product->id)->afterCommit();
+                    }
                 });
             } catch (Throwable $exception) {
                 $stats['failed']++;
