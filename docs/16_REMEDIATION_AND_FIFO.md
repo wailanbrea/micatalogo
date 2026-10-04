@@ -12,8 +12,8 @@ reglas de precio por margen y redondeo (Pro), reportes de ganancia y actualizar 
 - [ ] Android: abonos idempotentes, instantáneas inmutables, reconciliación y cola completa.
 - [x] Pedidos: confirmación a venta sin doble descuento de inventario.
 - [x] Dashboard, copy, planes reales, anuncios y metadatos del APK.
-- [ ] Pruebas web/Android, release firmado y verificación de publicación.
-- [ ] Producción: respaldo verificado y comparación de identidades antes/después.
+- [x] Pruebas web/Android, release firmado y verificación de publicación.
+- [x] Producción: respaldo verificado y comparación de identidades antes/después.
 
 ## Compatibilidad
 
@@ -34,8 +34,20 @@ el costo FIFO definitivo se asigna en el servidor al aceptar la venta.
 Los abonos de versiones anteriores requieren conciliación; no se reenvían
 automáticamente porque las ventas originales pudieron subir con crédito reducido.
 
-Validación: 227 pruebas web (SQLite en memoria); 73 pruebas instrumentadas Android
+Validación: 227 pruebas web (SQLite en memoria); 43 unitarias y 73 instrumentadas Android
 en emulador, sin fallos; build de producción y firma del APK 1.0.8/code 9 verificados.
 Certificado idéntico al APK 1.0.7. Tamaño 16,131,920 bytes; Android mínimo API 26.
 Hay respaldo SQL y de fuentes fuera del directorio público, con checksum y manifiesto
 de identidades. La verificación del archivo no equivale a una restauración ensayada.
+
+Publicado en el VPS el 2026-10-04. Antes/después de la ventana de mantenimiento:
+11 usuarios, 8 tiendas, 267 productos, 0 pedidos y 4 facturas; mismos identificadores,
+ninguna eliminación. Antes del mantenimiento se observaron altas legítimas mientras
+la tienda estaba en uso (258 → 259 → 267 productos); se preservaron en el respaldo final.
+Home, descarga y catálogo de decants: HTTP 200. Manifest público: code 9 / 1.0.8,
+hash `0d5222a4181e9a5de4d62742c9a5a8a419d39ae563703011b4f52ea4e0090075`.
+APK HTTP 200, longitud 16,131,920 bytes; firma idéntica a 1.0.7. Versiones anteriores
+del APK y archivos ajenos del VPS se conservaron.
+Fuentes Android actualizadas: `C:\Users\waila\AndroidStudioProjects\BSPOS-MiCatalogo`.
+Copia de fuentes sin credenciales ni artefactos de build:
+`C:\Users\waila\AndroidStudioProjects\BSPOS-MiCatalogo-Releases\source-1.0.8-20261004.tar.gz`.
