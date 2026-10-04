@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\QrCodeSvgService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -10,13 +11,18 @@ use Illuminate\View\View;
 
 class PublicDownloadController extends Controller
 {
-    public function index(): View
+    public function index(QrCodeSvgService $qrCodeService): View
     {
         $update = config('bspos.android_update', []);
+        $androidReleases = $update['version_code'] > 0 ? [$update] : [];
+        $downloadUrl = $androidReleases !== []
+            ? route('downloads.android', $update['version_code'])
+            : url('/descargas');
 
         return view('downloads.index', [
-            'androidReleases' => $update['version_code'] > 0 ? [$update] : [],
+            'androidReleases' => $androidReleases,
             'downloadCount' => $this->downloadCount($update),
+            'qrSvg' => $qrCodeService->generateSvg($downloadUrl, 280),
         ]);
     }
 
