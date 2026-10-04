@@ -27,7 +27,9 @@ class PublicDownloadController extends Controller
         abort_unless((int) ($update['version_code'] ?? 0) === $versionCode, 404);
         abort_unless(Str::startsWith((string) ($update['apk_url'] ?? ''), 'https://'), 404);
 
-        Cache::increment($this->downloadKey($versionCode));
+        $key = $this->downloadKey($versionCode);
+        Cache::add($key, 0, now()->addYears(10));
+        Cache::increment($key);
 
         return redirect()->away($update['apk_url']);
     }
