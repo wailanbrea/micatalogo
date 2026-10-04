@@ -67,7 +67,7 @@
                             </div>
                             <div class="flex items-center gap-3 px-2 sm:px-4">
                                 <span class="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 sm:flex"><svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.523 15.341a1 1 0 0 0 1.732-1l-.001-.002-1.732-3a1 1 0 1 0-1.732 1l1.733 3.002ZM6.477 15.34l1.732-3a1 1 0 1 0-1.732-1l-1.733 3.002a1 1 0 0 0 1.733.998ZM12 5c-3.314 0-6 2.239-6 5h12c0-2.761-2.686-5-6-5Zm-3.5 3A1.5 1.5 0 1 1 10 6.5 1.5 1.5 0 0 1 8.5 8Zm7 0A1.5 1.5 0 1 1 17 6.5 1.5 1.5 0 0 1 15.5 8ZM12 11c-3.866 0-7 2.239-7 5h14c0-2.761-3.134-5-7-5Z"/></svg></span>
-                                <div><p class="text-xs text-slate-500">Android</p><p class="mt-0.5 text-base font-extrabold text-[#14213d]">8+</p></div>
+                                <div><p class="text-xs text-slate-500">Android mínimo</p><p class="mt-0.5 text-base font-extrabold text-[#14213d]">API {{ $release['min_sdk'] ?? 26 }}{{ ($release['min_sdk'] ?? 26) === 26 ? ' · Android 8.0' : '' }}</p>@if(($release['size_bytes'] ?? 0) > 0)<p class="text-xs">APK {{ number_format($release['size_bytes'] / 1000000, 2) }} MB</p>@endif</div>
                             </div>
                             <div class="flex items-center gap-3 px-2 sm:px-4">
                                 <span class="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600 sm:flex"><svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m13 2-9 12h7l-1 8 9-12h-7l1-8Z"/></svg></span>

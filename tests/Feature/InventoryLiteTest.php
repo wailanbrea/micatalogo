@@ -562,7 +562,7 @@ test('inventory service computes financial valuation and gross profit correctly'
 
     expect($inventory->gross_profit)->toBe(2000.0);    // 5 * (1000 - 600)
     expect($inventory->unit_margin)->toBe(400.0);      // 1000 - 600
-    expect($inventory->margin_percentage)->toBe(66.7); // (400 / 600) * 100
+    expect($inventory->margin_percentage)->toBe(40.0); // (400 / 1000) * 100
 
     $service = app(InventoryService::class);
     $summary = $service->getShopInventorySummary($shop);

@@ -708,7 +708,7 @@
                 </div>
             @endif
 
-            <x-ad-slot position="catalog_between_rows" />
+            <x-ad-slot position="catalog_between_rows" :shop="$shop" />
 
             <!-- Sticky Bottom Store Floating Contact Bar for Mobile Screens -->
             <div class="fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-2.5 shadow-2xl flex items-center justify-between gap-3 sm:hidden">

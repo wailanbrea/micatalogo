@@ -117,6 +117,12 @@ class ProductInventory extends Model
      */
     public function getInventoryValueAttribute(): float
     {
+        if ($this->product?->isDecant()) {
+            return 0.0; // Presentations share the source stock; do not count it twice.
+        }
+        if (InventoryLot::where('product_id', $this->product_id)->exists()) {
+            return round((float) InventoryLot::where('product_id', $this->product_id)->sum('remaining_cost_cents') / 100, 2);
+        }
         if (! $this->cost_price || $this->stock_quantity <= 0) {
             return 0.0;
         }
@@ -133,13 +139,21 @@ class ProductInventory extends Model
             return 0.0;
         }
 
-        return round((float) $this->product->inventoryMovements()
+        $invoiced = InvoiceItem::query()
+            ->where('product_id', $this->product_id)
+            ->whereNotNull('total_cost_cents')
+            ->selectRaw('COALESCE(SUM(line_total - tax - general_discount_cents / 100.0 - total_cost_cents / 100.0), 0) as total')
+            ->value('total');
+        $legacy = $this->product->inventoryMovements()
             ->reorder()
             ->where('type', 'sale')
+            ->whereNull('invoice_id')
             ->whereNotNull('unit_price')
             ->whereNotNull('unit_cost')
-            ->selectRaw('COALESCE(SUM(ABS(quantity) * (unit_price - unit_cost)), 0) as total')
-            ->value('total'), 2);
+            ->selectRaw('COALESCE(SUM(ABS(quantity) * unit_price - COALESCE(total_cost_cents / 100.0, ABS(quantity) * unit_cost)), 0) as total')
+            ->value('total');
+
+        return round((float) $invoiced + (float) $legacy, 2);
     }
 
     /**
@@ -151,20 +165,20 @@ class ProductInventory extends Model
             return null;
         }
 
-        return round((float) $this->product->price - (float) $this->cost_price, 2);
+        return round($this->product->currentPrice() - (float) $this->cost_price, 2);
     }
 
     /**
-     * Profit margin percentage over cost: ((price - cost) / cost) * 100
+     * Gross margin percentage over the effective selling price.
      */
     public function getMarginPercentageAttribute(): ?float
     {
-        if (! $this->cost_price || (float) $this->cost_price <= 0 || ! $this->product) {
+        if ($this->cost_price === null || ! $this->product || $this->product->currentPrice() <= 0) {
             return null;
         }
 
-        $margin = (float) $this->product->price - (float) $this->cost_price;
+        $margin = $this->product->currentPrice() - (float) $this->cost_price;
 
-        return round(($margin / (float) $this->cost_price) * 100, 1);
+        return round(($margin / $this->product->currentPrice()) * 100, 1);
     }
 }

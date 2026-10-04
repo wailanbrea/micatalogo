@@ -108,7 +108,7 @@ class AdminUserController extends Controller
 
     public function updatePlan(Request $request, User $user): RedirectResponse
     {
-        $validated = $request->validate(['plan' => ['required', 'in:free,premium']]);
+        $validated = $request->validate(['plan' => ['required', 'in:free,premium,pro']]);
         $newPlan = UserPlan::from($validated['plan']);
 
         if ($newPlan === UserPlan::Free && $user->shops()->where('status', 'active')->get()->contains(

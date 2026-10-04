@@ -1,4 +1,4 @@
-<x-layouts.app title="MiCatalogo | Crea tu catálogo gratis y vende por WhatsApp">
+<x-layouts.app title="MiCatalogo | Catálogo, ventas e inventario para tu negocio" description="Crea tu catálogo, controla inventario, registra ventas, genera comprobantes y administra tu negocio desde MiCatalogo. Empieza gratis.">
     <div class="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans relative overflow-x-hidden selection:bg-blue-600 selection:text-white">
         <!-- Ambient background soft luminous lighting (Light / White theme) -->
         <div class="pointer-events-none absolute -top-40 -left-40 h-[600px] w-[600px] rounded-full bg-blue-100/70 blur-[130px]"></div>
@@ -140,22 +140,22 @@
                         </div>
 
                         <h1 class="text-4xl sm:text-5xl lg:text-[56px] font-extrabold text-slate-900 tracking-tight leading-[1.12]">
-                            Crea tu catálogo gratis.<br>
+                            Tu negocio empieza gratis.<br>
                             <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-                                Sube tus productos una vez.
+                                Catálogo, ventas e inventario.
                             </span><br>
-                            Comparte un solo enlace con tus clientes.
+                            Mantén el control desde un solo lugar.
                         </h1>
 
                         <p class="text-lg text-slate-600 max-w-xl leading-relaxed">
-                            Deja de publicar las mismas fotos todos los días. Tus clientes exploran tu vitrina por WhatsApp sin intermediarios, sin comisiones y en una <strong class="text-slate-900 font-bold">Vitrina 100% Aislada</strong> sin competidores.
+                            Administra productos, ventas, inventario y comprobantes desde un solo lugar. Tus clientes ven únicamente tu catálogo y te contactan directamente por WhatsApp. Empieza gratis, sin tarjeta.
                         </p>
 
                         <!-- CTA Cluster -->
                         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full pt-2">
                             @guest
                                 <a class="inline-flex items-center justify-center gap-2 bg-blue-600 text-white font-bold text-base px-7 py-3.5 rounded-xl shadow-lg shadow-blue-600/25 hover:bg-blue-700 transition-all active:scale-98 group" href="{{ route('register') }}">
-                                    <span>Crear mi catálogo gratis</span>
+                                    <span>Empezar gratis</span>
                                     <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                                 </a>
                                 <a class="inline-flex items-center justify-center gap-2 bg-white text-slate-700 border border-slate-200 font-semibold text-base px-6 py-3.5 rounded-xl shadow-xs hover:bg-slate-50 hover:border-slate-300 transition-colors" href="#como-funciona">
@@ -499,13 +499,13 @@
                     <!-- Section Title & Headline -->
                     <div class="max-w-3xl mb-12">
                         <span class="text-xs font-bold text-amber-800 bg-amber-100/80 border border-amber-200 px-3.5 py-1 rounded-full uppercase tracking-widest">
-                            Para cualquier mostrador
+                            Tu negocio, organizado a tu manera
                         </span>
                         <h2 class="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight mt-3">
-                            Hecho para lo que vendes.
+                            Herramientas para lo que vendes.
                         </h2>
                         <p class="text-base sm:text-lg text-slate-600 mt-3 leading-relaxed max-w-2xl">
-                            Elige tu tipo de negocio y la vitrina llega con plantilla, filtros y catálogo listos. Y esta no es una maqueta: tócala.
+                            Explora estos ejemplos interactivos de perfumes, ropa y tecnología. Los productos, imágenes y precios son ilustrativos, no ventas reales ni testimonios.
                         </p>
                     </div>
 
@@ -1025,6 +1025,18 @@
             </section>
 
             <!-- 5. VENTAJAS (Grid de 6 cards) -->
+            <section class="mx-auto max-w-7xl px-4 py-12" id="planes">
+                <h2 class="text-3xl font-bold">Empieza gratis. Crece cuando lo necesites.</h2>
+                <div class="mt-6 grid gap-4 md:grid-cols-3">
+                    @foreach(config('catalog.plans') as $key => $limits)
+                    <article class="rounded-2xl border bg-white p-6"><h3 class="text-xl font-bold">{{ \App\Enums\UserPlan::from($key)->label() }}</h3><p class="mt-2">{{ $limits['max_products_per_shop'] }} productos · {{ $limits['max_images_per_product'] }} imágenes por producto · {{ $limits['max_active_shops'] }} tienda activa</p><p class="mt-3">Catálogo, WhatsApp, ventas, inventario y comprobantes PDF.</p>
+                        @if($key === 'pro')<p class="mt-3">Reglas de precio por margen y redondeo. Subidas automáticas opcionales; bajadas con aprobación.</p>@endif
+                        <p class="mt-3 font-semibold">{{ $key === 'free' ? 'RD$0 · Sin tarjeta' : 'Activación por el administrador. Consulta disponibilidad y condiciones.' }}</p>
+                    </article>
+                    @endforeach
+                </div><p class="mt-4 text-sm text-slate-500">No hay cobro automático de suscripciones. No se anuncian cuotas de almacenamiento o usuarios que el sistema no controle.</p>
+            </section>
+            <section class="mx-auto max-w-7xl px-4 py-10"><h2 class="text-3xl font-bold">Administra también desde Android</h2><p class="mt-3">Descarga tu catálogo y registra ventas desde el teléfono. Las ventas y nuevos abonos se envían cuando hay conexión; los conflictos requieren revisión. La administración completa y los reportes FIFO están en el panel web.</p><a class="mt-4 inline-flex rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white" href="{{ route('downloads.index') }}">Ver versión y descargar APK</a></section>
             <section class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24" id="ventajas">
                 <div class="flex flex-col items-center gap-12">
                     <div class="text-center max-w-2xl flex flex-col items-center gap-2">
@@ -1032,10 +1044,10 @@
                             Todo en uno
                         </span>
                         <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-                            Todo lo que necesitas para mostrar tus productos
+                            Herramientas para vender y mantener el control
                         </h2>
                         <p class="text-base text-slate-600">
-                            Diseñado específicamente para las necesidades del vendedor informal y por chat.
+                            Catálogo, ventas, existencias, comprobantes PDF, clientes y crédito, vendedores e importación CSV/XLSX.
                         </p>
                     </div>
 
@@ -1100,7 +1112,7 @@
                             <div class="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center border border-teal-100">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             </div>
-                            <h3 class="text-lg font-bold text-slate-900">100% Gratis sin comisiones</h3>
+                            <h3 class="text-lg font-bold text-slate-900">Empieza gratis. Sin tarjeta.</h3>
                             <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
                                 Puedes crear tu catálogo hoy mismo sin suscripciones forzosas, sin intermediarios y sin ingresar tarjeta de crédito.
                             </p>
@@ -1280,7 +1292,7 @@
                     </h2>
 
                     <p class="text-base sm:text-lg text-blue-100 max-w-2xl leading-relaxed">
-                        Crea tu catálogo gratis y empieza a compartir un único enlace con tus clientes hoy mismo.
+                        Empieza hoy. Crece cuando lo necesites. Organiza tu negocio y comparte tu catálogo con tus clientes.
                     </p>
 
                     <div class="flex flex-col sm:flex-row items-center gap-3 pt-2">
@@ -1320,7 +1332,7 @@
                             <span class="text-lg font-extrabold tracking-tight text-slate-900">Mi<span class="text-blue-600">Catalogo</span></span>
                         </div>
                         <p class="text-xs text-slate-500 max-w-sm leading-relaxed">
-                            Vitrina digital sencilla para vendedores independientes. Comparte tus productos por WhatsApp con un solo enlace sin comisiones.
+                            Catálogo, ventas, inventario y comprobantes para tu negocio. Empieza gratis.
                         </p>
                     </div>
 

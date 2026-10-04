@@ -63,6 +63,11 @@ class InventoryService
                 throw new InvalidArgumentException("Stock insuficiente para {$product->name}. {$availableLabel}.", 409);
             }
 
+            $fifo = app(FifoCostService::class);
+            $fifoSource = $source ?? $product;
+            $fifoInventory = $sourceInventory ?? $inventory;
+            $fifo->initialize($fifoSource, $fifoInventory);
+
             $after = $before - $quantity;
 
             if ($product->isDecant()) {
@@ -93,13 +98,19 @@ class InventoryService
                 'quantity' => -$quantity,
                 'stock_before' => $before,
                 'stock_after' => $after,
-                'unit_price' => $unitPrice ?? $product->price,
+                'unit_price' => $unitPrice ?? $product->currentPrice(),
                 'unit_cost' => $inventory->cost_price,
                 'notes' => $notes ?: ($product->isDecant()
                     ? "Venta de decant de {$product->volume_ml} ml"
                     : 'Venta registrada'),
                 'user_id' => $userId,
                 'created_at' => now(),
+            ]);
+
+            $costCents = $fifo->consume($fifoSource, $consumedMl ?? $quantity, $movement);
+            $movement->update([
+                'total_cost_cents' => $costCents,
+                'unit_cost' => $costCents === null ? null : $costCents / (100 * $quantity),
             ]);
 
             if ($createInvoice) {
@@ -121,9 +132,12 @@ class InventoryService
      * @param  array<int, array{product: Product, quantity: int, unit_price?: float}>  $sales
      * @return array<int, InventoryMovement>
      */
-    public function recordCartSales(array $sales, ?int $userId = null, string $channel = 'whatsapp', string $paymentStatus = 'paid'): array
+    public function recordCartSales(array $sales, ?int $userId = null, string $channel = 'whatsapp', string $paymentStatus = 'paid', float $discount = 0, float $tax = 0): array
     {
-        return DB::transaction(function () use ($sales, $userId, $channel, $paymentStatus): array {
+        return DB::transaction(function () use ($sales, $userId, $channel, $paymentStatus, $discount, $tax): array {
+            if ($sales === [] || $discount < 0 || $tax < 0) {
+                throw new InvalidArgumentException('La venta o sus importes no son válidos.');
+            }
             $movements = collect($sales)->map(fn (array $sale) => $this->recordSale(
                 $sale['product'],
                 $sale['quantity'],
@@ -133,7 +147,7 @@ class InventoryService
                 $sale['unit_price'] ?? null,
             ))->all();
 
-            $this->createInvoiceForSales($sales[0]['product']->shop_id, $sales, $movements, $userId, $channel, $paymentStatus);
+            $this->createInvoiceForSales($sales[0]['product']->shop_id, $sales, $movements, $userId, $channel, $paymentStatus, $discount, $tax);
 
             return $movements;
         });
@@ -144,13 +158,13 @@ class InventoryService
      *
      * @throws InvalidArgumentException
      */
-    public function recordRestock(Product $product, int $quantity, ?string $notes = null, ?int $userId = null): InventoryMovement
+    public function recordRestock(Product $product, int $quantity, ?string $notes = null, ?int $userId = null, ?float $unitCost = null): InventoryMovement
     {
-        if ($quantity <= 0) {
+        if ($quantity <= 0 || ($unitCost !== null && $unitCost < 0)) {
             throw new InvalidArgumentException('La cantidad a reponer debe ser mayor a 0.');
         }
 
-        return DB::transaction(function () use ($product, $quantity, $notes, $userId) {
+        return DB::transaction(function () use ($product, $quantity, $notes, $userId, $unitCost) {
             $product = Product::query()->lockForUpdate()->findOrFail($product->id);
             $inventory = ProductInventory::where('product_id', $product->id)
                 ->lockForUpdate()
@@ -167,12 +181,25 @@ class InventoryService
             $before = $inventory->stock_quantity;
             $after = $before + $quantity;
 
-            $inventory->stock_quantity = $after;
+            $fifo = app(FifoCostService::class);
+            $fifo->initialize($product, $inventory);
+            $cost = $unitCost ?? ($inventory->cost_price === null ? null : (float) $inventory->cost_price);
+            $fifo->receive($product, $product->sale_unit === 'bottle' ? $quantity * (int) $product->volume_ml : $quantity,
+                $cost === null ? null : (int) round($cost * $quantity * 100));
+
             $availableMl = $this->availableMl($product, $inventory);
+            $inventory->stock_quantity = $after;
+            if ($unitCost !== null) {
+                $inventory->cost_price = $unitCost;
+            }
             if ($availableMl !== null) {
                 $inventory->available_ml = $availableMl + ($product->sale_unit === 'bottle' ? $quantity * $product->volume_ml : $quantity);
             }
             $inventory->save();
+
+            if ($cost !== null) {
+                app(ProductPricingService::class)->propose($product, $cost, $userId);
+            }
 
             $this->syncAvailability($product, $after);
             $this->syncDependentDecants($product);
@@ -221,6 +248,11 @@ class InventoryService
             $after = $newStock;
             $diff = $after - $before;
 
+            $fifo = app(FifoCostService::class);
+            $fifo->initialize($product, $inventory);
+            $canonicalBefore = $fifo->quantity($product, $inventory);
+            $canonicalAfter = $product->sale_unit === 'bottle' ? $after * (int) $product->volume_ml : $after;
+
             $inventory->stock_quantity = $after;
             if ($product->sale_unit === 'bottle') {
                 $inventory->available_ml = $after * $product->volume_ml;
@@ -235,7 +267,7 @@ class InventoryService
             $this->syncAvailability($product, $after);
             $this->syncDependentDecants($product);
 
-            return InventoryMovement::create([
+            $movement = InventoryMovement::create([
                 'product_id' => $product->id,
                 'type' => 'adjustment',
                 'quantity' => $diff,
@@ -247,6 +279,14 @@ class InventoryService
                 'user_id' => $userId,
                 'created_at' => now(),
             ]);
+            if ($canonicalAfter > $canonicalBefore) {
+                // A physical count does not prove acquisition cost.
+                $fifo->receive($product, $canonicalAfter - $canonicalBefore, null, 'physical_count');
+            } elseif ($canonicalAfter < $canonicalBefore) {
+                $fifo->consume($product, $canonicalBefore - $canonicalAfter, $movement);
+            }
+
+            return $movement;
         });
     }
 
@@ -338,7 +378,7 @@ class InventoryService
      * @param  array<int, array{product: Product, quantity: int, unit_price?: float}>  $sales
      * @param  array<int, InventoryMovement>  $movements
      */
-    private function createInvoiceForSales(int $shopId, array $sales, array $movements, ?int $userId, string $channel = 'whatsapp', string $paymentStatus = 'paid'): Invoice
+    private function createInvoiceForSales(int $shopId, array $sales, array $movements, ?int $userId, string $channel = 'whatsapp', string $paymentStatus = 'paid', float $discount = 0, float $tax = 0): Invoice
     {
         $invoice = Invoice::create([
             'shop_id' => $shopId,
@@ -356,8 +396,13 @@ class InventoryService
         foreach ($sales as $index => $sale) {
             $product = $sale['product'];
             $quantity = (int) $sale['quantity'];
-            $unitPrice = (float) ($sale['unit_price'] ?? $product->price);
-            $lineTotal = $unitPrice * $quantity;
+            $unitPrice = (float) ($sale['unit_price'] ?? $product->currentPrice());
+            $lineDiscount = (float) ($sale['discount'] ?? 0);
+            $lineTax = (float) ($sale['tax'] ?? 0);
+            $lineTotal = round($unitPrice * $quantity - $lineDiscount + $lineTax, 2);
+            if ($lineTotal < 0) {
+                throw new InvalidArgumentException('El descuento supera el importe de la línea.');
+            }
             $total += $lineTotal;
 
             $invoice->items()->create([
@@ -369,6 +414,9 @@ class InventoryService
                 'quantity' => $quantity,
                 'unit_price' => $unitPrice,
                 'line_total' => $lineTotal,
+                'discount' => $lineDiscount,
+                'tax' => $lineTax,
+                'total_cost_cents' => $movements[$index]->total_cost_cents ?? null,
             ]);
 
             if (isset($movements[$index])) {
@@ -376,9 +424,23 @@ class InventoryService
             }
         }
 
-        $invoice->update(['subtotal' => $total, 'total' => $total]);
+        if ($discount > $total) {
+            throw new InvalidArgumentException('El descuento supera el subtotal.');
+        }
+        $remainingDiscount = (int) round($discount * 100);
+        $remainingSubtotal = (int) round($total * 100);
+        foreach ($invoice->items()->orderBy('id')->get() as $item) {
+            $lineCents = (int) round((float) $item->line_total * 100);
+            $allocated = $remainingSubtotal > 0
+                ? ($lineCents === $remainingSubtotal ? $remainingDiscount : intdiv($remainingDiscount * $lineCents, $remainingSubtotal))
+                : 0;
+            $item->update(['general_discount_cents' => $allocated]);
+            $remainingSubtotal -= $lineCents;
+            $remainingDiscount -= $allocated;
+        }
+        $invoice->update(['subtotal' => $total, 'discount' => $discount, 'tax' => $tax, 'total' => round($total - $discount + $tax, 2)]);
 
-        $this->applySalespersonCommission($invoice, $shopId, $userId, $total);
+        $this->applySalespersonCommission($invoice, $shopId, $userId, (float) $invoice->total);
 
         return $invoice;
     }

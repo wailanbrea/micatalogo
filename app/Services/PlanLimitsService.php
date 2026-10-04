@@ -13,7 +13,7 @@ class PlanLimitsService
     {
         $plan = $user->plan instanceof UserPlan ? $user->plan : UserPlan::tryFrom((string) $user->plan);
 
-        if ($plan === UserPlan::Premium && $user->plan_expires_at?->isPast()) {
+        if ($plan !== UserPlan::Free && $user->plan_expires_at?->isPast()) {
             return UserPlan::Free;
         }
 

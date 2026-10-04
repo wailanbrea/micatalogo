@@ -52,6 +52,9 @@
 
         @if ($contextShop)
             @if ($canSeeMenu('sales'))
+            <a wire:navigate.hover href="{{ route('seller.shops.business', $contextShop) }}" class="{{ $linkClass }} {{ request()->routeIs('seller.shops.business') ? $activeClass : $idleClass }}">
+                <span aria-hidden="true" class="w-5 text-center">↗</span><span>Negocio y ganancias</span>
+            </a>
             <a wire:navigate.hover href="{{ route('seller.shops.inventory.index', $contextShop) }}" class="{{ $linkClass }} {{ $isInventory ? $activeClass : $idleClass }}">
                 <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h18v14H3zM7 9h4m-4 4h10m-10 4h7"/></svg>
                 <span>Vender</span>

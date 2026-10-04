@@ -70,9 +70,15 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
         ->middleware('can:delete,shop')
         ->name('shops.destroy');
     Route::scopeBindings()->middleware(['can:sell,shop', 'menu:sales'])->group(function () {
+        Route::get('/tiendas/{shop}/negocio', [\App\Http\Controllers\SellerBusinessController::class, 'index'])->name('shops.business');
+        Route::post('/tiendas/{shop}/pedidos/{order}/confirmar', [\App\Http\Controllers\SellerBusinessController::class, 'confirm'])->name('shops.orders.confirm');
         Route::get('/tiendas/{shop}/inventario', [SellerInventoryController::class, 'index'])->name('shops.inventory.index');
         Route::post('/tiendas/{shop}/inventario/cobro', [SellerInventoryController::class, 'checkout'])->name('shops.inventory.checkout');
         Route::post('/tiendas/{shop}/productos/{product}/inventario/venta', [SellerInventoryController::class, 'recordSale'])->name('shops.inventory.sale');
+    });
+    Route::scopeBindings()->middleware('can:update,shop')->group(function () {
+        Route::post('/tiendas/{shop}/productos/{product}/regla-precio', [\App\Http\Controllers\SellerBusinessController::class, 'rule'])->name('shops.pricing.rule');
+        Route::post('/tiendas/{shop}/productos/{product}/aprobar-precio', [\App\Http\Controllers\SellerBusinessController::class, 'approve'])->name('shops.pricing.approve');
     });
     Route::scopeBindings()->middleware(['can:sell,shop', 'menu:products'])->group(function () {
         Route::get('/tiendas/{shop}/productos', [SellerProductController::class, 'index'])->name('shops.products.index');

@@ -166,6 +166,7 @@
                                         <select name="plan" class="rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-700" onchange="this.form.submit()" @disabled($user->id === auth()->id())>
                                             <option value="free" @selected($user->plan?->value === 'free')>Gratis</option>
                                             <option value="premium" @selected($user->plan?->value === 'premium')>Premium</option>
+                                            <option value="pro" @selected($user->plan?->value === 'pro')>Pro</option>
                                         </select>
                                     </form>
                                 </td>

@@ -20,6 +20,10 @@ class InvoiceItem extends Model
         'quantity',
         'unit_price',
         'line_total',
+        'discount',
+        'general_discount_cents',
+        'tax',
+        'total_cost_cents',
     ];
 
     protected function casts(): array

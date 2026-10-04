@@ -185,6 +185,7 @@
             </div>
             <div class="border-t border-slate-100 pt-2">
                 <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Analisis</p>
+                @if ($canSeeMenu('sales'))<a wire:navigate href="{{ route('seller.shops.business', $shop) }}" class="block rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100">Negocio · ganancias y lotes</a>@endif
                 @if ($canSeeMenu('metrics'))<a wire:navigate href="{{ route('seller.shops.metrics.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'metrics' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Métricas y QR</a>@endif
             </div>
             <div class="border-t border-slate-100 pt-2">

@@ -58,6 +58,7 @@
         </tbody>
     </table>
 
+    <p>Subtotal: RD$ {{ number_format((float) $invoice->subtotal, 2) }} · Descuento general: RD$ {{ number_format((float) $invoice->discount, 2) }} · Impuesto general: RD$ {{ number_format((float) $invoice->tax, 2) }}</p>
     <div class="total">Total: RD$ {{ number_format((float) $invoice->total, 2) }}</div>
     <div class="footer">Gracias por su compra. Documento generado por MiCatalogo.</div>
 </body>

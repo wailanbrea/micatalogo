@@ -12,6 +12,7 @@
         <div class="mx-auto max-w-7xl space-y-6">
             <!-- Shop Context & Local Navigation Tabs -->
             <x-seller.shop-header :shop="$shop" activeTab="inventory" />
+            <a class="inline-flex rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white" href="{{ route('seller.shops.business', $shop) }}">Dashboard, pedidos y ganancia por producto</a>
 
             <!-- Flash Status Messages -->
             @if (session('status'))
@@ -781,6 +782,9 @@
                     </div>
 
                     <div>
+                        <label class="block text-xs font-semibold text-slate-600" for="restock_cost">Costo por unidad de este lote (opcional)</label>
+                        <input class="mt-1 w-full rounded-lg border p-2" id="restock_cost" name="unit_cost" type="number" min="0" step="0.01" placeholder="Costo de compra; no modifica lotes anteriores">
+                        <p class="my-2 text-xs text-slate-500">Vacío conserva el costo actual para este nuevo lote. Las bajadas de precio requieren aprobación.</p>
                         <label class="block text-xs font-semibold text-slate-600" for="restock_notes">Nota (opcional)</label>
                         <input
                             type="text"

@@ -82,12 +82,11 @@ class ProductionHardeningTest extends TestCase
         $response->assertDontSee('Espacio publicitario');
     }
 
-    public function test_ad_slot_is_rendered_when_ads_are_enabled(): void
+    public function test_home_has_no_ad_slot_even_when_ads_are_enabled(): void
     {
         config()->set('catalog.ads.enabled', true);
 
         $response = $this->get('/');
-        $response->assertSee('Espacio publicitario');
-        $response->assertSee('Publicidad');
+        $response->assertDontSee('Espacio publicitario');
     }
 }

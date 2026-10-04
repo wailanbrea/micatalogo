@@ -27,10 +27,14 @@ class PosSaleController extends Controller
             'payment_status' => ['required', 'in:paid,partial,pending'],
             'customer_id' => ['nullable', 'ulid'],
             'credit_amount' => ['nullable', 'decimal:0,2', 'min:0'],
+            'discount' => ['sometimes', 'decimal:0,2', 'min:0'],
+            'tax' => ['sometimes', 'decimal:0,2', 'min:0'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'ulid'],
             'items.*.quantity' => ['required', 'integer', 'min:1', 'max:10000'],
             'items.*.unit_price' => ['required', 'decimal:0,2', 'min:0'],
+            'items.*.discount' => ['sometimes', 'decimal:0,2', 'min:0'],
+            'items.*.tax' => ['sometimes', 'decimal:0,2', 'min:0'],
         ]);
         $payloadHash = hash('sha256', json_encode($validated, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION));
 
@@ -72,7 +76,11 @@ class PosSaleController extends Controller
 
                 $creditAmount = $validated['credit_amount'] ?? '0.00';
                 $creditCents = $this->toCents($creditAmount);
-                $totalCents = collect($validated['items'])->sum(fn (array $item): int => $this->toCents($products[$item['product_id']]->currentPrice()) * (int) $item['quantity']);
+                $totalCents = collect($validated['items'])->sum(fn (array $item): int => $this->toCents($products[$item['product_id']]->currentPrice()) * (int) $item['quantity'] - $this->toCents($item['discount'] ?? 0) + $this->toCents($item['tax'] ?? 0))
+                    - $this->toCents($validated['discount'] ?? 0) + $this->toCents($validated['tax'] ?? 0);
+                if ($totalCents < 0) {
+                    return response()->json(['message' => 'El descuento supera el total.'], 422);
+                }
                 $customer = null;
                 if (! empty($validated['customer_id'])) {
                     $customer = Customer::query()
@@ -104,12 +112,16 @@ class PosSaleController extends Controller
                     'product' => $products[$item['product_id']],
                     'quantity' => (int) $item['quantity'],
                     'unit_price' => $products[$item['product_id']]->currentPrice(),
+                    'discount' => (float) ($item['discount'] ?? 0),
+                    'tax' => (float) ($item['tax'] ?? 0),
                 ], $validated['items']);
                 $movements = $inventoryService->recordCartSales(
                     $sales,
                     $request->user()->id,
                     'pos',
                     $paymentStatus,
+                    (float) ($validated['discount'] ?? 0),
+                    (float) ($validated['tax'] ?? 0),
                 );
                 $invoice = Invoice::query()->findOrFail($movements[0]->invoice_id);
 

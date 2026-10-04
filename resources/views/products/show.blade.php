@@ -437,7 +437,7 @@
                 </a>
             </div>
 
-            <x-ad-slot position="product_below_details" />
+            <x-ad-slot position="product_below_details" :shop="$shop" />
 
             <!-- More products from this shop -->
             @if ($relatedProducts->isNotEmpty())

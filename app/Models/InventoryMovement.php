@@ -22,6 +22,7 @@ class InventoryMovement extends Model
         'stock_after',
         'unit_price',
         'unit_cost',
+        'total_cost_cents',
         'notes',
         'created_at',
     ];

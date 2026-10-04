@@ -25,6 +25,8 @@ class Invoice extends Model
         'commission_amount',
         'subtotal',
         'total',
+        'discount',
+        'tax',
         'issued_at',
     ];
 

@@ -141,11 +141,12 @@ class SellerInventoryController extends Controller
     {
         $validated = $request->validate([
             'quantity' => ['required', 'integer', 'min:1', 'max:100000'],
+            'unit_cost' => ['nullable', 'decimal:0,2', 'min:0'],
             'notes' => ['nullable', 'string', 'max:255'],
         ]);
 
         try {
-            $inventoryService->recordRestock($product, (int) $validated['quantity'], $validated['notes'] ?? null, $request->user()->id);
+            $inventoryService->recordRestock($product, (int) $validated['quantity'], $validated['notes'] ?? null, $request->user()->id, isset($validated['unit_cost']) ? (float) $validated['unit_cost'] : null);
 
             return back()->with('status', "Se repusieron {$validated['quantity']} unidad(es) en el inventario de {$product->name}.");
         } catch (InvalidArgumentException $e) {

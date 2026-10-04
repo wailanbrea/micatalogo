@@ -14,6 +14,11 @@ return [
             'max_products_per_shop' => 500,
             'max_images_per_product' => 3,
         ],
+        'pro' => [
+            'max_active_shops' => 1,
+            'max_products_per_shop' => 1500,
+            'max_images_per_product' => 8,
+        ],
     ],
 
     // Legacy keys remain available for existing tests and deployments.

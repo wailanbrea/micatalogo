@@ -190,6 +190,15 @@ class SellerProductController extends Controller
 
             $stockChanged = false;
             $oldStock = $inventory->stock_quantity;
+            $fifo = app(\App\Services\FifoCostService::class);
+            $hadLots = \App\Models\InventoryLot::where('product_id', $product->id)->exists();
+            if ($hadLots && ($presentation->sale_unit !== $product->sale_unit || $presentation->volume_ml !== $product->volume_ml)) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['sale_unit' => 'No cambies la unidad o volumen de un producto con lotes. Crea una presentación vinculada.']);
+            }
+            $oldCanonical = $fifo->quantity($product, $inventory);
+            if ($inventory->track_inventory && ! $product->isDecant()) {
+                $fifo->initialize($product, $inventory);
+            }
 
             $inventory->track_inventory = $trackInventory;
             $inventory->cost_price = $costPrice;
@@ -214,7 +223,7 @@ class SellerProductController extends Controller
 
             if ($stockChanged) {
                 $stockDelta = $inventory->stock_quantity - $oldStock;
-                $product->inventoryMovements()->create([
+                $adjustment = $product->inventoryMovements()->create([
                     'user_id' => $request->user()->id,
                     'type' => 'adjustment',
                     'quantity' => $stockDelta,
@@ -225,6 +234,14 @@ class SellerProductController extends Controller
                     'notes' => 'Ajuste manual desde edición de producto',
                     'created_at' => now(),
                 ]);
+                if ($trackInventory && ! $presentation->isDecant()) {
+                    $newCanonical = $fifo->quantity($presentation, $inventory);
+                    if ($newCanonical > $oldCanonical) {
+                        $fifo->receive($presentation, $newCanonical - $oldCanonical, null, 'physical_count');
+                    } elseif ($newCanonical < $oldCanonical) {
+                        $fifo->consume($product, $oldCanonical - $newCanonical, $adjustment);
+                    }
+                }
             }
 
             if ($trackInventory) {

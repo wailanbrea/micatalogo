@@ -240,9 +240,9 @@ class StorefrontIsolationTest extends TestCase
         $response = $this->get('/');
 
         $response->assertOk();
-        $response->assertSee('Crea tu catálogo gratis');
-        $response->assertSee('Sube tus productos una vez');
-        $response->assertSee('Comparte un solo enlace con tus clientes');
+        $response->assertSee('Tu negocio empieza gratis.');
+        $response->assertSee('Catálogo, ventas e inventario.');
+        $response->assertSee('Administra productos, ventas, inventario y comprobantes');
         $response->assertSee('Vitrina 100% Aislada');
 
         // Verify no products or shops are listed

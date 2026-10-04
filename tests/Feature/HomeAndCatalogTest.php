@@ -15,9 +15,9 @@ test('homepage renders seller landing page and never displays cross-store produc
     $response->assertOk();
 
     // Verify value propositions are present
-    $response->assertSee('Crea tu catálogo gratis');
-    $response->assertSee('Sube tus productos una vez');
-    $response->assertSee('Comparte un solo enlace con tus clientes');
+    $response->assertSee('Tu negocio empieza gratis.');
+    $response->assertSee('Catálogo, ventas e inventario.');
+    $response->assertSee('Administra productos, ventas, inventario y comprobantes');
     $response->assertSee('Vitrina 100% Aislada');
     $response->assertSee('Pedidos por WhatsApp');
     $response->assertSee('Descarga');
