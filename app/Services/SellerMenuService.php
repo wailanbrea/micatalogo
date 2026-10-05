@@ -42,7 +42,7 @@ class SellerMenuService
     public function normalize(?array $permissions): array
     {
         if ($permissions === null) {
-            return $this->assignableKeys();
+            return array_values(array_diff($this->assignableKeys(), ['finance']));
         }
 
         return array_values(array_intersect($this->assignableKeys(), $permissions));

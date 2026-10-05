@@ -14,6 +14,7 @@ class FinanceReportController extends Controller
     public function summary(Request $request, Shop $shop, BusinessDashboardService $service, SellerMenuService $menus): JsonResponse
     {
         abort_unless($menus->canManage($shop, $request->user()) || $request->user()->canSellAtShop($shop), 403);
+        abort_unless(in_array('finance', $menus->forUser($shop, $request->user()), true), 403);
 
         $from = $request->query('from');
         $to = $request->query('to');
@@ -25,7 +26,8 @@ class FinanceReportController extends Controller
         // Mask sensitive costs/profit if seller cannot view finance
         $canViewSensitiveFinance = $menus->canManage($shop, $request->user())
             || $request->user()->isAdmin()
-            || $request->user()->ownsShop($shop);
+            || $request->user()->ownsShop($shop)
+            || in_array('finance', $menus->forUser($shop, $request->user()), true);
 
         if (! $canViewSensitiveFinance) {
             $summary['period']['fifo_cogs'] = null;
@@ -46,7 +48,7 @@ class FinanceReportController extends Controller
 
     public function incomeStatement(Request $request, Shop $shop, BusinessDashboardService $service, SellerMenuService $menus): JsonResponse
     {
-        abort_unless($menus->canManage($shop, $request->user()) || $request->user()->ownsShop($shop) || $request->user()->isAdmin(), 403);
+        abort_unless(($request->user()->isAdmin() || $request->user()->canSellAtShop($shop)) && in_array('finance', $menus->forUser($shop, $request->user()), true), 403);
 
         $from = $request->query('from');
         $to = $request->query('to');
@@ -58,7 +60,7 @@ class FinanceReportController extends Controller
 
     public function cashFlow(Request $request, Shop $shop, BusinessDashboardService $service, SellerMenuService $menus): JsonResponse
     {
-        abort_unless($menus->canManage($shop, $request->user()) || $request->user()->ownsShop($shop) || $request->user()->isAdmin(), 403);
+        abort_unless(($request->user()->isAdmin() || $request->user()->canSellAtShop($shop)) && in_array('finance', $menus->forUser($shop, $request->user()), true), 403);
 
         $from = $request->query('from');
         $to = $request->query('to');

@@ -14,7 +14,7 @@ class ExpenseController extends Controller
 {
     public function index(Request $request, Shop $shop, PlanLimitsService $limits): JsonResponse
     {
-        abort_unless($request->user()->canSellAtShop($shop), 403);
+        abort_unless(($request->user()->isAdmin() || $request->user()->canSellAtShop($shop)), 403);
         $limits->assertFeature($shop->user, 'expenses');
 
         $expenses = $shop->expenses()
@@ -41,7 +41,7 @@ class ExpenseController extends Controller
 
     public function categories(Request $request, Shop $shop, ExpenseService $service, PlanLimitsService $limits): JsonResponse
     {
-        abort_unless($request->user()->canSellAtShop($shop), 403);
+        abort_unless(($request->user()->isAdmin() || $request->user()->canSellAtShop($shop)), 403);
         $limits->assertFeature($shop->user, 'expenses');
 
         if ($shop->expenseCategories()->count() === 0) {
@@ -55,7 +55,7 @@ class ExpenseController extends Controller
 
     public function store(Request $request, Shop $shop, ExpenseService $service, PlanLimitsService $limits): JsonResponse
     {
-        abort_unless($request->user()->canSellAtShop($shop), 403);
+        abort_unless(($request->user()->isAdmin() || $request->user()->canSellAtShop($shop)), 403);
         $limits->assertFeature($shop->user, 'expenses');
 
         $validated = $request->validate([
@@ -86,6 +86,7 @@ class ExpenseController extends Controller
 
         return response()->json([
             'message' => 'Gasto registrado exitosamente.',
+            'client_operation_uuid' => $validated['client_operation_uuid'] ?? null,
             'expense' => [
                 'id' => $expense->public_id,
                 'description' => $expense->description,
@@ -96,13 +97,14 @@ class ExpenseController extends Controller
                 'payment_method' => $expense->payment_method,
                 'occurred_at' => $expense->occurred_at->toIso8601String(),
                 'category' => $expense->category?->name,
+                'category_name' => $expense->category?->name,
             ],
         ], 201);
     }
 
     public function pay(Request $request, Shop $shop, Expense $expense, ExpenseService $service, PlanLimitsService $limits): JsonResponse
     {
-        abort_unless($request->user()->canSellAtShop($shop), 403);
+        abort_unless(($request->user()->isAdmin() || $request->user()->canSellAtShop($shop)), 403);
         abort_unless($expense->shop_id === $shop->id, 404);
         $limits->assertFeature($shop->user, 'expenses');
 
@@ -121,6 +123,7 @@ class ExpenseController extends Controller
 
         try {
             $payment = $service->recordExpensePayment($shop, $expense, $request->user(), $validated);
+            $expense->refresh();
         } catch (\InvalidArgumentException $e) {
             $status = ($e->getCode() >= 400 && $e->getCode() < 600) ? $e->getCode() : 422;
 
@@ -129,6 +132,7 @@ class ExpenseController extends Controller
 
         return response()->json([
             'message' => 'Abono al gasto registrado exitosamente.',
+            'client_operation_uuid' => $validated['client_operation_uuid'] ?? null,
             'payment' => [
                 'id' => $payment->public_id,
                 'amount' => (float) $payment->amount,

@@ -14,7 +14,7 @@ class CashRegisterController extends Controller
 {
     public function current(Request $request, Shop $shop, CashRegisterService $service, PlanLimitsService $limits): JsonResponse
     {
-        abort_unless($request->user()->canSellAtShop($shop), 403);
+        abort_unless(($request->user()->isAdmin() || $request->user()->canSellAtShop($shop)), 403);
         $limits->assertFeature($shop->user, 'cash_registers');
 
         $session = $service->getCurrentSession($shop, $request->user());
@@ -43,7 +43,7 @@ class CashRegisterController extends Controller
 
     public function open(Request $request, Shop $shop, CashRegisterService $service, PlanLimitsService $limits): JsonResponse
     {
-        abort_unless($request->user()->canSellAtShop($shop), 403);
+        abort_unless(($request->user()->isAdmin() || $request->user()->canSellAtShop($shop)), 403);
         $limits->assertFeature($shop->user, 'cash_registers');
 
         $validated = $request->validate([
@@ -84,7 +84,7 @@ class CashRegisterController extends Controller
 
     public function close(Request $request, Shop $shop, CashRegisterSession $session, CashRegisterService $service, PlanLimitsService $limits): JsonResponse
     {
-        abort_unless($request->user()->canSellAtShop($shop), 403);
+        abort_unless(($request->user()->isAdmin() || $request->user()->canSellAtShop($shop)), 403);
         abort_unless($session->shop_id === $shop->id, 404);
         $limits->assertFeature($shop->user, 'cash_registers');
 
@@ -133,7 +133,7 @@ class CashRegisterController extends Controller
 
     public function movement(Request $request, Shop $shop, CashRegisterSession $session, CashRegisterService $service, PlanLimitsService $limits): JsonResponse
     {
-        abort_unless($request->user()->canSellAtShop($shop), 403);
+        abort_unless(($request->user()->isAdmin() || $request->user()->canSellAtShop($shop)), 403);
         abort_unless($session->shop_id === $shop->id, 404);
         $limits->assertFeature($shop->user, 'cash_registers');
 
@@ -163,6 +163,7 @@ class CashRegisterController extends Controller
 
             return response()->json([
                 'message' => 'Movimiento registrado exitosamente.',
+                'client_operation_uuid' => $validated['client_operation_uuid'] ?? null,
                 'movement' => [
                     'id' => $movement->public_id,
                     'type' => $movement->type,

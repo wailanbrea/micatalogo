@@ -49,14 +49,14 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/shops/{shop}/reports/income-statement', [FinanceReportController::class, 'incomeStatement']);
         Route::get('/shops/{shop}/reports/cash-flow', [FinanceReportController::class, 'cashFlow']);
 
-        Route::get('/shops/{shop}/cash-sessions/current', [CashRegisterController::class, 'current']);
-        Route::post('/shops/{shop}/cash-sessions/open', [CashRegisterController::class, 'open']);
-        Route::post('/shops/{shop}/cash-sessions/{session}/close', [CashRegisterController::class, 'close']);
-        Route::post('/shops/{shop}/cash-sessions/{session}/movements', [CashRegisterController::class, 'movement']);
+        Route::get('/shops/{shop}/cash-sessions/current', [CashRegisterController::class, 'current'])->middleware('menu:cash');
+        Route::post('/shops/{shop}/cash-sessions/open', [CashRegisterController::class, 'open'])->middleware('menu:cash');
+        Route::post('/shops/{shop}/cash-sessions/{session}/close', [CashRegisterController::class, 'close'])->middleware('menu:cash');
+        Route::post('/shops/{shop}/cash-sessions/{session}/movements', [CashRegisterController::class, 'movement'])->middleware('menu:cash');
 
-        Route::get('/shops/{shop}/expenses', [ExpenseController::class, 'index']);
-        Route::get('/shops/{shop}/expense-categories', [ExpenseController::class, 'categories']);
-        Route::post('/shops/{shop}/expenses', [ExpenseController::class, 'store']);
-        Route::post('/shops/{shop}/expenses/{expense}/payments', [ExpenseController::class, 'pay']);
+        Route::get('/shops/{shop}/expenses', [ExpenseController::class, 'index'])->middleware('menu:expenses');
+        Route::get('/shops/{shop}/expense-categories', [ExpenseController::class, 'categories'])->middleware('menu:expenses');
+        Route::post('/shops/{shop}/expenses', [ExpenseController::class, 'store'])->middleware('menu:expenses');
+        Route::post('/shops/{shop}/expenses/{expense}/payments', [ExpenseController::class, 'pay'])->middleware('menu:expenses');
     });
 });

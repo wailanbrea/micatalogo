@@ -108,6 +108,20 @@ test('a POS sale ignores client manipulation of payment status and derives paid 
     expect($invoice->status)->toBe('paid');
 });
 
+test('wholesale 1200 snapshot rejects 1199 without mutating accounting', function () {
+    [$user, $shop, $product] = posSaleFixture(stock: 8, price: 1500);
+    $product->update(['wholesale_price' => 1200]);
+    $token = $user->createToken('contract', ['pos:write'])->plainTextToken;
+    $payload = posSalePayload((string) Str::uuid(), $product, 1, '1199.00');
+    $payload['sale_mode'] = 'wholesale';
+    $url = "/api/v1/shops/{$shop->public_id}/pos-sales";
+    $this->withToken($token)->postJson($url, $payload)->assertConflict()->assertJsonPath('reason', 'price_conflict');
+    expect(Invoice::count())->toBe(0)->and($product->fresh()->inventory->stock_quantity)->toBe(8);
+    $payload['items'][0]['unit_price'] = '1200.00';
+    $this->withToken($token)->postJson($url, $payload)->assertCreated()->assertJsonPath('total', '1200.00');
+    expect(Invoice::query()->sole()->sale_mode)->toBe('wholesale');
+});
+
 test('a wholesale sale validates the configured price and accounts the exact total', function () {
     [$user, $shop, $product] = posSaleFixture(stock: 8, price: 300);
     $product->update(['wholesale_price' => 220]);
