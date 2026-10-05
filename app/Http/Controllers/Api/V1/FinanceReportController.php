@@ -23,7 +23,11 @@ class FinanceReportController extends Controller
         $summary = $service->getSummary($shop, $from, $to, $sort, $direction);
 
         // Mask sensitive costs/profit if seller cannot view finance
-        if (! $menus->canManage($shop, $request->user()) && ! $request->user()->isAdmin() && ! $request->user()->ownsShop($shop)) {
+        $canViewSensitiveFinance = $menus->canManage($shop, $request->user())
+            || $request->user()->isAdmin()
+            || $request->user()->ownsShop($shop);
+
+        if (! $canViewSensitiveFinance) {
             $summary['period']['fifo_cogs'] = null;
             $summary['period']['gross_profit'] = null;
             $summary['period']['gross_margin_percent'] = null;
@@ -34,6 +38,7 @@ class FinanceReportController extends Controller
                 $item['gross_profit'] = null;
                 $item['margin_percent'] = null;
             }
+            $summary['current_state']['aging']['invoice_details'] = [];
         }
 
         return response()->json($summary);

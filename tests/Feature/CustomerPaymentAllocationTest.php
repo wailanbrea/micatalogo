@@ -116,7 +116,12 @@ test('single customer debt payment amortizes invoice, creates InvoicePayment lin
     expect((float) $aging['days_0_30'])->toBe(600.00)
         ->and((float) $aging['invoices_total'])->toBe(600.00)
         ->and((float) $aging['total_receivable'])->toBe(600.00)
-        ->and((float) $aging['reconciliation_difference'])->toBe(0.00);
+        ->and((float) $aging['reconciliation_difference'])->toBe(0.00)
+        ->and($aging['invoice_details'])->toHaveCount(1)
+        ->and($aging['invoice_details'][0]['invoice_number'])->toBe($invoice->invoice_number)
+        ->and($aging['invoice_details'][0]['customer_name'])->toBe($customer->name)
+        ->and((float) $aging['invoice_details'][0]['outstanding_amount'])->toBe(600.00)
+        ->and($aging['invoice_details'][0]['aging_bucket'])->toBe('0-30');
 });
 
 test('full customer debt payment marks invoice as paid and clears aging balance', function () {
@@ -137,7 +142,8 @@ test('full customer debt payment marks invoice as paid and clears aging balance'
     expect((float) $aging['days_0_30'])->toBe(0.00)
         ->and((float) $aging['invoices_total'])->toBe(0.00)
         ->and((float) $aging['total_receivable'])->toBe(0.00)
-        ->and((float) $aging['reconciliation_difference'])->toBe(0.00);
+        ->and((float) $aging['reconciliation_difference'])->toBe(0.00)
+        ->and($aging['invoice_details'])->toBeEmpty();
 });
 
 test('fifo multi-invoice allocation amortizes older invoices first and matches aging buckets', function () {
@@ -172,7 +178,10 @@ test('fifo multi-invoice allocation amortizes older invoices first and matches a
         ->and((float) $aging['days_0_30'])->toBe(1500.00)
         ->and((float) $aging['invoices_total'])->toBe(1500.00)
         ->and((float) $aging['total_receivable'])->toBe(1500.00)
-        ->and((float) $aging['reconciliation_difference'])->toBe(0.00);
+        ->and((float) $aging['reconciliation_difference'])->toBe(0.00)
+        ->and($aging['invoice_details'])->toHaveCount(1)
+        ->and($aging['invoice_details'][0]['invoice_number'])->toBe($invoiceB->invoice_number)
+        ->and((float) $aging['invoice_details'][0]['outstanding_amount'])->toBe(1500.00);
 });
 
 test('cash debt payment creates a cash movement in open cash register while bank transfer does not', function () {

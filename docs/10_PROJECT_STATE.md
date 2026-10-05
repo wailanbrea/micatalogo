@@ -3,7 +3,7 @@
 ## Snapshot
 
 - Date: 2026-10-05
-- Phase: Cierre definitivo y blindaje integral de la Fase Financiera 1; P&L, Cash Flow, Arqueo de caja, Aging por factura y Amortización FIFO de cobros desplegados.
+- Phase: Fase Financiera 1 completada en código local para Web/API/Android; pendientes la publicación de los últimos cambios Web/API y APK.
 - Local runtime: Laravel 12.69.2, PHP 8.2.33, MariaDB 11.4.12.
 
 ## Completed
@@ -44,13 +44,16 @@
   - Arqueo de caja (`CashRegisterSession`) aislado por usuario con índice único en BD e idempotencia estricta contra arqueos concurrentes dispares (409 Conflict).
   - Aging de cuentas por cobrar clasificado factura por factura utilizando `due_date` e idempotencia con hash SHA-256 en endpoints críticos.
   - Autorización protegida: panel de negocio protegido por `can:viewFinance,shop` (vendedores ordinarios 403), y gastos protegidos por `menu:expenses` y plan Pro.
-- Estado Android `1.0.14` (version code `15`):
-  - Retrocompatible a nivel de API backend con sincronización y ventas POS estándar.
-  - Estado de cumplimiento Fase 1: **NO CUMPLE AÚN** en la aplicación móvil (carece de UI para cobros divididos multimoneda, arqueo físico de caja, registro móvil de gastos y desglose de aging FIFO por factura). Programado para release Android `1.0.15` / `1.1.0`.
+- Android `1.0.15` (version code `16`; release local firmada, aún no publicada):
+  - Los abonos sincronizan método de pago y referencia; transferencia ya no se registra por omisión como efectivo.
+  - Caja financiera en línea conectada a la API: consulta, apertura, movimientos manuales, arqueo y cierre. UUID estable por reintento; no reemplaza la caja local offline del POS.
+  - Gastos Android incluyen UUID de idempotencia y lo conservan al reintentar la misma operación.
+  - La API entrega facturas pendientes de la tienda autorizada con cliente, fecha de referencia, días, tramo y saldo abierto; Finanzas los presenta junto con las cuatro cifras de conciliación. El desglose se oculta a vendedores sin permiso financiero.
+  - La versión `1.0.15` quedó instalada in-place en el Galaxy conectado. No se publicó APK ni se modificó VPS/manifiesto en esta tarea.
 
 ## Verified
 
-- `php vendor/bin/pest`: 310 tests, 1,506 assertions (100% passing).
+- `php vendor/bin/pest`: 310 tests, 1,515 assertions (100% passing, ejecutados con SQLite en memoria).
 - Tests de integridad financiera dedicados:
   - `CustomerPaymentAllocationTest` (6/6 passing)
   - `FinancialIdempotencyHardenedTest` (6/6 passing)
@@ -59,15 +62,19 @@
   - `MoneyTest` (8/8 passing)
   - `ApiPosSaleTest` (10/10 passing)
   - `SellerCommissionTest` (5/5 passing)
-- Android `gradlew testDebugUnitTest`: passing.
+- Android `gradlew testDebugUnitTest`: passing, incluida la cobertura de método/referencia de cobros e idempotencia de gastos.
 - `npm run build`: passing.
 - Production migrations, cache rebuild, backup comparison, and smoke test: passing.
 - Production mobile inventory import routes deployed and route cache rebuilt.
-- Production Android manifest and download verified against the signed `1.0.13` artifact.
+- Public Android endpoint checked on 2026-10-05: version `1.0.14`, code `15`; local release `1.0.15`, code `16`, signed with the existing certificate and verified non-debuggable.
+- `php -l` en `BusinessDashboardService.php` y `FinanceReportController.php`: sin errores.
+- On-device smoke: Android `1.0.15` actualizado in-place (first-install timestamp intacto) y abierto en Inicio sin crash. Finanzas/Caja no se navegaron: otra app tomó el primer plano durante el intento; no se registró ninguna operación financiera real.
 - R2 is not configured locally; media uses the local public fallback.
 
 ## Pending
 
+- Publicar el cambio local de detalle de Aging de la API y Android `1.0.15` cuando se solicite; no se modificó VPS ni manifiesto en esta tarea.
+- Completar navegación manual en el teléfono por Finanzas/Caja cuando esté disponible sin otra app en primer plano; no crear gastos, movimientos ni sesiones de caja en producción durante ese smoke test.
 - Configure the production R2 bucket, restricted API token, custom media domain, and health check.
 - Confirm the production queue worker and scheduler remain healthy after the release.
 

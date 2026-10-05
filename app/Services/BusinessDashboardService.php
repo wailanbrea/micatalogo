@@ -244,6 +244,7 @@ class BusinessDashboardService
             'days_61_90' => 0.0,
             'days_over_90' => 0.0,
             'overdue_count' => 0,
+            'invoice_details' => [],
         ];
 
         $now = now()->startOfDay();
@@ -253,7 +254,8 @@ class BusinessDashboardService
             ->where('shop_id', $shop->id)
             ->whereNotNull('customer_id')
             ->whereIn('status', ['pending', 'partial'])
-            ->with(['payments'])
+            ->with(['payments', 'customer:id,name'])
+            ->orderByRaw('COALESCE(due_date, issued_at) asc')
             ->get();
 
         $invoiceIds = $unpaidInvoices->pluck('id');
@@ -294,17 +296,30 @@ class BusinessDashboardService
             }
 
             if ($days <= 30) {
+                $bucket = '0-30';
                 $aging['days_0_30'] += $unpaidAmount;
             } elseif ($days <= 60) {
+                $bucket = '31-60';
                 $aging['days_31_60'] += $unpaidAmount;
                 $aging['overdue_count']++;
             } elseif ($days <= 90) {
+                $bucket = '61-90';
                 $aging['days_61_90'] += $unpaidAmount;
                 $aging['overdue_count']++;
             } else {
+                $bucket = '>90';
                 $aging['days_over_90'] += $unpaidAmount;
                 $aging['overdue_count']++;
             }
+
+            $aging['invoice_details'][] = [
+                'invoice_number' => (string) $invoice->invoice_number,
+                'customer_name' => (string) ($invoice->customer?->name ?? 'Cliente'),
+                'reference_date' => $refDate->toDateString(),
+                'overdue_days' => $days,
+                'outstanding_amount' => round($unpaidCents / 100.0, 2),
+                'aging_bucket' => $bucket,
+            ];
         }
 
         // Account for any remaining customer balance not tied to open invoices (e.g. manual charges)
