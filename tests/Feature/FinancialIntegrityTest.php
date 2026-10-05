@@ -610,6 +610,40 @@ test('71. partial payment to invoice reduces aged balance only by remaining debt
     expect($summary['current_state']['aging']['days_31_60'])->toBe(600.0);
 });
 
+test('aging never exceeds the authoritative customer balance when open invoices disagree', function () {
+    [$owner, $shop] = setupFinancialShop();
+    $customer = Customer::create([
+        'shop_id' => $shop->id,
+        'name' => 'Cliente con saldo conciliado',
+        'credit_limit' => 20000,
+        'balance' => 6500,
+    ]);
+
+    Invoice::create([
+        'shop_id' => $shop->id,
+        'user_id' => $owner->id,
+        'customer_id' => $customer->id,
+        'invoice_number' => 'INV-AGING-RECONCILE',
+        'subtotal' => 9500.00,
+        'total' => 9500.00,
+        'status' => 'pending',
+        'due_date' => now()->subDays(10),
+        'issued_at' => now()->subDays(10),
+    ]);
+
+    $summary = app(BusinessDashboardService::class)->getSummary(
+        $shop,
+        now()->startOfMonth()->toDateString(),
+        now()->toDateString()
+    );
+    $aging = $summary['current_state']['aging'];
+
+    expect($aging['total_receivable'])->toBe(6500.0)
+        ->and($aging['days_0_30'] + $aging['days_31_60'] + $aging['days_61_90'] + $aging['days_over_90'])->toBe(6500.0)
+        ->and($aging['invoices_total'])->toBe(6500.0)
+        ->and($aging['reconciliation_difference'])->toBe(0.0);
+});
+
 // 72. Venta web individual / carrito crea InvoicePayment y movimiento de caja si hay sesión abierta
 test('72. web sale creates InvoicePayment and cash movement when cash register is open', function () {
     [$owner, $shop, $product] = setupFinancialShop();

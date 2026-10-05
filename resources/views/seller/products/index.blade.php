@@ -3,8 +3,7 @@
     <x-admin.header 
         :breadcrumbs="[
             ['label' => 'Mis tiendas', 'url' => route('seller.dashboard')],
-            ['label' => $shop->name, 'url' => route('seller.shops.products.index', $shop)],
-            ['label' => 'Productos']
+            ['label' => $shop->name, 'url' => route('seller.shops.products.index', $shop)]
         ]" 
     />
 

@@ -20,7 +20,7 @@ return new class extends Migration
         }
 
         // 2. Add composite UNIQUE constraint [shop_id, client_operation_uuid] on expenses
-        if (Schema::hasTable('expenses')) {
+        if (Schema::hasTable('expenses') && ! Schema::hasIndex('expenses', 'unique_expense_shop_client_uuid')) {
             Schema::table('expenses', function (Blueprint $table) {
                 // Drop non-unique index if it was created standalone
                 $table->unique(['shop_id', 'client_operation_uuid'], 'unique_expense_shop_client_uuid');
@@ -28,14 +28,14 @@ return new class extends Migration
         }
 
         // 3. Add composite UNIQUE constraint [shop_id, client_operation_uuid] on expense_payments
-        if (Schema::hasTable('expense_payments')) {
+        if (Schema::hasTable('expense_payments') && ! Schema::hasIndex('expense_payments', 'unique_expense_payment_shop_client_uuid')) {
             Schema::table('expense_payments', function (Blueprint $table) {
                 $table->unique(['shop_id', 'client_operation_uuid'], 'unique_expense_payment_shop_client_uuid');
             });
         }
 
         // 4. Add composite UNIQUE constraint [shop_id, client_operation_uuid] on cash_movements
-        if (Schema::hasTable('cash_movements')) {
+        if (Schema::hasTable('cash_movements') && ! Schema::hasIndex('cash_movements', 'unique_cash_movement_shop_client_uuid')) {
             Schema::table('cash_movements', function (Blueprint $table) {
                 $table->unique(['shop_id', 'client_operation_uuid'], 'unique_cash_movement_shop_client_uuid');
             });
@@ -44,19 +44,19 @@ return new class extends Migration
 
     public function down(): void
     {
-        if (Schema::hasTable('cash_movements')) {
+        if (Schema::hasTable('cash_movements') && Schema::hasIndex('cash_movements', 'unique_cash_movement_shop_client_uuid')) {
             Schema::table('cash_movements', function (Blueprint $table) {
                 $table->dropUnique('unique_cash_movement_shop_client_uuid');
             });
         }
 
-        if (Schema::hasTable('expense_payments')) {
+        if (Schema::hasTable('expense_payments') && Schema::hasIndex('expense_payments', 'unique_expense_payment_shop_client_uuid')) {
             Schema::table('expense_payments', function (Blueprint $table) {
                 $table->dropUnique('unique_expense_payment_shop_client_uuid');
             });
         }
 
-        if (Schema::hasTable('expenses')) {
+        if (Schema::hasTable('expenses') && Schema::hasIndex('expenses', 'unique_expense_shop_client_uuid')) {
             Schema::table('expenses', function (Blueprint $table) {
                 $table->dropUnique('unique_expense_shop_client_uuid');
             });

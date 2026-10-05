@@ -62,7 +62,7 @@
                     </div>
 
                     <!-- Precios: Venta y Costo (Contabilidad de Inventario) -->
-                    <div class="grid gap-4 sm:grid-cols-2">
+                    <div class="grid gap-4 sm:grid-cols-3">
                         <div>
                             <label class="block text-sm font-semibold text-slate-800" for="price">Precio de Venta al Público (RD$) *</label>
                             <p class="text-[11px] text-slate-500">Precio visible para los clientes en la vitrina.</p>
@@ -70,6 +70,16 @@
                                 <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-slate-500">RD$</span>
                                 <input class="w-full rounded-md border border-slate-300 pl-12 pr-3 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="price" name="price" step="0.01" min="0" type="number" value="{{ old('price', $product->price) }}" placeholder="0.00">
                             </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-800" for="wholesale_price">Precio por mayor (RD$)</label>
+                            <p class="text-[11px] text-slate-500">Opcional; se usa en ventas mayoristas y no puede superar el precio regular.</p>
+                            <div class="relative mt-1.5 rounded-md shadow-sm">
+                                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-slate-500">RD$</span>
+                                <input class="w-full rounded-md border border-slate-300 pl-12 pr-3 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="wholesale_price" name="wholesale_price" step="0.01" min="0" max="99999999.99" type="number" value="{{ old('wholesale_price', $product->wholesale_price) }}" placeholder="Opcional">
+                            </div>
+                            @error('wholesale_price') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>
 
                         <div>

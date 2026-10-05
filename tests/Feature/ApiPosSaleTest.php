@@ -108,6 +108,63 @@ test('a POS sale ignores client manipulation of payment status and derives paid 
     expect($invoice->status)->toBe('paid');
 });
 
+test('a wholesale sale validates the configured price and accounts the exact total', function () {
+    [$user, $shop, $product] = posSaleFixture(stock: 8, price: 300);
+    $product->update(['wholesale_price' => 220]);
+    $payload = posSalePayload((string) Str::uuid(), $product, 3, '220.00');
+    $payload['sale_mode'] = 'wholesale';
+
+    $this->withToken($user->createToken('BSPOS', ['pos:write'])->plainTextToken)
+        ->postJson("/api/v1/shops/{$shop->public_id}/pos-sales", $payload)
+        ->assertCreated()
+        ->assertJsonPath('status', 'paid')
+        ->assertJsonPath('total', '660.00');
+
+    $invoice = Invoice::query()->with('items')->sole();
+    expect((float) $invoice->total)->toBe(660.0)
+        ->and($invoice->sale_mode)->toBe('wholesale')
+        ->and((float) $invoice->items->sole()->unit_price)->toBe(220.0)
+        ->and($product->fresh()->inventory->stock_quantity)->toBe(5);
+});
+
+test('a wholesale sale without a configured wholesale price cannot alter accounting or stock', function () {
+    [$user, $shop, $product] = posSaleFixture(stock: 8, price: 300);
+    $payload = posSalePayload((string) Str::uuid(), $product, 3, '220.00');
+    $payload['sale_mode'] = 'wholesale';
+
+    $this->withToken($user->createToken('BSPOS', ['pos:write'])->plainTextToken)
+        ->postJson("/api/v1/shops/{$shop->public_id}/pos-sales", $payload)
+        ->assertConflict()
+        ->assertJsonPath('reason', 'price_conflict');
+
+    expect($product->fresh()->inventory->stock_quantity)->toBe(8)
+        ->and(Invoice::count())->toBe(0)
+        ->and(InventoryMovement::count())->toBe(0);
+});
+
+test('a wholesale mixed sale reconciles payment, customer debt and invoice total', function () {
+    [$user, $shop, $product] = posSaleFixture(stock: 8, price: 300);
+    $product->update(['wholesale_price' => 220]);
+    $customer = Customer::create(['shop_id' => $shop->id, 'name' => 'Cliente Mayorista', 'credit_limit' => 1000]);
+    $payload = posSalePayload((string) Str::uuid(), $product, 3, '220.00');
+    $payload['sale_mode'] = 'wholesale';
+    $payload['customer_id'] = $customer->public_id;
+    $payload['credit_amount'] = '460.00';
+    $payload['payments'] = [['method' => 'card', 'amount' => '200.00']];
+
+    $this->withToken($user->createToken('BSPOS', ['pos:write'])->plainTextToken)
+        ->postJson("/api/v1/shops/{$shop->public_id}/pos-sales", $payload)
+        ->assertCreated()
+        ->assertJsonPath('status', 'partial')
+        ->assertJsonPath('total', '660.00');
+
+    $invoice = Invoice::query()->sole();
+    expect($invoice->sale_mode)->toBe('wholesale')
+        ->and((float) $invoice->total)->toBe(660.0)
+        ->and((float) $customer->fresh()->balance)->toBe(460.0)
+        ->and($product->fresh()->inventory->stock_quantity)->toBe(5);
+});
+
 test('an identical POS sale replay returns its original response without another stock decrement', function () {
     [$user, $shop, $product] = posSaleFixture(stock: 5, price: 250);
     $payload = posSalePayload((string) Str::uuid(), $product, 2, '250.00');

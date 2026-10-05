@@ -34,6 +34,7 @@ class Product extends Model
         'source_created_at',
         'source_key',
         'price',
+        'wholesale_price',
         'sale_price',
         'sale_starts_at',
         'sale_ends_at',
@@ -50,6 +51,7 @@ class Product extends Model
     {
         return [
             'price' => 'decimal:2',
+            'wholesale_price' => 'decimal:2',
             'sale_price' => 'decimal:2',
             'sale_starts_at' => 'datetime',
             'sale_ends_at' => 'datetime',

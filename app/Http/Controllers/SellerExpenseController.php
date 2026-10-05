@@ -58,7 +58,8 @@ class SellerExpenseController extends Controller
         $rawPaymentMethods = config('catalog.payment_methods', []);
         $paymentMethods = [];
         foreach ($rawPaymentMethods as $key => $conf) {
-            $paymentMethods[$key] = is_array($conf) ? ($conf['label'] ?? ucfirst($key)) : (string) $conf;
+            $label = is_array($conf) ? ($conf['label'] ?? ucfirst($key)) : $conf;
+            $paymentMethods[$key] = is_scalar($label) ? (string) $label : ucfirst((string) $key);
         }
         if (empty($paymentMethods)) {
             $paymentMethods = [

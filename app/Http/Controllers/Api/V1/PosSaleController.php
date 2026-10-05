@@ -32,6 +32,7 @@ class PosSaleController extends Controller
         $validated = $request->validate([
             'client_sale_uuid' => ['required', 'uuid'],
             'payment_status' => ['required', 'in:paid,partial,pending'],
+            'sale_mode' => ['sometimes', 'in:retail,wholesale'],
             'customer_id' => ['nullable', 'ulid'],
             'credit_amount' => ['nullable', 'decimal:0,2', 'min:0'],
             'discount' => ['sometimes', 'decimal:0,2', 'min:0'],
@@ -95,7 +96,10 @@ class PosSaleController extends Controller
                             'reason' => 'presentation_conflict',
                         ], 409);
                     }
-                    if (Money::toCents($item['unit_price']) !== Money::toCents($products[$item['product_id']]->currentPrice())) {
+                    $expectedPrice = ($validated['sale_mode'] ?? 'retail') === 'wholesale'
+                        ? $products[$item['product_id']]->wholesale_price
+                        : $products[$item['product_id']]->currentPrice();
+                    if ($expectedPrice === null || Money::toCents($item['unit_price']) !== Money::toCents($expectedPrice)) {
                         return response()->json([
                             'message' => 'The submitted price no longer matches the catalog.',
                             'reason' => 'price_conflict',
@@ -105,7 +109,7 @@ class PosSaleController extends Controller
 
                 $creditAmount = $validated['credit_amount'] ?? '0.00';
                 $creditCents = Money::toCents($creditAmount);
-                $totalCents = collect($validated['items'])->sum(fn (array $item): int => Money::toCents($products[$item['product_id']]->currentPrice()) * (int) $item['quantity'] - Money::toCents($item['discount'] ?? 0) + Money::toCents($item['tax'] ?? 0))
+                $totalCents = collect($validated['items'])->sum(fn (array $item): int => Money::toCents($item['unit_price']) * (int) $item['quantity'] - Money::toCents($item['discount'] ?? 0) + Money::toCents($item['tax'] ?? 0))
                     - Money::toCents($validated['discount'] ?? 0) + Money::toCents($validated['tax'] ?? 0);
                 if ($totalCents < 0) {
                     return response()->json(['message' => 'El descuento supera el total.'], 422);
@@ -174,7 +178,7 @@ class PosSaleController extends Controller
                 $sales = array_map(fn (array $item): array => [
                     'product' => $products[$item['product_id']],
                     'quantity' => (int) $item['quantity'],
-                    'unit_price' => $products[$item['product_id']]->currentPrice(),
+                    'unit_price' => $item['unit_price'],
                     'discount' => (float) ($item['discount'] ?? 0),
                     'tax' => (float) ($item['tax'] ?? 0),
                 ], $validated['items']);
@@ -187,6 +191,8 @@ class PosSaleController extends Controller
                     (float) ($validated['tax'] ?? 0),
                 );
                 $invoice = Invoice::query()->findOrFail($movements[0]->invoice_id);
+                $invoice->sale_mode = $validated['sale_mode'] ?? 'retail';
+                $invoice->save();
 
                 if (! empty($validated['due_date'])) {
                     $invoice->due_date = $validated['due_date'];

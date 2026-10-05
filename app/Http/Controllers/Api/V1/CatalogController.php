@@ -69,6 +69,7 @@ class CatalogController extends Controller
             'thumbnail_url' => $product->primaryImage?->thumbnail_url,
             'price' => number_format($product->currentPrice(), 2, '.', ''),
             'regular_price' => $product->price,
+            'wholesale_price' => $product->wholesale_price,
             'currency' => $product->currency,
             'sale_unit' => $product->sale_unit,
             'volume_ml' => $product->volume_ml,

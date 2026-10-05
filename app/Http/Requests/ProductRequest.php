@@ -33,6 +33,7 @@ class ProductRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:5000'],
             'notes' => ['nullable', 'string', 'max:10000'],
             'price' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            'wholesale_price' => ['nullable', 'numeric', 'min:0', 'lte:price', 'max:99999999.99'],
             'sale_price' => ['nullable', 'numeric', 'min:0', 'lt:price', 'max:99999999.99'],
             'sale_starts_at' => ['nullable', 'date'],
             'sale_ends_at' => ['nullable', 'date', 'after_or_equal:sale_starts_at'],

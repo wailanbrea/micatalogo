@@ -9,6 +9,7 @@ use App\Models\Shop;
 use App\Support\Money;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class BusinessDashboardService
 {
@@ -155,9 +156,12 @@ class BusinessDashboardService
         $operatingMarginPercent = $netSales > 0 ? round(($operatingProfit / $netSales) * 100, 1) : 0.0;
 
         // 5. Collections and Credit in period
-        $collectedFromInvoicesCents = (int) DB::table('invoice_payments')
-            ->where('shop_id', $shop->id)
-            ->whereNull('customer_account_entry_id')
+        $invoicePaymentsQuery = DB::table('invoice_payments')
+            ->where('shop_id', $shop->id);
+        if (Schema::hasColumn('invoice_payments', 'customer_account_entry_id')) {
+            $invoicePaymentsQuery->whereNull('customer_account_entry_id');
+        }
+        $collectedFromInvoicesCents = (int) $invoicePaymentsQuery
             ->whereBetween('received_at', [$fromDatetime, $toDatetime])
             ->sum('amount_cents');
 
@@ -267,7 +271,9 @@ class BusinessDashboardService
                 ->pluck('return_total', 'invoice_id')
             : collect();
 
-        $customerOpenInvoicesCents = [];
+        $remainingByCustomerCents = $customers->mapWithKeys(fn ($customer) => [
+            $customer->id => Money::toCents($customer->balance),
+        ])->all();
         $totalInvoicesCents = 0;
 
         foreach ($unpaidInvoices as $invoice) {
@@ -275,13 +281,15 @@ class BusinessDashboardService
             $paidCents = (int) $invoice->payments->sum('amount_cents');
             $returnedAmount = (float) ($invoiceReturns->get($invoice->id) ?? 0);
             $returnedCents = Money::toCents($returnedAmount);
-            $unpaidCents = max(0, $invoiceTotalCents - $paidCents - $returnedCents);
+            $invoiceUnpaidCents = max(0, $invoiceTotalCents - $paidCents - $returnedCents);
+            $customerBalanceCents = $remainingByCustomerCents[$invoice->customer_id] ?? 0;
+            $unpaidCents = min($invoiceUnpaidCents, $customerBalanceCents);
 
             if ($unpaidCents <= 0) {
                 continue;
             }
 
-            $customerOpenInvoicesCents[$invoice->customer_id] = ($customerOpenInvoicesCents[$invoice->customer_id] ?? 0) + $unpaidCents;
+            $remainingByCustomerCents[$invoice->customer_id] -= $unpaidCents;
             $totalInvoicesCents += $unpaidCents;
 
             $unpaidAmount = $unpaidCents / 100.0;
@@ -322,15 +330,13 @@ class BusinessDashboardService
             ];
         }
 
-        // Account for any remaining customer balance not tied to open invoices (e.g. manual charges)
+        // Include balances not represented by open invoices as current, unallocated receivables.
         $totalUnallocatedCents = 0;
         foreach ($customers as $customer) {
-            $customerBalCents = Money::toCents($customer->balance);
-            $invoicesCents = $customerOpenInvoicesCents[$customer->id] ?? 0;
-            if ($customerBalCents > $invoicesCents) {
-                $totalUnallocatedCents += ($customerBalCents - $invoicesCents);
-            }
+            $unallocatedCents = $remainingByCustomerCents[$customer->id] ?? Money::toCents($customer->balance);
+            $totalUnallocatedCents += $unallocatedCents;
         }
+        $aging['days_0_30'] += $totalUnallocatedCents / 100.0;
 
         $aging['days_0_30'] = round($aging['days_0_30'], 2);
         $aging['days_31_60'] = round($aging['days_31_60'], 2);
@@ -599,9 +605,12 @@ class BusinessDashboardService
     {
         // 1. INFLOWS:
         // Cash collected from direct invoice payments (cash, card, transfer, other)
-        $invoiceCollections = DB::table('invoice_payments')
-            ->where('shop_id', $shop->id)
-            ->whereNull('customer_account_entry_id')
+        $invoicePaymentsQuery = DB::table('invoice_payments')
+            ->where('shop_id', $shop->id);
+        if (Schema::hasColumn('invoice_payments', 'customer_account_entry_id')) {
+            $invoicePaymentsQuery->whereNull('customer_account_entry_id');
+        }
+        $invoiceCollections = $invoicePaymentsQuery
             ->whereBetween('received_at', [$fromDatetime, $toDatetime])
             ->selectRaw('payment_method, SUM(amount_cents) / 100.0 as total')
             ->groupBy('payment_method')

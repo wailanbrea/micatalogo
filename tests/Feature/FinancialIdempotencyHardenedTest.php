@@ -214,3 +214,22 @@ test('shop on free plan cannot access expense module while pro plan can', functi
         ->get(route('seller.shops.expenses.index', $proShop))
         ->assertOk();
 });
+
+test('expense page safely renders payment method config with nested labels', function () {
+    [$proOwner, , $shop] = createIdempotencyHardenedFixture();
+    ExpenseCategory::create([
+        'shop_id' => $shop->id,
+        'name' => 'Pruebas de configuración',
+        'is_active' => true,
+    ]);
+    config()->set('catalog.payment_methods', [
+        'cash' => ['label' => 'Efectivo'],
+        'card' => ['label' => ['configuración inválida']],
+    ]);
+
+    $this->actingAs($proOwner)
+        ->get(route('seller.shops.expenses.index', $shop))
+        ->assertOk()
+        ->assertSee('Efectivo')
+        ->assertSee('Card');
+});

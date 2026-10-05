@@ -2,13 +2,13 @@
 
 // Verified against the signed artifact; no credentials belong in this manifest.
 return [
-    'version_code' => 15,
-    'version_name' => '1.0.14',
+    'version_code' => 18,
+    'version_name' => '1.0.17',
     'minimum_supported_version_code' => 11,
-    'apk_url' => 'https://micatalogo.bsolutions.dev/downloads/bspos-1.0.14-auth-import.apk',
-    'apk_sha256' => '8d251b1fbae138d3be729c1c0c07758e7ce627923455eb93b0c8e99f4bf19f7a',
-    'release_notes' => 'Importa inventarios con cualquier formato: relaciona las columnas y guarda la plantilla de cada tienda para usarla en futuras cargas.',
-    'release_date' => '2026-10-04',
+    'apk_url' => 'https://micatalogo.bsolutions.dev/downloads/bspos-1.0.17-auth-import.apk',
+    'apk_sha256' => 'faa8f87febbf0e728ef0afbf734535faf65412d80d4ff3a417aff8c05dad9d35',
+    'release_notes' => 'Corrige la sincronización de pagos con tarjeta y transferencia y elimina títulos duplicados en pantallas.',
+    'release_date' => '2026-10-05',
     'min_sdk' => 26,
-    'size_bytes' => 16279380,
+    'size_bytes' => 16426836,
 ];
