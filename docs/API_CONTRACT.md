@@ -48,7 +48,7 @@ Updater: required si installed < minimum; optional si minimum <= installed < lat
 - [x] Fase 7: outbox financiero, conflictos y documentación offline.
 - [x] Fase 8: política y persistencia updater.
 - [x] Fase 9: fixtures compartidos, tests backend/Android/E2E.
-- [ ] Release final firmada, manifiesto y verificación pública.
+- [x] Release final firmada, manifiesto y verificación pública: 1.0.23 (24), mínimo 23. Evidencia en FINANCIAL_ALIGNMENT_RELEASE_1.0.23.md.
 
 ## Endpoints y compatibilidad
 
