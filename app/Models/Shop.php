@@ -100,6 +100,41 @@ class Shop extends Model
         return $this->hasMany(InventoryImportSession::class)->latest();
     }
 
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    public function invoicePayments(): HasMany
+    {
+        return $this->hasMany(InvoicePayment::class);
+    }
+
+    public function cashRegisterSessions(): HasMany
+    {
+        return $this->hasMany(CashRegisterSession::class)->latest('opened_at');
+    }
+
+    public function cashMovements(): HasMany
+    {
+        return $this->hasMany(CashMovement::class)->latest('occurred_at');
+    }
+
+    public function currentCashSession(): ?CashRegisterSession
+    {
+        return $this->cashRegisterSessions()->where('status', 'open')->first();
+    }
+
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class)->latest('occurred_at');
+    }
+
+    public function expenseCategories(): HasMany
+    {
+        return $this->hasMany(ExpenseCategory::class)->where('is_active', true)->orderBy('name');
+    }
+
     public function productLimit(): int
     {
         return app(PlanLimitsService::class)->productLimit($this);

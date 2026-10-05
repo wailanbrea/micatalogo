@@ -22,7 +22,7 @@ return [
             'max_images_per_product' => 3,
             'max_users' => 3,
             'max_sellers' => 3,
-            'features' => ['catalog', 'whatsapp_orders', 'inventory', 'sales', 'invoicing', 'reports', 'quotes', 'customers', 'android', 'bulk_import'],
+            'features' => ['catalog', 'whatsapp_orders', 'inventory', 'sales', 'invoicing', 'reports', 'quotes', 'customers', 'android', 'bulk_import', 'cash_registers'],
         ],
         'pro' => [
             'display_name' => 'Pro',
@@ -32,7 +32,7 @@ return [
             'max_images_per_product' => 3,
             'max_users' => 5,
             'max_sellers' => 5,
-            'features' => ['catalog', 'whatsapp_orders', 'inventory', 'sales', 'invoicing', 'reports', 'quotes', 'customers', 'android', 'credit_interest', 'wholesale_pricing', 'bulk_import', 'expenses', 'profit_sharing', 'automatic_pricing'],
+            'features' => ['catalog', 'whatsapp_orders', 'inventory', 'sales', 'invoicing', 'reports', 'quotes', 'customers', 'android', 'credit_interest', 'wholesale_pricing', 'bulk_import', 'expenses', 'profit_sharing', 'automatic_pricing', 'cash_registers'],
         ],
         'custom' => [
             'display_name' => 'Personalizado',
@@ -44,6 +44,53 @@ return [
             'max_sellers' => 100,
             'features' => ['custom_domain', 'multiple_shops', 'priority_support'],
         ],
+    ],
+
+    'payment_methods' => [
+        'cash' => [
+            'key' => 'cash',
+            'label' => 'Efectivo',
+            'requires_reference' => false,
+            'affects_cash_register' => true,
+        ],
+        'card' => [
+            'key' => 'card',
+            'label' => 'Tarjeta',
+            'requires_reference' => false,
+            'affects_cash_register' => false,
+        ],
+        'bank_transfer' => [
+            'key' => 'bank_transfer',
+            'label' => 'Transferencia',
+            'requires_reference' => false,
+            'affects_cash_register' => false,
+        ],
+        'credit' => [
+            'key' => 'credit',
+            'label' => 'Crédito',
+            'requires_reference' => false,
+            'affects_cash_register' => false,
+        ],
+        'other' => [
+            'key' => 'other',
+            'label' => 'Otro',
+            'requires_reference' => false,
+            'affects_cash_register' => false,
+        ],
+    ],
+
+    'default_expense_categories' => [
+        'Alquiler',
+        'Electricidad',
+        'Internet',
+        'Transporte',
+        'Publicidad',
+        'Nómina',
+        'Comisiones',
+        'Mantenimiento',
+        'Materiales',
+        'Impuestos',
+        'Otros',
     ],
 
     // Legacy keys remain available for existing tests and deployments.

@@ -9,6 +9,7 @@ return [
         'inventory' => 'Inventario',
         'collections' => 'Cobros',
         'cash' => 'Caja',
+        'expenses' => 'Gastos',
         'returns' => 'Devoluciones',
         'routes' => 'Rutas',
         'more' => 'Más herramientas',

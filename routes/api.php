@@ -6,6 +6,9 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\CatalogMediaController;
 use App\Http\Controllers\Api\V1\CustomerController;
+use App\Http\Controllers\Api\V1\CashRegisterController;
+use App\Http\Controllers\Api\V1\ExpenseController;
+use App\Http\Controllers\Api\V1\FinanceReportController;
 use App\Http\Controllers\Api\V1\InventoryImportController;
 use App\Http\Controllers\Api\V1\MobileOperationController;
 use App\Http\Controllers\Api\V1\PosSaleController;
@@ -40,5 +43,19 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/shops/{shop}/customers/{customer}', [CustomerController::class, 'show'])->middleware('abilities:customers:read');
         Route::post('/shops/{shop}/customers/{customer}/payments', [CustomerController::class, 'payment'])->middleware('abilities:customers:write');
         Route::post('/shops/{shop}/customers/{customer}/adjustments', [CustomerController::class, 'adjustment'])->middleware('abilities:customers:write');
+
+        // Financial & Cash Control API
+        Route::get('/shops/{shop}/finance/summary', [FinanceReportController::class, 'summary']);
+        Route::get('/shops/{shop}/reports/income-statement', [FinanceReportController::class, 'incomeStatement']);
+        Route::get('/shops/{shop}/reports/cash-flow', [FinanceReportController::class, 'cashFlow']);
+
+        Route::get('/shops/{shop}/cash-sessions/current', [CashRegisterController::class, 'current']);
+        Route::post('/shops/{shop}/cash-sessions/open', [CashRegisterController::class, 'open']);
+        Route::post('/shops/{shop}/cash-sessions/{session}/close', [CashRegisterController::class, 'close']);
+        Route::post('/shops/{shop}/cash-sessions/{session}/movements', [CashRegisterController::class, 'movement']);
+
+        Route::get('/shops/{shop}/expenses', [ExpenseController::class, 'index']);
+        Route::get('/shops/{shop}/expense-categories', [ExpenseController::class, 'categories']);
+        Route::post('/shops/{shop}/expenses', [ExpenseController::class, 'store']);
     });
 });

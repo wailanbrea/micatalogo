@@ -18,8 +18,13 @@ use InvalidArgumentException;
 
 class PosSaleController extends Controller
 {
-    public function store(Request $request, Shop $shop, InventoryService $inventoryService, CustomerAccountService $customerAccountService): JsonResponse
-    {
+    public function store(
+        Request $request,
+        Shop $shop,
+        InventoryService $inventoryService,
+        CustomerAccountService $customerAccountService,
+        \App\Services\PaymentService $paymentService
+    ): JsonResponse {
         abort_unless($request->user()->canSellAtShop($shop), 404);
 
         $validated = $request->validate([
@@ -29,6 +34,12 @@ class PosSaleController extends Controller
             'credit_amount' => ['nullable', 'decimal:0,2', 'min:0'],
             'discount' => ['sometimes', 'decimal:0,2', 'min:0'],
             'tax' => ['sometimes', 'decimal:0,2', 'min:0'],
+            'due_date' => ['nullable', 'date'],
+            'payments' => ['sometimes', 'array'],
+            'payments.*.method' => ['required_with:payments', 'string'],
+            'payments.*.amount' => ['required_with:payments', 'decimal:0,2', 'min:0.01'],
+            'payments.*.reference' => ['nullable', 'string', 'max:120'],
+            'payments.*.notes' => ['nullable', 'string', 'max:255'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'ulid'],
             'items.*.quantity' => ['required', 'integer', 'min:1', 'max:10000'],
@@ -42,7 +53,7 @@ class PosSaleController extends Controller
         $payloadHash = hash('sha256', json_encode($validated, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION));
 
         try {
-            return DB::transaction(function () use ($shop, $validated, $payloadHash, $inventoryService, $customerAccountService, $request): JsonResponse {
+            return DB::transaction(function () use ($shop, $validated, $payloadHash, $inventoryService, $customerAccountService, $paymentService, $request): JsonResponse {
                 $existing = PosSaleUpload::query()
                     ->with('invoice')
                     ->where('shop_id', $shop->id)
@@ -141,11 +152,41 @@ class PosSaleController extends Controller
                 );
                 $invoice = Invoice::query()->findOrFail($movements[0]->invoice_id);
 
+                if (! empty($validated['due_date'])) {
+                    $invoice->due_date = $validated['due_date'];
+                    $invoice->save();
+                }
+
                 if ($customer) {
                     $invoice->customer()->associate($customer)->save();
                 }
-                if ($creditCents > 0) {
-                    $customerAccountService->recordInvoiceCharge($customer, $invoice, $creditAmount, $request->user()->id);
+
+                // Process payments (split or default single payment / credit)
+                $payments = $validated['payments'] ?? [];
+                if (empty($payments) && $paymentStatus === 'paid') {
+                    $paidCents = $totalCents - $creditCents;
+                    if ($paidCents > 0) {
+                        $payments[] = [
+                            'method' => 'cash',
+                            'amount' => number_format($paidCents / 100, 2, '.', ''),
+                        ];
+                    }
+                }
+
+                if (! empty($payments) || (float) $creditAmount > 0) {
+                    $paymentService->processInvoicePayments(
+                        $shop,
+                        $invoice,
+                        $request->user(),
+                        $payments,
+                        $creditAmount,
+                        $customer
+                    );
+                }
+
+                if (empty($validated['payments']) && (float) $creditAmount == 0 && in_array($validated['payment_status'], ['partial', 'pending'])) {
+                    $invoice->status = $validated['payment_status'];
+                    $invoice->save();
                 }
 
                 $upload->invoice()->associate($invoice);

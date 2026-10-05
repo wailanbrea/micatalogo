@@ -76,8 +76,21 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
         Route::get('/tiendas/{shop}/inventario', [SellerInventoryController::class, 'index'])->name('shops.inventory.index');
         Route::post('/tiendas/{shop}/inventario/cobro', [SellerInventoryController::class, 'checkout'])->name('shops.inventory.checkout');
         Route::post('/tiendas/{shop}/productos/{product}/inventario/venta', [SellerInventoryController::class, 'recordSale'])->name('shops.inventory.sale');
+        Route::get('/tiendas/{shop}/gastos', [\App\Http\Controllers\SellerExpenseController::class, 'index'])->name('shops.expenses.index');
+        Route::post('/tiendas/{shop}/gastos', [\App\Http\Controllers\SellerExpenseController::class, 'store'])->name('shops.expenses.store');
+        Route::post('/tiendas/{shop}/gastos/categorias', [\App\Http\Controllers\SellerExpenseController::class, 'storeCategory'])->name('shops.expenses.categories.store');
+    });
+    Route::scopeBindings()->middleware(['can:sell,shop', 'menu:cash'])->group(function () {
+        Route::get('/tiendas/{shop}/caja', [\App\Http\Controllers\SellerCashRegisterController::class, 'index'])->name('shops.cash.index');
+        Route::post('/tiendas/{shop}/caja/abrir', [\App\Http\Controllers\SellerCashRegisterController::class, 'open'])->name('shops.cash.open');
+        Route::post('/tiendas/{shop}/caja/{session}/cerrar', [\App\Http\Controllers\SellerCashRegisterController::class, 'close'])->name('shops.cash.close');
+        Route::post('/tiendas/{shop}/caja/{session}/movimientos', [\App\Http\Controllers\SellerCashRegisterController::class, 'movement'])->name('shops.cash.movement');
+    });
+    Route::scopeBindings()->middleware(['can:sell,shop', 'menu:inventory'])->group(function () {
+        Route::get('/tiendas/{shop}/inventario/lotes', [\App\Http\Controllers\SellerBusinessController::class, 'lots'])->name('shops.inventory.lots');
     });
     Route::scopeBindings()->middleware('can:update,shop')->group(function () {
+        Route::get('/tiendas/{shop}/productos/reglas-precio', [\App\Http\Controllers\SellerBusinessController::class, 'pricing'])->name('shops.pricing.index');
         Route::post('/tiendas/{shop}/productos/{product}/regla-precio', [\App\Http\Controllers\SellerBusinessController::class, 'rule'])->name('shops.pricing.rule');
         Route::post('/tiendas/{shop}/productos/{product}/aprobar-precio', [\App\Http\Controllers\SellerBusinessController::class, 'approve'])->name('shops.pricing.approve');
     });

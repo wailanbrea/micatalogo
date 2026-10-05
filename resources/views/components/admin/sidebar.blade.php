@@ -81,6 +81,18 @@
                 <span>Agotados</span>
             </a>
             @endif
+            @if ($canSeeMenu('cash'))
+            <a wire:navigate.hover href="{{ route('seller.shops.cash.index', $contextShop) }}" class="{{ $linkClass }} {{ request()->routeIs('seller.shops.cash.*') ? $activeClass : $idleClass }}">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2m2 4h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2Zm7-5a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z"/></svg>
+                <span>Control de caja</span>
+            </a>
+            @endif
+            @if ($canSeeMenu('expenses') || $canSeeMenu('sales'))
+            <a wire:navigate.hover href="{{ route('seller.shops.expenses.index', $contextShop) }}" class="{{ $linkClass }} {{ request()->routeIs('seller.shops.expenses.*') ? $activeClass : $idleClass }}">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/></svg>
+                <span>Gastos operativos</span>
+            </a>
+            @endif
             @if ($canSeeMenu('customers'))
             <a wire:navigate.hover href="{{ route('seller.shops.customers.index', $contextShop) }}" class="{{ $linkClass }} {{ $isCustomers ? $activeClass : $idleClass }}">
                 <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 0 0-4-4h-1m-4 6H3v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2Zm-3-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg>

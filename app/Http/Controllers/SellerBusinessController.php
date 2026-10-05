@@ -6,6 +6,7 @@ use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Shop;
+use App\Services\BusinessDashboardService;
 use App\Services\InventoryService;
 use App\Services\ProductPricingService;
 use Illuminate\Http\Request;
@@ -14,62 +15,104 @@ use Illuminate\Validation\ValidationException;
 
 class SellerBusinessController extends Controller
 {
-    public function index(Request $request, Shop $shop)
-    {
-        $range = $request->validate(['from' => ['nullable', 'date'], 'to' => ['nullable', 'date', 'after_or_equal:from']]);
+    public function index(
+        Request $request,
+        Shop $shop,
+        ?BusinessDashboardService $dashboardService = null,
+        ?InventoryService $inventoryService = null
+    ) {
+        $dashboardService = $dashboardService ?: app(BusinessDashboardService::class);
+        $inventoryService = $inventoryService ?: app(InventoryService::class);
+        $range = $request->validate([
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'sort' => ['nullable', 'string', 'in:profit,revenue,units,margin,cost_incomplete'],
+            'dir' => ['nullable', 'string', 'in:asc,desc'],
+        ]);
+
         $from = $range['from'] ?? now()->startOfMonth()->toDateString();
         $to = $range['to'] ?? now()->toDateString();
-        $sales = Invoice::where('shop_id', $shop->id)->whereDate('issued_at', '>=', $from)->whereDate('issued_at', '<=', $to);
-        $products = DB::table('invoice_items')->join('invoices', 'invoices.id', '=', 'invoice_items.invoice_id')
-            ->where('invoices.shop_id', $shop->id)->whereDate('issued_at', '>=', $from)->whereDate('issued_at', '<=', $to)
-            ->selectRaw('product_id, product_name, SUM(quantity) as units, SUM(line_total - invoice_items.tax - general_discount_cents / 100.0) as revenue, SUM(total_cost_cents) / 100.0 as known_cost, SUM(CASE WHEN total_cost_cents IS NULL THEN 1 ELSE 0 END) as unknown_lines')
-            ->groupBy('product_id', 'product_name')->orderByDesc('revenue')->get();
-        $inventory = app(InventoryService::class)->getShopInventorySummary($shop);
-        $returns = DB::table('invoice_return_items')->join('invoice_returns', 'invoice_returns.id', '=', 'invoice_return_items.invoice_return_id')
-            ->join('invoice_items', 'invoice_items.id', '=', 'invoice_return_items.invoice_item_id')
-            ->join('invoices', 'invoices.id', '=', 'invoice_items.invoice_id')->where('invoices.shop_id', $shop->id)
-            ->whereDate('invoice_returns.created_at', '>=', $from)->whereDate('invoice_returns.created_at', '<=', $to)
-            ->selectRaw('product_id, product_name, SUM(invoice_return_items.quantity) as units, SUM(refund - tax_refund) as revenue,
-                SUM(CASE WHEN restock = 1 THEN COALESCE(invoice_return_items.total_cost_cents, 0) ELSE 0 END) / 100.0 as known_cost,
-                SUM(CASE WHEN restock = 1 AND invoice_return_items.total_cost_cents IS NULL THEN 1 ELSE 0 END) as unknown_lines')
-            ->groupBy('product_id', 'product_name')->get();
-        foreach ($returns as $returned) {
-            $row = $products->first(fn($row) => $row->product_id === $returned->product_id && $row->product_name === $returned->product_name);
-            if (! $row) {
-                $row = (object) ['product_id' => $returned->product_id, 'product_name' => $returned->product_name,
-                    'units' => 0, 'revenue' => 0, 'known_cost' => 0, 'unknown_lines' => 0];
-                $products->push($row);
-            }
-            $row->units -= $returned->units;
-            $row->revenue -= $returned->revenue;
-            $row->known_cost -= $returned->known_cost;
-            $row->unknown_lines += $returned->unknown_lines;
-        }
+        $sort = $range['sort'] ?? 'profit';
+        $dir = $range['dir'] ?? 'desc';
+
+        $summary = $dashboardService->getSummary($shop, $from, $to, $sort, $dir);
+
+        $inventory = $inventoryService->getShopInventorySummary($shop);
+        $orders = $shop->orders()->with('items')->whereNull('invoice_id')->latest()->paginate(15);
+        $rules = DB::table('product_price_rules')->whereIn('product_id', $shop->products()->select('id'))->get()->keyBy('product_id');
+        $lots = \App\Models\InventoryLot::whereIn('product_id', $shop->products()->select('id'))->orderBy('received_at')->get();
+
+        // Calculate today net sales for backward compatibility and quick KPI
         $refundBase = DB::table('invoice_returns')->join('invoices', 'invoices.id', '=', 'invoice_returns.invoice_id')->where('invoices.shop_id', $shop->id);
-        $periodRefunds = (clone $refundBase)->whereDate('invoice_returns.created_at', '>=', $from)->whereDate('invoice_returns.created_at', '<=', $to)->sum('invoice_returns.total');
         $todayRefunds = (clone $refundBase)->whereDate('invoice_returns.created_at', today())->sum('invoice_returns.total');
+        $today = Invoice::where('shop_id', $shop->id)->whereDate('issued_at', today())->where('status', '!=', 'void')->sum('total') - $todayRefunds;
+
+        // Legacy products collection mapping for backward compatibility
+        $products = collect($summary['profitability'])->map(fn ($p) => (object) [
+            'product_id' => $p['product_id'],
+            'product_name' => $p['product_name'],
+            'units' => $p['units'],
+            'revenue' => $p['revenue'],
+            'known_cost' => $p['cost'],
+            'unknown_lines' => $p['has_unknown_cost'] ? 1 : 0,
+            'gross_profit' => $p['gross_profit'],
+            'margin_percent' => $p['margin_percent'],
+        ]);
 
         return view('seller.business', [
-            'shop' => $shop, 'from' => $from, 'to' => $to, 'products' => $products,
-            'today' => Invoice::where('shop_id', $shop->id)->whereDate('issued_at', today())->sum('total') - $todayRefunds,
-            'total' => (clone $sales)->sum('total') - $periodRefunds, 'discount' => (clone $sales)->sum('discount'),
-            'receivable' => $shop->customers()->sum('balance'), 'inventory' => $inventory,
-            'orders' => $shop->orders()->with('items')->whereNull('invoice_id')->latest()->paginate(15),
-            'rules' => DB::table('product_price_rules')->whereIn('product_id', $shop->products()->select('id'))->get()->keyBy('product_id'),
-            'lots' => \App\Models\InventoryLot::whereIn('product_id', $shop->products()->select('id'))->orderBy('received_at')->get(),
+            'shop' => $shop,
+            'from' => $from,
+            'to' => $to,
+            'sort' => $sort,
+            'dir' => $dir,
+            'summary' => $summary,
+            'products' => $products,
+            'today' => max(0.0, (float) $today),
+            'total' => $summary['period']['net_sales'],
+            'discount' => $summary['period']['discounts'],
+            'receivable' => $summary['current_state']['receivable_total'],
+            'inventory' => $inventory,
+            'orders' => $orders,
+            'rules' => $rules,
+            'lots' => $lots,
         ]);
+    }
+
+    public function lots(Request $request, Shop $shop)
+    {
+        $products = $shop->products()->select(['id', 'name'])->get()->keyBy('id');
+        $lots = \App\Models\InventoryLot::whereIn('product_id', $products->keys())
+            ->orderByDesc('received_at')
+            ->paginate(25);
+
+        return view('seller.inventory.lots', compact('shop', 'lots', 'products'));
+    }
+
+    public function pricing(Request $request, Shop $shop)
+    {
+        $products = $shop->products()->where('sale_unit', '!=', 'decant')->with('inventory')->get();
+        $rules = DB::table('product_price_rules')->whereIn('product_id', $products->pluck('id'))->get()->keyBy('product_id');
+
+        return view('seller.pricing.index', compact('shop', 'products', 'rules'));
     }
 
     public function rule(Request $request, Shop $shop, Product $product, ProductPricingService $pricing)
     {
         $pricing->requirePro($product);
-        $data = $request->validate(['margin_percent' => ['required', 'numeric', 'min:0', 'max:95'],
-            'round_step' => ['required', 'decimal:0,2', 'min:0.01', 'max:10000'], 'auto_increase' => ['sometimes', 'boolean']]);
+        $data = $request->validate([
+            'margin_percent' => ['required', 'numeric', 'min:0', 'max:95'],
+            'round_step' => ['required', 'decimal:0,2', 'min:0.01', 'max:10000'],
+            'auto_increase' => ['sometimes', 'boolean'],
+        ]);
         DB::transaction(function () use ($product, $data) {
             Product::whereKey($product->id)->lockForUpdate()->firstOrFail();
             DB::table('product_price_rules')->updateOrInsert(['product_id' => $product->id], [
-                'margin_percent' => $data['margin_percent'], 'round_step_cents' => (int) round((float) $data['round_step'] * 100),
-                'auto_increase' => $data['auto_increase'] ?? false, 'pending_price' => null, 'created_at' => now(), 'updated_at' => now(),
+                'margin_percent' => $data['margin_percent'],
+                'round_step_cents' => (int) round((float) $data['round_step'] * 100),
+                'auto_increase' => $data['auto_increase'] ?? false,
+                'pending_price' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         });
 
