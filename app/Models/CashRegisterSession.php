@@ -27,7 +27,10 @@ class CashRegisterSession extends Model
         'difference',
         'difference_cents',
         'status',
+        'is_open_flag',
         'notes',
+        'client_operation_uuid',
+        'payload_sha256',
     ];
 
     protected function casts(): array
@@ -87,5 +90,14 @@ class CashRegisterSession extends Model
         $netMovements = (int) $this->movements()->sum('amount_cents');
 
         return $opening + $netMovements;
+    }
+
+    public function resolveRouteBinding($value, $field = null)
+    {
+        if ($field) {
+            return $this->where($field, $value)->first();
+        }
+
+        return $this->where('public_id', $value)->orWhere('id', $value)->first();
     }
 }

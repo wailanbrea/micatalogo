@@ -34,13 +34,21 @@
   - Estrategias explícitas (`skip`, `update`, `create`) con protección contra colisiones ilegales de código de barras.
   - Consumo de cuotas de plan exclusivo para productos nuevos (`create`), sin cobrar updates/skips, asegurado con `Shop::lockForUpdate()`.
   - Manejo controlado de categorías faltantes y preservación de SKU/barcode con ceros iniciales.
+- Cierre y blindaje de la Fase Financiera 1:
+  - Manejador central determinista de dinero `App\Support\Money` (cero float en lógica contable y persistencia).
+  - Estado de Resultados (P&L) auditado: ventas brutas, deducción de ITBIS de ingresos netos, descuentos en línea y globales, devoluciones con restitución de costo FIFO, ganancia bruta, gastos operativos devengados en el período, comisiones y ganancia operativa.
+  - Cobertura de costos ponderada (`revenue_cost_coverage`) y semáforo de margen contra reglas objetivo (`ProductPriceRule`).
+  - Flujo de Efectivo real: reconciliación estricta de cobros de facturas, abonos a créditos, pagos a gastos y movimientos de caja.
+  - Abonos parciales a gastos (`ExpensePayment`) con seguimiento de saldos pendientes y estado `paid`/`partial`/`pending`.
+  - Arqueo de caja (`CashRegisterSession`) aislado por usuario con índice único en BD para prevenir aperturas concurrentes.
+  - Aging de cuentas por cobrar clasificado factura por factura utilizando `due_date` e idempotencia con hash SHA-256 en endpoints críticos.
 - Android `1.0.13` release with version code `14` published and verified; minimum supported version remains `11`.
 
 ## Verified
 
-- `php vendor/bin/pest`: 250 tests, 1,200 assertions (100% passing).
-- Android `gradlew testDebugUnitTest`: passing. Instrumented tests require an emulator
-  reset because the existing installed APK has a different signing certificate.
+- `php vendor/bin/pest`: 297 tests, 1,434 assertions (100% passing).
+- Tests de integridad financiera dedicados: `FinancialIntegrityTest` (17/17 passing), `MoneyTest` (8/8 passing).
+- Android `gradlew testDebugUnitTest`: passing.
 - `npm run build`: passing.
 - Production migrations, cache rebuild, backup comparison, and smoke test: passing.
 - Production mobile inventory import routes deployed and route cache rebuilt.

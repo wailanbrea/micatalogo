@@ -57,5 +57,6 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/shops/{shop}/expenses', [ExpenseController::class, 'index']);
         Route::get('/shops/{shop}/expense-categories', [ExpenseController::class, 'categories']);
         Route::post('/shops/{shop}/expenses', [ExpenseController::class, 'store']);
+        Route::post('/shops/{shop}/expenses/{expense}/payments', [ExpenseController::class, 'pay']);
     });
 });

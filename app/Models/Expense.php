@@ -20,11 +20,15 @@ class Expense extends Model
         'description',
         'amount',
         'amount_cents',
+        'amount_paid',
+        'amount_paid_cents',
         'payment_status',
         'payment_method',
         'reference',
         'occurred_at',
         'notes',
+        'client_operation_uuid',
+        'payload_sha256',
     ];
 
     protected function casts(): array
@@ -32,6 +36,8 @@ class Expense extends Model
         return [
             'amount' => 'decimal:2',
             'amount_cents' => 'integer',
+            'amount_paid' => 'decimal:2',
+            'amount_paid_cents' => 'integer',
             'occurred_at' => 'datetime',
         ];
     }
@@ -56,6 +62,21 @@ class Expense extends Model
         return $this->belongsTo(CashRegisterSession::class);
     }
 
+    public function payments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ExpensePayment::class);
+    }
+
+    public function unpaidAmountCents(): int
+    {
+        return max(0, (int) $this->amount_cents - (int) $this->amount_paid_cents);
+    }
+
+    public function unpaidAmount(): float
+    {
+        return $this->unpaidAmountCents() / 100.0;
+    }
+
     public function statusLabel(): string
     {
         return match ($this->payment_status) {
@@ -64,5 +85,14 @@ class Expense extends Model
             'pending' => 'Pendiente',
             default => ucfirst($this->payment_status),
         };
+    }
+
+    public function resolveRouteBinding($value, $field = null)
+    {
+        if ($field) {
+            return $this->where($field, $value)->first();
+        }
+
+        return $this->where('public_id', $value)->orWhere('id', $value)->first();
     }
 }

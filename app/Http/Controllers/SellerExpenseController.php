@@ -19,6 +19,7 @@ class SellerExpenseController extends Controller
         $from = $request->from ?: now()->startOfMonth()->toDateString();
         $to = $request->to ?: now()->toDateString();
         $categoryId = $request->category_id;
+        $status = $request->status;
 
         $categories = $shop->expenseCategories()->where('is_active', true)->orderBy('name')->get();
         if ($categories->isEmpty()) {
@@ -27,19 +28,26 @@ class SellerExpenseController extends Controller
         }
 
         $query = $shop->expenses()
-            ->with(['category', 'user'])
+            ->with(['category', 'user', 'payments'])
             ->whereDate('occurred_at', '>=', $from)
             ->whereDate('occurred_at', '<=', $to)
             ->when($categoryId, fn ($q) => $q->where('expense_category_id', $categoryId))
+            ->when($status, fn ($q) => $q->where('payment_status', $status))
             ->latest('occurred_at');
 
         $expenses = (clone $query)->paginate(15)->withQueryString();
 
-        $totalPeriodCents = (int) (clone $query)->where('payment_status', 'paid')->sum('amount_cents');
-        $totalPeriod = $totalPeriodCents / 100.0;
+        $totalIncurredCents = (int) (clone $query)->sum('amount_cents');
+        $totalIncurred = $totalIncurredCents / 100.0;
+        $totalPeriod = $totalIncurred;
+
+        $totalPaidCents = (int) (clone $query)->sum('amount_paid_cents');
+        $totalPaid = $totalPaidCents / 100.0;
+
+        $totalPendingCents = max(0, $totalIncurredCents - $totalPaidCents);
+        $totalPending = $totalPendingCents / 100.0;
 
         $byCategory = (clone $query)
-            ->where('payment_status', 'paid')
             ->join('expense_categories', 'expense_categories.id', '=', 'expenses.expense_category_id')
             ->selectRaw('expense_categories.name as cat_name, SUM(expenses.amount_cents) as cat_cents')
             ->groupBy('expense_categories.name')
@@ -61,7 +69,11 @@ class SellerExpenseController extends Controller
             'from',
             'to',
             'categoryId',
+            'status',
             'totalPeriod',
+            'totalIncurred',
+            'totalPaid',
+            'totalPending',
             'byCategory',
             'paymentMethods'
         ));
@@ -73,6 +85,8 @@ class SellerExpenseController extends Controller
             'expense_category_id' => ['required', 'integer'],
             'description' => ['required', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'min:0.01'],
+            'paid_amount' => ['nullable', 'numeric', 'min:0'],
+            'payment_status' => ['nullable', 'in:paid,partial,pending'],
             'payment_method' => ['required', 'in:cash,card,bank_transfer,credit,other'],
             'occurred_at' => ['nullable', 'date'],
             'reference' => ['nullable', 'string', 'max:100'],
@@ -83,13 +97,41 @@ class SellerExpenseController extends Controller
             $expense = $expenseService->recordExpense($shop, $request->user(), $validated);
 
             $msg = 'Gasto registrado correctamente por RD$ ' . number_format((float) $validated['amount'], 2);
-            if ($expense->cash_register_session_id) {
+            if ($expense->amount_paid_cents < $expense->amount_cents) {
+                $msg .= ' (pagado: RD$ ' . number_format((float) $expense->amount_paid, 2) . ', pendiente: RD$ ' . number_format($expense->unpaidAmount(), 2) . ').';
+            } elseif ($expense->cash_register_session_id) {
                 $msg .= ' (descontado de la caja abierta actual).';
             }
 
             return back()->with('status', $msg);
         } catch (InvalidArgumentException $e) {
             return back()->withErrors(['expense' => $e->getMessage()]);
+        }
+    }
+
+    public function storePayment(Request $request, Shop $shop, Expense $expense, ExpenseService $expenseService): RedirectResponse
+    {
+        abort_unless($expense->shop_id === $shop->id, 404);
+
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'payment_method' => ['required', 'in:cash,card,bank_transfer,other'],
+            'reference' => ['nullable', 'string', 'max:100'],
+            'notes' => ['nullable', 'string', 'max:500'],
+            'paid_at' => ['nullable', 'date'],
+        ]);
+
+        try {
+            $payment = $expenseService->recordExpensePayment($shop, $expense, $request->user(), $validated);
+
+            $msg = 'Abono registrado correctamente por RD$ ' . number_format((float) $validated['amount'], 2);
+            if ($payment->cash_register_session_id) {
+                $msg .= ' (descontado de la caja abierta actual).';
+            }
+
+            return back()->with('status', $msg);
+        } catch (InvalidArgumentException $e) {
+            return back()->withErrors(['expense_payment' => $e->getMessage()]);
         }
     }
 

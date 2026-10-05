@@ -24,6 +24,8 @@ class InvoicePayment extends Model
         'reference',
         'notes',
         'received_at',
+        'client_operation_uuid',
+        'payload_sha256',
     ];
 
     protected function casts(): array

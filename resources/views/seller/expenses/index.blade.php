@@ -64,27 +64,51 @@
             </div>
 
             <!-- Total and Category Breakdown Banner -->
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <!-- Incurred Expenses -->
                 <div class="rounded-2xl border border-rose-200 bg-white p-5 shadow-xs">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Total gastado en período</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Gastos incurridos (P&L)</span>
                     <p class="mt-2 text-2xl font-black text-rose-700 tracking-tight tabular-nums whitespace-nowrap">
-                        RD$ {{ number_format($totalPeriod, 2) }}
+                        RD$ {{ number_format($totalIncurred, 2) }}
                     </p>
                     <p class="mt-1 text-[11px] text-slate-500">
-                        Deducción directa de la ganancia operativa.
+                        Deducción de ganancia devengada.
                     </p>
                 </div>
 
-                <div class="sm:col-span-2 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Desglose por categoría</span>
-                    <div class="mt-3 flex flex-wrap gap-2">
+                <!-- Cash Paid -->
+                <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Efectivo pagado (Flujo)</span>
+                    <p class="mt-2 text-2xl font-black text-slate-900 tracking-tight tabular-nums whitespace-nowrap">
+                        RD$ {{ number_format($totalPaid, 2) }}
+                    </p>
+                    <p class="mt-1 text-[11px] text-slate-500">
+                        Dinero realmente desembolsado.
+                    </p>
+                </div>
+
+                <!-- Pending to Pay -->
+                <div class="rounded-2xl border {{ $totalPending > 0 ? 'border-amber-300 bg-amber-50/30' : 'border-slate-200 bg-white' }} p-5 shadow-xs">
+                    <span class="text-xs font-bold uppercase tracking-wider {{ $totalPending > 0 ? 'text-amber-800' : 'text-slate-500' }}">Saldo pendiente</span>
+                    <p class="mt-2 text-2xl font-black {{ $totalPending > 0 ? 'text-amber-700' : 'text-slate-900' }} tracking-tight tabular-nums whitespace-nowrap">
+                        RD$ {{ number_format($totalPending, 2) }}
+                    </p>
+                    <p class="mt-1 text-[11px] {{ $totalPending > 0 ? 'text-amber-800 font-semibold' : 'text-slate-500' }}">
+                        {{ $totalPending > 0 ? 'Compromisos pendientes' : 'Todos saldados' }}
+                    </p>
+                </div>
+
+                <!-- Breakdown by Category -->
+                <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Por categoría</span>
+                    <div class="mt-2.5 flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
                         @forelse ($byCategory as $cat)
-                            <span class="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-800">
+                            <span class="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-800">
                                 <span>{{ $cat->cat_name }}:</span>
                                 <strong class="font-black tabular-nums text-slate-900">RD$ {{ number_format($cat->cat_cents / 100.0, 2) }}</strong>
                             </span>
                         @empty
-                            <span class="text-xs text-slate-400">Sin gastos registrados en el rango seleccionado.</span>
+                            <span class="text-xs text-slate-400">Sin gastos registrados.</span>
                         @endforelse
                     </div>
                 </div>
@@ -109,7 +133,7 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block font-bold text-slate-700 mb-1">Monto (RD$)</label>
+                                <label class="block font-bold text-slate-700 mb-1">Monto total (RD$)</label>
                                 <input type="number" name="amount" step="0.01" min="0.01" required placeholder="0.00" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs font-black text-slate-900 tabular-nums focus:border-rose-600">
                             </div>
                         </div>
@@ -131,25 +155,32 @@
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
+                                <label class="block font-bold text-slate-700 mb-1">Monto pagado ahora (RD$)</label>
+                                <input type="number" name="paid_amount" step="0.01" min="0" placeholder="Dejar vacío si se paga completo" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs font-semibold text-slate-900 tabular-nums focus:border-rose-600">
+                                <span class="block text-[11px] text-slate-400 mt-0.5">Vacío = pagado completo. 0 = pendiente. Menor = parcial.</span>
+                            </div>
+                            <div>
                                 <label class="block font-bold text-slate-700 mb-1">Fecha del gasto</label>
                                 <input type="date" name="occurred_at" value="{{ now()->toDateString() }}" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs font-semibold text-slate-900 focus:border-rose-600">
                             </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block font-bold text-slate-700 mb-1">Comprobante / NCF / Referencia (opcional)</label>
                                 <input type="text" name="reference" placeholder="Ej: B0100000045, Factura #123" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs font-medium text-slate-900 focus:border-rose-600">
                             </div>
-                        </div>
-
-                        <div>
-                            <label class="block font-bold text-slate-700 mb-1">Notas adicionales (opcional)</label>
-                            <input type="text" name="notes" placeholder="Detalles u observaciones" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs font-medium text-slate-900 focus:border-rose-600">
+                            <div>
+                                <label class="block font-bold text-slate-700 mb-1">Notas adicionales (opcional)</label>
+                                <input type="text" name="notes" placeholder="Detalles u observaciones" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs font-medium text-slate-900 focus:border-rose-600">
+                            </div>
                         </div>
 
                         <div class="rounded-xl border border-blue-100 bg-blue-50/60 p-3 text-xs text-blue-800 flex items-center gap-2">
                             <svg class="h-4 w-4 shrink-0 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
-                            <span>Si seleccionas <strong>Efectivo</strong> y tu caja está abierta, el importe se descontará automáticamente del arqueo de caja.</span>
+                            <span>Si seleccionas <strong>Efectivo</strong> y tu caja está abierta, el importe efectivamente pagado se descontará de la caja.</span>
                         </div>
 
                         <button type="submit" class="inline-flex items-center gap-2 rounded-2xl bg-rose-600 px-6 py-3 text-xs font-bold text-white shadow-xs hover:bg-rose-700 transition cursor-pointer">
@@ -203,6 +234,12 @@
                                 <option value="{{ $cat->id }}" @selected($categoryId == $cat->id)>{{ $cat->name }}</option>
                             @endforeach
                         </select>
+                        <select name="status" class="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold">
+                            <option value="">Todos los estados</option>
+                            <option value="paid" @selected(($status ?? '') === 'paid')>Pagados</option>
+                            <option value="partial" @selected(($status ?? '') === 'partial')>Parciales</option>
+                            <option value="pending" @selected(($status ?? '') === 'pending')>Pendientes</option>
+                        </select>
                         <button type="submit" class="rounded-xl bg-slate-800 px-3 py-1.5 font-bold text-white hover:bg-slate-900 cursor-pointer">Filtrar</button>
                     </form>
                 </div>
@@ -214,41 +251,106 @@
                                 <th class="px-4 py-3">Fecha</th>
                                 <th class="px-4 py-3">Categoría</th>
                                 <th class="px-4 py-3">Descripción</th>
+                                <th class="px-4 py-3">Estado</th>
                                 <th class="px-4 py-3">Método</th>
-                                <th class="px-4 py-3">Referencia</th>
-                                <th class="px-4 py-3 text-right">Monto</th>
+                                <th class="px-4 py-3 text-right">Total</th>
+                                <th class="px-4 py-3 text-right">Pagado</th>
+                                <th class="px-4 py-3 text-right">Pendiente</th>
+                                <th class="px-4 py-3 text-center">Acciones</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 bg-white">
                             @forelse ($expenses as $expense)
                                 <tr class="hover:bg-slate-50 transition">
-                                    <td class="px-4 py-3 text-slate-600 font-mono">
+                                    <td class="px-4 py-3 text-slate-600 font-mono whitespace-nowrap">
                                         {{ $expense->occurred_at->format('d/m/Y') }}
                                     </td>
-                                    <td class="px-4 py-3 font-bold text-slate-800">
+                                    <td class="px-4 py-3 font-bold text-slate-800 whitespace-nowrap">
                                         {{ $expense->category?->name ?? 'Sin categoría' }}
                                     </td>
-                                    <td class="px-4 py-3 text-slate-900 font-medium">
-                                        {{ $expense->description }}
+                                    <td class="px-4 py-3 text-slate-900 font-medium max-w-xs">
+                                        <div class="truncate">{{ $expense->description }}</div>
                                         @if ($expense->notes)
-                                            <span class="block text-[11px] text-slate-400">{{ $expense->notes }}</span>
+                                            <span class="block text-[11px] text-slate-400 truncate">{{ $expense->notes }}</span>
+                                        @endif
+                                        @if ($expense->reference)
+                                            <span class="block text-[10px] text-slate-400 font-mono">Ref: {{ $expense->reference }}</span>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3">
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        @if ($expense->payment_status === 'paid')
+                                            <span class="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+                                                Pagado
+                                            </span>
+                                        @elseif ($expense->payment_status === 'partial')
+                                            <span class="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800 border border-amber-200">
+                                                Parcial
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center rounded-md bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-700 border border-rose-200">
+                                                Pendiente
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap">
                                         <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700 capitalize">
                                             {{ $paymentMethods[$expense->payment_method] ?? $expense->payment_method }}
                                         </span>
                                     </td>
-                                    <td class="px-4 py-3 text-slate-500 font-mono text-[11px]">
-                                        {{ $expense->reference ?: '—' }}
-                                    </td>
-                                    <td class="px-4 py-3 text-right font-black text-rose-700 tabular-nums whitespace-nowrap">
+                                    <td class="px-4 py-3 text-right font-black text-slate-900 tabular-nums whitespace-nowrap">
                                         RD$ {{ number_format($expense->amount_cents / 100.0, 2) }}
+                                    </td>
+                                    <td class="px-4 py-3 text-right font-semibold text-emerald-700 tabular-nums whitespace-nowrap">
+                                        RD$ {{ number_format($expense->amount_paid_cents / 100.0, 2) }}
+                                    </td>
+                                    <td class="px-4 py-3 text-right font-black {{ $expense->unpaidAmountCents() > 0 ? 'text-amber-700' : 'text-slate-400' }} tabular-nums whitespace-nowrap">
+                                        RD$ {{ number_format($expense->unpaidAmount(), 2) }}
+                                    </td>
+                                    <td class="px-4 py-3 text-center whitespace-nowrap">
+                                        @if ($expense->unpaidAmountCents() > 0)
+                                            <details class="relative inline-block text-left">
+                                                <summary class="inline-flex items-center gap-1 rounded-lg bg-rose-50 border border-rose-200 px-2.5 py-1 text-[11px] font-black text-rose-700 hover:bg-rose-100 transition cursor-pointer list-none">
+                                                    <span>Abonar</span>
+                                                    <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                                    </svg>
+                                                </summary>
+                                                <div class="absolute right-0 z-30 mt-2 w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl text-left">
+                                                    <h4 class="text-xs font-black text-slate-900 mb-2">Abonar a gasto</h4>
+                                                    <p class="text-[11px] text-slate-500 mb-3">Pendiente: <strong class="text-amber-700 tabular-nums">RD$ {{ number_format($expense->unpaidAmount(), 2) }}</strong></p>
+                                                    <form method="POST" action="{{ route('seller.shops.expenses.payments.store', [$shop, $expense]) }}" class="space-y-2.5 text-xs">
+                                                        @csrf
+                                                        <div>
+                                                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Monto (RD$)</label>
+                                                            <input type="number" name="amount" step="0.01" min="0.01" max="{{ $expense->unpaidAmount() }}" value="{{ $expense->unpaidAmount() }}" required class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs font-bold tabular-nums">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Método</label>
+                                                            <select name="payment_method" required class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs font-semibold">
+                                                                <option value="cash">Efectivo</option>
+                                                                <option value="card">Tarjeta</option>
+                                                                <option value="bank_transfer">Transferencia</option>
+                                                                <option value="other">Otro</option>
+                                                            </select>
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Referencia (opcional)</label>
+                                                            <input type="text" name="reference" placeholder="Ej: Recibo #44" class="w-full rounded-lg border border-slate-300 px-2 py-1 text-xs">
+                                                        </div>
+                                                        <button type="submit" class="w-full rounded-xl bg-rose-600 py-2 text-xs font-bold text-white hover:bg-rose-700 transition cursor-pointer">
+                                                            Confirmar abono
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </details>
+                                        @else
+                                            <span class="text-[11px] font-semibold text-emerald-600">Saldado</span>
+                                        @endif
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-4 py-8 text-center text-slate-400">
+                                    <td colspan="9" class="px-4 py-8 text-center text-slate-400">
                                         Sin gastos registrados en el período seleccionado.
                                     </td>
                                 </tr>

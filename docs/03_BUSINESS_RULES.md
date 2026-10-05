@@ -58,3 +58,33 @@
   - Re-submitting a confirmed session returns the existing summary idempotently.
   - API provides `POST /shops/{shop}/inventory-import/{session}/confirm` alongside backward-compatible `POST /shops/{shop}/inventory-import`.
 
+## Financial Integrity & Accounting Rules (Phase 1)
+
+- **Deterministic Money Handling (`Money` helper)**: Zero `float` usage in persistence and business calculations. All financial transactions operate with integer cents (`int`) or fixed two-decimal strings (`decimal:2`).
+- **P&L vs. Cash Flow Separation**:
+  - P&L (Estado de Resultados) reflects revenue upon invoice issuance (`net_sales = gross_sales - discounts - returns`) and expenses when incurred (`occurred_at`).
+  - Cash flow measures real money in and out (`invoice_payments`, debt collections, and `expense_payments`).
+  - Sales tax (ITBIS/IVA) is strictly excluded from net sales and profits; it is tracked as a pass-through fiscal liability.
+- **COGS & Margins**:
+  - Cost of Goods Sold is calculated using historical FIFO lot tracking (`inventory_lots`).
+  - Gross profit is `net_sales - fifo_cogs`.
+  - Operating profit is `gross_profit - operating_expenses - commissions`.
+  - Profit margin indicators are grounded against configured target pricing rules (`ProductPriceRule`); arbitrary fixed thresholds are prohibited.
+- **Unified Payment Contract & Validation**:
+  - Split payments must satisfy $\text{payments} + \text{credit} = \text{invoice total}$.
+  - Overpayment or credit exceeding invoice total is rejected with 422.
+  - Credit sales require an associated customer; orphan pending sales are strictly rejected.
+  - Payment status is derived server-side (`paid`, `partial`, `pending`).
+- **Expense Partial Payments (`ExpensePayment`)**:
+  - Expenses record accrued amount, paid amount, and payment status (`paid`, `partial`, `pending`).
+  - Partial installments can be recorded against pending expenses without exceeding unpaid balance.
+- **Cash Register Integrity (`CashRegisterSession`)**:
+  - Strict user-to-session isolation. A cashier/seller can only access and register movements on their own active session.
+  - Unique composite database constraint `[shop_id, user_id, is_open_flag]` prevents concurrent open sessions by the same user.
+  - Only the shop owner or users with explicit administrative permissions can manage or close sessions belonging to other sellers.
+- **Per-Invoice Debt Aging**:
+  - Aging buckets (0-30, 31-60, 61-90, 90+ days) are determined per unpaid invoice based on `due_date` (or `issued_at`).
+  - Partial payments reduce invoice debt deterministically without borrowing dates from customer's global account.
+- **Idempotency**:
+  - Operations across Web and API (`expenses`, `expense_payments`, `invoice_payments`, `cash_movements`, `cash_register_sessions`) accept `client_operation_uuid` and payload SHA-256 hash to guarantee safe replay and prevent duplicate ledger entries.
+

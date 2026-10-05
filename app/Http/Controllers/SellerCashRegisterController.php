@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CashRegisterSession;
 use App\Models\Shop;
 use App\Services\CashRegisterService;
+use App\Services\PlanLimitsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -12,8 +13,10 @@ use InvalidArgumentException;
 
 class SellerCashRegisterController extends Controller
 {
-    public function index(Request $request, Shop $shop, CashRegisterService $cashRegisterService): View
+    public function index(Request $request, Shop $shop, CashRegisterService $cashRegisterService, PlanLimitsService $limits): View
     {
+        $limits->assertFeature($shop->user, 'cash_registers');
+
         $user = $request->user();
         $currentSession = $cashRegisterService->getCurrentSession($shop, $user);
         $sessionSummary = null;
@@ -25,13 +28,19 @@ class SellerCashRegisterController extends Controller
             $sessionSummary = $cashRegisterService->getSessionSummary($currentSession);
         }
 
-        $pastSessions = CashRegisterSession::query()
+        $canManageAll = $cashRegisterService->canManageAllCashRegisters($shop, $user);
+
+        $pastSessionsQuery = CashRegisterSession::query()
             ->where('shop_id', $shop->id)
             ->where('status', 'closed')
             ->with('user')
-            ->latest('closed_at')
-            ->paginate(10)
-            ->withQueryString();
+            ->latest('closed_at');
+
+        if (! $canManageAll) {
+            $pastSessionsQuery->where('user_id', $user->id);
+        }
+
+        $pastSessions = $pastSessionsQuery->paginate(10)->withQueryString();
 
         $allowedTypes = [
             'cash_in' => 'Entrada de efectivo',
@@ -46,12 +55,15 @@ class SellerCashRegisterController extends Controller
             'sessionSummary',
             'movements',
             'pastSessions',
-            'allowedTypes'
+            'allowedTypes',
+            'canManageAll'
         ));
     }
 
-    public function open(Request $request, Shop $shop, CashRegisterService $cashRegisterService): RedirectResponse
+    public function open(Request $request, Shop $shop, CashRegisterService $cashRegisterService, PlanLimitsService $limits): RedirectResponse
     {
+        $limits->assertFeature($shop->user, 'cash_registers');
+
         $validated = $request->validate([
             'opening_amount' => ['required', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string', 'max:500'],
@@ -71,9 +83,12 @@ class SellerCashRegisterController extends Controller
         }
     }
 
-    public function close(Request $request, Shop $shop, CashRegisterSession $session, CashRegisterService $cashRegisterService): RedirectResponse
+    public function close(Request $request, Shop $shop, CashRegisterSession $session, CashRegisterService $cashRegisterService, PlanLimitsService $limits): RedirectResponse
     {
         abort_unless($session->shop_id === $shop->id, 404);
+        $limits->assertFeature($shop->user, 'cash_registers');
+
+        abort_unless($cashRegisterService->canManageSession($shop, $request->user(), $session), 403, 'No tienes permiso para cerrar la sesión de caja de otro usuario.');
 
         $validated = $request->validate([
             'counted_amount' => ['required', 'numeric', 'min:0'],
@@ -101,9 +116,12 @@ class SellerCashRegisterController extends Controller
         }
     }
 
-    public function movement(Request $request, Shop $shop, CashRegisterSession $session, CashRegisterService $cashRegisterService): RedirectResponse
+    public function movement(Request $request, Shop $shop, CashRegisterSession $session, CashRegisterService $cashRegisterService, PlanLimitsService $limits): RedirectResponse
     {
         abort_unless($session->shop_id === $shop->id, 404);
+        $limits->assertFeature($shop->user, 'cash_registers');
+
+        abort_unless($cashRegisterService->canManageSession($shop, $request->user(), $session), 403, 'No tienes permiso para registrar movimientos en la caja de otro usuario.');
 
         $validated = $request->validate([
             'type' => ['required', 'in:cash_in,cash_out,owner_contribution,owner_withdrawal'],
@@ -112,7 +130,7 @@ class SellerCashRegisterController extends Controller
         ]);
 
         try {
-            $cashRegisterService->recordMovement(
+            $cashRegisterService->recordManualMovement(
                 $session,
                 $request->user(),
                 $validated['type'],

@@ -130,6 +130,11 @@ class Shop extends Model
         return $this->hasMany(Expense::class)->latest('occurred_at');
     }
 
+    public function expensePayments(): HasMany
+    {
+        return $this->hasMany(ExpensePayment::class);
+    }
+
     public function expenseCategories(): HasMany
     {
         return $this->hasMany(ExpenseCategory::class)->where('is_active', true)->orderBy('name');

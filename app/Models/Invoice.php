@@ -18,6 +18,7 @@ class Invoice extends Model
         'salesperson_id',
         'invoice_number',
         'status',
+        'payment_status',
         'channel',
         'currency',
         'commission_type',
@@ -81,6 +82,18 @@ class Invoice extends Model
     public function paidAmount(): float
     {
         return (float) $this->payments()->sum('amount');
+    }
+
+    public function getPaymentStatusAttribute(): ?string
+    {
+        return $this->attributes['status'] ?? null;
+    }
+
+    public function setPaymentStatusAttribute(?string $value): void
+    {
+        if ($value !== null) {
+            $this->attributes['status'] = $value;
+        }
     }
 
     public function pendingAmount(): float

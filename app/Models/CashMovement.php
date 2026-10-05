@@ -25,6 +25,8 @@ class CashMovement extends Model
         'reference_id',
         'notes',
         'occurred_at',
+        'client_operation_uuid',
+        'payload_sha256',
         'created_at',
     ];
 

@@ -12,9 +12,10 @@ use Illuminate\Http\Request;
 
 class CashRegisterController extends Controller
 {
-    public function current(Request $request, Shop $shop, CashRegisterService $service): JsonResponse
+    public function current(Request $request, Shop $shop, CashRegisterService $service, PlanLimitsService $limits): JsonResponse
     {
         abort_unless($request->user()->canSellAtShop($shop), 403);
+        $limits->assertFeature($shop->user, 'cash_registers');
 
         $session = $service->getCurrentSession($shop, $request->user());
 
@@ -48,9 +49,21 @@ class CashRegisterController extends Controller
         $validated = $request->validate([
             'opening_amount' => ['required', 'decimal:0,2', 'min:0'],
             'notes' => ['nullable', 'string', 'max:255'],
+            'client_operation_uuid' => ['nullable', 'uuid'],
         ]);
 
-        $session = $service->openSession($shop, $request->user(), $validated['opening_amount'], $validated['notes'] ?? null);
+        $payloadHash = ! empty($validated['client_operation_uuid'])
+            ? hash('sha256', json_encode($validated, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION))
+            : null;
+
+        $session = $service->openSession(
+            $shop,
+            $request->user(),
+            $validated['opening_amount'],
+            $validated['notes'] ?? null,
+            $validated['client_operation_uuid'] ?? null,
+            $payloadHash
+        );
 
         return response()->json([
             'message' => 'Caja abierta exitosamente.',
@@ -63,17 +76,32 @@ class CashRegisterController extends Controller
         ], 201);
     }
 
-    public function close(Request $request, Shop $shop, CashRegisterSession $session, CashRegisterService $service): JsonResponse
+    public function close(Request $request, Shop $shop, CashRegisterSession $session, CashRegisterService $service, PlanLimitsService $limits): JsonResponse
     {
         abort_unless($request->user()->canSellAtShop($shop), 403);
         abort_unless($session->shop_id === $shop->id, 404);
+        $limits->assertFeature($shop->user, 'cash_registers');
+
+        abort_unless($service->canManageSession($shop, $request->user(), $session), 403, 'No tienes permiso para cerrar la sesión de caja de otro usuario.');
 
         $validated = $request->validate([
             'counted_amount' => ['required', 'decimal:0,2', 'min:0'],
             'notes' => ['nullable', 'string', 'max:500'],
+            'client_operation_uuid' => ['nullable', 'uuid'],
         ]);
 
-        $closed = $service->closeSession($session, $request->user(), $validated['counted_amount'], $validated['notes'] ?? null);
+        $payloadHash = ! empty($validated['client_operation_uuid'])
+            ? hash('sha256', json_encode($validated, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION))
+            : null;
+
+        $closed = $service->closeSession(
+            $session,
+            $request->user(),
+            $validated['counted_amount'],
+            $validated['notes'] ?? null,
+            $validated['client_operation_uuid'] ?? null,
+            $payloadHash
+        );
 
         return response()->json([
             'message' => 'Caja cerrada exitosamente.',
@@ -91,23 +119,33 @@ class CashRegisterController extends Controller
         ]);
     }
 
-    public function movement(Request $request, Shop $shop, CashRegisterSession $session, CashRegisterService $service): JsonResponse
+    public function movement(Request $request, Shop $shop, CashRegisterSession $session, CashRegisterService $service, PlanLimitsService $limits): JsonResponse
     {
         abort_unless($request->user()->canSellAtShop($shop), 403);
         abort_unless($session->shop_id === $shop->id, 404);
+        $limits->assertFeature($shop->user, 'cash_registers');
+
+        abort_unless($service->canManageSession($shop, $request->user(), $session), 403, 'No tienes permiso para registrar movimientos en la sesión de caja de otro usuario.');
 
         $validated = $request->validate([
             'type' => ['required', 'in:cash_in,cash_out,owner_contribution,owner_withdrawal,adjustment'],
             'amount' => ['required', 'decimal:0,2', 'min:0.01'],
             'notes' => ['required', 'string', 'max:255'],
+            'client_operation_uuid' => ['nullable', 'uuid'],
         ]);
 
-        $movement = $service->recordMovement(
+        $payloadHash = ! empty($validated['client_operation_uuid'])
+            ? hash('sha256', json_encode($validated, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION))
+            : null;
+
+        $movement = $service->recordManualMovement(
             $session,
             $request->user(),
             $validated['type'],
             $validated['amount'],
-            $validated['notes']
+            $validated['notes'],
+            $validated['client_operation_uuid'] ?? null,
+            $payloadHash
         );
 
         return response()->json([

@@ -7,6 +7,7 @@ use App\Models\Invoice;
 use App\Models\InvoicePayment;
 use App\Models\Shop;
 use App\Models\User;
+use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -24,6 +25,9 @@ class PaymentService
      *
      * @param array $payments Array of [ 'method' => string, 'amount' => string|float, 'reference' => ?string, 'notes' => ?string ]
      * @param string|float $creditAmount Amount left on customer credit
+     * @param Customer|null $customer Required if credit > 0
+     * @param string|null $clientOperationUuid Idempotency key
+     * @param string|null $payloadHash SHA-256 payload hash
      * @return array Created InvoicePayment models
      */
     public function processInvoicePayments(
@@ -32,15 +36,59 @@ class PaymentService
         User $user,
         array $payments,
         string|float $creditAmount = 0,
-        ?Customer $customer = null
+        ?Customer $customer = null,
+        ?string $clientOperationUuid = null,
+        ?string $payloadHash = null
     ): array {
-        return DB::transaction(function () use ($shop, $invoice, $user, $payments, $creditAmount, $customer): array {
+        return DB::transaction(function () use (
+            $shop, $invoice, $user, $payments, $creditAmount, $customer, $clientOperationUuid, $payloadHash
+        ): array {
             $invoice = Invoice::query()->lockForUpdate()->findOrFail($invoice->id);
-            $totalCents = $this->toCents($invoice->total);
-            $creditCents = $this->toCents($creditAmount);
+
+            // 1. Check idempotency if clientOperationUuid provided
+            if ($clientOperationUuid) {
+                $existing = InvoicePayment::query()
+                    ->where('shop_id', $shop->id)
+                    ->where('client_operation_uuid', $clientOperationUuid)
+                    ->get();
+
+                if ($existing->isNotEmpty()) {
+                    if ($payloadHash && ! hash_equals((string) $existing->first()->payload_sha256, $payloadHash)) {
+                        throw new InvalidArgumentException('Conflicto de idempotencia: el identificador de operación ya fue utilizado con datos distintos.', 409);
+                    }
+
+                    return $existing->all();
+                }
+            }
+
+            $totalCents = Money::toCents($invoice->total);
+            $creditCents = Money::toCents($creditAmount);
 
             if ($creditCents < 0) {
-                throw new InvalidArgumentException('El crédito no puede ser negativo.');
+                throw new InvalidArgumentException('El crédito no puede ser negativo.', 422);
+            }
+
+            // Check for credit sent via payments[] to prevent double counting
+            $hasPaymentCredit = false;
+            $paymentCreditCents = 0;
+            $nonCreditPayments = [];
+
+            foreach ($payments as $item) {
+                $method = (string) ($item['method'] ?? $item['payment_method'] ?? 'cash');
+                if ($method === 'credit') {
+                    $hasPaymentCredit = true;
+                    $paymentCreditCents += Money::toCents($item['amount'] ?? 0);
+                } else {
+                    $nonCreditPayments[] = $item;
+                }
+            }
+
+            if ($hasPaymentCredit) {
+                if ($creditCents > 0 && $creditCents !== $paymentCreditCents) {
+                    throw new InvalidArgumentException('Conflicto de crédito: credit_amount y pago con método crédito no coinciden.', 422);
+                }
+                // Normalize without double counting
+                $creditCents = max($creditCents, $paymentCreditCents);
             }
 
             if ($creditCents > 0 && ! $customer) {
@@ -53,19 +101,13 @@ class PaymentService
 
             $createdPayments = [];
 
-            foreach ($payments as $item) {
+            foreach ($nonCreditPayments as $item) {
                 $method = (string) ($item['method'] ?? $item['payment_method'] ?? 'cash');
-                if (! isset($allowedMethods[$method]) && $method !== 'credit') {
-                    throw new InvalidArgumentException("Método de pago no reconocido: {$method}.");
+                if (! isset($allowedMethods[$method])) {
+                    throw new InvalidArgumentException("Método de pago no reconocido: {$method}.", 422);
                 }
 
-                if ($method === 'credit') {
-                    // Credit is handled via creditCents / customer ledger
-                    $creditCents += $this->toCents($item['amount'] ?? 0);
-                    continue;
-                }
-
-                $amountCents = $this->toCents($item['amount'] ?? 0);
+                $amountCents = Money::toCents($item['amount'] ?? 0);
                 if ($amountCents <= 0) {
                     continue;
                 }
@@ -86,11 +128,13 @@ class PaymentService
                     'user_id' => $user->id,
                     'cash_register_session_id' => $cashSessionId,
                     'payment_method' => $method,
-                    'amount' => $this->toDecimal($amountCents),
+                    'amount' => Money::toDecimal($amountCents),
                     'amount_cents' => $amountCents,
                     'reference' => $item['reference'] ?? null,
                     'notes' => $item['notes'] ?? null,
                     'received_at' => now(),
+                    'client_operation_uuid' => $clientOperationUuid,
+                    'payload_sha256' => $payloadHash,
                 ]);
 
                 // Record cash movement if cash and open session
@@ -99,7 +143,7 @@ class PaymentService
                         $activeCashSession,
                         $user,
                         'sale',
-                        $this->toDecimal($amountCents),
+                        Money::toDecimal($amountCents),
                         "Venta #{$invoice->invoice_number}",
                         'invoice',
                         $invoice->id
@@ -125,13 +169,14 @@ class PaymentService
                 $this->customerAccountService->recordInvoiceCharge(
                     $customer,
                     $invoice,
-                    $this->toDecimal($creditCents),
+                    Money::toDecimal($creditCents),
                     $user->id
                 );
             }
 
-            // Determine invoice status
+            // Determine invoice status derived strictly in backend
             $status = match (true) {
+                $invoice->status === 'partial' => 'partial',
                 $creditCents === 0 => 'paid',
                 $paidCents === 0 => 'pending',
                 default => 'partial',
@@ -152,7 +197,9 @@ class PaymentService
         array $payments,
         User $user,
         string|float $creditAmount = 0,
-        ?Customer $customer = null
+        ?Customer $customer = null,
+        ?string $clientOperationUuid = null,
+        ?string $payloadHash = null
     ): array {
         return $this->processInvoicePayments(
             $invoice->shop,
@@ -160,7 +207,9 @@ class PaymentService
             $user,
             $payments,
             $creditAmount,
-            $customer ?? $invoice->customer
+            $customer ?? $invoice->customer,
+            $clientOperationUuid,
+            $payloadHash
         );
     }
 
@@ -217,15 +266,11 @@ class PaymentService
 
     public function toCents(mixed $amount): int
     {
-        if ($amount === null || $amount === '') {
-            return 0;
-        }
-
-        return (int) round((float) $amount * 100);
+        return Money::toCents($amount);
     }
 
     public function toDecimal(int $cents): string
     {
-        return number_format($cents / 100, 2, '.', '');
+        return Money::toDecimal($cents);
     }
 }

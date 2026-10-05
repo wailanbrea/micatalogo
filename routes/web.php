@@ -78,6 +78,7 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
         Route::post('/tiendas/{shop}/productos/{product}/inventario/venta', [SellerInventoryController::class, 'recordSale'])->name('shops.inventory.sale');
         Route::get('/tiendas/{shop}/gastos', [\App\Http\Controllers\SellerExpenseController::class, 'index'])->name('shops.expenses.index');
         Route::post('/tiendas/{shop}/gastos', [\App\Http\Controllers\SellerExpenseController::class, 'store'])->name('shops.expenses.store');
+        Route::post('/tiendas/{shop}/gastos/{expense}/pagos', [\App\Http\Controllers\SellerExpenseController::class, 'storePayment'])->name('shops.expenses.payments.store');
         Route::post('/tiendas/{shop}/gastos/categorias', [\App\Http\Controllers\SellerExpenseController::class, 'storeCategory'])->name('shops.expenses.categories.store');
     });
     Route::scopeBindings()->middleware(['can:sell,shop', 'menu:cash'])->group(function () {

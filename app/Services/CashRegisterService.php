@@ -6,12 +6,19 @@ use App\Models\CashMovement;
 use App\Models\CashRegisterSession;
 use App\Models\Shop;
 use App\Models\User;
+use App\Support\Money;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 class CashRegisterService
 {
+    public const MANUAL_MOVEMENT_TYPES = [
+        'cash_in', 'cash_out', 'owner_contribution', 'owner_withdrawal', 'adjustment',
+    ];
+
     public function getCurrentSession(Shop $shop, User $user): ?CashRegisterSession
     {
         return CashRegisterSession::query()
@@ -21,9 +28,50 @@ class CashRegisterService
             ->first();
     }
 
-    public function openSession(Shop $shop, User $user, mixed $openingAmount = 0, ?string $notes = null): CashRegisterSession
+    public function canManageAllCashRegisters(Shop $shop, User $user): bool
     {
-        return DB::transaction(function () use ($shop, $user, $openingAmount, $notes): CashRegisterSession {
+        return $user->isAdmin() || $user->ownsShop($shop) || $user->isActiveShopMember($shop);
+    }
+
+    public function canManageSession(Shop $shop, User $user, CashRegisterSession $session): bool
+    {
+        if ($session->shop_id !== $shop->id) {
+            return false;
+        }
+
+        if ($session->user_id === $user->id) {
+            return true;
+        }
+
+        return $this->canManageAllCashRegisters($shop, $user);
+    }
+
+    public function openSession(
+        Shop $shop,
+        User $user,
+        mixed $openingAmount = 0,
+        ?string $notes = null,
+        ?string $clientOperationUuid = null,
+        ?string $payloadHash = null
+    ): CashRegisterSession {
+        // Check idempotency first
+        if ($clientOperationUuid) {
+            $existingByIdp = CashRegisterSession::query()
+                ->where('shop_id', $shop->id)
+                ->where('user_id', $user->id)
+                ->where('client_operation_uuid', $clientOperationUuid)
+                ->first();
+
+            if ($existingByIdp) {
+                if ($payloadHash && ! hash_equals((string) $existingByIdp->payload_sha256, $payloadHash)) {
+                    throw new InvalidArgumentException('Conflicto de idempotencia: el identificador de operación ya fue utilizado con datos distintos.', 409);
+                }
+
+                return $existingByIdp;
+            }
+        }
+
+        return DB::transaction(function () use ($shop, $user, $openingAmount, $notes, $clientOperationUuid, $payloadHash): CashRegisterSession {
             $existing = CashRegisterSession::query()
                 ->where('shop_id', $shop->id)
                 ->where('user_id', $user->id)
@@ -35,56 +83,113 @@ class CashRegisterService
                 throw new InvalidArgumentException('Ya tienes una sesión de caja abierta en esta tienda.', 409);
             }
 
-            $openingCents = $this->toCents($openingAmount);
+            $openingCents = Money::toCents($openingAmount);
             if ($openingCents < 0) {
-                throw new InvalidArgumentException('El fondo inicial de caja no puede ser negativo.');
+                throw new InvalidArgumentException('El fondo inicial de caja no puede ser negativo.', 422);
             }
 
-            return CashRegisterSession::create([
-                'public_id' => (string) Str::ulid(),
-                'shop_id' => $shop->id,
-                'user_id' => $user->id,
-                'opened_at' => now(),
-                'opening_amount' => $this->toDecimal($openingCents),
-                'opening_amount_cents' => $openingCents,
-                'status' => 'open',
-                'notes' => $notes,
-            ]);
+            try {
+                return CashRegisterSession::create([
+                    'public_id' => (string) Str::ulid(),
+                    'shop_id' => $shop->id,
+                    'user_id' => $user->id,
+                    'opened_at' => now(),
+                    'opening_amount' => Money::toDecimal($openingCents),
+                    'opening_amount_cents' => $openingCents,
+                    'status' => 'open',
+                    'is_open_flag' => 1,
+                    'notes' => $notes,
+                    'client_operation_uuid' => $clientOperationUuid,
+                    'payload_sha256' => $payloadHash,
+                ]);
+            } catch (QueryException $e) {
+                // If unique constraint unique_open_cash_session_per_user triggers
+                if (str_contains($e->getMessage(), 'unique_open_cash_session_per_user') || str_contains($e->getMessage(), 'Duplicate entry')) {
+                    throw new InvalidArgumentException('Ya tienes una sesión de caja abierta en esta tienda.', 409);
+                }
+                throw $e;
+            }
         });
     }
 
-    public function closeSession(CashRegisterSession $session, User $user, mixed $countedAmount, ?string $notes = null): CashRegisterSession
-    {
-        return DB::transaction(function () use ($session, $user, $countedAmount, $notes): CashRegisterSession {
+    public function closeSession(
+        CashRegisterSession $session,
+        User $user,
+        mixed $countedAmount,
+        ?string $notes = null,
+        ?string $clientOperationUuid = null,
+        ?string $payloadHash = null
+    ): CashRegisterSession {
+        if (! $this->canManageSession($session->shop, $user, $session)) {
+            throw new AuthorizationException('No tienes permiso para cerrar la sesión de caja de otro usuario.', 403);
+        }
+
+        // Idempotent retry: return already closed session
+        if ($session->status === 'closed') {
+            return $session;
+        }
+
+        return DB::transaction(function () use ($session, $user, $countedAmount, $notes, $clientOperationUuid, $payloadHash): CashRegisterSession {
             $session = CashRegisterSession::query()->lockForUpdate()->findOrFail($session->id);
 
             if ($session->status === 'closed') {
-                throw new InvalidArgumentException('Esta sesión de caja ya se encuentra cerrada.');
+                return $session;
             }
 
-            $countedCents = $this->toCents($countedAmount);
+            $countedCents = Money::toCents($countedAmount);
             if ($countedCents < 0) {
-                throw new InvalidArgumentException('El monto contado no puede ser negativo.');
+                throw new InvalidArgumentException('El monto contado no puede ser negativo.', 422);
             }
 
             $expectedCents = $session->calculateExpectedBalance();
             $differenceCents = $countedCents - $expectedCents;
 
             $session->closed_at = now();
-            $session->expected_closing_amount = $this->toDecimal($expectedCents);
+            $session->expected_closing_amount = Money::toDecimal($expectedCents);
             $session->expected_closing_amount_cents = $expectedCents;
-            $session->counted_closing_amount = $this->toDecimal($countedCents);
+            $session->counted_closing_amount = Money::toDecimal($countedCents);
             $session->counted_closing_amount_cents = $countedCents;
-            $session->difference = $this->toDecimal($differenceCents);
+            $session->difference = Money::toDecimal($differenceCents);
             $session->difference_cents = $differenceCents;
             $session->status = 'closed';
+            $session->is_open_flag = null; // Release concurrency lock
             if ($notes !== null) {
                 $session->notes = $notes;
+            }
+            if ($clientOperationUuid) {
+                $session->client_operation_uuid = $clientOperationUuid;
+                $session->payload_sha256 = $payloadHash;
             }
             $session->save();
 
             return $session;
         });
+    }
+
+    public function recordManualMovement(
+        CashRegisterSession $session,
+        User $user,
+        string $type,
+        mixed $amount,
+        string $notes,
+        ?string $clientOperationUuid = null,
+        ?string $payloadHash = null
+    ): CashMovement {
+        if (! in_array($type, self::MANUAL_MOVEMENT_TYPES, true)) {
+            throw new InvalidArgumentException("Tipo de movimiento manual no permitido: {$type}. Las ventas, gastos y cobros deben originarse desde sus módulos respectivos.", 422);
+        }
+
+        return $this->recordMovement(
+            $session,
+            $user,
+            $type,
+            $amount,
+            $notes,
+            null,
+            null,
+            $clientOperationUuid,
+            $payloadHash
+        );
     }
 
     public function recordMovement(
@@ -94,18 +199,40 @@ class CashRegisterService
         mixed $amount,
         ?string $notes = null,
         ?string $referenceType = null,
-        ?int $referenceId = null
+        ?int $referenceId = null,
+        ?string $clientOperationUuid = null,
+        ?string $payloadHash = null
     ): CashMovement {
-        return DB::transaction(function () use ($session, $user, $type, $amount, $notes, $referenceType, $referenceId): CashMovement {
+        if (! $this->canManageSession($session->shop, $user, $session)) {
+            throw new AuthorizationException('No tienes permiso para registrar movimientos en la sesión de caja de otro usuario.', 403);
+        }
+
+        // Check idempotency if clientOperationUuid provided
+        if ($clientOperationUuid) {
+            $existing = CashMovement::query()
+                ->where('shop_id', $session->shop_id)
+                ->where('client_operation_uuid', $clientOperationUuid)
+                ->first();
+
+            if ($existing) {
+                if ($payloadHash && ! hash_equals((string) $existing->payload_sha256, $payloadHash)) {
+                    throw new InvalidArgumentException('Conflicto de idempotencia: el identificador de operación ya fue utilizado con datos distintos.', 409);
+                }
+
+                return $existing;
+            }
+        }
+
+        return DB::transaction(function () use ($session, $user, $type, $amount, $notes, $referenceType, $referenceId, $clientOperationUuid, $payloadHash): CashMovement {
             $session = CashRegisterSession::query()->lockForUpdate()->findOrFail($session->id);
 
             if ($session->status === 'closed') {
                 throw new InvalidArgumentException('No se pueden registrar movimientos en una sesión de caja cerrada.', 422);
             }
 
-            $rawCents = $this->toCents($amount);
+            $rawCents = Money::toCents($amount);
             if ($rawCents === 0) {
-                throw new InvalidArgumentException('El monto del movimiento debe ser distinto de cero.');
+                throw new InvalidArgumentException('El monto del movimiento debe ser distinto de cero.', 422);
             }
 
             $allowedTypes = [
@@ -114,7 +241,7 @@ class CashRegisterService
             ];
 
             if (! in_array($type, $allowedTypes, true)) {
-                throw new InvalidArgumentException("Tipo de movimiento de caja no reconocido: {$type}.");
+                throw new InvalidArgumentException("Tipo de movimiento de caja no reconocido: {$type}.", 422);
             }
 
             $signedCents = match ($type) {
@@ -130,12 +257,14 @@ class CashRegisterService
                 'shop_id' => $session->shop_id,
                 'user_id' => $user->id,
                 'type' => $type,
-                'amount' => $this->toDecimal($signedCents),
+                'amount' => Money::toDecimal($signedCents),
                 'amount_cents' => $signedCents,
                 'reference_type' => $referenceType,
                 'reference_id' => $referenceId,
                 'notes' => $notes,
                 'occurred_at' => now(),
+                'client_operation_uuid' => $clientOperationUuid,
+                'payload_sha256' => $payloadHash,
             ]);
         });
     }
@@ -162,18 +291,18 @@ class CashRegisterService
 
         return [
             'opening_amount' => (float) $session->opening_amount,
-            'sales_cash' => (float) $this->toDecimal($salesCashCents),
-            'collections_cash' => (float) $this->toDecimal($collectionsCashCents),
-            'cash_in' => (float) $this->toDecimal($cashInCents),
-            'owner_contributions' => (float) $this->toDecimal($ownerContribCents),
-            'expenses_cash' => (float) $this->toDecimal(abs($expensesCashCents)),
-            'supplier_payments' => (float) $this->toDecimal(abs($supplierPayCents)),
-            'cash_out' => (float) $this->toDecimal(abs($cashOutCents)),
-            'owner_withdrawals' => (float) $this->toDecimal(abs($ownerWithdrCents)),
-            'adjustments' => (float) $this->toDecimal($adjustmentsCents),
-            'total_in' => (float) $this->toDecimal($totalInCents),
-            'total_out' => (float) $this->toDecimal($totalOutCents),
-            'expected_amount' => (float) $this->toDecimal($expectedCents),
+            'sales_cash' => (float) Money::toDecimal($salesCashCents),
+            'collections_cash' => (float) Money::toDecimal($collectionsCashCents),
+            'cash_in' => (float) Money::toDecimal($cashInCents),
+            'owner_contributions' => (float) Money::toDecimal($ownerContribCents),
+            'expenses_cash' => (float) Money::toDecimal(abs($expensesCashCents)),
+            'supplier_payments' => (float) Money::toDecimal(abs($supplierPayCents)),
+            'cash_out' => (float) Money::toDecimal(abs($cashOutCents)),
+            'owner_withdrawals' => (float) Money::toDecimal(abs($ownerWithdrCents)),
+            'adjustments' => (float) Money::toDecimal($adjustmentsCents),
+            'total_in' => (float) Money::toDecimal($totalInCents),
+            'total_out' => (float) Money::toDecimal($totalOutCents),
+            'expected_amount' => (float) Money::toDecimal($expectedCents),
             'counted_amount' => $session->counted_closing_amount !== null ? (float) $session->counted_closing_amount : null,
             'difference' => $session->difference !== null ? (float) $session->difference : null,
             'status' => $session->status,
@@ -182,15 +311,11 @@ class CashRegisterService
 
     public function toCents(mixed $amount): int
     {
-        if ($amount === null || $amount === '') {
-            return 0;
-        }
-
-        return (int) round((float) $amount * 100);
+        return Money::toCents($amount);
     }
 
     public function toDecimal(int $cents): string
     {
-        return number_format($cents / 100, 2, '.', '');
+        return Money::toDecimal($cents);
     }
 }

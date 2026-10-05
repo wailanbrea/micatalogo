@@ -316,9 +316,14 @@
                             RD$ {{ number_format($summary['period']['fifo_cogs'], 2) }}
                         </p>
                         <p class="mt-1 text-xs text-slate-500 flex items-center justify-between">
-                            <span>Cobertura: <strong class="tabular-nums">{{ $summary['period']['cost_coverage_percent'] }}%</strong></span>
+                            <span>Cobertura: <strong class="tabular-nums">{{ $summary['period']['revenue_cost_coverage'] }}%</strong></span>
                             <span>{{ $summary['period']['units_sold'] }} unidades</span>
                         </p>
+                        @if (!empty($summary['period']['is_cost_coverage_partial']))
+                            <p class="mt-1 text-[10px] text-amber-700 font-semibold">
+                                Cobertura parcial de costos. Asigna costos para mayor precisión.
+                            </p>
+                        @endif
                     </div>
 
                     <!-- Gastos operativos -->
@@ -358,7 +363,23 @@
 
                         <div class="space-y-2 text-xs divide-y divide-slate-100">
                             <div class="flex items-center justify-between pt-1">
-                                <span class="text-slate-600">Ventas netas (después de devoluciones)</span>
+                                <span class="text-slate-600">Ventas brutas</span>
+                                <span class="font-black text-slate-900 tabular-nums whitespace-nowrap">RD$ {{ number_format($summary['income_statement']['gross_sales'], 2) }}</span>
+                            </div>
+                            @if ($summary['income_statement']['discounts'] > 0)
+                                <div class="flex items-center justify-between pt-2">
+                                    <span class="text-slate-600">(-) Descuentos concedidos</span>
+                                    <span class="font-bold text-amber-700 tabular-nums whitespace-nowrap">-RD$ {{ number_format($summary['income_statement']['discounts'], 2) }}</span>
+                                </div>
+                            @endif
+                            @if ($summary['income_statement']['returns'] > 0)
+                                <div class="flex items-center justify-between pt-2">
+                                    <span class="text-slate-600">(-) Devoluciones de mercancía</span>
+                                    <span class="font-bold text-rose-700 tabular-nums whitespace-nowrap">-RD$ {{ number_format($summary['income_statement']['returns'], 2) }}</span>
+                                </div>
+                            @endif
+                            <div class="flex items-center justify-between pt-2 bg-slate-50 px-2 py-1 rounded-lg">
+                                <span class="font-bold text-slate-800">(=) Ventas netas</span>
                                 <span class="font-black text-slate-900 tabular-nums whitespace-nowrap">RD$ {{ number_format($summary['income_statement']['net_sales'], 2) }}</span>
                             </div>
                             <div class="flex items-center justify-between pt-2">
@@ -366,11 +387,11 @@
                                 <span class="font-bold text-slate-700 tabular-nums whitespace-nowrap">-RD$ {{ number_format($summary['income_statement']['fifo_cogs'], 2) }}</span>
                             </div>
                             <div class="flex items-center justify-between pt-2 bg-emerald-50/50 px-2.5 py-1.5 rounded-lg">
-                                <span class="font-bold text-emerald-900">(=) Ganancia bruta</span>
+                                <span class="font-bold text-emerald-900">(=) Ganancia bruta ({{ $summary['income_statement']['gross_margin_percent'] }}%)</span>
                                 <span class="font-black text-emerald-700 tabular-nums whitespace-nowrap">RD$ {{ number_format($summary['income_statement']['gross_profit'], 2) }}</span>
                             </div>
                             <div class="flex items-center justify-between pt-2">
-                                <span class="text-slate-600">(-) Gastos operativos pagados</span>
+                                <span class="text-slate-600">(-) Gastos operativos</span>
                                 <span class="font-bold text-rose-700 tabular-nums whitespace-nowrap">-RD$ {{ number_format($summary['income_statement']['operating_expenses_total'], 2) }}</span>
                             </div>
                             @if ($summary['income_statement']['commissions'] > 0)
@@ -386,6 +407,13 @@
                                 </span>
                             </div>
                         </div>
+
+                        @if ($summary['income_statement']['tax_collected'] > 0)
+                            <div class="mt-3 rounded-xl border border-slate-100 bg-slate-50/70 p-2.5 text-[11px] text-slate-600 flex items-center justify-between">
+                                <span>ITBIS / Impuestos cobrados (no es ingreso):</span>
+                                <strong class="font-bold tabular-nums text-slate-800">RD$ {{ number_format($summary['income_statement']['tax_collected'], 2) }}</strong>
+                            </div>
+                        @endif
                     </div>
 
                     <!-- 2. Flujo de Efectivo -->
@@ -606,7 +634,18 @@
                                     </td>
                                     <td class="px-4 py-3.5 text-center whitespace-nowrap">
                                         @if ($row['revenue'] > 0 && ! $row['has_unknown_cost'])
-                                            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-black tabular-nums {{ $row['margin_percent'] >= 40 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : ($row['margin_percent'] > 0 ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-rose-50 text-rose-700 border border-rose-200') }}">
+                                            @php
+                                                $prodRule = $rules->get($row['product_id']) ?? null;
+                                                $targetMargin = $prodRule ? (float) $prodRule->margin_percent : null;
+                                                if ($row['margin_percent'] < 0) {
+                                                    $badgeClass = 'bg-rose-50 text-rose-700 border border-rose-200';
+                                                } elseif ($targetMargin !== null && $row['margin_percent'] >= $targetMargin) {
+                                                    $badgeClass = 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+                                                } else {
+                                                    $badgeClass = 'bg-blue-50 text-blue-700 border border-blue-200';
+                                                }
+                                            @endphp
+                                            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-black tabular-nums {{ $badgeClass }}">
                                                 {{ number_format($row['margin_percent'], 1) }}%
                                             </span>
                                         @else

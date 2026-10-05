@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\ProductInventory;
 use App\Models\Shop;
 use App\Models\ShopSeller;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -20,13 +21,13 @@ class InventoryService
      *
      * @throws InvalidArgumentException
      */
-    public function recordSale(Product $product, int $quantity, ?string $notes = null, ?int $userId = null, bool $createInvoice = true, ?float $unitPrice = null): InventoryMovement
+    public function recordSale(Product $product, int $quantity, ?string $notes = null, ?int $userId = null, bool $createInvoice = true, ?float $unitPrice = null, ?string $paymentMethod = 'cash'): InventoryMovement
     {
         if ($quantity <= 0) {
             throw new InvalidArgumentException('La cantidad vendida debe ser mayor a 0.');
         }
 
-        return DB::transaction(function () use ($product, $quantity, $notes, $userId, $createInvoice, $unitPrice) {
+        return DB::transaction(function () use ($product, $quantity, $notes, $userId, $createInvoice, $unitPrice, $paymentMethod) {
             $product = Product::query()->lockForUpdate()->findOrFail($product->id);
             $inventory = ProductInventory::where('product_id', $product->id)
                 ->lockForUpdate()
@@ -119,6 +120,11 @@ class InventoryService
                     [['product' => $product, 'quantity' => $quantity, 'unit_price' => $unitPrice]],
                     [$movement],
                     $userId,
+                    'web',
+                    'paid',
+                    0,
+                    0,
+                    $paymentMethod ?? 'cash'
                 );
             }
 
@@ -132,9 +138,9 @@ class InventoryService
      * @param  array<int, array{product: Product, quantity: int, unit_price?: float}>  $sales
      * @return array<int, InventoryMovement>
      */
-    public function recordCartSales(array $sales, ?int $userId = null, string $channel = 'whatsapp', string $paymentStatus = 'paid', float $discount = 0, float $tax = 0): array
+    public function recordCartSales(array $sales, ?int $userId = null, string $channel = 'whatsapp', string $paymentStatus = 'paid', float $discount = 0, float $tax = 0, ?string $paymentMethod = 'cash'): array
     {
-        return DB::transaction(function () use ($sales, $userId, $channel, $paymentStatus, $discount, $tax): array {
+        return DB::transaction(function () use ($sales, $userId, $channel, $paymentStatus, $discount, $tax, $paymentMethod): array {
             if ($sales === [] || $discount < 0 || $tax < 0) {
                 throw new InvalidArgumentException('La venta o sus importes no son válidos.');
             }
@@ -145,9 +151,10 @@ class InventoryService
                 $userId,
                 false,
                 $sale['unit_price'] ?? null,
+                $paymentMethod ?? 'cash',
             ))->all();
 
-            $this->createInvoiceForSales($sales[0]['product']->shop_id, $sales, $movements, $userId, $channel, $paymentStatus, $discount, $tax);
+            $this->createInvoiceForSales($sales[0]['product']->shop_id, $sales, $movements, $userId, $channel, $paymentStatus, $discount, $tax, $paymentMethod ?? 'cash');
 
             return $movements;
         });
@@ -411,7 +418,7 @@ class InventoryService
      * @param  array<int, array{product: Product, quantity: int, unit_price?: float}>  $sales
      * @param  array<int, InventoryMovement>  $movements
      */
-    private function createInvoiceForSales(int $shopId, array $sales, array $movements, ?int $userId, string $channel = 'whatsapp', string $paymentStatus = 'paid', float $discount = 0, float $tax = 0): Invoice
+    private function createInvoiceForSales(int $shopId, array $sales, array $movements, ?int $userId, string $channel = 'whatsapp', string $paymentStatus = 'paid', float $discount = 0, float $tax = 0, ?string $paymentMethod = 'cash'): Invoice
     {
         $invoice = Invoice::create([
             'shop_id' => $shopId,
@@ -475,6 +482,22 @@ class InventoryService
         $invoice->update(['subtotal' => $total, 'discount' => $discount, 'tax' => $tax, 'total' => round($total - $discount + $tax, 2)]);
 
         $this->applySalespersonCommission($invoice, $shopId, $userId, (float) $invoice->total);
+
+        // For non-POS sales with status paid, record InvoicePayment and link to cash register
+        if ($channel !== 'pos' && $paymentStatus === 'paid' && (float) $invoice->total > 0) {
+            $shop = Shop::find($shopId);
+            $user = $userId ? User::find($userId) : $shop?->user;
+            if ($shop && $user) {
+                app(PaymentService::class)->processInvoicePayments(
+                    $shop,
+                    $invoice,
+                    $user,
+                    [['method' => $paymentMethod ?? 'cash', 'amount' => (string) $invoice->total]],
+                    0,
+                    null
+                );
+            }
+        }
 
         return $invoice;
     }

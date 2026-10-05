@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\Shop;
 use App\Services\CustomerAccountService;
 use App\Services\InventoryService;
+use App\Support\Money;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -126,9 +127,34 @@ class PosSaleController extends Controller
                     return response()->json(['message' => 'Credit cannot exceed the sale total.'], 422);
                 }
 
-                $paymentStatus = $creditCents === 0
-                    ? $validated['payment_status']
-                    : ($creditCents === $totalCents ? 'pending' : 'partial');
+                // Disallow orphan pending without customer or debt
+                if ($validated['payment_status'] === 'pending' && ($creditCents === 0 || ! $customer)) {
+                    return response()->json([
+                        'message' => 'Una factura pendiente requiere un cliente y saldo a crédito real.',
+                        'errors' => [
+                            'customer_id' => ['Una factura pendiente requiere un cliente y saldo a crédito real.'],
+                        ],
+                    ], 422);
+                }
+
+                $payments = $validated['payments'] ?? [];
+                if (empty($payments) && $creditCents < $totalCents) {
+                    $paidCents = $totalCents - $creditCents;
+                    if ($paidCents > 0) {
+                        $payments[] = [
+                            'method' => 'cash',
+                            'amount' => Money::toDecimal($paidCents),
+                        ];
+                    }
+                }
+
+                // Derive status strictly: credit = total -> pending, credit > 0 -> partial, requested partial -> partial, else paid
+                $derivedStatus = match (true) {
+                    $creditCents === $totalCents => 'pending',
+                    $creditCents > 0 => 'partial',
+                    ($validated['payment_status'] ?? null) === 'partial' => 'partial',
+                    default => 'paid',
+                };
 
                 $upload = PosSaleUpload::create([
                     'shop_id' => $shop->id,
@@ -146,7 +172,7 @@ class PosSaleController extends Controller
                     $sales,
                     $request->user()->id,
                     'pos',
-                    $paymentStatus,
+                    $derivedStatus,
                     (float) ($validated['discount'] ?? 0),
                     (float) ($validated['tax'] ?? 0),
                 );
@@ -161,33 +187,17 @@ class PosSaleController extends Controller
                     $invoice->customer()->associate($customer)->save();
                 }
 
-                // Process payments (split or default single payment / credit)
-                $payments = $validated['payments'] ?? [];
-                if (empty($payments) && $paymentStatus === 'paid') {
-                    $paidCents = $totalCents - $creditCents;
-                    if ($paidCents > 0) {
-                        $payments[] = [
-                            'method' => 'cash',
-                            'amount' => number_format($paidCents / 100, 2, '.', ''),
-                        ];
-                    }
-                }
-
-                if (! empty($payments) || (float) $creditAmount > 0) {
-                    $paymentService->processInvoicePayments(
-                        $shop,
-                        $invoice,
-                        $request->user(),
-                        $payments,
-                        $creditAmount,
-                        $customer
-                    );
-                }
-
-                if (empty($validated['payments']) && (float) $creditAmount == 0 && in_array($validated['payment_status'], ['partial', 'pending'])) {
-                    $invoice->status = $validated['payment_status'];
-                    $invoice->save();
-                }
+                // Process payments (split or default single payment / credit) with idempotency
+                $paymentService->processInvoicePayments(
+                    $shop,
+                    $invoice,
+                    $request->user(),
+                    $payments,
+                    $creditAmount,
+                    $customer,
+                    $validated['client_sale_uuid'],
+                    $payloadHash
+                );
 
                 $upload->invoice()->associate($invoice);
                 $upload->save();

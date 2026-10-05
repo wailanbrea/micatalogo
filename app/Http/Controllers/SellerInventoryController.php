@@ -91,11 +91,20 @@ class SellerInventoryController extends Controller
     {
         $validated = $request->validate([
             'quantity' => ['required', 'integer', 'min:1', 'max:10000'],
+            'payment_method' => ['nullable', 'in:cash,card,bank_transfer,other'],
             'notes' => ['nullable', 'string', 'max:255'],
         ]);
 
         try {
-            $inventoryService->recordSale($product, (int) $validated['quantity'], $validated['notes'] ?? null, $request->user()->id);
+            $inventoryService->recordSale(
+                $product,
+                (int) $validated['quantity'],
+                $validated['notes'] ?? null,
+                $request->user()->id,
+                true,
+                null,
+                $validated['payment_method'] ?? 'cash'
+            );
 
             return back()->with('status', "Venta de {$validated['quantity']} unidad(es) de {$product->name} registrada exitosamente.");
         } catch (InvalidArgumentException $e) {
@@ -109,6 +118,7 @@ class SellerInventoryController extends Controller
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'integer', 'distinct'],
             'items.*.quantity' => ['required', 'integer', 'min:1', 'max:10000'],
+            'payment_method' => ['nullable', 'in:cash,card,bank_transfer,other'],
         ]);
 
         $items = collect($validated['items'])
@@ -127,6 +137,11 @@ class SellerInventoryController extends Controller
                     'quantity' => $quantity,
                 ])->values()->all(),
                 $request->user()->id,
+                'web',
+                'paid',
+                0,
+                0,
+                $validated['payment_method'] ?? 'cash'
             );
 
             return response()->json([
