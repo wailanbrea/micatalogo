@@ -1,10 +1,11 @@
 <?php
 
-use App\Enums\UserStatus;
 use App\Enums\UserRole;
+use App\Enums\UserStatus;
 use App\Models\Shop;
 use App\Models\ShopSeller;
 use App\Models\User;
+use App\Services\SellerMenuService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -161,7 +162,7 @@ test('a shop owner can create a seller from the Android API', function () {
         ])
         ->assertCreated()
         ->assertJsonPath('seller.email', 'new-seller@example.com')
-        ->assertJsonPath('seller.menu_permissions', app(\App\Services\SellerMenuService::class)->assignableKeys());
+        ->assertJsonPath('seller.menu_permissions', app(SellerMenuService::class)->assignableKeys());
 
     $seller = User::query()->where('email', 'new-seller@example.com')->firstOrFail();
     $this->assertDatabaseHas('shop_sellers', [
@@ -202,6 +203,47 @@ test('the mobile shops endpoint keeps administrators scoped to their accessible 
         ->assertOk()
         ->assertJsonCount(1)
         ->assertJsonPath('0.id', $owned->public_id);
+});
+
+test('only administrators can manage every shop from the mobile API', function () {
+    $admin = User::factory()->admin()->create();
+    $owner = User::factory()->create(['name' => 'Store owner', 'email' => 'owner@example.com']);
+    $shop = Shop::factory()->for($owner)->create([
+        'name' => 'Remote store',
+        'whatsapp_country_code' => '1',
+        'whatsapp_number' => '8095551234',
+    ]);
+    $seller = User::factory()->create();
+
+    $this->actingAs($seller, 'sanctum')
+        ->getJson('/api/v1/admin/shops')
+        ->assertForbidden();
+
+    $this->actingAs($admin, 'sanctum')
+        ->getJson('/api/v1/admin/shops')
+        ->assertOk()
+        ->assertJsonPath('0.id', $shop->public_id)
+        ->assertJsonPath('0.owner_email', 'owner@example.com')
+        ->assertJsonPath('0.product_count', 0);
+
+    $this->actingAs($admin, 'sanctum')
+        ->putJson("/api/v1/admin/shops/{$shop->public_id}", [
+            'name' => 'Updated store',
+            'whatsapp_country_code' => '+1',
+            'whatsapp_number' => '(809) 555-9876',
+            'status' => 'suspended',
+        ])
+        ->assertOk()
+        ->assertJsonPath('name', 'Updated store')
+        ->assertJsonPath('status', 'suspended');
+
+    expect($shop->fresh()->only(['name', 'whatsapp_country_code', 'whatsapp_number', 'status']))
+        ->toBe([
+            'name' => 'Updated store',
+            'whatsapp_country_code' => '1',
+            'whatsapp_number' => '8095559876',
+            'status' => 'suspended',
+        ]);
 });
 
 test('an authenticated user can update their profile', function () {

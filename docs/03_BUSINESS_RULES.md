@@ -32,3 +32,29 @@
   a shared marketplace directory.
 - Discovery Flag: `shops.discovery_enabled` defaults to `false`. External discovery is
   opt-in only.
+
+## Bulk Inventory Import & Quotas
+
+- **Supported File Formats**: CSV (comma or semicolon delimited, with or without UTF-8 BOM), TXT, and XLSX.
+- **Monetary Precision & Parser**: Prices and costs are parsed using a robust parser that determines decimal vs thousand separators without binary float corruption. Supported patterns include `2500`, `2500.50`, `2500,50`, `2,500`, `2,500.50`, `2.500,50`, and currency prefixes (`RD$`, `DOP`, `$`, `USD`). Never interprets decimals as integers (e.g. `2500,50` evaluates to `2500.50`, never `250050`). Values are persisted as exact strings/DECIMAL(12,2).
+- **Identifier Preservation**: Barcode and SKU (`product_code`) are preserved as verbatim strings with leading zeros retained (e.g., `'000123'`).
+- **Internal Duplicate Detection**: The preview identifies duplicates within the file by normalized barcode, SKU, or identical name, flagging invalid duplicate rows to prevent accidental double-creation.
+- **Multi-Tenant Shop Isolation**: Existing product matching (`barcode`, `product_code`, `name`) strictly queries within the seller's active shop (`shop_id`). SKUs in other shops never collide or link across tenants.
+- **Explicit Duplicate Strategies**:
+  - `skip`: Leaves existing product unchanged without adjusting stock or consuming quota.
+  - `update`: Updates allowed fields (`name`, `price`, `cost_price`, `stock`, `brand`, `description`, `notes`, `category`, `attributes`) on the existing product and its `ProductInventory` (adjusting stock via `InventoryService` without creating duplicate inventory records). Does not consume product quota.
+  - `create`: Creates a new product. Disallows creation if the product barcode already exists in the shop.
+- **Quota Consumption**: Only rows resulting in newly created products (`effective_action === 'create'`) count towards plan product limits. Updates and skips do not consume quota. If the number of new products exceeds remaining plan quota, the transaction fails before any product is written (total rollback).
+- **Category Resolution**:
+  - Existing shop categories match insensitively (case/accents/spaces).
+  - Unrecognized categories are reported in `missing_categories`.
+  - With `create_missing_categories = true`, categories are automatically created and linked.
+  - With `create_missing_categories = false`, the product is imported with `shop_category_id = null`.
+- **Duplicate Attributes**: Attributes repeated on the same row (e.g. `Marca=Rasasi;Marca=Lattafa`) trigger warnings and safely retain the first definition.
+- **Server-Side Import Sessions (`InventoryImportSession`)**:
+  - Previews create a short-lived server session (`status = 'previewed'`, 2-hour expiration).
+  - Confirmations reference the server `session_id`, eliminating client-side payload tampering.
+  - Operations run inside `DB::transaction()` with `Shop::lockForUpdate()`.
+  - Re-submitting a confirmed session returns the existing summary idempotently.
+  - API provides `POST /shops/{shop}/inventory-import/{session}/confirm` alongside backward-compatible `POST /shops/{shop}/inventory-import`.
+

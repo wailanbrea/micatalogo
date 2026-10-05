@@ -2,13 +2,13 @@
 
 // Verified against the signed artifact; no credentials belong in this manifest.
 return [
-    'version_code' => 14,
-    'version_name' => '1.0.13',
+    'version_code' => 15,
+    'version_name' => '1.0.14',
     'minimum_supported_version_code' => 11,
-    'apk_url' => 'https://micatalogo.bsolutions.dev/downloads/bspos-1.0.13-auth-import.apk',
-    'apk_sha256' => 'ef3bdd9e9c7bfb37e427d2bc3defd58a6bd7b8542de8322645924e95aa6e0c81',
-    'release_notes' => 'Conserva el correo recordado y muestra el acceso con huella junto al ojo de contraseña cuando existe una sesión guardada.',
+    'apk_url' => 'https://micatalogo.bsolutions.dev/downloads/bspos-1.0.14-auth-import.apk',
+    'apk_sha256' => '8d251b1fbae138d3be729c1c0c07758e7ce627923455eb93b0c8e99f4bf19f7a',
+    'release_notes' => 'Importa inventarios con cualquier formato: relaciona las columnas y guarda la plantilla de cada tienda para usarla en futuras cargas.',
     'release_date' => '2026-10-04',
     'min_sdk' => 26,
-    'size_bytes' => 16246612,
+    'size_bytes' => 16279380,
 ];

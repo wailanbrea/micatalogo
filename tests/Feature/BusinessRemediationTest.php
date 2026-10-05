@@ -68,3 +68,22 @@ test('ads are shown only inside free catalogs', function () {
     $user->update(['plan' => UserPlan::Free]);
     $this->get(route('shops.show', $shop))->assertOk()->assertSee('aria-label="Espacio publicitario"', false);
 });
+
+test('business and earnings dashboard renders styled kpis and sections', function () {
+    [$user, $shop, $product] = businessFixture();
+
+    $response = $this->actingAs($user)->get(route('seller.shops.business', $shop));
+
+    $response->assertOk()
+        ->assertSee('Control del negocio')
+        ->assertSee('Ventas hoy')
+        ->assertSee('Ventas del período')
+        ->assertSee('Por cobrar')
+        ->assertSee('Stock bajo')
+        ->assertSee('Agotados')
+        ->assertSee('Ventas y ganancia por producto')
+        ->assertSee('Lotes de inventario')
+        ->assertSee('Reglas de precio · Pro')
+        ->assertSee('Pedidos pendientes de confirmar');
+});
+

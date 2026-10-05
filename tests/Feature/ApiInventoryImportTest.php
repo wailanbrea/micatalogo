@@ -60,6 +60,36 @@ test('a free account can preview and confirm inventory import from the API', fun
         ->assertJsonPath('imported', 1);
 });
 
+test('a shop can map and remember nonstandard inventory headers', function () {
+    $owner = User::factory()->create(['plan' => UserPlan::Free]);
+    $shop = Shop::factory()->for($owner)->create();
+    $token = $owner->createToken('inventory-import', ['catalog:read'])->plainTextToken;
+    $file = UploadedFile::fake()->createWithContent('proveedor.csv', "Artículo,Venta final,Unidades,Ref proveedor\nCrema corporal,345.50,8,CR-09\n");
+
+    $this->withToken($token)
+        ->post('/api/v1/shops/'.$shop->public_id.'/inventory-import/preview', [
+            'file' => $file,
+            'mapping' => [
+                'name' => 'Artículo',
+                'price' => 'Venta final',
+                'stock' => 'Unidades',
+                'product_code' => 'Ref proveedor',
+            ],
+        ])
+        ->assertOk()
+        ->assertJsonPath('rows.0.name', 'Crema corporal')
+        ->assertJsonPath('rows.0.price', '345.50')
+        ->assertJsonPath('rows.0.stock', 8)
+        ->assertJsonPath('mapping.name', 'articulo');
+
+    expect($shop->fresh()->inventory_import_mapping)->toMatchArray([
+        'name' => 'articulo',
+        'price' => 'venta final',
+        'stock' => 'unidades',
+        'product_code' => 'ref proveedor',
+    ]);
+});
+
 test('free basic and pro plans expose bulk inventory import', function () {
     foreach ([UserPlan::Free, UserPlan::Premium, UserPlan::Pro] as $plan) {
         expect(config('catalog.plans.'.$plan->value.'.features'))->toContain('bulk_import');

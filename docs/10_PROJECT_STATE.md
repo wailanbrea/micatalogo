@@ -26,6 +26,14 @@
 - Mobile inventory import API endpoints:
   - `POST /api/v1/shops/{shop}/inventory-import/preview`
   - `POST /api/v1/shops/{shop}/inventory-import`
+  - `POST /api/v1/shops/{shop}/inventory-import/{session}/confirm` (dedicated session confirmation)
+- Fortalecimiento e integridad transaccional de importación de inventario:
+  - Parser numérico y monetario sin float, compatible con formatos dominicanos y latinos (`2500,50`, `RD$ 2,500.50`).
+  - Detección de duplicados internos (en el archivo) y existentes (en la tienda) sin cruce multi-tenant.
+  - Sesiones server-side seguras (`InventoryImportSession`) con expiración de 2 horas e idempotencia.
+  - Estrategias explícitas (`skip`, `update`, `create`) con protección contra colisiones ilegales de código de barras.
+  - Consumo de cuotas de plan exclusivo para productos nuevos (`create`), sin cobrar updates/skips, asegurado con `Shop::lockForUpdate()`.
+  - Manejo controlado de categorías faltantes y preservación de SKU/barcode con ceros iniciales.
 - Android `1.0.13` release with version code `14` published and verified; minimum supported version remains `11`.
 
 ## Verified

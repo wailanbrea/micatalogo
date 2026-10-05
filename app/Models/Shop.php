@@ -19,8 +19,8 @@ class Shop extends Model
     protected $fillable = [
         'name', 'slug', 'description', 'logo_object_key', 'cover_object_key',
         'primary_color', 'secondary_color', 'whatsapp_country_code', 'whatsapp_number',
-        'offers_shipping', 'instagram', 'address', 'maps_url', 'status', 'discovery_enabled',
-        'product_limit',
+            'offers_shipping', 'instagram', 'address', 'maps_url', 'status', 'discovery_enabled',
+            'product_limit', 'inventory_import_mapping',
     ];
 
     protected $attributes = [
@@ -33,6 +33,7 @@ class Shop extends Model
             'offers_shipping' => 'boolean',
             'discovery_enabled' => 'boolean',
             'product_limit' => 'integer',
+            'inventory_import_mapping' => 'array',
         ];
     }
 
@@ -92,6 +93,11 @@ class Shop extends Model
     public function members(): HasMany
     {
         return $this->hasMany(ShopMember::class);
+    }
+
+    public function importSessions(): HasMany
+    {
+        return $this->hasMany(InventoryImportSession::class)->latest();
     }
 
     public function productLimit(): int
