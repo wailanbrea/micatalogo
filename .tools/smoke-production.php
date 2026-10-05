@@ -17,10 +17,16 @@ $route->setParameter('shop', $shop);
 $request->setRouteResolver(fn() => $route);
 $app->instance('request', $request);
 $html = app(App\Http\Controllers\SellerBusinessController::class)->index($request, $shop)->render();
+$apkUrlPath = parse_url((string) config('bspos.android_update.apk_url'), PHP_URL_PATH);
+$apkPath = is_string($apkUrlPath)
+    ? public_path(str_replace('/', DIRECTORY_SEPARATOR, ltrim($apkUrlPath, '/')))
+    : null;
+$expectedApkHash = strtolower((string) config('bspos.android_update.apk_sha256'));
+$actualApkHash = $apkPath && is_file($apkPath) ? strtolower((string) hash_file('sha256', $apkPath)) : '';
 $checks = ['business_render' => str_contains($html, 'Ventas y ganancia por producto'),
     'fifo_table' => Illuminate\Support\Facades\Schema::hasTable('inventory_lots'),
     'invoice_cost_column' => Illuminate\Support\Facades\Schema::hasColumn('invoice_items', 'total_cost_cents'),
-    'apk_hash' => hash_equals(config('bspos.android_update.apk_sha256'), hash_file('sha256', public_path('downloads/bspos-1.0.10-auth-import.apk')))];
+    'apk_hash' => $expectedApkHash !== '' && $actualApkHash !== '' && hash_equals($expectedApkHash, $actualApkHash)];
 echo json_encode($checks, JSON_PRETTY_PRINT);
 exit(in_array(false, $checks, true) ? 1 : 0);
 } catch (Throwable $error) {
