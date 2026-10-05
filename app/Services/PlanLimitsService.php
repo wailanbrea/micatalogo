@@ -82,7 +82,7 @@ class PlanLimitsService
     {
         if ($this->userCount($shop) >= $this->userLimit($shop)) {
             throw ValidationException::withMessages([
-                'email' => "El plan {$this->planFor($shop->user)->label()} permite {$this->userLimit($shop)} usuarios. Puedes contratar usuarios adicionales por US$".number_format((float) config('catalog.additional_seat_price_usd'), 2)." al mes.",
+                'email' => "El plan {$this->planFor($shop->user)->label()} permite {$this->userLimit($shop)} usuarios. Puedes contratar usuarios adicionales por US$".number_format((float) config('catalog.additional_seat_price_usd'), 2).' al mes.',
             ]);
         }
     }
@@ -91,7 +91,7 @@ class PlanLimitsService
     {
         if ($this->sellerCount($shop) >= $this->sellerLimit($shop)) {
             throw ValidationException::withMessages([
-                'email' => "El plan {$this->planFor($shop->user)->label()} permite {$this->sellerLimit($shop)} vendedores. Puedes contratar vendedores adicionales por US$".number_format((float) config('catalog.additional_seat_price_usd'), 2)." al mes.",
+                'email' => "El plan {$this->planFor($shop->user)->label()} permite {$this->sellerLimit($shop)} vendedores. Puedes contratar vendedores adicionales por US$".number_format((float) config('catalog.additional_seat_price_usd'), 2).' al mes.',
             ]);
         }
     }

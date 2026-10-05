@@ -19,8 +19,8 @@ class Shop extends Model
     protected $fillable = [
         'name', 'slug', 'description', 'logo_object_key', 'cover_object_key',
         'primary_color', 'secondary_color', 'whatsapp_country_code', 'whatsapp_number',
-            'offers_shipping', 'instagram', 'address', 'maps_url', 'status', 'discovery_enabled',
-            'product_limit', 'inventory_import_mapping',
+        'offers_shipping', 'instagram', 'address', 'maps_url', 'status', 'discovery_enabled',
+        'product_limit', 'inventory_import_mapping',
     ];
 
     protected $attributes = [

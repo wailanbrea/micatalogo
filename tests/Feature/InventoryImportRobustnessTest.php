@@ -4,12 +4,14 @@ use App\Enums\UserPlan;
 use App\Models\InventoryImportSession;
 use App\Models\Product;
 use App\Models\Shop;
-use App\Models\ShopCategory;
 use App\Models\User;
+use App\Services\CatalogMediaService;
 use App\Services\InventoryImportService;
 use App\Services\PlanLimitsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 uses(RefreshDatabase::class);
 
@@ -146,7 +148,7 @@ test('duplicate strategies: skip, update, and create behave correctly without st
     $shop = Shop::factory()->for($owner)->create();
     $importer = app(InventoryImportService::class);
     $limits = app(PlanLimitsService::class);
-    $media = app(\App\Services\CatalogMediaService::class);
+    $media = app(CatalogMediaService::class);
 
     $existing = Product::factory()->for($shop)->create([
         'name' => 'Camisa Original',
@@ -195,7 +197,7 @@ test('unrecognized categories generate warning and respect create_missing_catego
     $shop = Shop::factory()->for($owner)->create();
     $importer = app(InventoryImportService::class);
     $limits = app(PlanLimitsService::class);
-    $media = app(\App\Services\CatalogMediaService::class);
+    $media = app(CatalogMediaService::class);
 
     // Existing category
     $shop->categories()->create([
@@ -270,7 +272,7 @@ test('session security prevents cross-tenant confirmation, handles expiry and pr
 
     $importer = app(InventoryImportService::class);
     $limits = app(PlanLimitsService::class);
-    $media = app(\App\Services\CatalogMediaService::class);
+    $media = app(CatalogMediaService::class);
 
     $file = UploadedFile::fake()->createWithContent('test.csv', "nombre,precio\nProducto Seguro,100\n");
     $preview = $importer->preview($file, [], $shopA, $ownerA);
@@ -278,7 +280,7 @@ test('session security prevents cross-tenant confirmation, handles expiry and pr
 
     // 1. Cross-tenant attempt: Shop B tries to confirm Shop A's session
     expect(fn () => $importer->confirmSession($shopB, $session, [], $limits, $media, $ownerB))
-        ->toThrow(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+        ->toThrow(HttpException::class);
 
     // 2. Normal confirmation succeeds
     $firstConfirm = $importer->confirmSession($shopA, $session, [], $limits, $media, $ownerA);
@@ -297,7 +299,7 @@ test('plan quota only charges newly created products and rolls back entirely if 
     $shop = Shop::factory()->for($owner)->create();
     $importer = app(InventoryImportService::class);
     $limits = app(PlanLimitsService::class);
-    $media = app(\App\Services\CatalogMediaService::class);
+    $media = app(CatalogMediaService::class);
 
     // Shop already has 2 products (remaining quota = 1)
     $p1 = Product::factory()->for($shop)->create(['name' => 'P1', 'product_code' => 'SKU-01', 'price' => 100]);
@@ -329,7 +331,7 @@ test('plan quota only charges newly created products and rolls back entirely if 
     $sessionExceed = InventoryImportSession::where('public_id', $previewExceed['session_id'])->first();
 
     expect(fn () => $importer->confirmSession($shop, $sessionExceed, [], $limits, $media, $owner))
-        ->toThrow(\Illuminate\Validation\ValidationException::class);
+        ->toThrow(ValidationException::class);
 
     // Rollback verification: product count is still 3 and P4 was never created
     expect($shop->products()->count())->toBe(3);
@@ -428,4 +430,3 @@ test('api flow: previews file, confirms using dedicated /confirm endpoint, and r
 
     expect($shop->products()->where('product_code', 'API-01')->count())->toBe(1);
 });
-

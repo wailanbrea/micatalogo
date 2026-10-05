@@ -7,8 +7,8 @@ use App\Models\Shop;
 use App\Models\ShopSeller;
 use App\Models\User;
 use App\Notifications\SellerInvitationNotification;
-use App\Services\SellerMenuService;
 use App\Services\PlanLimitsService;
+use App\Services\SellerMenuService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -21,7 +21,7 @@ class SellerManagementController extends Controller
     {
         $sellers = $shop->sellers()->with('user')->orderByDesc('is_active')->orderBy('created_at')->get();
         $members = $shop->members()->with('user')->orderByDesc('is_active')->orderBy('created_at')->get();
-        $quota = app(\App\Services\PlanLimitsService::class)->shopQuota($shop);
+        $quota = app(PlanLimitsService::class)->shopQuota($shop);
         $stats = Invoice::query()
             ->where('shop_id', $shop->id)
             ->whereNotNull('salesperson_id')

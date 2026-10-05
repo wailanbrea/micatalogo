@@ -8,11 +8,13 @@ use App\Http\Requests\ProductRequest;
 use App\Jobs\ResolveProductCatalogMediaJob;
 use App\Models\AttributeDefinition;
 use App\Models\GlobalCategory;
+use App\Models\InventoryLot;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductInventory;
 use App\Models\Shop;
 use App\Services\CatalogMediaService;
+use App\Services\FifoCostService;
 use App\Services\ImageProcessingService;
 use App\Services\MediaStorageService;
 use App\Services\PlanLimitsService;
@@ -190,10 +192,10 @@ class SellerProductController extends Controller
 
             $stockChanged = false;
             $oldStock = $inventory->stock_quantity;
-            $fifo = app(\App\Services\FifoCostService::class);
-            $hadLots = \App\Models\InventoryLot::where('product_id', $product->id)->exists();
+            $fifo = app(FifoCostService::class);
+            $hadLots = InventoryLot::where('product_id', $product->id)->exists();
             if ($hadLots && ($presentation->sale_unit !== $product->sale_unit || $presentation->volume_ml !== $product->volume_ml)) {
-                throw \Illuminate\Validation\ValidationException::withMessages(['sale_unit' => 'No cambies la unidad o volumen de un producto con lotes. Crea una presentación vinculada.']);
+                throw ValidationException::withMessages(['sale_unit' => 'No cambies la unidad o volumen de un producto con lotes. Crea una presentación vinculada.']);
             }
             $oldCanonical = $fifo->quantity($product, $inventory);
             if ($inventory->track_inventory && ! $product->isDecant()) {

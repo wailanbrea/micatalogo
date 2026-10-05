@@ -116,17 +116,24 @@ $$\text{Flujo Neto} = \text{Entradas de Efectivo} - \text{Salidas de Efectivo}$$
 
 ---
 
-## 7. Cuentas por Cobrar y Antigüedad de Deuda (Aging por Factura)
+## 7. Cuentas por Cobrar, Antigüedad (Aging) y Amortización FIFO de Cobros
 
-- El análisis de vencimiento clasifica las deudas de clientes basándose en la fecha de vencimiento individual (`invoices.due_date` o `invoices.issued_at` si no tiene vencimiento explícito).
-- Cada factura impaga se evalúa calculando su saldo remanente:
-  $$\text{Deuda Factura} = \text{invoice.total} - \sum \text{invoice.payments.amount}$$
-- Tramos de antigüedad:
-  - **Al día / 0 a 30 días**: Facturas no vencidas o con menos de 30 días desde su vencimiento.
-  - **31 a 60 días**: Vencimiento entre 31 y 60 días atrás.
-  - **61 a 90 días**: Vencimiento entre 61 y 90 días atrás.
-  - **Más de 90 días**: Vencimiento superior a 90 días.
-- Ningún cobro o abono a una factura envejece usando la fecha de la cuenta global del cliente; se reconcilia factura por factura.
+- **Amortización FIFO a Facturas Impagas**:
+  Al registrar un cobro de cliente (`PaymentService::recordCustomerDebtPayment`), el monto recibido se aplica automáticamente en orden cronológico estricto (FIFO) a las facturas pendientes (`COALESCE(due_date, issued_at) ASC, issued_at ASC, id ASC`):
+  - Por cada factura amortizada, se genera un registro en `invoice_payments` con el campo `customer_account_entry_id` vinculado al asiento contable en `customer_account_entries`.
+  - El estado de la factura se actualiza automáticamente a `paid` si el saldo remanente llega a cero, o `partial` si queda deuda.
+  - Si el cobro es en efectivo y hay una sesión de caja abierta, se registra exactamente un `CashMovement` en la caja física.
+- **Aging y Reconciliación Auditada**:
+  - El cálculo de antigüedad de deuda clasifica cada factura impaga por su vencimiento real (`due_date` o `issued_at`):
+    $$\text{Deuda Pendiente Factura} = \text{invoice.total} - \sum \text{invoice.payments.amount} - \sum \text{invoice.returns.amount}$$
+  - Tramos de antigüedad:
+    - **Al día / 0 a 30 días**: Facturas no vencidas o con menos de 30 días de vencimiento.
+    - **31 a 60 días**: Vencimiento entre 31 y 60 días atrás.
+    - **61 a 90 días**: Vencimiento entre 61 y 90 días atrás.
+    - **Más de 90 días**: Vencimiento superior a 90 días.
+  - Ecuación de Reconciliación:
+    $$\text{total\_receivable} = \text{invoices\_total} + \text{unallocated\_receivables}$$
+    $$\text{reconciliation\_difference} = \text{total\_receivable} - (\text{invoices\_total} + \text{unallocated\_receivables}) = 0$$
 
 ---
 
@@ -134,8 +141,19 @@ $$\text{Flujo Neto} = \text{Entradas de Efectivo} - \text{Salidas de Efectivo}$$
 
 Para prevenir registros duplicados por reintentos de red en clientes Web y móviles Android:
 - Las tablas `expenses`, `expense_payments`, `invoice_payments`, `cash_movements` y `cash_register_sessions` incorporan:
-  - `client_operation_uuid`: Identificador universal único generado en el cliente antes de transmitir.
-  - `payload_sha256`: Hash criptográfico de los parámetros del payload.
-- Si el servidor recibe una solicitud con un `client_operation_uuid` ya procesado:
+  - `client_operation_uuid`: Identificador universal único estándar UUIDv4 (`Str::isUuid(...)`) generado en el cliente antes de transmitir (sin sufijos incompatibles como `-pay`).
+  - Índices únicos compuestos `UNIQUE(shop_id, client_operation_uuid)` a nivel de motor de base de datos.
+  - `payload_sha256`: Hash criptográfico SHA-256 de los parámetros del payload.
+- Comportamiento ante reintentos:
   - Si el hash coincide: Retorna la respuesta previa de forma idéntica e idempotente con código `200` o `201`.
-  - Si el hash difiere: Rechaza con código `HTTP 409 Conflict` evitando corrupción o desalineación de datos.
+  - Si el hash o montos difieren: Rechaza con código `HTTP 409 Conflict` evitando corrupción o desalineación de datos.
+  - En cierre de caja (`CashRegisterService::closeSession`): Si la sesión ya está cerrada y se reenvía un arqueo con monto contado dispar, se rechaza inmediatamente con `409 Conflict`.
+
+---
+
+## 9. Prevención de Doble Contabilización en Flujo de Efectivo
+
+Para garantizar que ningún peso se cuente dos veces en el Flujo de Efectivo:
+- Los cobros de ventas de mostrador (`invoice_payments`) se contabilizan filtrando estrictamente `whereNull('customer_account_entry_id')`.
+- Los cobros de deudas de clientes entran a través de `customer_account_entries` (tipo `payment`).
+- De esta manera, el cobro de una factura a crédito se refleja exactamente una vez en la tesorería (al momento en que el cliente abona su cuenta), evitando duplicar el ingreso en el reporte de caja o cash flow.

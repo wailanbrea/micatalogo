@@ -6,6 +6,8 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\Shop;
 use App\Models\User;
+use App\Services\ImageDerivativeService;
+use App\Services\ImageProcessingService;
 use App\Services\MediaStorageService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -20,15 +22,15 @@ test('a transient image processing failure retains the upload for its successful
     Storage::fake('public');
     Storage::fake('r2');
     $product = Product::factory()->create();
-    $image = app(\App\Services\ImageProcessingService::class)->storeTempAndDispatch($product,
+    $image = app(ImageProcessingService::class)->storeTempAndDispatch($product,
         UploadedFile::fake()->image('retry.jpg', 80, 80));
     $path = substr($image->object_key, strlen('temp/'));
     $job = new ProcessProductImageJob($image->id, $path);
-    $broken = \Mockery::mock(\App\Services\ImageDerivativeService::class);
-    $broken->shouldReceive('render')->once()->andThrow(new \RuntimeException('Transient processing failure'));
-    expect(fn () => $job->handle(app(MediaStorageService::class), $broken))->toThrow(\RuntimeException::class);
+    $broken = Mockery::mock(ImageDerivativeService::class);
+    $broken->shouldReceive('render')->once()->andThrow(new RuntimeException('Transient processing failure'));
+    expect(fn () => $job->handle(app(MediaStorageService::class), $broken))->toThrow(RuntimeException::class);
     Storage::disk('temp')->assertExists($path);
-    $job->handle(app(MediaStorageService::class), app(\App\Services\ImageDerivativeService::class));
+    $job->handle(app(MediaStorageService::class), app(ImageDerivativeService::class));
     expect($image->fresh()->processing_status)->toBe(ProductImageProcessingStatus::Ready);
     Storage::disk('temp')->assertMissing($path);
 });

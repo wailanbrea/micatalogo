@@ -2,7 +2,6 @@
 
 use App\Enums\UserPlan;
 use App\Models\Invoice;
-use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductInventory;
 use App\Models\Shop;
@@ -19,6 +18,7 @@ function businessFixture(): array
     $shop = Shop::factory()->create(['user_id' => $user->id]);
     $product = Product::factory()->create(['shop_id' => $shop->id, 'price' => 300, 'sale_unit' => 'unit']);
     ProductInventory::create(['product_id' => $product->id, 'track_inventory' => true, 'stock_quantity' => 5, 'cost_price' => 100, 'sold_quantity' => 0, 'low_stock_threshold' => 1]);
+
     return [$user, $shop, $product];
 }
 
@@ -86,4 +86,3 @@ test('business and earnings dashboard renders styled kpis and sections', functio
         ->assertSee('Reglas de precio · Pro')
         ->assertSee('Pedidos pendientes de confirmar');
 });
-

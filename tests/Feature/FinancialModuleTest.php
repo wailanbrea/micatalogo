@@ -2,7 +2,6 @@
 
 use App\Enums\UserPlan;
 use App\Models\CashMovement;
-use App\Models\CashRegisterSession;
 use App\Models\Customer;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
@@ -17,7 +16,6 @@ use App\Services\CashRegisterService;
 use App\Services\ExpenseService;
 use App\Services\PaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
@@ -58,7 +56,7 @@ test('split payment validates that paid plus credit equals invoice total in cent
     expect(fn () => $paymentService->recordInvoicePayments($invoice, [
         ['payment_method' => 'cash', 'amount' => 500],
         ['payment_method' => 'card', 'amount' => 400],
-    ], $user))->toThrow(\InvalidArgumentException::class);
+    ], $user))->toThrow(InvalidArgumentException::class);
 
     // Scenario 2: Perfect match: 300 cash + 400 transfer + 300 card = 1000
     $payments = $paymentService->recordInvoicePayments($invoice, [

@@ -1,8 +1,8 @@
 <?php
 
-use App\Http\Middleware\SecurityHeadersMiddleware;
-use App\Http\Middleware\EnsureSellerMenuAccess;
 use App\Http\Middleware\EnsureApiAppVersion;
+use App\Http\Middleware\EnsureSellerMenuAccess;
+use App\Http\Middleware\SecurityHeadersMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;

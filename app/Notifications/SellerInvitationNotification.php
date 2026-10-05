@@ -9,9 +9,7 @@ use Illuminate\Support\Facades\URL;
 
 class SellerInvitationNotification extends Notification
 {
-    public function __construct(private readonly Shop $shop, private readonly string $accessType = 'vendedor')
-    {
-    }
+    public function __construct(private readonly Shop $shop, private readonly string $accessType = 'vendedor') {}
 
     public function via(object $notifiable): array
     {

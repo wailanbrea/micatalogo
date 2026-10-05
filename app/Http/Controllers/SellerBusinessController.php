@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\InventoryLot;
 use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\Product;
@@ -40,7 +41,7 @@ class SellerBusinessController extends Controller
         $inventory = $inventoryService->getShopInventorySummary($shop);
         $orders = $shop->orders()->with('items')->whereNull('invoice_id')->latest()->paginate(15);
         $rules = DB::table('product_price_rules')->whereIn('product_id', $shop->products()->select('id'))->get()->keyBy('product_id');
-        $lots = \App\Models\InventoryLot::whereIn('product_id', $shop->products()->select('id'))->orderBy('received_at')->get();
+        $lots = InventoryLot::whereIn('product_id', $shop->products()->select('id'))->orderBy('received_at')->get();
 
         // Calculate today net sales for backward compatibility and quick KPI
         $refundBase = DB::table('invoice_returns')->join('invoices', 'invoices.id', '=', 'invoice_returns.invoice_id')->where('invoices.shop_id', $shop->id);
@@ -81,7 +82,7 @@ class SellerBusinessController extends Controller
     public function lots(Request $request, Shop $shop)
     {
         $products = $shop->products()->select(['id', 'name'])->get()->keyBy('id');
-        $lots = \App\Models\InventoryLot::whereIn('product_id', $products->keys())
+        $lots = InventoryLot::whereIn('product_id', $products->keys())
             ->orderByDesc('received_at')
             ->paginate(25);
 

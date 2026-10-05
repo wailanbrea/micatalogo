@@ -10,8 +10,8 @@ class Money
      * Convert an arbitrary monetary representation to integer cents deterministically.
      * Rejects invalid inputs (e.g. 'abc', '1,2,3', '--') without float rounding artifacts.
      *
-     * @param string|int|float|null $value
-     * @return int
+     * @param  string|int|float|null  $value
+     *
      * @throws InvalidArgumentException
      */
     public static function toCents(mixed $value): int
@@ -87,7 +87,7 @@ class Money
                     $fraction = str_pad($parts[1], 2, '0');
                 } elseif (strlen($parts[1]) === 3 && strlen($parts[0]) <= 3) {
                     // e.g. 2,500 -> 2500.00
-                    $whole = $parts[0] . $parts[1];
+                    $whole = $parts[0].$parts[1];
                     $fraction = '00';
                 } else {
                     throw new InvalidArgumentException("Formato monetario ambiguo o inválido: '{$value}'");
@@ -107,7 +107,7 @@ class Money
                     $fraction = str_pad($parts[1], 2, '0');
                 } elseif (strlen($parts[1]) === 3 && strlen($parts[0]) <= 3) {
                     // e.g. 2.500 thousands
-                    $whole = $parts[0] . $parts[1];
+                    $whole = $parts[0].$parts[1];
                     $fraction = '00';
                 } else {
                     throw new InvalidArgumentException("Formato monetario ambiguo o inválido: '{$value}'");

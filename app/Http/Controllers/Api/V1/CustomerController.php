@@ -7,6 +7,8 @@ use App\Models\Customer;
 use App\Models\CustomerAccountEntry;
 use App\Models\Shop;
 use App\Services\CustomerAccountService;
+use App\Services\PaymentService;
+use App\Services\SellerMenuService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -86,32 +88,53 @@ class CustomerController extends Controller
         ]);
     }
 
-    public function payment(Request $request, Shop $shop, Customer $customer, CustomerAccountService $accountService): JsonResponse
-    {
+    public function payment(
+        Request $request,
+        Shop $shop,
+        Customer $customer,
+        PaymentService $paymentService
+    ): JsonResponse {
         $this->ensureCustomerOwner($request, $shop, $customer);
         $validated = $request->validate([
             'client_transaction_uuid' => ['required', 'uuid'],
             'amount' => ['required', 'decimal:0,2', 'gt:0'],
+            'payment_method' => ['sometimes', 'string', 'in:cash,card,bank_transfer,other'],
+            'reference' => ['nullable', 'string', 'max:120'],
             'notes' => ['nullable', 'string', 'max:255'],
         ]);
         $payloadHash = hash('sha256', json_encode($validated, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION));
+        $paymentMethod = $validated['payment_method'] ?? 'cash';
 
         try {
-            $entry = $accountService->recordPayment(
+            $result = $paymentService->recordCustomerDebtPayment(
+                $shop,
                 $customer,
+                $request->user(),
                 $validated['amount'],
-                $request->user()->id,
+                $paymentMethod,
                 $validated['client_transaction_uuid'],
                 $payloadHash,
                 $validated['notes'] ?? null,
+                $validated['reference'] ?? null
             );
         } catch (InvalidArgumentException $exception) {
-            return response()->json(['message' => $exception->getMessage(), 'reason' => $exception->getCode() === 409 ? 'idempotency_conflict' : 'invalid_payment'], $exception->getCode() ?: 422);
+            return response()->json([
+                'message' => $exception->getMessage(),
+                'reason' => $exception->getCode() === 409 ? 'idempotency_conflict' : 'invalid_payment',
+            ], $exception->getCode() ?: 422);
         }
 
         return response()->json([
             'customer' => $this->customerPayload($customer->fresh()),
-            'entry' => $this->entryPayload($entry),
+            'entry' => $this->entryPayload($result['entry']),
+            'payment_id' => $result['payment_id'],
+            'client_transaction_uuid' => $result['client_transaction_uuid'],
+            'amount' => $result['amount'],
+            'payment_method' => $result['payment_method'],
+            'customer_balance' => $result['customer_balance'],
+            'allocations' => $result['allocations'],
+            'cash_register_affected' => $result['cash_register_affected'],
+            'server_timestamp' => $result['server_timestamp'],
         ], 201);
     }
 
@@ -178,7 +201,7 @@ class CustomerController extends Controller
     private function ensureShopOwner(Request $request, Shop $shop): void
     {
         abort_unless($request->user()->canSellAtShop($shop), 404);
-        abort_unless(in_array('customers', app(\App\Services\SellerMenuService::class)->forUser($shop, $request->user()), true), 403);
+        abort_unless(in_array('customers', app(SellerMenuService::class)->forUser($shop, $request->user()), true), 403);
     }
 
     private function ensureCustomerOwner(Request $request, Shop $shop, Customer $customer): void

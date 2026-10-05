@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Enums\UserPlan;
 use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductImageProcessingStatus;
 use App\Enums\ProductModerationStatus;
+use App\Enums\UserPlan;
 use App\Jobs\ProcessProductImageJob;
 use App\Models\Product;
 use App\Models\Shop;

@@ -37,6 +37,21 @@ npm run build
 php .tools\composer\composer.phar audit
 ```
 
+## Financial Architecture (Fase Financiera 1)
+
+El motor financiero de MiCatalogo unifica la contabilidad de ventas, cobros, cartera y caja con verdad matemática única:
+- **Aritmética en centavos**: Prohibido el uso de `float` en lógica contable y persistencia (`App\Support\Money`).
+- **Estado de Resultados (P&L)**: Ventas brutas, deducción de ITBIS de ingresos netos, descuentos en línea y globales, devoluciones con restitución de costo FIFO, ganancia bruta, gastos operativos devengados, comisiones y ganancia operativa.
+- **Flujo de Efectivo**: Registro estricto sin doble contabilización entre cobros de mostrador (`whereNull('customer_account_entry_id')`) y cobros de deudas (`customer_account_entries`).
+- **Amortización FIFO de deudas**: Los cobros de clientes se asignan en orden cronológico estricto a las facturas impagas, creando vínculos `InvoicePayment` y conciliando el saldo de cartera ($\text{total\_receivable} = \text{invoices\_total} + \text{unallocated\_receivables}$, $\text{reconciliation\_difference} = 0$).
+- **Arqueo de caja (`CashRegisterSession`)**: Aislamiento por usuario y tienda con bloqueo único en BD e idempotencia estricta contra arqueos concurrentes dispares (409 Conflict).
+- **Autorización protegida**: Dashboard de negocio protegido con `can:viewFinance,shop` (vendedores ordinarios 403), y gastos protegidos con `menu:expenses` y plan Pro.
+
+### Estado de Compatibilidad de la App Android (`1.0.14`, version code `15`)
+
+- **Sincronización y POS**: Totalmente compatible a nivel de backend/API para ventas directas, cobros estándar y sincronización de clientes/inventario.
+- **Cumplimiento de la Fase Financiera 1**: **NO CUMPLE AÚN** en el cliente móvil. La versión actual (`1.0.14`) no implementa en pantalla los flujos de cobros divididos multimoneda, apertura y cierre físico de caja con arqueo ciego, registro de gastos operativos, ni visualización del aging FIFO desglosado por factura. El soporte móvil completo está programado para la versión `1.0.15` / `1.1.0`.
+
 ## Media Storage
 
 Local development falls back to the `public` disk when R2 credentials are absent. For

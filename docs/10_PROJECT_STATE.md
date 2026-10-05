@@ -2,9 +2,8 @@
 
 ## Snapshot
 
-- Date: 2026-10-04
-- Commit: `2da3505` plus the advanced storefront and plan-limit work in the current working tree.
-- Phase: plan-limit and account-plan release deployed and production smoke-verified; Pro supports 3 active shops.
+- Date: 2026-10-05
+- Phase: Cierre definitivo y blindaje integral de la Fase Financiera 1; P&L, Cash Flow, Arqueo de caja, Aging por factura y Amortización FIFO de cobros desplegados.
 - Local runtime: Laravel 12.69.2, PHP 8.2.33, MariaDB 11.4.12.
 
 ## Completed
@@ -34,20 +33,32 @@
   - Estrategias explícitas (`skip`, `update`, `create`) con protección contra colisiones ilegales de código de barras.
   - Consumo de cuotas de plan exclusivo para productos nuevos (`create`), sin cobrar updates/skips, asegurado con `Shop::lockForUpdate()`.
   - Manejo controlado de categorías faltantes y preservación de SKU/barcode con ceros iniciales.
-- Cierre y blindaje de la Fase Financiera 1:
+- Cierre definitivo y blindaje de la Fase Financiera 1:
   - Manejador central determinista de dinero `App\Support\Money` (cero float en lógica contable y persistencia).
   - Estado de Resultados (P&L) auditado: ventas brutas, deducción de ITBIS de ingresos netos, descuentos en línea y globales, devoluciones con restitución de costo FIFO, ganancia bruta, gastos operativos devengados en el período, comisiones y ganancia operativa.
   - Cobertura de costos ponderada (`revenue_cost_coverage`) y semáforo de margen contra reglas objetivo (`ProductPriceRule`).
-  - Flujo de Efectivo real: reconciliación estricta de cobros de facturas, abonos a créditos, pagos a gastos y movimientos de caja.
+  - Flujo de Efectivo real: reconciliación estricta de cobros de facturas, abonos a créditos, pagos a gastos y movimientos de caja sin doble contabilización.
+  - Amortización FIFO de cobros de clientes a facturas impagas (`PaymentService::recordCustomerDebtPayment`), vinculando `invoice_payments.customer_account_entry_id` y actualizando automáticamente el estado a `paid` o `partial`.
+  - Reconciliación matemática perfecta entre cartera de clientes y facturas ($\text{total\_receivable} = \text{invoices\_total} + \text{unallocated\_receivables}$, $\text{reconciliation\_difference} = 0$).
   - Abonos parciales a gastos (`ExpensePayment`) con seguimiento de saldos pendientes y estado `paid`/`partial`/`pending`.
-  - Arqueo de caja (`CashRegisterSession`) aislado por usuario con índice único en BD para prevenir aperturas concurrentes.
+  - Arqueo de caja (`CashRegisterSession`) aislado por usuario con índice único en BD e idempotencia estricta contra arqueos concurrentes dispares (409 Conflict).
   - Aging de cuentas por cobrar clasificado factura por factura utilizando `due_date` e idempotencia con hash SHA-256 en endpoints críticos.
-- Android `1.0.13` release with version code `14` published and verified; minimum supported version remains `11`.
+  - Autorización protegida: panel de negocio protegido por `can:viewFinance,shop` (vendedores ordinarios 403), y gastos protegidos por `menu:expenses` y plan Pro.
+- Estado Android `1.0.14` (version code `15`):
+  - Retrocompatible a nivel de API backend con sincronización y ventas POS estándar.
+  - Estado de cumplimiento Fase 1: **NO CUMPLE AÚN** en la aplicación móvil (carece de UI para cobros divididos multimoneda, arqueo físico de caja, registro móvil de gastos y desglose de aging FIFO por factura). Programado para release Android `1.0.15` / `1.1.0`.
 
 ## Verified
 
-- `php vendor/bin/pest`: 297 tests, 1,434 assertions (100% passing).
-- Tests de integridad financiera dedicados: `FinancialIntegrityTest` (17/17 passing), `MoneyTest` (8/8 passing).
+- `php vendor/bin/pest`: 310 tests, 1,506 assertions (100% passing).
+- Tests de integridad financiera dedicados:
+  - `CustomerPaymentAllocationTest` (6/6 passing)
+  - `FinancialIdempotencyHardenedTest` (6/6 passing)
+  - `FinancialIntegrityTest` (17/17 passing)
+  - `FinancialModuleTest` (6/6 passing)
+  - `MoneyTest` (8/8 passing)
+  - `ApiPosSaleTest` (10/10 passing)
+  - `SellerCommissionTest` (5/5 passing)
 - Android `gradlew testDebugUnitTest`: passing.
 - `npm run build`: passing.
 - Production migrations, cache rebuild, backup comparison, and smoke test: passing.

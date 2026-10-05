@@ -7,7 +7,6 @@ use App\Models\ProductInventory;
 use App\Models\Shop;
 use App\Models\User;
 use App\Services\InventoryService;
-use App\Services\ProductPricingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 

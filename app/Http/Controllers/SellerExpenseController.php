@@ -3,10 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Expense;
-use App\Models\ExpenseCategory;
 use App\Models\Shop;
 use App\Services\ExpenseService;
-use Carbon\Carbon;
+use App\Services\PlanLimitsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -14,8 +13,10 @@ use InvalidArgumentException;
 
 class SellerExpenseController extends Controller
 {
-    public function index(Request $request, Shop $shop, ExpenseService $expenseService): View
+    public function index(Request $request, Shop $shop, ExpenseService $expenseService, PlanLimitsService $limits): View
     {
+        $limits->assertFeature($shop->user, 'expenses');
+
         $from = $request->from ?: now()->startOfMonth()->toDateString();
         $to = $request->to ?: now()->toDateString();
         $categoryId = $request->category_id;
@@ -54,13 +55,20 @@ class SellerExpenseController extends Controller
             ->orderByDesc('cat_cents')
             ->get();
 
-        $paymentMethods = config('catalog.payment_methods', [
-            'cash' => 'Efectivo',
-            'card' => 'Tarjeta',
-            'bank_transfer' => 'Transferencia',
-            'credit' => 'Crédito',
-            'other' => 'Otro',
-        ]);
+        $rawPaymentMethods = config('catalog.payment_methods', []);
+        $paymentMethods = [];
+        foreach ($rawPaymentMethods as $key => $conf) {
+            $paymentMethods[$key] = is_array($conf) ? ($conf['label'] ?? ucfirst($key)) : (string) $conf;
+        }
+        if (empty($paymentMethods)) {
+            $paymentMethods = [
+                'cash' => 'Efectivo',
+                'card' => 'Tarjeta',
+                'bank_transfer' => 'Transferencia',
+                'credit' => 'Crédito',
+                'other' => 'Otro',
+            ];
+        }
 
         return view('seller.expenses.index', compact(
             'shop',
@@ -79,8 +87,10 @@ class SellerExpenseController extends Controller
         ));
     }
 
-    public function store(Request $request, Shop $shop, ExpenseService $expenseService): RedirectResponse
+    public function store(Request $request, Shop $shop, ExpenseService $expenseService, PlanLimitsService $limits): RedirectResponse
     {
+        $limits->assertFeature($shop->user, 'expenses');
+
         $validated = $request->validate([
             'expense_category_id' => ['required', 'integer'],
             'description' => ['required', 'string', 'max:255'],
@@ -96,9 +106,9 @@ class SellerExpenseController extends Controller
         try {
             $expense = $expenseService->recordExpense($shop, $request->user(), $validated);
 
-            $msg = 'Gasto registrado correctamente por RD$ ' . number_format((float) $validated['amount'], 2);
+            $msg = 'Gasto registrado correctamente por RD$ '.number_format((float) $validated['amount'], 2);
             if ($expense->amount_paid_cents < $expense->amount_cents) {
-                $msg .= ' (pagado: RD$ ' . number_format((float) $expense->amount_paid, 2) . ', pendiente: RD$ ' . number_format($expense->unpaidAmount(), 2) . ').';
+                $msg .= ' (pagado: RD$ '.number_format((float) $expense->amount_paid, 2).', pendiente: RD$ '.number_format($expense->unpaidAmount(), 2).').';
             } elseif ($expense->cash_register_session_id) {
                 $msg .= ' (descontado de la caja abierta actual).';
             }
@@ -109,9 +119,10 @@ class SellerExpenseController extends Controller
         }
     }
 
-    public function storePayment(Request $request, Shop $shop, Expense $expense, ExpenseService $expenseService): RedirectResponse
+    public function storePayment(Request $request, Shop $shop, Expense $expense, ExpenseService $expenseService, PlanLimitsService $limits): RedirectResponse
     {
         abort_unless($expense->shop_id === $shop->id, 404);
+        $limits->assertFeature($shop->user, 'expenses');
 
         $validated = $request->validate([
             'amount' => ['required', 'numeric', 'min:0.01'],
@@ -124,7 +135,7 @@ class SellerExpenseController extends Controller
         try {
             $payment = $expenseService->recordExpensePayment($shop, $expense, $request->user(), $validated);
 
-            $msg = 'Abono registrado correctamente por RD$ ' . number_format((float) $validated['amount'], 2);
+            $msg = 'Abono registrado correctamente por RD$ '.number_format((float) $validated['amount'], 2);
             if ($payment->cash_register_session_id) {
                 $msg .= ' (descontado de la caja abierta actual).';
             }
@@ -135,8 +146,10 @@ class SellerExpenseController extends Controller
         }
     }
 
-    public function storeCategory(Request $request, Shop $shop): RedirectResponse
+    public function storeCategory(Request $request, Shop $shop, PlanLimitsService $limits): RedirectResponse
     {
+        $limits->assertFeature($shop->user, 'expenses');
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:100'],
         ]);

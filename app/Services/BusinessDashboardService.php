@@ -3,9 +3,7 @@
 namespace App\Services;
 
 use App\Models\Customer;
-use App\Models\InventoryLot;
 use App\Models\Invoice;
-use App\Models\Order;
 use App\Models\Product;
 use App\Models\Shop;
 use App\Support\Money;
@@ -159,6 +157,7 @@ class BusinessDashboardService
         // 5. Collections and Credit in period
         $collectedFromInvoicesCents = (int) DB::table('invoice_payments')
             ->where('shop_id', $shop->id)
+            ->whereNull('customer_account_entry_id')
             ->whereBetween('received_at', [$fromDatetime, $toDatetime])
             ->sum('amount_cents');
 
@@ -266,10 +265,10 @@ class BusinessDashboardService
                 ->pluck('return_total', 'invoice_id')
             : collect();
 
-        $processedInvoiceCustomerIds = [];
+        $customerOpenInvoicesCents = [];
+        $totalInvoicesCents = 0;
 
         foreach ($unpaidInvoices as $invoice) {
-            $processedInvoiceCustomerIds[$invoice->customer_id] = true;
             $invoiceTotalCents = Money::toCents($invoice->total);
             $paidCents = (int) $invoice->payments->sum('amount_cents');
             $returnedAmount = (float) ($invoiceReturns->get($invoice->id) ?? 0);
@@ -279,6 +278,9 @@ class BusinessDashboardService
             if ($unpaidCents <= 0) {
                 continue;
             }
+
+            $customerOpenInvoicesCents[$invoice->customer_id] = ($customerOpenInvoicesCents[$invoice->customer_id] ?? 0) + $unpaidCents;
+            $totalInvoicesCents += $unpaidCents;
 
             $unpaidAmount = $unpaidCents / 100.0;
 
@@ -306,34 +308,12 @@ class BusinessDashboardService
         }
 
         // Account for any remaining customer balance not tied to open invoices (e.g. manual charges)
+        $totalUnallocatedCents = 0;
         foreach ($customers as $customer) {
-            $customerBal = (float) $customer->balance;
-            if ($customerBal <= 0) {
-                continue;
-            }
-
-            // If customer has no open invoices, classify using their latest charge
-            if (empty($processedInvoiceCustomerIds[$customer->id])) {
-                $charge = DB::table('customer_account_entries')
-                    ->where('customer_id', $customer->id)
-                    ->where('type', 'charge')
-                    ->orderByDesc('created_at')
-                    ->first();
-
-                $days = $charge ? abs((int) $now->diffInDays(Carbon::parse($charge->created_at)->startOfDay())) : 0;
-
-                if ($days <= 30) {
-                    $aging['days_0_30'] += $customerBal;
-                } elseif ($days <= 60) {
-                    $aging['days_31_60'] += $customerBal;
-                    $aging['overdue_count']++;
-                } elseif ($days <= 90) {
-                    $aging['days_61_90'] += $customerBal;
-                    $aging['overdue_count']++;
-                } else {
-                    $aging['days_over_90'] += $customerBal;
-                    $aging['overdue_count']++;
-                }
+            $customerBalCents = Money::toCents($customer->balance);
+            $invoicesCents = $customerOpenInvoicesCents[$customer->id] ?? 0;
+            if ($customerBalCents > $invoicesCents) {
+                $totalUnallocatedCents += ($customerBalCents - $invoicesCents);
             }
         }
 
@@ -341,6 +321,10 @@ class BusinessDashboardService
         $aging['days_31_60'] = round($aging['days_31_60'], 2);
         $aging['days_61_90'] = round($aging['days_61_90'], 2);
         $aging['days_over_90'] = round($aging['days_over_90'], 2);
+        $aging['invoices_total'] = round($totalInvoicesCents / 100.0, 2);
+        $aging['unallocated_receivables'] = round($totalUnallocatedCents / 100.0, 2);
+        $aging['total_receivable'] = round($totalReceivable, 2);
+        $aging['reconciliation_difference'] = round($aging['total_receivable'] - ($aging['invoices_total'] + $aging['unallocated_receivables']), 2);
 
         // 2. Inventory Value at COST (FIFO remaining cost)
         $inventoryCostCents = (int) DB::table('inventory_lots')
@@ -599,9 +583,10 @@ class BusinessDashboardService
     protected function computeCashFlow(Shop $shop, string $fromDatetime, string $toDatetime, array $period): array
     {
         // 1. INFLOWS:
-        // Cash collected from invoice payments (cash, card, transfer, other)
+        // Cash collected from direct invoice payments (cash, card, transfer, other)
         $invoiceCollections = DB::table('invoice_payments')
             ->where('shop_id', $shop->id)
+            ->whereNull('customer_account_entry_id')
             ->whereBetween('received_at', [$fromDatetime, $toDatetime])
             ->selectRaw('payment_method, SUM(amount_cents) / 100.0 as total')
             ->groupBy('payment_method')

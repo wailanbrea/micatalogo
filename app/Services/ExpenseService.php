@@ -43,12 +43,17 @@ class ExpenseService
      * - Idempotency via client_operation_uuid and payload_sha256.
      * - Cash register movement only for the actual amount paid in cash.
      */
-    public function recordExpense(Shop $shop, User $user, array $data): Expense
-    {
+    public function recordExpense(
+        Shop $shop,
+        User $user,
+        array $data,
+        ?string $clientOperationUuid = null,
+        ?string $payloadHash = null
+    ): Expense {
         $this->planLimitsService->assertFeature($shop->user, 'expenses');
 
-        $clientOperationUuid = $data['client_operation_uuid'] ?? null;
-        $payloadHash = $data['payload_sha256'] ?? null;
+        $clientOperationUuid = $clientOperationUuid ?? $data['client_operation_uuid'] ?? null;
+        $payloadHash = $payloadHash ?? $data['payload_sha256'] ?? (! empty($clientOperationUuid) ? hash('sha256', json_encode($data, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION)) : null);
 
         if ($clientOperationUuid) {
             $existing = Expense::query()
@@ -155,7 +160,7 @@ class ExpenseService
                     'reference' => $data['reference'] ?? null,
                     'notes' => $data['notes'] ?? null,
                     'paid_at' => ! empty($data['occurred_at']) ? $data['occurred_at'] : now(),
-                    'client_operation_uuid' => $clientOperationUuid ? "{$clientOperationUuid}-pay" : null,
+                    'client_operation_uuid' => $clientOperationUuid,
                     'payload_sha256' => $payloadHash,
                 ]);
 
@@ -181,12 +186,18 @@ class ExpenseService
     /**
      * Record a subsequent payment towards an existing unpaid or partial expense.
      */
-    public function recordExpensePayment(Shop $shop, Expense $expense, User $user, array $data): ExpensePayment
-    {
+    public function recordExpensePayment(
+        Shop $shop,
+        Expense $expense,
+        User $user,
+        array $data,
+        ?string $clientOperationUuid = null,
+        ?string $payloadHash = null
+    ): ExpensePayment {
         $this->planLimitsService->assertFeature($shop->user, 'expenses');
 
-        $clientOperationUuid = $data['client_operation_uuid'] ?? null;
-        $payloadHash = $data['payload_sha256'] ?? null;
+        $clientOperationUuid = $clientOperationUuid ?? $data['client_operation_uuid'] ?? null;
+        $payloadHash = $payloadHash ?? $data['payload_sha256'] ?? (! empty($clientOperationUuid) ? hash('sha256', json_encode($data, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION)) : null);
 
         if ($clientOperationUuid) {
             $existing = ExpensePayment::query()

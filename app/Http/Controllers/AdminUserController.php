@@ -118,7 +118,7 @@ class AdminUserController extends Controller
         if ($newPlan === UserPlan::Free && $user->shops()->where('status', 'active')->get()->contains(
             fn ($shop): bool => $shop->products()->count() > (int) config('catalog.plans.free.max_products_per_shop', 100)
         )) {
-            return back()->with('error', "No se puede cambiar a Gratis: {$user->name} tiene una tienda activa con más de ".config('catalog.plans.free.max_products_per_shop')." productos. No se eliminó ningún producto.");
+            return back()->with('error', "No se puede cambiar a Gratis: {$user->name} tiene una tienda activa con más de ".config('catalog.plans.free.max_products_per_shop').' productos. No se eliminó ningún producto.');
         }
 
         $user->update([

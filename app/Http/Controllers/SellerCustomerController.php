@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Customer;
 use App\Models\Shop;
 use App\Services\CustomerAccountService;
+use App\Services\PaymentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -85,27 +86,39 @@ class SellerCustomerController extends Controller
         return back()->with('status', "Crédito registrado para {$customer->name}.");
     }
 
-    public function payment(Request $request, Shop $shop, Customer $customer, CustomerAccountService $accountService): RedirectResponse
-    {
+    public function payment(
+        Request $request,
+        Shop $shop,
+        Customer $customer,
+        PaymentService $paymentService
+    ): RedirectResponse {
         $validated = $request->validate([
             'amount' => ['required', 'decimal:0,2', 'gt:0'],
+            'payment_method' => ['sometimes', 'string', 'in:cash,card,bank_transfer,other'],
+            'reference' => ['nullable', 'string', 'max:120'],
             'notes' => ['nullable', 'string', 'max:255'],
         ]);
 
+        $paymentMethod = $validated['payment_method'] ?? 'cash';
+        $uuid = (string) Str::uuid();
+
         try {
-            $accountService->recordPayment(
+            $paymentService->recordCustomerDebtPayment(
+                $shop,
                 $customer,
+                $request->user(),
                 $validated['amount'],
-                $request->user()->id,
-                (string) Str::uuid(),
+                $paymentMethod,
+                $uuid,
                 $this->payloadHash('payment', $customer, $validated),
                 $validated['notes'] ?? null,
+                $validated['reference'] ?? null
             );
         } catch (InvalidArgumentException $exception) {
             return back()->withErrors(['payment' => $exception->getMessage()]);
         }
 
-        return back()->with('status', "Cobro registrado para {$customer->name}.");
+        return back()->with('status', "Cobro de RD\${$validated['amount']} ({$paymentMethod}) registrado para {$customer->name}.");
     }
 
     /** @param array<string, mixed> $payload */

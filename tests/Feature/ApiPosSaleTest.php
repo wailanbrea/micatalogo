@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Customer;
 use App\Models\InventoryMovement;
 use App\Models\Invoice;
 use App\Models\Product;
@@ -49,17 +50,25 @@ test('new POS clients reject a changed decant presentation before consuming shar
     expect(Invoice::count())->toBe(1)->and($source->fresh()->inventory->available_ml)->toBe(90);
 });
 
-test('a POS sale uses the pos channel, requested payment status, and decrements stock', function () {
+test('a POS sale uses the pos channel, derives partial status with customer debt, and decrements stock', function () {
     [$user, $shop, $product] = posSaleFixture(stock: 5, price: 300);
     $product->update([
         'sale_price' => 250,
         'sale_starts_at' => now()->subMinute(),
         'sale_ends_at' => now()->addMinute(),
     ]);
+    $customer = Customer::create(['shop_id' => $shop->id, 'name' => 'Cliente Crédito', 'credit_limit' => 1000]);
     $clientSaleUuid = (string) Str::uuid();
 
+    $payload = posSalePayload($clientSaleUuid, $product, 2, '250.00');
+    $payload['customer_id'] = $customer->public_id;
+    $payload['credit_amount'] = '250.00';
+    $payload['payments'] = [
+        ['method' => 'cash', 'amount' => '250.00'],
+    ];
+
     $this->withToken($user->createToken('BSPOS', ['pos:write'])->plainTextToken)
-        ->postJson("/api/v1/shops/{$shop->public_id}/pos-sales", posSalePayload($clientSaleUuid, $product, 2, '250.00', 'partial'))
+        ->postJson("/api/v1/shops/{$shop->public_id}/pos-sales", $payload)
         ->assertCreated()
         ->assertJsonPath('client_sale_uuid', $clientSaleUuid)
         ->assertJsonPath('status', 'partial')
@@ -81,6 +90,22 @@ test('a POS sale uses the pos channel, requested payment status, and decrements 
         'quantity' => -2,
         'unit_price' => 250,
     ]);
+});
+
+test('a POS sale ignores client manipulation of payment status and derives paid when fully settled', function () {
+    [$user, $shop, $product] = posSaleFixture(stock: 5, price: 300);
+    $clientSaleUuid = (string) Str::uuid();
+
+    // Client maliciously or erroneously attempts to mark fully paid sale as 'partial'
+    $payload = posSalePayload($clientSaleUuid, $product, 1, '300.00', 'partial');
+
+    $this->withToken($user->createToken('BSPOS', ['pos:write'])->plainTextToken)
+        ->postJson("/api/v1/shops/{$shop->public_id}/pos-sales", $payload)
+        ->assertCreated()
+        ->assertJsonPath('status', 'paid');
+
+    $invoice = Invoice::query()->sole();
+    expect($invoice->status)->toBe('paid');
 });
 
 test('an identical POS sale replay returns its original response without another stock decrement', function () {

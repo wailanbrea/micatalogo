@@ -2,12 +2,8 @@
 
 use App\Enums\UserPlan;
 use App\Models\CashMovement;
-use App\Models\CashRegisterSession;
 use App\Models\Customer;
-use App\Models\CustomerAccountEntry;
 use App\Models\Expense;
-use App\Models\ExpenseCategory;
-use App\Models\ExpensePayment;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoicePayment;
@@ -15,6 +11,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductInventory;
 use App\Models\Shop;
+use App\Models\ShopSeller;
 use App\Models\User;
 use App\Services\BusinessDashboardService;
 use App\Services\CashRegisterService;
@@ -22,9 +19,7 @@ use App\Services\CustomerAccountService;
 use App\Services\ExpenseService;
 use App\Services\InventoryService;
 use App\Services\PaymentService;
-use App\Support\Money;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
@@ -34,7 +29,7 @@ function setupFinancialShop(): array
     $owner = User::factory()->create(['plan' => UserPlan::Pro]);
     $shop = Shop::factory()->create(['user_id' => $owner->id]);
     $seller = User::factory()->create(['plan' => UserPlan::Free]);
-    \App\Models\ShopSeller::create([
+    ShopSeller::create([
         'shop_id' => $shop->id,
         'user_id' => $seller->id,
         'commission_type' => 'percentage',
@@ -446,7 +441,7 @@ test('65. sum of expenses by category matches operating expenses total strictly 
 test('66. cash movement on another sellers cash register session is forbidden with 403', function () {
     [$owner, $shop, $product, $seller] = setupFinancialShop();
     $otherSeller = User::factory()->create(['plan' => UserPlan::Free]);
-    \App\Models\ShopSeller::create([
+    ShopSeller::create([
         'shop_id' => $shop->id,
         'user_id' => $otherSeller->id,
         'commission_type' => 'percentage',
@@ -476,7 +471,7 @@ test('67. concurrent cash register opening by same user is blocked', function ()
 
     // Trying to open another session without closing throws exception
     expect(fn () => $cashService->openSession($shop, $owner, 300, 'Segunda apertura'))
-        ->toThrow(\InvalidArgumentException::class);
+        ->toThrow(InvalidArgumentException::class);
 });
 
 // 68. Idempotencia de gastos con UUID: reintento devuelve mismo gasto sin duplicar

@@ -21,20 +21,33 @@ class MobileOperationController extends Controller
                 'items.*.refund_total' => ['sometimes', 'decimal:0,2', 'min:0', 'max:10000000000000'], 'items.*.restock' => ['required', 'boolean']];
         } else {
             $rules['product_id'] = ['required', 'ulid'];
-            if ($type === 'product_upsert') $rules += ['name' => ['sometimes', 'required', 'string', 'max:255'],
-                'internal_code' => ['nullable', 'string', 'max:120'], 'barcode' => ['nullable', 'regex:/^[0-9]{8,14}$/'],
-                'description' => ['nullable', 'string', 'max:10000'], 'category_name' => ['nullable', 'string', 'max:100'],
-                'image_base64' => ['sometimes', 'string', 'max:699052'],
-                'image_sha256' => ['required_with:image_base64', 'regex:/^[a-f0-9]{64}$/'],
-                'price' => ['sometimes', 'decimal:0,2', 'min:0', 'max:1000000000'], 'expected_price' => ['sometimes', 'decimal:0,2', 'min:0'],
-                'cost_price' => ['nullable', 'decimal:0,2', 'min:0', 'max:1000000000'], 'minimum_stock' => ['sometimes', 'integer', 'min:0', 'max:1000000']];
-            if ($type === 'restock') $rules += ['quantity' => ['required', 'integer', 'min:1', 'max:1000000'], 'unit_cost' => ['required', 'decimal:0,2', 'min:0', 'max:1000000000']];
-            if ($type === 'adjustment') $rules += ['stock' => ['required', 'integer', 'min:0', 'max:1000000'], 'expected_stock' => ['required', 'integer', 'min:0'], 'notes' => ['required', 'string', 'max:1000']];
-            if ($type === 'adjustment') $rules['notes'] = ['required', 'string', 'max:1000'];
-            if ($type === 'adjustment') $rules['expected_available_ml'] = ['sometimes', 'integer', 'min:0'];
+            if ($type === 'product_upsert') {
+                $rules += ['name' => ['sometimes', 'required', 'string', 'max:255'],
+                    'internal_code' => ['nullable', 'string', 'max:120'], 'barcode' => ['nullable', 'regex:/^[0-9]{8,14}$/'],
+                    'description' => ['nullable', 'string', 'max:10000'], 'category_name' => ['nullable', 'string', 'max:100'],
+                    'image_base64' => ['sometimes', 'string', 'max:699052'],
+                    'image_sha256' => ['required_with:image_base64', 'regex:/^[a-f0-9]{64}$/'],
+                    'price' => ['sometimes', 'decimal:0,2', 'min:0', 'max:1000000000'], 'expected_price' => ['sometimes', 'decimal:0,2', 'min:0'],
+                    'cost_price' => ['nullable', 'decimal:0,2', 'min:0', 'max:1000000000'], 'minimum_stock' => ['sometimes', 'integer', 'min:0', 'max:1000000']];
+            }
+            if ($type === 'restock') {
+                $rules += ['quantity' => ['required', 'integer', 'min:1', 'max:1000000'], 'unit_cost' => ['required', 'decimal:0,2', 'min:0', 'max:1000000000']];
+            }
+            if ($type === 'adjustment') {
+                $rules += ['stock' => ['required', 'integer', 'min:0', 'max:1000000'], 'expected_stock' => ['required', 'integer', 'min:0'], 'notes' => ['required', 'string', 'max:1000']];
+            }
+            if ($type === 'adjustment') {
+                $rules['notes'] = ['required', 'string', 'max:1000'];
+            }
+            if ($type === 'adjustment') {
+                $rules['expected_available_ml'] = ['sometimes', 'integer', 'min:0'];
+            }
         }
         $data = $request->validate($rules);
-        try { return response()->json($service->apply($shop, $request->user(), $data), 201); }
-        catch (InvalidArgumentException $error) { return response()->json(['message' => $error->getMessage(), 'reason' => 'operation_conflict'], $error->getCode() ?: 422); }
+        try {
+            return response()->json($service->apply($shop, $request->user(), $data), 201);
+        } catch (InvalidArgumentException $error) {
+            return response()->json(['message' => $error->getMessage(), 'reason' => 'operation_conflict'], $error->getCode() ?: 422);
+        }
     }
 }

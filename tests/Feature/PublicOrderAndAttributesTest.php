@@ -4,12 +4,12 @@ namespace Tests\Feature;
 
 use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductModerationStatus;
+use App\Enums\UserPlan;
 use App\Models\AttributeDefinition;
 use App\Models\Product;
 use App\Models\ProductAttributeValue;
 use App\Models\Shop;
 use App\Models\User;
-use App\Enums\UserPlan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Tests\TestCase;

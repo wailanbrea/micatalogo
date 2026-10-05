@@ -42,7 +42,19 @@
                                 </div>
                                 <div class="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2">
                                     <form method="POST" action="{{ route('seller.shops.customers.charge', [$shop, $customer]) }}" class="flex flex-wrap gap-2">@csrf<input name="amount" required min="0.01" step="0.01" type="number" placeholder="Monto crédito" class="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-xs"><input name="notes" required maxlength="255" placeholder="Motivo" class="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-xs"><button class="rounded-lg bg-amber-600 px-3 py-2 text-xs font-bold text-white hover:bg-amber-700">Registrar crédito</button></form>
-                                    <form method="POST" action="{{ route('seller.shops.customers.payment', [$shop, $customer]) }}" class="flex flex-wrap gap-2">@csrf<input name="amount" required min="0.01" step="0.01" type="number" placeholder="Monto cobrado" class="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-xs"><input name="notes" maxlength="255" placeholder="Nota (opcional)" class="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-xs"><button class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700">Registrar cobro</button></form>
+                                    <form method="POST" action="{{ route('seller.shops.customers.payment', [$shop, $customer]) }}" class="flex flex-wrap items-center gap-2">
+                                        @csrf
+                                        <input name="amount" required min="0.01" step="0.01" type="number" placeholder="Monto cobrado" class="min-w-0 w-28 rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold tabular-nums">
+                                        <select name="payment_method" class="rounded-lg border border-slate-300 bg-white px-2 py-2 text-xs font-medium text-slate-700">
+                                            <option value="cash">Efectivo</option>
+                                            <option value="card">Tarjeta</option>
+                                            <option value="bank_transfer">Transferencia</option>
+                                            <option value="other">Otro</option>
+                                        </select>
+                                        <input name="reference" maxlength="120" placeholder="Ref." class="min-w-0 w-20 rounded-lg border border-slate-300 px-2 py-2 text-xs">
+                                        <input name="notes" maxlength="255" placeholder="Nota" class="min-w-0 flex-1 rounded-lg border border-slate-300 px-2 py-2 text-xs">
+                                        <button class="whitespace-nowrap rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700">Registrar cobro</button>
+                                    </form>
                                 </div>
                                 @if ($customer->accountEntries->isNotEmpty())
                                     <div class="mt-3 text-xs text-slate-500"><span class="font-semibold text-slate-700">Últimos movimientos:</span> @foreach ($customer->accountEntries as $entry)<span class="ml-2 inline-block">{{ $entry->created_at->format('d/m H:i') }} · {{ $entry->type === 'payment' ? 'Cobro' : ($entry->type === 'charge' ? 'Crédito' : 'Ajuste') }} <strong class="{{ (float) $entry->amount < 0 ? 'text-emerald-700' : 'text-amber-700' }}">RD$ {{ number_format((float) $entry->amount, 2) }}</strong></span>@endforeach</div>

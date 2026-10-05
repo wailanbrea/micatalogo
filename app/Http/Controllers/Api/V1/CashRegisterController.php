@@ -56,24 +56,30 @@ class CashRegisterController extends Controller
             ? hash('sha256', json_encode($validated, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION))
             : null;
 
-        $session = $service->openSession(
-            $shop,
-            $request->user(),
-            $validated['opening_amount'],
-            $validated['notes'] ?? null,
-            $validated['client_operation_uuid'] ?? null,
-            $payloadHash
-        );
+        try {
+            $session = $service->openSession(
+                $shop,
+                $request->user(),
+                $validated['opening_amount'],
+                $validated['notes'] ?? null,
+                $validated['client_operation_uuid'] ?? null,
+                $payloadHash
+            );
 
-        return response()->json([
-            'message' => 'Caja abierta exitosamente.',
-            'session' => [
-                'id' => $session->public_id,
-                'opened_at' => $session->opened_at->toIso8601String(),
-                'opening_amount' => (float) $session->opening_amount,
-                'status' => $session->status,
-            ],
-        ], 201);
+            return response()->json([
+                'message' => 'Caja abierta exitosamente.',
+                'session' => [
+                    'id' => $session->public_id,
+                    'opened_at' => $session->opened_at->toIso8601String(),
+                    'opening_amount' => (float) $session->opening_amount,
+                    'status' => $session->status,
+                ],
+            ], 201);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], $e->getCode() ?: 422);
+        }
     }
 
     public function close(Request $request, Shop $shop, CashRegisterSession $session, CashRegisterService $service, PlanLimitsService $limits): JsonResponse
@@ -94,29 +100,35 @@ class CashRegisterController extends Controller
             ? hash('sha256', json_encode($validated, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION))
             : null;
 
-        $closed = $service->closeSession(
-            $session,
-            $request->user(),
-            $validated['counted_amount'],
-            $validated['notes'] ?? null,
-            $validated['client_operation_uuid'] ?? null,
-            $payloadHash
-        );
+        try {
+            $closed = $service->closeSession(
+                $session,
+                $request->user(),
+                $validated['counted_amount'],
+                $validated['notes'] ?? null,
+                $validated['client_operation_uuid'] ?? null,
+                $payloadHash
+            );
 
-        return response()->json([
-            'message' => 'Caja cerrada exitosamente.',
-            'session' => [
-                'id' => $closed->public_id,
-                'opened_at' => $closed->opened_at->toIso8601String(),
-                'closed_at' => $closed->closed_at?->toIso8601String(),
-                'opening_amount' => (float) $closed->opening_amount,
-                'expected_closing_amount' => (float) $closed->expected_closing_amount,
-                'counted_closing_amount' => (float) $closed->counted_closing_amount,
-                'difference' => (float) $closed->difference,
-                'status' => $closed->status,
-                'notes' => $closed->notes,
-            ],
-        ]);
+            return response()->json([
+                'message' => 'Caja cerrada exitosamente.',
+                'session' => [
+                    'id' => $closed->public_id,
+                    'opened_at' => $closed->opened_at->toIso8601String(),
+                    'closed_at' => $closed->closed_at?->toIso8601String(),
+                    'opening_amount' => (float) $closed->opening_amount,
+                    'expected_closing_amount' => (float) $closed->expected_closing_amount,
+                    'counted_closing_amount' => (float) $closed->counted_closing_amount,
+                    'difference' => (float) $closed->difference,
+                    'status' => $closed->status,
+                    'notes' => $closed->notes,
+                ],
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], $e->getCode() ?: 422);
+        }
     }
 
     public function movement(Request $request, Shop $shop, CashRegisterSession $session, CashRegisterService $service, PlanLimitsService $limits): JsonResponse
@@ -138,25 +150,31 @@ class CashRegisterController extends Controller
             ? hash('sha256', json_encode($validated, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION))
             : null;
 
-        $movement = $service->recordManualMovement(
-            $session,
-            $request->user(),
-            $validated['type'],
-            $validated['amount'],
-            $validated['notes'],
-            $validated['client_operation_uuid'] ?? null,
-            $payloadHash
-        );
+        try {
+            $movement = $service->recordManualMovement(
+                $session,
+                $request->user(),
+                $validated['type'],
+                $validated['amount'],
+                $validated['notes'],
+                $validated['client_operation_uuid'] ?? null,
+                $payloadHash
+            );
 
-        return response()->json([
-            'message' => 'Movimiento registrado exitosamente.',
-            'movement' => [
-                'id' => $movement->public_id,
-                'type' => $movement->type,
-                'amount' => (float) $movement->amount,
-                'notes' => $movement->notes,
-                'occurred_at' => $movement->occurred_at->toIso8601String(),
-            ],
-        ], 201);
+            return response()->json([
+                'message' => 'Movimiento registrado exitosamente.',
+                'movement' => [
+                    'id' => $movement->public_id,
+                    'type' => $movement->type,
+                    'amount' => (float) $movement->amount,
+                    'notes' => $movement->notes,
+                    'occurred_at' => $movement->occurred_at->toIso8601String(),
+                ],
+            ], 201);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], $e->getCode() ?: 422);
+        }
     }
 }

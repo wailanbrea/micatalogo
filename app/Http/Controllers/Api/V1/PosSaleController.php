@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\Shop;
 use App\Services\CustomerAccountService;
 use App\Services\InventoryService;
+use App\Services\PaymentService;
 use App\Support\Money;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -24,7 +25,7 @@ class PosSaleController extends Controller
         Shop $shop,
         InventoryService $inventoryService,
         CustomerAccountService $customerAccountService,
-        \App\Services\PaymentService $paymentService
+        PaymentService $paymentService
     ): JsonResponse {
         abort_unless($request->user()->canSellAtShop($shop), 404);
 
@@ -54,7 +55,7 @@ class PosSaleController extends Controller
         $payloadHash = hash('sha256', json_encode($validated, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION));
 
         try {
-            return DB::transaction(function () use ($shop, $validated, $payloadHash, $inventoryService, $customerAccountService, $paymentService, $request): JsonResponse {
+            return DB::transaction(function () use ($shop, $validated, $payloadHash, $inventoryService, $paymentService, $request): JsonResponse {
                 $existing = PosSaleUpload::query()
                     ->with('invoice')
                     ->where('shop_id', $shop->id)
@@ -94,7 +95,7 @@ class PosSaleController extends Controller
                             'reason' => 'presentation_conflict',
                         ], 409);
                     }
-                    if ($this->toCents($item['unit_price']) !== $this->toCents($products[$item['product_id']]->currentPrice())) {
+                    if (Money::toCents($item['unit_price']) !== Money::toCents($products[$item['product_id']]->currentPrice())) {
                         return response()->json([
                             'message' => 'The submitted price no longer matches the catalog.',
                             'reason' => 'price_conflict',
@@ -103,9 +104,9 @@ class PosSaleController extends Controller
                 }
 
                 $creditAmount = $validated['credit_amount'] ?? '0.00';
-                $creditCents = $this->toCents($creditAmount);
-                $totalCents = collect($validated['items'])->sum(fn (array $item): int => $this->toCents($products[$item['product_id']]->currentPrice()) * (int) $item['quantity'] - $this->toCents($item['discount'] ?? 0) + $this->toCents($item['tax'] ?? 0))
-                    - $this->toCents($validated['discount'] ?? 0) + $this->toCents($validated['tax'] ?? 0);
+                $creditCents = Money::toCents($creditAmount);
+                $totalCents = collect($validated['items'])->sum(fn (array $item): int => Money::toCents($products[$item['product_id']]->currentPrice()) * (int) $item['quantity'] - Money::toCents($item['discount'] ?? 0) + Money::toCents($item['tax'] ?? 0))
+                    - Money::toCents($validated['discount'] ?? 0) + Money::toCents($validated['tax'] ?? 0);
                 if ($totalCents < 0) {
                     return response()->json(['message' => 'El descuento supera el total.'], 422);
                 }
@@ -148,12 +149,21 @@ class PosSaleController extends Controller
                     }
                 }
 
-                // Derive status strictly: credit = total -> pending, credit > 0 -> partial, requested partial -> partial, else paid
+                $paidCents = collect($payments)->sum(fn ($p) => Money::toCents($p['amount'] ?? 0));
+
+                if ($paidCents + $creditCents !== $totalCents) {
+                    $diffFormatted = number_format(abs(($paidCents + $creditCents) - $totalCents) / 100, 2);
+
+                    return response()->json([
+                        'message' => "La suma de pagos y crédito no coincide con el total de la venta (diferencia: RD\${$diffFormatted}).",
+                    ], 422);
+                }
+
+                // Derive status strictly from money, ignoring client status manipulation
                 $derivedStatus = match (true) {
-                    $creditCents === $totalCents => 'pending',
-                    $creditCents > 0 => 'partial',
-                    ($validated['payment_status'] ?? null) === 'partial' => 'partial',
-                    default => 'paid',
+                    $paidCents === $totalCents && $creditCents === 0 => 'paid',
+                    $paidCents === 0 && $creditCents === $totalCents => 'pending',
+                    default => 'partial',
                 };
 
                 $upload = PosSaleUpload::create([
@@ -258,12 +268,5 @@ class PosSaleController extends Controller
             'status' => $invoice->status,
             'total' => $invoice->total,
         ];
-    }
-
-    private function toCents(string|int|float $amount): int
-    {
-        [$whole, $fraction] = array_pad(explode('.', (string) $amount, 2), 2, '0');
-
-        return ((int) $whole * 100) + (int) str_pad($fraction, 2, '0');
     }
 }

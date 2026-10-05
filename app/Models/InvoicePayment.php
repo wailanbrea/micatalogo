@@ -16,6 +16,7 @@ class InvoicePayment extends Model
         'shop_id',
         'invoice_id',
         'customer_id',
+        'customer_account_entry_id',
         'user_id',
         'cash_register_session_id',
         'payment_method',
@@ -50,6 +51,11 @@ class InvoicePayment extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function customerAccountEntry(): BelongsTo
+    {
+        return $this->belongsTo(CustomerAccountEntry::class);
     }
 
     public function user(): BelongsTo

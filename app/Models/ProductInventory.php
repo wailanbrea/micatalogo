@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\DB;
 
 class ProductInventory extends Model
 {
@@ -153,7 +154,7 @@ class ProductInventory extends Model
             ->selectRaw('COALESCE(SUM(ABS(quantity) * unit_price - COALESCE(total_cost_cents / 100.0, ABS(quantity) * unit_cost)), 0) as total')
             ->value('total');
 
-        $refunds = \Illuminate\Support\Facades\DB::table('invoice_return_items')
+        $refunds = DB::table('invoice_return_items')
             ->join('invoice_items', 'invoice_items.id', '=', 'invoice_return_items.invoice_item_id')
             ->where('invoice_items.product_id', $this->product_id)->whereNotNull('invoice_items.total_cost_cents')
             ->selectRaw('COALESCE(SUM(refund - tax_refund - CASE WHEN restock = 1 THEN COALESCE(invoice_return_items.total_cost_cents, 0) / 100.0 ELSE 0 END), 0) as total')

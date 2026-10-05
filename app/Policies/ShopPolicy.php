@@ -27,6 +27,11 @@ class ShopPolicy
         return $user->ownsShop($shop) || $user->isActiveShopMember($shop);
     }
 
+    public function viewFinance(User $user, Shop $shop): bool
+    {
+        return $user->ownsShop($shop) || $user->isActiveShopMember($shop);
+    }
+
     public function sell(User $user, Shop $shop): bool
     {
         return $user->canSellAtShop($shop);

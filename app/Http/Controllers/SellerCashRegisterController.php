@@ -77,7 +77,7 @@ class SellerCashRegisterController extends Controller
                 $validated['notes'] ?? null
             );
 
-            return back()->with('status', 'Sesión de caja abierta correctamente con RD$ ' . number_format((float) $validated['opening_amount'], 2));
+            return back()->with('status', 'Sesión de caja abierta correctamente con RD$ '.number_format((float) $validated['opening_amount'], 2));
         } catch (InvalidArgumentException $e) {
             return back()->withErrors(['cash_register' => $e->getMessage()]);
         }
@@ -107,10 +107,10 @@ class SellerCashRegisterController extends Controller
             $diffText = $diff == 0.0
                 ? 'Arqueo perfecto: caja cuadrada.'
                 : ($diff > 0
-                    ? 'Caja cerrada con SOBRANTE de RD$ ' . number_format($diff, 2)
-                    : 'Caja cerrada con FALTANTE de RD$ ' . number_format(abs($diff), 2));
+                    ? 'Caja cerrada con SOBRANTE de RD$ '.number_format($diff, 2)
+                    : 'Caja cerrada con FALTANTE de RD$ '.number_format(abs($diff), 2));
 
-            return back()->with('status', 'Caja cerrada. ' . $diffText);
+            return back()->with('status', 'Caja cerrada. '.$diffText);
         } catch (InvalidArgumentException $e) {
             return back()->withErrors(['cash_register' => $e->getMessage()]);
         }

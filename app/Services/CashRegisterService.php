@@ -124,21 +124,35 @@ class CashRegisterService
             throw new AuthorizationException('No tienes permiso para cerrar la sesión de caja de otro usuario.', 403);
         }
 
+        $countedCents = Money::toCents($countedAmount);
+        if ($countedCents < 0) {
+            throw new InvalidArgumentException('El monto contado no puede ser negativo.', 422);
+        }
+
         // Idempotent retry: return already closed session
         if ($session->status === 'closed') {
+            if ($payloadHash && $session->payload_sha256 && ! hash_equals((string) $session->payload_sha256, $payloadHash)) {
+                throw new InvalidArgumentException('Conflicto de idempotencia: la sesión de caja ya fue cerrada con datos distintos.', 409);
+            }
+            if ($session->counted_closing_amount_cents !== null && (int) $session->counted_closing_amount_cents !== $countedCents) {
+                throw new InvalidArgumentException('Conflicto: la sesión de caja ya se encuentra cerrada con un monto de arqueo distinto.', 409);
+            }
+
             return $session;
         }
 
-        return DB::transaction(function () use ($session, $user, $countedAmount, $notes, $clientOperationUuid, $payloadHash): CashRegisterSession {
+        return DB::transaction(function () use ($session, $countedCents, $notes, $clientOperationUuid, $payloadHash): CashRegisterSession {
             $session = CashRegisterSession::query()->lockForUpdate()->findOrFail($session->id);
 
             if ($session->status === 'closed') {
-                return $session;
-            }
+                if ($payloadHash && $session->payload_sha256 && ! hash_equals((string) $session->payload_sha256, $payloadHash)) {
+                    throw new InvalidArgumentException('Conflicto de idempotencia: la sesión de caja ya fue cerrada con datos distintos.', 409);
+                }
+                if ($session->counted_closing_amount_cents !== null && (int) $session->counted_closing_amount_cents !== $countedCents) {
+                    throw new InvalidArgumentException('Conflicto: la sesión de caja ya se encuentra cerrada con un monto de arqueo distinto.', 409);
+                }
 
-            $countedCents = Money::toCents($countedAmount);
-            if ($countedCents < 0) {
-                throw new InvalidArgumentException('El monto contado no puede ser negativo.', 422);
+                return $session;
             }
 
             $expectedCents = $session->calculateExpectedBalance();

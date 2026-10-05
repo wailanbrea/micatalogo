@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\ProductImageProcessingStatus;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductInventory;

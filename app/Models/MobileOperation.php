@@ -7,5 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class MobileOperation extends Model
 {
     protected $guarded = ['id'];
-    protected function casts(): array { return ['result' => 'array']; }
+
+    protected function casts(): array
+    {
+        return ['result' => 'array'];
+    }
 }

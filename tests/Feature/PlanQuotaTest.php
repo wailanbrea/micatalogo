@@ -4,6 +4,7 @@ use App\Enums\UserPlan;
 use App\Models\Product;
 use App\Models\Shop;
 use App\Models\User;
+use App\Services\PlanLimitsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -66,7 +67,7 @@ test('the full-access account uses the custom plan limits', function () {
     ]);
     $shop = Shop::factory()->for($owner)->create();
 
-    $quota = app(\App\Services\PlanLimitsService::class)->shopQuota($shop);
+    $quota = app(PlanLimitsService::class)->shopQuota($shop);
 
     expect($quota['plan'])->toBe('custom')
         ->and($quota['product_limit'])->toBe(1_000_000)

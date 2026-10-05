@@ -1,25 +1,34 @@
 <?php
 
+use App\Enums\ProductImageProcessingStatus;
+use App\Enums\UserPlan;
+use App\Http\Controllers\SellerBusinessController;
 use App\Models\InventoryLot;
 use App\Models\Invoice;
 use App\Models\MobileOperation;
 use App\Models\Product;
+use App\Models\ProductImage;
 use App\Models\ProductInventory;
 use App\Models\Shop;
 use App\Models\User;
-use App\Enums\UserPlan;
+use App\Services\InventoryService;
+use App\Services\MediaStorageService;
+use App\Services\PlanLimitsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
 test('mobile photos are immutable idempotent and promoted without deleting previous media', function () {
-    \Illuminate\Support\Facades\Storage::fake('public');
-    \Illuminate\Support\Facades\Storage::fake('r2');
+    Storage::fake('public');
+    Storage::fake('r2');
     [$user, $shop, $product, $token] = mobileFixture();
-    $old = \App\Models\ProductImage::factory()->for($product)->create(['sort_order' => 0]);
-    $file = \Illuminate\Http\UploadedFile::fake()->image('movil.jpg', 40, 50);
+    $old = ProductImage::factory()->for($product)->create(['sort_order' => 0]);
+    $file = UploadedFile::fake()->image('movil.jpg', 40, 50);
     $bytes = file_get_contents($file->getRealPath());
     $payload = ['client_operation_uuid' => (string) Str::uuid(), 'type' => 'product_upsert',
         'product_id' => $product->public_id, 'image_base64' => base64_encode($bytes), 'image_sha256' => hash('sha256', $bytes)];
@@ -28,9 +37,9 @@ test('mobile photos are immutable idempotent and promoted without deleting previ
     $this->withToken($token)->postJson($url, $payload)->assertCreated();
     expect($product->images()->count())->toBe(2)->and($old->fresh()->sort_order)->toBe(1);
     $new = $product->images()->whereKeyNot($old->id)->first();
-    expect($new->processing_status)->toBe(\App\Enums\ProductImageProcessingStatus::Ready)
+    expect($new->processing_status)->toBe(ProductImageProcessingStatus::Ready)
         ->and($new->sort_order)->toBe(0);
-    app(\App\Services\MediaStorageService::class)->disk()->assertExists($new->object_key);
+    app(MediaStorageService::class)->disk()->assertExists($new->object_key);
     $payload['client_operation_uuid'] = (string) Str::uuid();
     $this->withToken($token)->postJson($url, $payload)->assertCreated();
     expect($product->images()->count())->toBe(2);
@@ -42,12 +51,12 @@ test('mobile photos are immutable idempotent and promoted without deleting previ
 });
 
 test('mobile photos enforce plan quota without deleting media or applying partial edits', function () {
-    \Illuminate\Support\Facades\Storage::fake('public');
-    \Illuminate\Support\Facades\Storage::fake('r2');
+    Storage::fake('public');
+    Storage::fake('r2');
     [$user, $shop, $product, $token] = mobileFixture();
-    \App\Models\ProductImage::factory()->for($product)->count(app(\App\Services\PlanLimitsService::class)->imageLimit($shop))->create();
+    ProductImage::factory()->for($product)->count(app(PlanLimitsService::class)->imageLimit($shop))->create();
     $before = $product->images()->pluck('id')->all();
-    $file = \Illuminate\Http\UploadedFile::fake()->image('foto.jpg', 40, 40);
+    $file = UploadedFile::fake()->image('foto.jpg', 40, 40);
     $bytes = file_get_contents($file->getRealPath());
     $this->withToken($token)->postJson('/api/v1/shops/'.$shop->public_id.'/mobile-operations', [
         'client_operation_uuid' => (string) Str::uuid(), 'type' => 'product_upsert', 'product_id' => $product->public_id,
@@ -63,6 +72,7 @@ function mobileFixture(): array
     $shop = Shop::factory()->create(['user_id' => $user->id]);
     $product = Product::factory()->create(['shop_id' => $shop->id, 'price' => 250, 'sale_unit' => 'unit']);
     ProductInventory::create(['product_id' => $product->id, 'track_inventory' => true, 'stock_quantity' => 5, 'cost_price' => 100]);
+
     return [$user, $shop, $product, $user->createToken('test', ['pos:write'])->plainTextToken];
 }
 
@@ -147,7 +157,7 @@ test('mobile returns restore original sold cost not the latest receipt cost and 
     $saleUuid = (string) Str::uuid();
     $this->withToken($token)->postJson('/api/v1/shops/'.$shop->public_id.'/pos-sales', ['client_sale_uuid' => $saleUuid,
         'payment_status' => 'paid', 'items' => [['product_id' => $product->public_id, 'quantity' => 2, 'unit_price' => '250.00']]])->assertCreated();
-    app(\App\Services\InventoryService::class)->recordRestock($product, 2, null, $user->id, 300);
+    app(InventoryService::class)->recordRestock($product, 2, null, $user->id, 300);
     $url = '/api/v1/shops/'.$shop->public_id.'/mobile-operations';
     $refund = ['client_operation_uuid' => (string) Str::uuid(), 'type' => 'return', 'client_sale_uuid' => $saleUuid,
         'items' => [['product_id' => $product->public_id, 'quantity' => 1, 'refund_price' => '250.00', 'restock' => true]]];
@@ -158,7 +168,7 @@ test('mobile returns restore original sold cost not the latest receipt cost and 
         ->and($product->fresh()->inventory->inventory_value)->toBe(1000.0)
         ->and((float) $product->fresh()->inventory->cost_price)->toBe(300.0);
     expect($product->fresh()->inventory->gross_profit)->toBe(150.0);
-    $report = app(\App\Http\Controllers\SellerBusinessController::class)->index(\Illuminate\Http\Request::create('/'), $shop)->getData();
+    $report = app(SellerBusinessController::class)->index(Request::create('/'), $shop)->getData();
     expect((float) $report['total'])->toBe(250.0)
         ->and((float) $report['products']->first()->revenue)->toBe(250.0)
         ->and((float) $report['products']->first()->known_cost)->toBe(100.0);

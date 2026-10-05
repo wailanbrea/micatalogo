@@ -8,14 +8,17 @@ use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\CatalogHomeController;
 use App\Http\Controllers\EmailVerificationCodeController;
 use App\Http\Controllers\ProductCatalogMediaController;
-use App\Http\Controllers\PublicOrderController;
 use App\Http\Controllers\PublicDownloadController;
+use App\Http\Controllers\PublicOrderController;
 use App\Http\Controllers\PublicProductController;
 use App\Http\Controllers\PublicReportController;
 use App\Http\Controllers\PublicShopController;
 use App\Http\Controllers\PublicSupportController;
 use App\Http\Controllers\SellerBulkProductController;
+use App\Http\Controllers\SellerBusinessController;
+use App\Http\Controllers\SellerCashRegisterController;
 use App\Http\Controllers\SellerCustomerController;
+use App\Http\Controllers\SellerExpenseController;
 use App\Http\Controllers\SellerInventoryController;
 use App\Http\Controllers\SellerInventoryImportController;
 use App\Http\Controllers\SellerInvitationController;
@@ -23,8 +26,8 @@ use App\Http\Controllers\SellerManagementController;
 use App\Http\Controllers\SellerProductController;
 use App\Http\Controllers\SellerShopController;
 use App\Http\Controllers\SellerShopMetricController;
-use App\Http\Controllers\ShopMemberController;
 use App\Http\Controllers\ShopCategoryController;
+use App\Http\Controllers\ShopMemberController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\WhatsAppRedirectController;
 use App\Http\Middleware\EnsureWebAccountIsActive;
@@ -71,29 +74,33 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
         ->middleware('can:delete,shop')
         ->name('shops.destroy');
     Route::scopeBindings()->middleware(['can:sell,shop', 'menu:sales'])->group(function () {
-        Route::get('/tiendas/{shop}/negocio', [\App\Http\Controllers\SellerBusinessController::class, 'index'])->name('shops.business');
-        Route::post('/tiendas/{shop}/pedidos/{order}/confirmar', [\App\Http\Controllers\SellerBusinessController::class, 'confirm'])->name('shops.orders.confirm');
+        Route::get('/tiendas/{shop}/negocio', [SellerBusinessController::class, 'index'])
+            ->middleware('can:viewFinance,shop')
+            ->name('shops.business');
+        Route::post('/tiendas/{shop}/pedidos/{order}/confirmar', [SellerBusinessController::class, 'confirm'])->name('shops.orders.confirm');
         Route::get('/tiendas/{shop}/inventario', [SellerInventoryController::class, 'index'])->name('shops.inventory.index');
         Route::post('/tiendas/{shop}/inventario/cobro', [SellerInventoryController::class, 'checkout'])->name('shops.inventory.checkout');
         Route::post('/tiendas/{shop}/productos/{product}/inventario/venta', [SellerInventoryController::class, 'recordSale'])->name('shops.inventory.sale');
-        Route::get('/tiendas/{shop}/gastos', [\App\Http\Controllers\SellerExpenseController::class, 'index'])->name('shops.expenses.index');
-        Route::post('/tiendas/{shop}/gastos', [\App\Http\Controllers\SellerExpenseController::class, 'store'])->name('shops.expenses.store');
-        Route::post('/tiendas/{shop}/gastos/{expense}/pagos', [\App\Http\Controllers\SellerExpenseController::class, 'storePayment'])->name('shops.expenses.payments.store');
-        Route::post('/tiendas/{shop}/gastos/categorias', [\App\Http\Controllers\SellerExpenseController::class, 'storeCategory'])->name('shops.expenses.categories.store');
+    });
+    Route::scopeBindings()->middleware(['can:sell,shop', 'menu:expenses'])->group(function () {
+        Route::get('/tiendas/{shop}/gastos', [SellerExpenseController::class, 'index'])->name('shops.expenses.index');
+        Route::post('/tiendas/{shop}/gastos', [SellerExpenseController::class, 'store'])->name('shops.expenses.store');
+        Route::post('/tiendas/{shop}/gastos/{expense}/pagos', [SellerExpenseController::class, 'storePayment'])->name('shops.expenses.payments.store');
+        Route::post('/tiendas/{shop}/gastos/categorias', [SellerExpenseController::class, 'storeCategory'])->name('shops.expenses.categories.store');
     });
     Route::scopeBindings()->middleware(['can:sell,shop', 'menu:cash'])->group(function () {
-        Route::get('/tiendas/{shop}/caja', [\App\Http\Controllers\SellerCashRegisterController::class, 'index'])->name('shops.cash.index');
-        Route::post('/tiendas/{shop}/caja/abrir', [\App\Http\Controllers\SellerCashRegisterController::class, 'open'])->name('shops.cash.open');
-        Route::post('/tiendas/{shop}/caja/{session}/cerrar', [\App\Http\Controllers\SellerCashRegisterController::class, 'close'])->name('shops.cash.close');
-        Route::post('/tiendas/{shop}/caja/{session}/movimientos', [\App\Http\Controllers\SellerCashRegisterController::class, 'movement'])->name('shops.cash.movement');
+        Route::get('/tiendas/{shop}/caja', [SellerCashRegisterController::class, 'index'])->name('shops.cash.index');
+        Route::post('/tiendas/{shop}/caja/abrir', [SellerCashRegisterController::class, 'open'])->name('shops.cash.open');
+        Route::post('/tiendas/{shop}/caja/{session}/cerrar', [SellerCashRegisterController::class, 'close'])->name('shops.cash.close');
+        Route::post('/tiendas/{shop}/caja/{session}/movimientos', [SellerCashRegisterController::class, 'movement'])->name('shops.cash.movement');
     });
     Route::scopeBindings()->middleware(['can:sell,shop', 'menu:inventory'])->group(function () {
-        Route::get('/tiendas/{shop}/inventario/lotes', [\App\Http\Controllers\SellerBusinessController::class, 'lots'])->name('shops.inventory.lots');
+        Route::get('/tiendas/{shop}/inventario/lotes', [SellerBusinessController::class, 'lots'])->name('shops.inventory.lots');
     });
     Route::scopeBindings()->middleware('can:update,shop')->group(function () {
-        Route::get('/tiendas/{shop}/productos/reglas-precio', [\App\Http\Controllers\SellerBusinessController::class, 'pricing'])->name('shops.pricing.index');
-        Route::post('/tiendas/{shop}/productos/{product}/regla-precio', [\App\Http\Controllers\SellerBusinessController::class, 'rule'])->name('shops.pricing.rule');
-        Route::post('/tiendas/{shop}/productos/{product}/aprobar-precio', [\App\Http\Controllers\SellerBusinessController::class, 'approve'])->name('shops.pricing.approve');
+        Route::get('/tiendas/{shop}/productos/reglas-precio', [SellerBusinessController::class, 'pricing'])->name('shops.pricing.index');
+        Route::post('/tiendas/{shop}/productos/{product}/regla-precio', [SellerBusinessController::class, 'rule'])->name('shops.pricing.rule');
+        Route::post('/tiendas/{shop}/productos/{product}/aprobar-precio', [SellerBusinessController::class, 'approve'])->name('shops.pricing.approve');
     });
     Route::scopeBindings()->middleware(['can:sell,shop', 'menu:products'])->group(function () {
         Route::get('/tiendas/{shop}/productos', [SellerProductController::class, 'index'])->name('shops.products.index');

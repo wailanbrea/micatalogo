@@ -10,6 +10,7 @@ use App\Models\ProductInventory;
 use App\Models\Shop;
 use App\Models\ShopSeller;
 use App\Models\User;
+use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -229,13 +230,18 @@ class InventoryService
     /** Restores returned goods at their sale's captured cost, never the latest cost. */
     public function recordReturn(Product $product, int $quantity, ?int $costCents, ?int $userId, ?string $notes = null): InventoryMovement
     {
-        if ($quantity <= 0 || ($costCents !== null && $costCents < 0)) throw new InvalidArgumentException('Devolución no válida.');
+        if ($quantity <= 0 || ($costCents !== null && $costCents < 0)) {
+            throw new InvalidArgumentException('Devolución no válida.');
+        }
+
         return DB::transaction(function () use ($product, $quantity, $costCents, $userId, $notes) {
             $product = Product::withTrashed()->whereKey($product->id)->lockForUpdate()->firstOrFail();
             $inventory = $product->inventory()->lockForUpdate()->firstOrFail();
             $source = $product->isDecant() ? Product::withTrashed()->whereKey($product->inventory_source_product_id)->lockForUpdate()->firstOrFail() : $product;
             $sourceInventory = $source->id === $product->id ? $inventory : $source->inventory()->lockForUpdate()->firstOrFail();
-            if (! $sourceInventory->track_inventory) throw new InvalidArgumentException('El inventario fuente no está controlado.');
+            if (! $sourceInventory->track_inventory) {
+                throw new InvalidArgumentException('El inventario fuente no está controlado.');
+            }
             $fifo = app(FifoCostService::class);
             $fifo->initialize($source, $sourceInventory);
             $canonical = $this->consumedMl($product, $quantity) ?? $quantity;
@@ -245,13 +251,16 @@ class InventoryService
             if ($available !== null) {
                 $sourceInventory->available_ml = $available + $canonical;
                 $sourceInventory->stock_quantity = $this->stockUnitsFromMl($source, $available + $canonical);
-            } else $sourceInventory->stock_quantity += $quantity;
+            } else {
+                $sourceInventory->stock_quantity += $quantity;
+            }
             $sourceInventory->save();
             $inventory->sold_quantity = max(0, $inventory->sold_quantity - $quantity);
             $inventory->save();
             $this->syncAvailability($source, $sourceInventory->stock_quantity);
             $this->syncDependentDecants($source);
             $after = $product->isDecant() ? intdiv((int) $sourceInventory->available_ml, $product->volume_ml) : $sourceInventory->stock_quantity;
+
             return InventoryMovement::create(['product_id' => $product->id, 'type' => 'return', 'quantity' => $quantity,
                 'stock_before' => $before, 'stock_after' => $after, 'unit_price' => null,
                 'unit_cost' => $costCents === null ? null : $costCents / (100 * $quantity), 'total_cost_cents' => $costCents,
@@ -418,7 +427,7 @@ class InventoryService
      * @param  array<int, array{product: Product, quantity: int, unit_price?: float}>  $sales
      * @param  array<int, InventoryMovement>  $movements
      */
-    private function createInvoiceForSales(int $shopId, array $sales, array $movements, ?int $userId, string $channel = 'whatsapp', string $paymentStatus = 'paid', float $discount = 0, float $tax = 0, ?string $paymentMethod = 'cash'): Invoice
+    private function createInvoiceForSales(int $shopId, array $sales, array $movements, ?int $userId, string $channel = 'whatsapp', string $paymentStatus = 'paid', float|string|int $discount = 0, float|string|int $tax = 0, ?string $paymentMethod = 'cash'): Invoice
     {
         $invoice = Invoice::create([
             'shop_id' => $shopId,
@@ -432,18 +441,22 @@ class InventoryService
             'issued_at' => now(),
         ]);
 
-        $total = 0.0;
+        $discountCents = Money::toCents($discount);
+        $taxCents = Money::toCents($tax);
+        $subtotalCents = 0;
+
         foreach ($sales as $index => $sale) {
             $product = $sale['product'];
             $quantity = (int) $sale['quantity'];
-            $unitPrice = (float) ($sale['unit_price'] ?? $product->currentPrice());
-            $lineDiscount = (float) ($sale['discount'] ?? 0);
-            $lineTax = (float) ($sale['tax'] ?? 0);
-            $lineTotal = round($unitPrice * $quantity - $lineDiscount + $lineTax, 2);
-            if ($lineTotal < 0) {
+            $unitPriceCents = Money::toCents($sale['unit_price'] ?? $product->currentPrice());
+            $lineDiscountCents = Money::toCents($sale['discount'] ?? 0);
+            $lineTaxCents = Money::toCents($sale['tax'] ?? 0);
+
+            $lineTotalCents = ($unitPriceCents * $quantity) - $lineDiscountCents + $lineTaxCents;
+            if ($lineTotalCents < 0) {
                 throw new InvalidArgumentException('El descuento supera el importe de la línea.');
             }
-            $total += $lineTotal;
+            $subtotalCents += $lineTotalCents;
 
             $invoice->items()->create([
                 'product_id' => $product->id,
@@ -453,10 +466,10 @@ class InventoryService
                 'volume_ml' => $product->volume_ml,
                 'inventory_source_product_id' => $product->inventory_source_product_id,
                 'quantity' => $quantity,
-                'unit_price' => $unitPrice,
-                'line_total' => $lineTotal,
-                'discount' => $lineDiscount,
-                'tax' => $lineTax,
+                'unit_price' => Money::toDecimal($unitPriceCents),
+                'line_total' => Money::toDecimal($lineTotalCents),
+                'discount' => Money::toDecimal($lineDiscountCents),
+                'tax' => Money::toDecimal($lineTaxCents),
                 'total_cost_cents' => $movements[$index]->total_cost_cents ?? null,
             ]);
 
@@ -465,26 +478,34 @@ class InventoryService
             }
         }
 
-        if ($discount > $total) {
+        if ($discountCents > $subtotalCents) {
             throw new InvalidArgumentException('El descuento supera el subtotal.');
         }
-        $remainingDiscount = (int) round($discount * 100);
-        $remainingSubtotal = (int) round($total * 100);
+
+        $remainingDiscountCents = $discountCents;
+        $remainingSubtotalCents = $subtotalCents;
         foreach ($invoice->items()->orderBy('id')->get() as $item) {
-            $lineCents = (int) round((float) $item->line_total * 100);
-            $allocated = $remainingSubtotal > 0
-                ? ($lineCents === $remainingSubtotal ? $remainingDiscount : intdiv($remainingDiscount * $lineCents, $remainingSubtotal))
+            $lineCents = Money::toCents($item->line_total);
+            $allocated = $remainingSubtotalCents > 0
+                ? ($lineCents === $remainingSubtotalCents ? $remainingDiscountCents : intdiv($remainingDiscountCents * $lineCents, $remainingSubtotalCents))
                 : 0;
             $item->update(['general_discount_cents' => $allocated]);
-            $remainingSubtotal -= $lineCents;
-            $remainingDiscount -= $allocated;
+            $remainingSubtotalCents -= $lineCents;
+            $remainingDiscountCents -= $allocated;
         }
-        $invoice->update(['subtotal' => $total, 'discount' => $discount, 'tax' => $tax, 'total' => round($total - $discount + $tax, 2)]);
 
-        $this->applySalespersonCommission($invoice, $shopId, $userId, (float) $invoice->total);
+        $totalCents = max(0, $subtotalCents - $discountCents + $taxCents);
+        $invoice->update([
+            'subtotal' => Money::toDecimal($subtotalCents),
+            'discount' => Money::toDecimal($discountCents),
+            'tax' => Money::toDecimal($taxCents),
+            'total' => Money::toDecimal($totalCents),
+        ]);
+
+        $this->applySalespersonCommission($invoice, $shopId, $userId, $totalCents);
 
         // For non-POS sales with status paid, record InvoicePayment and link to cash register
-        if ($channel !== 'pos' && $paymentStatus === 'paid' && (float) $invoice->total > 0) {
+        if ($channel !== 'pos' && $paymentStatus === 'paid' && $totalCents > 0) {
             $shop = Shop::find($shopId);
             $user = $userId ? User::find($userId) : $shop?->user;
             if ($shop && $user) {
@@ -492,7 +513,7 @@ class InventoryService
                     $shop,
                     $invoice,
                     $user,
-                    [['method' => $paymentMethod ?? 'cash', 'amount' => (string) $invoice->total]],
+                    [['method' => $paymentMethod ?? 'cash', 'amount' => Money::toDecimal($totalCents)]],
                     0,
                     null
                 );
@@ -502,7 +523,7 @@ class InventoryService
         return $invoice;
     }
 
-    private function applySalespersonCommission(Invoice $invoice, int $shopId, ?int $userId, float $total): void
+    private function applySalespersonCommission(Invoice $invoice, int $shopId, ?int $userId, int $totalCents): void
     {
         if (! $userId) {
             return;
@@ -518,15 +539,19 @@ class InventoryService
             return;
         }
 
-        $amount = $seller->commission_type === 'percentage'
-            ? round($total * ((float) $seller->commission_value / 100), 2)
-            : (float) $seller->commission_value;
+        if ($seller->commission_type === 'percentage') {
+            // Represent percentage as basis points: 7.5% = 750 bps
+            $bps = (int) round(((float) $seller->commission_value) * 100);
+            $commissionCents = (int) round(($totalCents * $bps) / 10000);
+        } else {
+            $commissionCents = Money::toCents($seller->commission_value);
+        }
 
         $invoice->update([
             'salesperson_id' => $userId,
             'commission_type' => $seller->commission_type,
             'commission_value' => $seller->commission_value,
-            'commission_amount' => $amount,
+            'commission_amount' => Money::toDecimal($commissionCents),
         ]);
     }
 

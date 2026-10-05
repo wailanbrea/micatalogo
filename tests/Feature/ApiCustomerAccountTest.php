@@ -35,7 +35,7 @@ test('a seller creates an idempotent customer scoped to their shop', function ()
         ->assertCreated()
         ->assertExactJson($first->json());
 
-expect(Customer::query()->count())->toBe(1);
+    expect(Customer::query()->count())->toBe(1);
 });
 
 test('a customer created with credit profile keeps identity and contact fields', function () {

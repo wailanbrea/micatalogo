@@ -80,6 +80,7 @@ class ExpenseController extends Controller
             $expense = $service->recordExpense($shop, $request->user(), $validated);
         } catch (\InvalidArgumentException $e) {
             $status = ($e->getCode() >= 400 && $e->getCode() < 600) ? $e->getCode() : 422;
+
             return response()->json(['message' => $e->getMessage()], $status);
         }
 
@@ -122,6 +123,7 @@ class ExpenseController extends Controller
             $payment = $service->recordExpensePayment($shop, $expense, $request->user(), $validated);
         } catch (\InvalidArgumentException $e) {
             $status = ($e->getCode() >= 400 && $e->getCode() < 600) ? $e->getCode() : 422;
+
             return response()->json(['message' => $e->getMessage()], $status);
         }
 

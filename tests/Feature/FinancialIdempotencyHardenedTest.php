@@ -1,0 +1,216 @@
+<?php
+
+use App\Enums\UserPlan;
+use App\Models\Expense;
+use App\Models\ExpenseCategory;
+use App\Models\Shop;
+use App\Models\ShopSeller;
+use App\Models\User;
+use App\Services\CashRegisterService;
+use App\Services\ExpenseService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
+
+uses(RefreshDatabase::class);
+
+function createIdempotencyHardenedFixture(): array
+{
+    $proOwner = User::factory()->create(['plan' => UserPlan::Pro]);
+    $shop = Shop::factory()->create(['user_id' => $proOwner->id]);
+
+    $sellerUser = User::factory()->create(['plan' => UserPlan::Free]);
+    ShopSeller::create([
+        'shop_id' => $shop->id,
+        'user_id' => $sellerUser->id,
+        'role' => 'seller',
+        'commission_type' => 'percentage',
+        'commission_value' => 0,
+        'is_active' => true,
+    ]);
+
+    $category = ExpenseCategory::create([
+        'shop_id' => $shop->id,
+        'name' => 'Suministros',
+        'is_active' => true,
+    ]);
+
+    return [$proOwner, $sellerUser, $shop, $category];
+}
+
+test('expense and expense payment client_operation_uuid are valid standard UUIDs without invalid suffixes', function () {
+    [$proOwner, $sellerUser, $shop, $category] = createIdempotencyHardenedFixture();
+    $expenseService = app(ExpenseService::class);
+
+    $expenseUuid = (string) Str::uuid();
+    $expense = $expenseService->recordExpense($shop, $proOwner, [
+        'expense_category_id' => $category->id,
+        'description' => 'Compra de papel térmico',
+        'amount' => '1000.00',
+        'paid_amount' => '400.00',
+        'payment_status' => 'partial',
+        'payment_method' => 'cash',
+        'client_operation_uuid' => $expenseUuid,
+    ]);
+
+    expect(Str::isUuid($expense->client_operation_uuid))->toBeTrue()
+        ->and($expense->client_operation_uuid)->toBe($expenseUuid);
+
+    // Initial partial payment created with expense
+    $initialPayment = $expense->payments()->first();
+    expect($initialPayment)->not->toBeNull()
+        ->and(Str::isUuid($initialPayment->client_operation_uuid))->toBeTrue()
+        ->and($initialPayment->client_operation_uuid)->not->toContain('-pay');
+
+    // Subsequent partial payment with its own client UUID
+    $subsequentUuid = (string) Str::uuid();
+    $subsequentPayment = $expenseService->recordExpensePayment($shop, $expense, $proOwner, [
+        'amount' => '300.00',
+        'payment_method' => 'cash',
+        'client_operation_uuid' => $subsequentUuid,
+    ]);
+
+    expect(Str::isUuid($subsequentPayment->client_operation_uuid))->toBeTrue()
+        ->and($subsequentPayment->client_operation_uuid)->toBe($subsequentUuid)
+        ->and($subsequentPayment->client_operation_uuid)->not->toContain('-pay');
+});
+
+test('expense payment replay with same UUID is idempotent and returns original payment', function () {
+    [$proOwner, $sellerUser, $shop, $category] = createIdempotencyHardenedFixture();
+    $expenseService = app(ExpenseService::class);
+
+    $expense = $expenseService->recordExpense($shop, $proOwner, [
+        'expense_category_id' => $category->id,
+        'description' => 'Servicio de Internet',
+        'amount' => '2000.00',
+        'paid_amount' => '0.00',
+        'payment_status' => 'pending',
+        'payment_method' => 'bank_transfer',
+    ]);
+
+    $paymentUuid = (string) Str::uuid();
+    $payload = [
+        'amount' => '500.00',
+        'payment_method' => 'bank_transfer',
+        'client_operation_uuid' => $paymentUuid,
+    ];
+    $payloadHash = hash('sha256', json_encode($payload, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION));
+
+    // First attempt
+    $payment1 = $expenseService->recordExpensePayment($shop, $expense, $proOwner, $payload, $paymentUuid, $payloadHash);
+
+    // Replay attempt with same payload and hash
+    $payment2 = $expenseService->recordExpensePayment($shop, $expense, $proOwner, $payload, $paymentUuid, $payloadHash);
+
+    expect($payment1->id)->toBe($payment2->id)
+        ->and($expense->fresh()->payments()->count())->toBe(1)
+        ->and((float) $expense->fresh()->amount_paid)->toBe(500.00);
+});
+
+test('expense payment with same UUID but conflicting payload throws 409 Conflict', function () {
+    [$proOwner, $sellerUser, $shop, $category] = createIdempotencyHardenedFixture();
+    $expenseService = app(ExpenseService::class);
+
+    $expense = $expenseService->recordExpense($shop, $proOwner, [
+        'expense_category_id' => $category->id,
+        'description' => 'Electricidad',
+        'amount' => '3000.00',
+        'paid_amount' => '0.00',
+        'payment_status' => 'pending',
+        'payment_method' => 'bank_transfer',
+    ]);
+
+    $paymentUuid = (string) Str::uuid();
+    $payloadA = [
+        'amount' => '1000.00',
+        'payment_method' => 'bank_transfer',
+        'client_operation_uuid' => $paymentUuid,
+    ];
+    $hashA = hash('sha256', json_encode($payloadA, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION));
+
+    $expenseService->recordExpensePayment($shop, $expense, $proOwner, $payloadA, $paymentUuid, $hashA);
+
+    // Conflicting replay with different amount
+    $payloadB = [
+        'amount' => '1500.00',
+        'payment_method' => 'bank_transfer',
+        'client_operation_uuid' => $paymentUuid,
+    ];
+    $hashB = hash('sha256', json_encode($payloadB, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION));
+
+    expect(fn () => $expenseService->recordExpensePayment($shop, $expense, $proOwner, $payloadB, $paymentUuid, $hashB))
+        ->toThrow(InvalidArgumentException::class);
+});
+
+test('closing cash register session is idempotent upon exact replay but rejects different counted amount with 409', function () {
+    [$proOwner, $sellerUser, $shop] = createIdempotencyHardenedFixture();
+    $cashService = app(CashRegisterService::class);
+
+    $session = $cashService->openSession($shop, $proOwner, '1000.00');
+
+    $closeUuid = (string) Str::uuid();
+    $closePayloadA = [
+        'counted_amount' => '1000.00',
+        'notes' => 'Cierre cuadre perfecto',
+        'client_operation_uuid' => $closeUuid,
+    ];
+    $hashA = hash('sha256', json_encode($closePayloadA, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION));
+
+    // 1. Close session
+    $closedSession = $cashService->closeSession($session, $proOwner, '1000.00', 'Cierre cuadre perfecto', $closeUuid, $hashA);
+    expect($closedSession->status)->toBe('closed');
+
+    // 2. Replay close with same counted amount and hash -> returns closed session idempotently
+    $replaySession = $cashService->closeSession($closedSession, $proOwner, '1000.00', 'Cierre cuadre perfecto', $closeUuid, $hashA);
+    expect($replaySession->id)->toBe($closedSession->id);
+
+    // 3. Attempt to close with DIFFERENT counted amount -> throws 409 Conflict
+    $closePayloadB = [
+        'counted_amount' => '1200.00',
+        'notes' => 'Intento diferente',
+        'client_operation_uuid' => $closeUuid,
+    ];
+    $hashB = hash('sha256', json_encode($closePayloadB, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION));
+
+    expect(fn () => $cashService->closeSession($closedSession, $proOwner, '1200.00', 'Intento diferente', $closeUuid, $hashB))
+        ->toThrow(InvalidArgumentException::class);
+});
+
+test('seller without shop owner or membership permissions cannot view business financial dashboard', function () {
+    [$proOwner, $sellerUser, $shop] = createIdempotencyHardenedFixture();
+
+    // Regular seller should be blocked by can:viewFinance policy
+    $this->actingAs($sellerUser)
+        ->get(route('seller.shops.business', $shop))
+        ->assertForbidden();
+
+    // Owner can access financial dashboard
+    $this->actingAs($proOwner)
+        ->get(route('seller.shops.business', $shop))
+        ->assertOk();
+});
+
+test('shop on free plan cannot access expense module while pro plan can', function () {
+    $freeOwner = User::factory()->create(['plan' => UserPlan::Free]);
+    $freeShop = Shop::factory()->create(['user_id' => $freeOwner->id]);
+
+    $proOwner = User::factory()->create(['plan' => UserPlan::Pro]);
+    $proShop = Shop::factory()->create(['user_id' => $proOwner->id]);
+
+    // Free plan accessing expenses web index is redirected with validation error on plan
+    $this->actingAs($freeOwner)
+        ->get(route('seller.shops.expenses.index', $freeShop))
+        ->assertRedirect()
+        ->assertSessionHasErrors('plan');
+
+    // Free plan accessing expenses api index returns 422 with validation error
+    $freeToken = $freeOwner->createToken('test', ['*'])->plainTextToken;
+    $this->withToken($freeToken)
+        ->getJson("/api/v1/shops/{$freeShop->public_id}/expenses")
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['plan']);
+
+    // Pro plan accessing expenses web index is allowed
+    $this->actingAs($proOwner)
+        ->get(route('seller.shops.expenses.index', $proShop))
+        ->assertOk();
+});

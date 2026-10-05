@@ -82,9 +82,15 @@
   - Strict user-to-session isolation. A cashier/seller can only access and register movements on their own active session.
   - Unique composite database constraint `[shop_id, user_id, is_open_flag]` prevents concurrent open sessions by the same user.
   - Only the shop owner or users with explicit administrative permissions can manage or close sessions belonging to other sellers.
-- **Per-Invoice Debt Aging**:
+- **Per-Invoice Debt Aging & FIFO Amortization**:
   - Aging buckets (0-30, 31-60, 61-90, 90+ days) are determined per unpaid invoice based on `due_date` (or `issued_at`).
-  - Partial payments reduce invoice debt deterministically without borrowing dates from customer's global account.
-- **Idempotency**:
-  - Operations across Web and API (`expenses`, `expense_payments`, `invoice_payments`, `cash_movements`, `cash_register_sessions`) accept `client_operation_uuid` and payload SHA-256 hash to guarantee safe replay and prevent duplicate ledger entries.
+  - Cobros a deudas de clientes aplican amortización FIFO estricta hacia las facturas impagas (`due_date ASC, issued_at ASC`), vinculando `invoice_payments.customer_account_entry_id` y actualizando el status a `paid` o `partial`.
+  - Reconciliación contable auditada: la suma de deudas por facturas más saldos no asignados coincide exactamente con el saldo total por cobrar del cliente ($\text{reconciliation\_difference} = 0$).
+  - Prevención de doble contabilización: los cobros de deudas no se duplican en tesorería al filtrarse `invoice_payments` con `whereNull('customer_account_entry_id')` para ventas directas.
+- **Financial Authorization & Plan Enforcement**:
+  - El panel financiero de negocio (`/tiendas/{shop}/negocio`) requiere autorización `can:viewFinance,shop` (reservado al dueño de la tienda y administradores; denegado a vendedores ordinarios con 403).
+  - El módulo de gastos (`/tiendas/{shop}/gastos`) está protegido por el middleware de menú `menu:expenses` y validado por cuota de plan Pro (`PlanLimitsService::assertFeature($shop->user, 'expenses')`).
+- **Idempotency & Hardened Conflict Detection**:
+  - Operaciones financieras (`expenses`, `expense_payments`, `invoice_payments`, `cash_movements`, `cash_register_sessions`) usan UUIDs estándar v4 y hash SHA-256 con restricción única `UNIQUE(shop_id, client_operation_uuid)`.
+  - Reintentos con payload dispar o montos de arqueo de caja dispares arrojan error de conflicto `HTTP 409 Conflict`.
 

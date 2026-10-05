@@ -9,9 +9,7 @@ use App\Models\AttributeDefinition;
 use App\Models\GlobalCategory;
 use App\Models\InventoryImportSession;
 use App\Models\Product;
-use App\Models\ProductInventory;
 use App\Models\Shop;
-use App\Models\ShopCategory;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -320,6 +318,7 @@ class InventoryImportService
 
                 if ($action === 'skip') {
                     $skippedCount++;
+
                     continue;
                 }
 
@@ -338,6 +337,7 @@ class InventoryImportService
                         ]);
                         $skippedCount++;
                         $errorCount++;
+
                         continue;
                     }
 
@@ -390,6 +390,7 @@ class InventoryImportService
                     if (! $product) {
                         // Could not locate product for update, skip
                         $skippedCount++;
+
                         continue;
                     }
 
@@ -1053,6 +1054,7 @@ class InventoryImportService
             $nameKey = Str::lower($name);
             if (isset($seen[$nameKey])) {
                 $warnings[] = "Atributo '{$name}' duplicado en la misma fila (se conserva el primer valor).";
+
                 continue;
             }
             $seen[$nameKey] = true;
