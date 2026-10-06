@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\ProductAvailabilityStatus;
+use App\Models\Customer;
 use App\Models\InventoryMovement;
 use App\Models\Invoice;
 use App\Models\Product;
@@ -139,9 +140,9 @@ class InventoryService
      * @param  array<int, array{product: Product, quantity: int, unit_price?: float}>  $sales
      * @return array<int, InventoryMovement>
      */
-    public function recordCartSales(array $sales, ?int $userId = null, string $channel = 'whatsapp', string $paymentStatus = 'paid', float $discount = 0, float $tax = 0, ?string $paymentMethod = 'cash'): array
+    public function recordCartSales(array $sales, ?int $userId = null, string $channel = 'whatsapp', string $paymentStatus = 'paid', float $discount = 0, float $tax = 0, ?string $paymentMethod = 'cash', ?Customer $customer = null, string|float|int $creditAmount = 0, ?string $paymentReference = null): array
     {
-        return DB::transaction(function () use ($sales, $userId, $channel, $paymentStatus, $discount, $tax, $paymentMethod): array {
+        return DB::transaction(function () use ($sales, $userId, $channel, $paymentStatus, $discount, $tax, $paymentMethod, $customer, $creditAmount, $paymentReference): array {
             if ($sales === [] || $discount < 0 || $tax < 0) {
                 throw new InvalidArgumentException('La venta o sus importes no son válidos.');
             }
@@ -155,7 +156,7 @@ class InventoryService
                 $paymentMethod ?? 'cash',
             ))->all();
 
-            $this->createInvoiceForSales($sales[0]['product']->shop_id, $sales, $movements, $userId, $channel, $paymentStatus, $discount, $tax, $paymentMethod ?? 'cash');
+            $this->createInvoiceForSales($sales[0]['product']->shop_id, $sales, $movements, $userId, $channel, $paymentStatus, $discount, $tax, $paymentMethod ?? 'cash', $customer, $creditAmount, $paymentReference);
 
             return $movements;
         });
@@ -427,7 +428,7 @@ class InventoryService
      * @param  array<int, array{product: Product, quantity: int, unit_price?: float}>  $sales
      * @param  array<int, InventoryMovement>  $movements
      */
-    private function createInvoiceForSales(int $shopId, array $sales, array $movements, ?int $userId, string $channel = 'whatsapp', string $paymentStatus = 'paid', float|string|int $discount = 0, float|string|int $tax = 0, ?string $paymentMethod = 'cash'): Invoice
+    private function createInvoiceForSales(int $shopId, array $sales, array $movements, ?int $userId, string $channel = 'whatsapp', string $paymentStatus = 'paid', float|string|int $discount = 0, float|string|int $tax = 0, ?string $paymentMethod = 'cash', ?Customer $customer = null, string|float|int $creditAmount = 0, ?string $paymentReference = null): Invoice
     {
         $invoice = Invoice::create([
             'shop_id' => $shopId,
@@ -504,18 +505,24 @@ class InventoryService
 
         $this->applySalespersonCommission($invoice, $shopId, $userId, $totalCents);
 
-        // For non-POS sales with status paid, record InvoicePayment and link to cash register
-        if ($channel !== 'pos' && $paymentStatus === 'paid' && $totalCents > 0) {
+        // For non-POS sales, persist the real payment split and any customer credit atomically.
+        $creditCents = Money::toCents($creditAmount);
+        if ($channel !== 'pos' && $totalCents > 0 && ($paymentStatus === 'paid' || $creditCents > 0 || $customer !== null || $paymentReference !== null)) {
             $shop = Shop::find($shopId);
             $user = $userId ? User::find($userId) : $shop?->user;
             if ($shop && $user) {
+                $paidCents = max(0, $totalCents - $creditCents);
                 app(PaymentService::class)->processInvoicePayments(
                     $shop,
                     $invoice,
                     $user,
-                    [['method' => $paymentMethod ?? 'cash', 'amount' => Money::toDecimal($totalCents)]],
-                    0,
-                    null
+                    $paidCents > 0 ? [[
+                        'method' => $paymentMethod ?? 'cash',
+                        'amount' => Money::toDecimal($paidCents),
+                        'reference' => $paymentReference,
+                    ]] : [],
+                    Money::toDecimal($creditCents),
+                    $customer
                 );
             }
         }

@@ -6,9 +6,11 @@ use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductModerationStatus;
 use App\Enums\UserPlan;
 use App\Models\AttributeDefinition;
+use App\Models\Invoice;
+use App\Models\Order;
 use App\Models\Product;
-use App\Models\ProductInventory;
 use App\Models\ProductAttributeValue;
+use App\Models\ProductInventory;
 use App\Models\Shop;
 use App\Models\User;
 use App\Services\CashRegisterService;
@@ -41,7 +43,12 @@ class PublicOrderAndAttributesTest extends TestCase
 
         $response->assertCreated()
             ->assertJsonPath('order_number', fn (string $value) => str_starts_with($value, 'MC-'))
+            ->assertJsonPath('confirmation_url', fn (string $value) => str_contains($value, 'signature='))
             ->assertJsonPath('whatsapp_url', fn (string $value) => str_contains($value, 'wa.me/'));
+
+        $message = urldecode((string) parse_url($response->json('whatsapp_url'), PHP_URL_QUERY));
+        expect($message)->toContain('Confirmar pedido y registrar pago:')
+            ->and($message)->toContain($response->json('order_number'));
 
         $this->assertDatabaseHas('orders', [
             'shop_id' => $shop->id,
@@ -87,13 +94,13 @@ class PublicOrderAndAttributesTest extends TestCase
         ])->assertCreated()
             ->assertJsonPath('whatsapp_url', fn (string $url) => str_contains($url, 'wa.me/18298144525'));
 
-        $order = \App\Models\Order::query()->where('order_number', $created->json('order_number'))->firstOrFail();
+        $order = Order::query()->where('order_number', $created->json('order_number'))->firstOrFail();
 
         $this->actingAs($owner)
             ->post(route('seller.shops.orders.confirm', [$shop, $order]))
             ->assertRedirect();
 
-        $invoice = $order->fresh()->invoice_id ? \App\Models\Invoice::findOrFail($order->fresh()->invoice_id) : null;
+        $invoice = $order->fresh()->invoice_id ? Invoice::findOrFail($order->fresh()->invoice_id) : null;
         expect($order->fresh()->status)->toBe('confirmed')
             ->and($invoice)->not->toBeNull()
             ->and((float) $invoice->total)->toBe(800.0)
@@ -168,7 +175,7 @@ class PublicOrderAndAttributesTest extends TestCase
             'items' => [['id' => $decant->public_id, 'quantity' => 2]],
         ])->assertCreated();
 
-        $order = \App\Models\Order::query()
+        $order = Order::query()
             ->where('order_number', $created->json('order_number'))
             ->with('items')
             ->firstOrFail();

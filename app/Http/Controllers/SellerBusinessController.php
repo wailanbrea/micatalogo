@@ -10,8 +10,11 @@ use App\Models\Shop;
 use App\Services\BusinessDashboardService;
 use App\Services\InventoryService;
 use App\Services\ProductPricingService;
+use App\Support\Money;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class SellerBusinessController extends Controller
@@ -140,10 +143,53 @@ class SellerBusinessController extends Controller
     public function confirm(Request $request, Shop $shop, Order $order, InventoryService $inventory)
     {
         abort_unless($order->shop_id === $shop->id, 404);
-        DB::transaction(function () use ($request, $order, $shop, $inventory) {
+        $data = $request->validate([
+            'payment_kind' => ['nullable', Rule::in(['paid', 'cash', 'credit', 'mixed'])],
+            'payment_method' => ['nullable', Rule::in(array_keys(config('catalog.payment_methods', [])))],
+            'customer_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('customers', 'id')->where(fn ($query) => $query->where('shop_id', $shop->id)->where('is_active', true)),
+            ],
+            'credit_amount' => ['nullable', 'numeric', 'min:0'],
+            'reference' => ['nullable', 'string', 'max:120'],
+        ]);
+
+        DB::transaction(function () use ($request, $order, $shop, $inventory, $data) {
             $order = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
             if ($order->invoice_id !== null) {
                 return;
+            }
+
+            $paymentKind = $data['payment_kind'] ?? 'paid';
+            $paymentKind = $paymentKind === 'cash' ? 'paid' : $paymentKind;
+            $totalCents = Money::toCents($order->total);
+            $creditCents = match ($paymentKind) {
+                'credit' => $totalCents,
+                'mixed' => Money::toCents($data['credit_amount'] ?? 0),
+                default => 0,
+            };
+
+            if ($paymentKind === 'mixed' && ($creditCents <= 0 || $creditCents >= $totalCents)) {
+                throw ValidationException::withMessages(['credit_amount' => 'En un pago mixto, el crédito debe ser menor que el total y mayor que cero.']);
+            }
+            if ($creditCents > $totalCents) {
+                throw ValidationException::withMessages(['credit_amount' => 'El crédito no puede superar el total del pedido.']);
+            }
+
+            $customer = null;
+            if ($creditCents > 0) {
+                if (empty($data['customer_id'])) {
+                    throw ValidationException::withMessages(['customer_id' => 'Selecciona el cliente que asumirá el crédito.']);
+                }
+                $customer = $shop->customers()->whereKey($data['customer_id'])->where('is_active', true)->firstOrFail();
+            } elseif (! empty($data['customer_id'])) {
+                $customer = $shop->customers()->whereKey($data['customer_id'])->where('is_active', true)->firstOrFail();
+            }
+
+            $paymentMethod = $data['payment_method'] ?? 'cash';
+            if ($paymentMethod === 'credit') {
+                $paymentMethod = 'cash';
             }
             $lines = $order->items()->get()->map(function ($item) use ($shop) {
                 $product = $shop->products()->find($item->product_id);
@@ -153,10 +199,44 @@ class SellerBusinessController extends Controller
 
                 return ['product' => $product, 'quantity' => $item->quantity, 'unit_price' => (float) $item->unit_price];
             })->all();
-            $movements = $inventory->recordCartSales($lines, $request->user()->id);
+            $initialStatus = $creditCents === 0 ? 'paid' : ($totalCents === $creditCents ? 'pending' : 'partial');
+            $movements = $inventory->recordCartSales(
+                $lines,
+                $request->user()->id,
+                'whatsapp',
+                $initialStatus,
+                0,
+                0,
+                $paymentMethod,
+                $customer,
+                Money::toDecimal($creditCents),
+                $data['reference'] ?? null,
+            );
             $order->update(['status' => 'confirmed', 'invoice_id' => $movements[0]->invoice_id]);
         });
 
         return back()->with('status', 'Pedido confirmado como venta.');
+    }
+
+    public function confirmForm(Request $request, Shop $shop, Order $order)
+    {
+        abort_unless($order->shop_id === $shop->id, 404);
+
+        $order->load(['items', 'invoice.customer', 'invoice.payments']);
+        $customers = $shop->customers()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'phone', 'balance', 'credit_limit']);
+        $invoiceUrl = $order->invoice
+            ? URL::temporarySignedRoute('track.wa.shop', now()->addDays(7), [$shop, 'invoice' => $order->invoice->id])
+            : null;
+
+        return view('seller.orders.confirm', [
+            'shop' => $shop,
+            'order' => $order,
+            'customers' => $customers,
+            'paymentMethods' => config('catalog.payment_methods', []),
+            'invoiceUrl' => $invoiceUrl,
+        ]);
     }
 }

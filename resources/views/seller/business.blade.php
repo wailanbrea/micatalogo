@@ -885,6 +885,13 @@
                                         </p>
                                     </div>
 
+                                    <a
+                                        href="{{ \Illuminate\Support\Facades\URL::temporarySignedRoute('seller.shops.orders.confirm.show', now()->addDays(7), [$shop, $order]) }}"
+                                        class="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3.5 py-2 text-xs font-bold text-blue-700 transition hover:bg-blue-100"
+                                    >
+                                        Revisar pedido
+                                    </a>
+
                                     <form method="POST" action="{{ route('seller.shops.orders.confirm', [$shop, $order]) }}">
                                         @csrf
                                         <button

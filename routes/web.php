@@ -26,8 +26,8 @@ use App\Http\Controllers\SellerInventoryController;
 use App\Http\Controllers\SellerInventoryImportController;
 use App\Http\Controllers\SellerInvitationController;
 use App\Http\Controllers\SellerManagementController;
-use App\Http\Controllers\SellerProductController;
 use App\Http\Controllers\SellerPosController;
+use App\Http\Controllers\SellerProductController;
 use App\Http\Controllers\SellerShopController;
 use App\Http\Controllers\SellerShopMetricController;
 use App\Http\Controllers\ShopCategoryController;
@@ -86,6 +86,9 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
         Route::get('/tiendas/{shop}/negocio', [SellerBusinessController::class, 'index'])
             ->middleware('can:viewFinance,shop')
             ->name('shops.business');
+        Route::get('/tiendas/{shop}/pedidos/{order}/confirmar', [SellerBusinessController::class, 'confirmForm'])
+            ->middleware('signed')
+            ->name('shops.orders.confirm.show');
         Route::post('/tiendas/{shop}/pedidos/{order}/confirmar', [SellerBusinessController::class, 'confirm'])->name('shops.orders.confirm');
         Route::get('/tiendas/{shop}/pos', [SellerPosController::class, 'index'])->name('shops.pos');
         Route::post('/tiendas/{shop}/pos', [SellerPosController::class, 'store'])->name('shops.pos.store');

@@ -13,6 +13,7 @@ use App\Services\MetricRecordingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
 class PublicOrderController extends Controller
@@ -103,12 +104,18 @@ class PublicOrderController extends Controller
         });
 
         $metricService->recordShopOrderSent($shop);
-        $message = $this->whatsappMessage($shop, $order);
+        $confirmationUrl = URL::temporarySignedRoute(
+            'seller.shops.orders.confirm.show',
+            now()->addDays(7),
+            [$shop, $order]
+        );
+        $message = $this->whatsappMessage($shop, $order, $confirmationUrl);
         $whatsappUrl = 'https://wa.me/'.$shop->whatsapp_country_code.$shop->whatsapp_number.'?text='.rawurlencode($message);
 
         if ($request->expectsJson()) {
             return response()->json([
                 'order_number' => $order->order_number,
+                'confirmation_url' => $confirmationUrl,
                 'whatsapp_url' => $whatsappUrl,
             ], 201);
         }
@@ -152,7 +159,7 @@ class PublicOrderController extends Controller
         return $number;
     }
 
-    private function whatsappMessage(Shop $shop, Order $order): string
+    private function whatsappMessage(Shop $shop, Order $order, string $confirmationUrl): string
     {
         $message = "Hola {$shop->name}, quiero realizar este pedido desde MiCatalogo:\n\n";
         $message .= "Pedido: #{$order->order_number}\n";
@@ -162,6 +169,7 @@ class PublicOrderController extends Controller
         }
 
         $message .= "\nTotal: RD$ ".number_format((float) $order->total, 0, ',', '.');
+        $message .= "\n\nConfirmar pedido y registrar pago:\n{$confirmationUrl}";
 
         if ($order->customer_name) {
             $message .= "\nCliente: {$order->customer_name}";

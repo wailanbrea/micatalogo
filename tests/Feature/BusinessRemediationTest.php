@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\UserPlan;
+use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\ProductInventory;
@@ -8,6 +9,7 @@ use App\Models\Shop;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
@@ -45,6 +47,70 @@ test('dashboard renders actual costs and order confirmation is idempotent', func
     $this->actingAs($user)->post($url)->assertRedirect();
     expect(Invoice::count())->toBe(1)->and($product->fresh()->inventory->stock_quantity)->toBe(4);
     $this->actingAs($user)->get(route('seller.shops.business', $shop))->assertOk()->assertSee('Ventas y ganancia por producto')->assertSee($product->name);
+});
+
+test('whatsapp order opens a signed payment screen and records a credit invoice', function () {
+    [$user, $shop, $product] = businessFixture();
+    $customer = Customer::create([
+        'shop_id' => $shop->id,
+        'name' => 'Cliente WhatsApp',
+        'credit_limit' => 1000,
+        'balance' => 0,
+        'is_active' => true,
+    ]);
+    $order = $shop->orders()->create([
+        'order_number' => 'MC-CREDIT',
+        'currency' => 'DOP',
+        'subtotal' => 300,
+        'total' => 300,
+        'status' => 'sent_to_whatsapp',
+        'customer_name' => 'Cliente WhatsApp',
+    ]);
+    $order->items()->create(['product_id' => $product->id, 'product_name' => $product->name, 'quantity' => 1, 'unit_price' => 300, 'line_total' => 300]);
+
+    $signedUrl = URL::temporarySignedRoute('seller.shops.orders.confirm.show', now()->addHour(), [$shop, $order]);
+    $this->actingAs($user)->get($signedUrl)
+        ->assertOk()
+        ->assertSee('Registrar cobro')
+        ->assertSee($order->order_number);
+
+    $this->actingAs($user)->post(route('seller.shops.orders.confirm', [$shop, $order]), [
+        'payment_kind' => 'credit',
+        'customer_id' => $customer->id,
+    ])->assertRedirect();
+
+    $invoice = Invoice::findOrFail($order->fresh()->invoice_id);
+    $this->actingAs($user)->get($signedUrl)
+        ->assertOk()
+        ->assertSee('Ver / descargar factura PDF')
+        ->assertSee($invoice->invoice_number);
+    expect($invoice->status)->toBe('pending')
+        ->and($invoice->customer_id)->toBe($customer->id)
+        ->and($invoice->payments()->count())->toBe(0)
+        ->and((float) $customer->fresh()->balance)->toBe(300.0)
+        ->and($product->fresh()->inventory->stock_quantity)->toBe(4);
+});
+
+test('whatsapp order confirmation records a mixed payment method and exact credit', function () {
+    [$user, $shop, $product] = businessFixture();
+    $customer = Customer::create(['shop_id' => $shop->id, 'name' => 'Cliente Mixto', 'credit_limit' => 1000, 'is_active' => true]);
+    $order = $shop->orders()->create(['order_number' => 'MC-MIXED', 'currency' => 'DOP', 'subtotal' => 300, 'total' => 300, 'status' => 'sent_to_whatsapp']);
+    $order->items()->create(['product_id' => $product->id, 'product_name' => $product->name, 'quantity' => 1, 'unit_price' => 300, 'line_total' => 300]);
+
+    $this->actingAs($user)->post(route('seller.shops.orders.confirm', [$shop, $order]), [
+        'payment_kind' => 'mixed',
+        'payment_method' => 'card',
+        'credit_amount' => 100,
+        'customer_id' => $customer->id,
+        'reference' => 'POS-4821',
+    ])->assertRedirect();
+
+    $invoice = Invoice::findOrFail($order->fresh()->invoice_id);
+    expect($invoice->status)->toBe('partial')
+        ->and((float) $invoice->payments()->sum('amount'))->toBe(200.0)
+        ->and($invoice->payments()->first()->payment_method)->toBe('card')
+        ->and($invoice->payments()->first()->reference)->toBe('POS-4821')
+        ->and((float) $customer->fresh()->balance)->toBe(100.0);
 });
 
 test('price proposal requires owner Pro and rejects stale approval', function () {
