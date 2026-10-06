@@ -3,6 +3,7 @@
 use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\ProductInventory;
 use App\Models\Shop;
 use App\Models\User;
 use App\Services\CashRegisterService;
@@ -98,6 +99,39 @@ test('day close exposes the existing cash session reconciliation flow', function
         ->assertSee('Sesión de caja activa')
         ->assertSee('Efectivo contado')
         ->assertSee(route('seller.shops.cash.close', [$shop, $session->public_id]));
+});
+
+test('decants expose the guided presentation and shared inventory actions', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->for($user)->create();
+    $source = Product::factory()->for($shop)->create([
+        'name' => 'Botella fuente',
+        'sale_unit' => 'bottle',
+        'volume_ml' => 100,
+    ]);
+    ProductInventory::create([
+        'product_id' => $source->id,
+        'track_inventory' => true,
+        'stock_quantity' => 1,
+        'available_ml' => 100,
+        'cost_price' => 1000,
+        'sold_quantity' => 0,
+        'low_stock_threshold' => 1,
+    ]);
+    Product::factory()->for($shop)->create([
+        'name' => 'Decant 5 ml',
+        'sale_unit' => 'decant',
+        'volume_ml' => 5,
+        'inventory_source_product_id' => $source->id,
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('seller.shops.feature', [$shop, 'feature' => 'decants']))
+        ->assertOk()
+        ->assertSee('Crear presentación decant')
+        ->assertSee('Ver inventario compartido')
+        ->assertSee('100 ml de origen')
+        ->assertSee('5 ml · 0 listos');
 });
 
 test('feature modules remain tenant isolated', function () {

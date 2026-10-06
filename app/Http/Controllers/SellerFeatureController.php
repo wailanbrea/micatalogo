@@ -851,11 +851,20 @@ class SellerFeatureController extends Controller
             ],
             'rows' => $products->map(fn (Product $product) => [
                 'primary' => $product->name,
-                'secondary' => $product->sourceProduct?->name ?: 'Botella de origen no configurada',
-                'value' => $product->volume_ml ? $product->volume_ml.' ml' : 'Volumen pendiente',
+                'secondary' => $product->sourceProduct?->name
+                    ? $product->sourceProduct->name.' · '.($product->sourceProduct->inventory?->available_ml ?? 0).' ml de origen'
+                    : 'Botella de origen no configurada',
+                'value' => $product->volume_ml
+                    ? $product->volume_ml.' ml · '.number_format((int) ($product->inventory?->stock_quantity ?? 0)).' listos'
+                    : 'Volumen pendiente',
                 'status' => $product->sourceProduct ? 'Vinculado' : 'Revisar',
             ])->all(),
             'note' => 'Los decants comparten el inventario de su producto de origen; no se duplica la valoración de la botella.',
+            'actions' => [
+                ['label' => 'Crear presentación decant', 'url' => route('seller.shops.products.create', $shop).'?sale_unit=decant', 'tone' => 'primary'],
+                ['label' => 'Ver inventario compartido', 'url' => route('seller.shops.inventory.index', $shop), 'tone' => 'secondary'],
+                ['label' => 'Ver lotes y costos FIFO', 'url' => route('seller.shops.inventory.lots', $shop), 'tone' => 'secondary'],
+            ],
         ];
     }
 
