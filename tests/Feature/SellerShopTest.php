@@ -250,7 +250,9 @@ test('seller dashboard renders unified persistent navigation and account dropdow
         ->assertSee('Vendedores')
         ->assertDontSee('Usuarios del sistema')
         ->assertDontSee('Reportes')
-        ->assertSee(route('seller.shops.inventory.index', $shop));
+        ->assertSee(route('seller.shops.inventory.index', $shop))
+        ->assertSee('data-navigation-progress')
+        ->assertSee('wire:navigate.hover');
 });
 
 test('an assigned seller can see the shop catalog and selling entry without owner menus', function () {

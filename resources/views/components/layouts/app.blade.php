@@ -45,6 +45,7 @@
     @endphp
 
     <body @class(['bg-slate-50', 'md:pl-80' => $isPanelLayout])>
+        <div data-navigation-progress class="navigation-progress" aria-hidden="true"></div>
         @if ($isPanelLayout)
             <x-admin.sidebar />
         @endif

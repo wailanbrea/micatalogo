@@ -70,6 +70,32 @@ const initializeDashboardWidgets = () => {
     initializeSalesCharts();
 };
 
+let navigationProgressTimer;
+
+const startNavigationProgress = () => {
+    const navigationProgress = document.querySelector('[data-navigation-progress]');
+    if (!navigationProgress) {
+        return;
+    }
+
+    window.clearTimeout(navigationProgressTimer);
+    navigationProgress.classList.remove('is-complete');
+    navigationProgress.classList.add('is-active');
+};
+
+const finishNavigationProgress = () => {
+    const navigationProgress = document.querySelector('[data-navigation-progress]');
+    if (!navigationProgress) {
+        return;
+    }
+
+    navigationProgress.classList.remove('is-active');
+    navigationProgress.classList.add('is-complete');
+    navigationProgressTimer = window.setTimeout(() => {
+        navigationProgress.classList.remove('is-complete');
+    }, 220);
+};
+
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeDashboardWidgets, { once: true });
 } else {
@@ -79,3 +105,5 @@ if (document.readyState === 'loading') {
 // Livewire replaces the page body during wire:navigate without re-running the
 // module. Reinitialize widgets after every client-side navigation.
 document.addEventListener('livewire:navigated', initializeDashboardWidgets);
+document.addEventListener('livewire:navigating', startNavigationProgress);
+document.addEventListener('livewire:navigated', finishNavigationProgress);
