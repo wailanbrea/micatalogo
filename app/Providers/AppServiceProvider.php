@@ -3,6 +3,9 @@
 namespace App\Providers;
 
 use App\Models\User;
+use App\Services\BusinessPresentationService;
+use App\Services\BusinessProfileService;
+use App\Services\SellerMenuService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -16,7 +19,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Reuse navigation policy results during one request without leaking
+        // shop/user state between requests in long-running workers.
+        $this->app->scoped(BusinessProfileService::class);
+        $this->app->scoped(SellerMenuService::class);
+        $this->app->scoped(BusinessPresentationService::class);
     }
 
     /**

@@ -7,6 +7,9 @@ use App\Models\User;
 
 class BusinessProfileService
 {
+    /** @var array<string, array<string, string>> */
+    private array $capabilitiesCache = [];
+
     public function types(): array
     {
         return config('business-types.types', []);
@@ -34,6 +37,11 @@ class BusinessProfileService
 
     public function capabilities(Shop $shop): array
     {
+        $cacheKey = (string) ($shop->getKey() ?? spl_object_id($shop));
+        if (array_key_exists($cacheKey, $this->capabilitiesCache)) {
+            return $this->capabilitiesCache[$cacheKey];
+        }
+
         $type = $this->normalizeType($shop->business_type);
         $configured = $this->types()[$type]['capabilities'] ?? $this->types()['general_retail']['capabilities'];
         $overrides = is_array($shop->business_capability_overrides) ? $shop->business_capability_overrides : [];
@@ -62,7 +70,7 @@ class BusinessProfileService
                 : $this->effectiveState($shop->user, $key, false);
         }
 
-        return $result;
+        return $this->capabilitiesCache[$cacheKey] = $result;
     }
 
     public function allows(Shop $shop, string $capability): bool

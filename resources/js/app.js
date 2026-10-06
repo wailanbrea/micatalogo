@@ -75,3 +75,7 @@ if (document.readyState === 'loading') {
 } else {
     initializeDashboardWidgets();
 }
+
+// Livewire replaces the page body during wire:navigate without re-running the
+// module. Reinitialize widgets after every client-side navigation.
+document.addEventListener('livewire:navigated', initializeDashboardWidgets);

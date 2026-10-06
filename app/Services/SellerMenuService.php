@@ -74,11 +74,13 @@ class SellerMenuService
     public function visibleForUser(Shop $shop, User $user): array
     {
         $menus = $this->forUser($shop, $user);
+        $capabilities = $this->profiles->capabilities($shop);
 
-        return array_values(array_filter($menus, fn (string $menu): bool => $this->menuIsAvailable($shop, $menu)));
+        return array_values(array_filter($menus, fn (string $menu): bool => $this->menuIsAvailable($menu, $capabilities)));
     }
 
-    private function menuIsAvailable(Shop $shop, string $menu): bool
+    /** @param array<string, string> $capabilities */
+    private function menuIsAvailable(string $menu, array $capabilities): bool
     {
         $capability = match ($menu) {
             'products' => 'products',
@@ -93,7 +95,7 @@ class SellerMenuService
             default => null,
         };
 
-        return $capability === null || $this->profiles->allows($shop, $capability);
+        return $capability === null || ($capabilities[$capability] ?? 'disabled') === 'enabled';
     }
 
     /** @return list<string> */

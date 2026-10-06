@@ -271,7 +271,7 @@ test('an assigned seller can see the shop catalog and selling entry without owne
         ->assertSee('Tienda asignada')
         ->assertSee('Guía para vendedores')
         ->assertDontSee('Guía para administradores de tienda')
-        ->assertSee('Vender')
+        ->assertSee('Registrar venta')
         ->assertSee('Productos')
         ->assertDontSee('Mis tiendas')
         ->assertDontSee('Configuración')

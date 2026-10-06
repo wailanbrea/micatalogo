@@ -32,7 +32,7 @@
                             <div class="rounded-xl border border-white/10 bg-white/[0.07] p-4">
                                 <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-400 text-sm font-black text-cyan-950">02</span>
                                 <p class="mt-4 text-sm font-bold">Registra la venta</p>
-                                <p class="mt-1 text-xs leading-5 text-emerald-100/70">Usa Vender para descontar existencias correctamente.</p>
+                                <p class="mt-1 text-xs leading-5 text-emerald-100/70">Usa Inventario para registrar ventas y descontar existencias correctamente.</p>
                             </div>
                             <div class="rounded-xl border border-white/10 bg-white/[0.07] p-4">
                                 <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-300 text-sm font-black text-amber-950">03</span>
@@ -412,7 +412,7 @@
                                 <a 
                                     class="whitespace-nowrap rounded-lg bg-blue-600 px-3 py-1.5 font-bold text-white shadow-2xs transition hover:bg-blue-700"
                                     href="{{ route('seller.shops.products.index', $shop) }}"
-                                    wire:navigate.hover
+                                    wire:navigate
                                 >
                                     Productos ({{ $shop->products_count ?? $shop->products()->count() }})
                                 </a>
@@ -422,9 +422,9 @@
                                 <a
                                     class="whitespace-nowrap rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 font-semibold text-amber-800 shadow-2xs transition hover:bg-amber-100"
                                     href="{{ route('seller.shops.inventory.index', $shop) }}"
-                                    wire:navigate.hover
+                                    wire:navigate
                                 >
-                                    Vender
+                                    Registrar venta
                                 </a>
                                 @endif
 
@@ -432,7 +432,7 @@
                                 <a 
                                     class="whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 shadow-2xs transition hover:bg-slate-50"
                                     href="{{ route('seller.shops.products.bulk.create', $shop) }}"
-                                    wire:navigate.hover
+                                    wire:navigate
                                 >
                                     Subida masiva
                                 </a>
@@ -442,7 +442,7 @@
                                 <a 
                                     class="whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 shadow-2xs transition hover:bg-slate-50"
                                     href="{{ route('seller.shops.categories.index', $shop) }}"
-                                    wire:navigate.hover
+                                    wire:navigate
                                 >
                                     Categorías
                                 </a>
@@ -452,7 +452,7 @@
                                 <a 
                                     class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 font-bold text-indigo-700 shadow-2xs transition hover:bg-indigo-100"
                                     href="{{ route('seller.shops.metrics.index', $shop) }}"
-                                    wire:navigate.hover
+                                    wire:navigate
                                     title="Ver métricas de visitas, contactos WhatsApp y código QR"
                                 >
                                     <svg class="h-3.5 w-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
@@ -464,7 +464,7 @@
                                 <a 
                                     class="whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 shadow-2xs transition hover:bg-slate-50"
                                     href="{{ route('seller.shops.edit', $shop) }}"
-                                    wire:navigate.hover
+                                    wire:navigate
                                 >
                                     Editar tienda
                                 </a>

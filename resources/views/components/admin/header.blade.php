@@ -39,7 +39,7 @@
     <div class="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-2.5 sm:px-6">
         <!-- Brand & Nav Links -->
         <div class="flex min-w-0 items-center gap-2 sm:gap-6">
-            <a class="flex min-w-0 shrink items-center gap-2 text-base font-black text-slate-900 hover:opacity-90 transition" href="{{ $isAdmin ? route('admin.dashboard') : route('seller.dashboard') }}">
+            <a wire:navigate class="flex min-w-0 shrink items-center gap-2 text-base font-black text-slate-900 hover:opacity-90 transition" href="{{ $isAdmin ? route('admin.dashboard') : route('seller.dashboard') }}">
                 <span class="truncate">Mi<span class="text-blue-600">Catalogo</span></span>
                 @if ($isAdmin)
                     <span class="rounded bg-rose-100 px-1.5 py-0.5 text-[11px] font-bold text-rose-700">Admin</span>
@@ -215,73 +215,70 @@
         >
             <div>
                 <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Inicio</p>
-                <a class="block rounded-lg px-3 py-2 transition {{ $isDashboard ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ $dashboardUrl }}">Dashboard</a>
+                <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ $isDashboard ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ $dashboardUrl }}">Dashboard</a>
                 @if ($canManageShops)
-                    <a class="block rounded-lg px-3 py-2 transition {{ $isMyShops ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.dashboard') }}">Mis tiendas</a>
+                    <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ $isMyShops ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.dashboard') }}">Mis tiendas</a>
                 @endif
                 @if ($canManageShops && ($isAdmin || ! $user->hasActiveShopAssignment()))
-                    <a class="block rounded-lg px-3 py-2 text-slate-700 transition hover:bg-slate-100" href="{{ route('seller.shops.create') }}">Crear tienda</a>
+                    <a wire:navigate class="block rounded-lg px-3 py-2 text-slate-700 transition hover:bg-slate-100" href="{{ route('seller.shops.create') }}">Crear tienda</a>
                 @endif
             </div>
             @if ($activeShop)
                 <div class="border-t border-slate-100 pt-2">
                     <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Operacion</p>
                     @if ($canSeeMenu('sales'))
-                        <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.inventory.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.inventory.index', $activeShop) }}">Vender</a>
-                    @endif
-                    @if ($canSeeMenu('inventory'))
-                        <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.inventory.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.inventory.index', $activeShop) }}">Inventario</a>
+                        <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.inventory.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.inventory.index', $activeShop) }}">Inventario</a>
                     @endif
                     @if ($canSeeMenu('customers'))
-                        <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.customers.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.customers.index', $activeShop) }}">Clientes y cobros</a>
+                        <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.customers.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.customers.index', $activeShop) }}">Clientes y cobros</a>
                     @endif
                     @if ($isAdmin || $user->ownsShop($activeShop))
-                        <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.sellers.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.sellers.index', $activeShop) }}">Vendedores</a>
+                        <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.sellers.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.sellers.index', $activeShop) }}">Vendedores</a>
                     @endif
                 </div>
                 <div class="border-t border-slate-100 pt-2">
                     <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Catalogo</p>
                     @if ($canSeeMenu('products'))
-                        <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.products.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.products.index', $activeShop) }}">Productos</a>
-                        <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.categories.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.categories.index', $activeShop) }}">Categorías</a>
+                        <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.products.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.products.index', $activeShop) }}">Productos</a>
+                        <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.categories.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.categories.index', $activeShop) }}">Categorías</a>
                         @if ($user->isAdmin() || $user->ownsShop($activeShop))
-                            <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.products.bulk.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.products.bulk.create', $activeShop) }}">Subida masiva</a>
-                            <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.products.import.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.products.import.create', $activeShop) }}">Importar inventario</a>
+                            <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.products.bulk.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.products.bulk.create', $activeShop) }}">Subida masiva</a>
+                            <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.products.import.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.products.import.create', $activeShop) }}">Importar inventario</a>
                         @endif
                     @endif
                 </div>
                 <div class="border-t border-slate-100 pt-2">
                     <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Analisis</p>
                     @if ($canSeeMenu('metrics'))
-                        <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.metrics.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.metrics.index', $activeShop) }}">Métricas y QR</a>
+                        <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.metrics.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.metrics.index', $activeShop) }}">Métricas y QR</a>
                     @endif
                 </div>
                 <div class="border-t border-slate-100 pt-2">
                     <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Configuracion</p>
                     @if ($canSeeMenu('shop_settings') && ($isAdmin || $user->ownsShop($activeShop)))
-                        <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.edit') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.edit', $activeShop) }}">Configuración de tienda</a>
+                        <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.edit') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.edit', $activeShop) }}">Configuración de tienda</a>
                     @endif
                 </div>
             @endif
             @if ($isAdmin)
                 <div class="border-t border-slate-100 pt-2">
                     <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-rose-500">Administracion</p>
-                    <a class="block rounded-lg px-3 py-2 transition {{ $isViewAllShops ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.dashboard', ['view' => 'all']) }}">Todas las tiendas</a>
-                    <a class="block rounded-lg px-3 py-2 transition {{ $isAdminDashboard ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.dashboard') }}">Dashboard</a>
-                    <a class="flex items-center justify-between rounded-lg px-3 py-2 transition {{ $isAdminReports ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.reports.index') }}">
+                    <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ $isViewAllShops ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.dashboard', ['view' => 'all']) }}">Todas las tiendas</a>
+                    <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ $isAdminDashboard ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.dashboard') }}">Dashboard</a>
+                    <a wire:navigate class="flex items-center justify-between rounded-lg px-3 py-2 transition {{ $isAdminReports ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.reports.index') }}">
                         <span>Reportes</span>
                         @if ($openReportsCount > 0)
                             <span class="rounded-full {{ $isAdminReports ? 'bg-white text-rose-600' : 'bg-rose-500 text-white' }} px-1.5 py-0.5 text-[10px]">{{ $openReportsCount }}</span>
                             @endif
                         </a>
-                    <a class="flex items-center justify-between rounded-lg px-3 py-2 transition {{ $isAdminSupport ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.support.index') }}">
+                    <a wire:navigate class="flex items-center justify-between rounded-lg px-3 py-2 transition {{ $isAdminSupport ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.support.index') }}">
                         <span>Soporte</span>
                         @if ($openSupportCount > 0)
                             <span class="rounded-full {{ $isAdminSupport ? 'bg-white text-blue-600' : 'bg-blue-500 text-white' }} px-1.5 py-0.5 text-[10px]">{{ $openSupportCount }}</span>
                         @endif
                     </a>
-                    <a class="block rounded-lg px-3 py-2 transition {{ $isAdminCategories ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.categories.index') }}">Categorías globales</a>
-                    <a class="block rounded-lg px-3 py-2 transition {{ $isAdminUsers ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.users.index') }}">Usuarios</a>
+                    <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ $isAdminCategories ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.categories.index') }}">Categorías globales</a>
+                    <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ $isAdminUsers ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.users.index') }}">Usuarios</a>
                 </div>
             @endif
             <div class="border-t border-slate-100 pt-2">
