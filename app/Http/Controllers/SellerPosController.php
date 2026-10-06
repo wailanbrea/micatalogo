@@ -19,7 +19,7 @@ class SellerPosController extends Controller
     {
         $products = $shop->products()
             ->whereHas('inventory', fn ($query) => $query->where('track_inventory', true))
-            ->with(['inventory', 'images', 'primaryImage', 'sourceProduct.inventory'])
+            ->with(['inventory', 'images', 'primaryImage', 'sourceProduct.inventory', 'shopCategory', 'globalCategory'])
             ->orderBy('name')
             ->get()
             ->map(fn ($product): array => [
@@ -34,8 +34,17 @@ class SellerPosController extends Controller
                 'volume_ml' => $product->volume_ml,
                 'source_product_id' => $product->sourceProduct?->public_id,
                 'image_url' => $product->image_url,
+                'category' => $product->shopCategory?->name ?? $product->globalCategory?->name ?? 'Sin categoría',
             ])
             ->values();
+
+        $lowStockCount = $shop->products()
+            ->whereHas('inventory', function ($query): void {
+                $query->where('track_inventory', true)
+                    ->whereColumn('stock_quantity', '<=', 'low_stock_threshold')
+                    ->where('stock_quantity', '>', 0);
+            })
+            ->count();
 
         $customers = $shop->customers()
             ->where('is_active', true)
@@ -57,6 +66,10 @@ class SellerPosController extends Controller
             'presentation' => $presentation->resolve($shop),
             'paymentMethods' => config('catalog.payment_methods', []),
             'clientSaleUuid' => old('client_sale_uuid') ?: (string) Str::uuid(),
+            'posSummary' => [
+                'available_products' => $products->where('stock', '>', 0)->count(),
+                'low_stock' => $lowStockCount,
+            ],
         ]);
     }
 
