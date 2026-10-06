@@ -11,6 +11,7 @@
     $isDashboard = request()->routeIs('seller.dashboard', 'admin.dashboard');
     $isProducts = request()->routeIs('seller.shops.products.*');
     $isInventory = request()->routeIs('seller.shops.inventory.*');
+    $isPos = request()->routeIs('seller.shops.pos');
     $isLowStock = $isInventory && request('stock') === 'low';
     $isOutOfStock = $isInventory && request('stock') === 'out';
     $isCustomers = request()->routeIs('seller.shops.customers.*');
@@ -57,6 +58,10 @@
             </a>
             @endif
             @if ($canSeeMenu('sales'))
+            <a wire:navigate href="{{ route('seller.shops.pos', $contextShop) }}" class="{{ $linkClass }} {{ $isPos ? $activeClass : $idleClass }}">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h18v14H3zM7 9h4m-4 4h2m5-4h3m-3 4h3M7 17h10"/></svg>
+                <span>Punto de venta</span>
+            </a>
             <a wire:navigate href="{{ route('seller.shops.inventory.index', $contextShop) }}" class="{{ $linkClass }} {{ $isInventory && ! $isLowStock && ! $isOutOfStock ? $activeClass : $idleClass }}">
                 <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16v13H4zM8 3h8v4H8zM8 12h8"/></svg>
                 <span>Inventario</span>

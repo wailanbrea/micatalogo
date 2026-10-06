@@ -24,6 +24,7 @@ use App\Http\Controllers\SellerInventoryImportController;
 use App\Http\Controllers\SellerInvitationController;
 use App\Http\Controllers\SellerManagementController;
 use App\Http\Controllers\SellerProductController;
+use App\Http\Controllers\SellerPosController;
 use App\Http\Controllers\SellerShopController;
 use App\Http\Controllers\SellerShopMetricController;
 use App\Http\Controllers\ShopCategoryController;
@@ -78,6 +79,8 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
             ->middleware('can:viewFinance,shop')
             ->name('shops.business');
         Route::post('/tiendas/{shop}/pedidos/{order}/confirmar', [SellerBusinessController::class, 'confirm'])->name('shops.orders.confirm');
+        Route::get('/tiendas/{shop}/pos', [SellerPosController::class, 'index'])->name('shops.pos');
+        Route::post('/tiendas/{shop}/pos', [SellerPosController::class, 'store'])->name('shops.pos.store');
         Route::get('/tiendas/{shop}/inventario', [SellerInventoryController::class, 'index'])->name('shops.inventory.index');
         Route::post('/tiendas/{shop}/inventario/cobro', [SellerInventoryController::class, 'checkout'])->name('shops.inventory.checkout');
         Route::post('/tiendas/{shop}/productos/{product}/inventario/venta', [SellerInventoryController::class, 'recordSale'])->name('shops.inventory.sale');

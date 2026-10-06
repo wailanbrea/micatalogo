@@ -176,6 +176,7 @@
         >
             <div>
                 <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Operacion</p>
+                @if ($canSeeMenu('sales'))<a wire:navigate href="{{ route('seller.shops.pos', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'pos' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Punto de venta</a>@endif
                 @if ($canSeeMenu('sales'))<a wire:navigate href="{{ route('seller.shops.inventory.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'inventory' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">{{ $inventoryLabel }}</a>@endif
                 @if ($canSeeMenu('customers'))<a wire:navigate href="{{ route('seller.shops.customers.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'customers' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Clientes y cobros</a>@endif
                 @if ($canSeeMenu('sellers') && ($user->isAdmin() || $user->ownsShop($shop)))<a wire:navigate href="{{ route('seller.shops.sellers.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'sellers' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Vendedores</a>@endif

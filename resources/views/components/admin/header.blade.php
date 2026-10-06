@@ -227,6 +227,7 @@
                 <div class="border-t border-slate-100 pt-2">
                     <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Operacion</p>
                     @if ($canSeeMenu('sales'))
+                        <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.pos') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.pos', $activeShop) }}">Punto de venta</a>
                         <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.inventory.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.inventory.index', $activeShop) }}">Inventario</a>
                     @endif
                     @if ($canSeeMenu('inventory') && $canSeeMenu('sales'))

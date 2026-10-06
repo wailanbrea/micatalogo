@@ -17,7 +17,7 @@
                             </div>
                             <h2 class="mt-4 max-w-lg text-2xl font-black tracking-tight sm:text-3xl">Vende en {{ $assignedShop->name }}.</h2>
                             <p class="mt-3 max-w-xl text-sm leading-6 text-emerald-100/80">Tu administrador ya preparó la tienda. Entra a vender, consulta el catálogo y registra cada cobro desde tu espacio de trabajo.</p>
-                            <a class="mt-6 inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-4 py-2.5 text-sm font-bold text-emerald-950 shadow-lg shadow-emerald-950/40 transition hover:bg-emerald-300" href="{{ route('seller.shops.inventory.index', $assignedShop) }}">
+                            <a class="mt-6 inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-4 py-2.5 text-sm font-bold text-emerald-950 shadow-lg shadow-emerald-950/40 transition hover:bg-emerald-300" href="{{ route('seller.shops.pos', $assignedShop) }}">
                                 Ir a vender
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6 6 6-6 6"/></svg>
                             </a>
@@ -32,7 +32,7 @@
                             <div class="rounded-xl border border-white/10 bg-white/[0.07] p-4">
                                 <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-400 text-sm font-black text-cyan-950">02</span>
                                 <p class="mt-4 text-sm font-bold">Registra la venta</p>
-                                <p class="mt-1 text-xs leading-5 text-emerald-100/70">Usa Inventario para registrar ventas y descontar existencias correctamente.</p>
+                                <p class="mt-1 text-xs leading-5 text-emerald-100/70">Usa el Punto de venta para cobrar y descontar existencias correctamente.</p>
                             </div>
                             <div class="rounded-xl border border-white/10 bg-white/[0.07] p-4">
                                 <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-300 text-sm font-black text-amber-950">03</span>
@@ -421,10 +421,17 @@
                                 @if ($canSeeMenu('sales'))
                                 <a
                                     class="whitespace-nowrap rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 font-semibold text-amber-800 shadow-2xs transition hover:bg-amber-100"
-                                    href="{{ route('seller.shops.inventory.index', $shop) }}"
+                                    href="{{ route('seller.shops.pos', $shop) }}"
                                     wire:navigate
                                 >
                                     Registrar venta
+                                </a>
+                                <a
+                                    class="whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 shadow-2xs transition hover:bg-slate-50"
+                                    href="{{ route('seller.shops.inventory.index', $shop) }}"
+                                    wire:navigate
+                                >
+                                    Inventario
                                 </a>
                                 @endif
 

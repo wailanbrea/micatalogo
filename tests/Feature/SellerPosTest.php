@@ -1,0 +1,82 @@
+<?php
+
+use App\Models\Customer;
+use App\Models\Invoice;
+use App\Models\Product;
+use App\Models\ProductInventory;
+use App\Models\Shop;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
+
+uses(RefreshDatabase::class);
+
+function webPosProductPayload(Product $product, int $quantity = 1, ?string $unitPrice = null): array
+{
+    return [
+        'product_id' => $product->public_id,
+        'quantity' => $quantity,
+        'unit_price' => $unitPrice ?? number_format($product->currentPrice(), 2, '.', ''),
+        'expected_sale_unit' => $product->sale_unit ?: 'unit',
+        'expected_volume_ml' => $product->volume_ml,
+        'expected_source_product_id' => $product->sourceProduct?->public_id,
+    ];
+}
+
+test('seller can open the web POS and register a paid sale', function () {
+    $user = User::factory()->create(['plan' => 'premium']);
+    $shop = Shop::factory()->create(['user_id' => $user->id]);
+    $product = Product::factory()->create(['shop_id' => $shop->id, 'price' => 275]);
+    ProductInventory::create(['product_id' => $product->id, 'track_inventory' => true, 'stock_quantity' => 8]);
+
+    $this->actingAs($user)
+        ->get(route('seller.shops.pos', $shop))
+        ->assertOk()
+        ->assertSee('Punto de venta')
+        ->assertSee($product->name);
+
+    $this->actingAs($user)
+        ->post(route('seller.shops.pos.store', $shop), [
+            'client_sale_uuid' => (string) Str::uuid(),
+            'payment_status' => 'paid',
+            'sale_mode' => 'retail',
+            'credit_amount' => '0.00',
+            'payments' => [['method' => 'cash', 'amount' => '550.00']],
+            'items' => [webPosProductPayload($product, 2)],
+        ])
+        ->assertRedirect(route('seller.shops.pos', $shop))
+        ->assertSessionHas('status');
+
+    $invoice = Invoice::query()->with('items')->sole();
+    expect($invoice->channel)->toBe('pos')
+        ->and($invoice->status)->toBe('paid')
+        ->and((float) $invoice->total)->toBe(550.0)
+        ->and($product->fresh()->inventory->stock_quantity)->toBe(6);
+});
+
+test('web POS supports wholesale mixed payment and customer credit', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->create(['user_id' => $user->id]);
+    $product = Product::factory()->create(['shop_id' => $shop->id, 'price' => 300, 'wholesale_price' => 220]);
+    ProductInventory::create(['product_id' => $product->id, 'track_inventory' => true, 'stock_quantity' => 8]);
+    $customer = Customer::create(['shop_id' => $shop->id, 'name' => 'Cliente Web', 'credit_limit' => 1000]);
+
+    $this->actingAs($user)
+        ->post(route('seller.shops.pos.store', $shop), [
+            'client_sale_uuid' => (string) Str::uuid(),
+            'payment_status' => 'paid',
+            'sale_mode' => 'wholesale',
+            'credit_amount' => '240.00',
+            'customer_id' => $customer->public_id,
+            'payments' => [['method' => 'card', 'amount' => '200.00']],
+            'items' => [webPosProductPayload($product, 2, '220.00')],
+        ])
+        ->assertRedirect(route('seller.shops.pos', $shop));
+
+    $invoice = Invoice::query()->sole();
+    expect($invoice->sale_mode)->toBe('wholesale')
+        ->and($invoice->status)->toBe('partial')
+        ->and((float) $invoice->total)->toBe(440.0)
+        ->and((float) $customer->fresh()->balance)->toBe(240.0)
+        ->and($product->fresh()->inventory->stock_quantity)->toBe(6);
+});
