@@ -57,6 +57,7 @@ class PublicShopStorefrontTest extends TestCase
         $response = $this->get('/tienda/brea-calzados');
 
         $response->assertOk();
+        $response->assertSee('meta name="csrf-token"', false);
         $response->assertSee('Brea Calzados');
         $response->assertSee('Tienda de zapatos finos');
         $response->assertSee('Nike Air Runner');
