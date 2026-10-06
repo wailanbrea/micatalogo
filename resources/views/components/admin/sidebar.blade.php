@@ -20,7 +20,7 @@
     $linkClass = 'flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition';
     $activeClass = 'bg-blue-50 text-blue-700 shadow-[inset_4px_0_0_#2563eb]';
     $idleClass = 'text-slate-700 hover:bg-slate-50 hover:text-slate-950';
-    $visibleMenus = $contextShop ? app(\App\Services\SellerMenuService::class)->forUser($contextShop, $user) : [];
+    $visibleMenus = $contextShop ? app(\App\Services\SellerMenuService::class)->visibleForUser($contextShop, $user) : [];
     $canSeeMenu = fn (string $key): bool => ! $contextShop || in_array($key, $visibleMenus, true);
     $isAssignedSellerOnly = $user?->isAssignedSellerOnly() ?? false;
     $canManageShops = ! $isAssignedSellerOnly;

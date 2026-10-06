@@ -26,7 +26,7 @@ class MobileOperationService
         if ($data['type'] !== 'return') {
             Gate::forUser($user)->authorize('update', $shop);
         } else {
-            abort_unless(in_array('returns', app(SellerMenuService::class)->forUser($shop, $user), true), 403);
+            abort_unless(in_array('returns', app(SellerMenuService::class)->visibleForUser($shop, $user), true), 403);
         }
         $hash = hash('sha256', json_encode($data, JSON_THROW_ON_ERROR));
 

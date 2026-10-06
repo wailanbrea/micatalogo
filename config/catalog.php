@@ -32,7 +32,7 @@ return [
             'max_images_per_product' => 3,
             'max_users' => 5,
             'max_sellers' => 5,
-            'features' => ['catalog', 'whatsapp_orders', 'inventory', 'sales', 'invoicing', 'reports', 'quotes', 'customers', 'android', 'credit_interest', 'wholesale_pricing', 'bulk_import', 'expenses', 'profit_sharing', 'automatic_pricing', 'cash_registers'],
+            'features' => ['catalog', 'whatsapp_orders', 'inventory', 'sales', 'invoicing', 'reports', 'quotes', 'customers', 'android', 'credit_interest', 'wholesale_pricing', 'decants', 'bulk_import', 'expenses', 'profit_sharing', 'automatic_pricing', 'cash_registers'],
         ],
         'custom' => [
             'display_name' => 'Personalizado',

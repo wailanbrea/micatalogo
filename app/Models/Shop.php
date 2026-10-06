@@ -21,6 +21,7 @@ class Shop extends Model
         'primary_color', 'secondary_color', 'whatsapp_country_code', 'whatsapp_number',
         'offers_shipping', 'instagram', 'address', 'maps_url', 'status', 'discovery_enabled',
         'product_limit', 'inventory_import_mapping',
+        'business_type', 'business_capability_overrides', 'business_profile_version', 'onboarding_completed_at',
     ];
 
     protected $attributes = [
@@ -34,6 +35,9 @@ class Shop extends Model
             'discovery_enabled' => 'boolean',
             'product_limit' => 'integer',
             'inventory_import_mapping' => 'array',
+            'business_capability_overrides' => 'array',
+            'business_profile_version' => 'integer',
+            'onboarding_completed_at' => 'datetime',
         ];
     }
 

@@ -201,7 +201,7 @@ class CustomerController extends Controller
     private function ensureShopOwner(Request $request, Shop $shop): void
     {
         abort_unless($request->user()->canSellAtShop($shop), 404);
-        abort_unless(in_array('customers', app(SellerMenuService::class)->forUser($shop, $request->user()), true), 403);
+        abort_unless(in_array('customers', app(SellerMenuService::class)->visibleForUser($shop, $request->user()), true), 403);
     }
 
     private function ensureCustomerOwner(Request $request, Shop $shop, Customer $customer): void

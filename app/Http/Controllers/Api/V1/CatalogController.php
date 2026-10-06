@@ -6,12 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Shop;
 use App\Services\PlanLimitsService;
+use App\Services\BusinessCapabilityService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class CatalogController extends Controller
 {
-    public function show(Request $request, Shop $shop, PlanLimitsService $limits): JsonResponse
+    public function show(Request $request, Shop $shop, PlanLimitsService $limits, BusinessCapabilityService $capabilities): JsonResponse
     {
         abort_unless($request->user()->canSellAtShop($shop), 404);
 
@@ -41,6 +42,7 @@ class CatalogController extends Controller
                 'id' => $shop->public_id,
                 'name' => $shop->name,
                 'slug' => $shop->slug,
+                ...$capabilities->payload($shop),
                 'quota' => $limits->shopQuota($shop, $products->count()),
             ],
             'categories' => $categories,

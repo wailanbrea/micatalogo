@@ -27,7 +27,7 @@
     $activeShop = request()->route('shop');
     $activeShop = $activeShop instanceof \App\Models\Shop ? $activeShop : null;
     $visibleMenus = $activeShop && $user
-        ? app(\App\Services\SellerMenuService::class)->forUser($activeShop, $user)
+        ? app(\App\Services\SellerMenuService::class)->visibleForUser($activeShop, $user)
         : [];
     $canSeeMenu = fn (string $key): bool => ! $activeShop || in_array($key, $visibleMenus, true);
     $dashboardUrl = $isAdmin ? route('admin.dashboard') : route('seller.dashboard');

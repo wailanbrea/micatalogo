@@ -7,6 +7,7 @@ use App\Enums\ProductModerationStatus;
 use App\Models\Product;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class ProductRequest extends FormRequest
 {
@@ -62,5 +63,15 @@ class ProductRequest extends FormRequest
             'attributes.*.value' => ['nullable', 'string', 'max:255'],
             'attributes.*.filterable' => ['nullable', 'boolean'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            if ($this->input('sale_unit') === 'decant'
+                && ! app(\App\Services\BusinessCapabilityService::class)->allows($this->route('shop'), 'decants')) {
+                $validator->errors()->add('sale_unit', 'Los decants no están disponibles para el tipo de negocio o plan de esta tienda.');
+            }
+        });
     }
 }

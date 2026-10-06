@@ -32,13 +32,13 @@
                     <p class="mt-1.5 text-xs sm:text-sm text-slate-500">Abre tu vitrina digital en menos de 3 minutos sin tarjeta de crédito.</p>
                 </div>
 
-                <form class="mt-6 space-y-4.5" method="POST" action="{{ url('/register') }}" x-data="{ showPass: false }">
+                <form class="mt-6 space-y-4.5" method="POST" action="{{ url('/register') }}" x-data="{ showPass: false, slug: '{{ old('slug') }}' }">
                     @csrf
                     
                     <!-- Name Input -->
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-700" for="name">
-                            Tu Nombre o Nombre de tu Negocio
+                            Tu nombre
                         </label>
                         <div class="relative mt-1.5">
                             <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
@@ -50,7 +50,7 @@
                                 name="name" 
                                 type="text" 
                                 value="{{ old('name') }}" 
-                                placeholder="Ej. BSolutions o Calzados Pérez"
+                                placeholder="Ej. Wailan Brea"
                                 required 
                                 autofocus 
                                 autocomplete="name">
@@ -61,6 +61,45 @@
                                 {{ $message }}
                             </p> 
                         @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700" for="business_name">Nombre del negocio</label>
+                        <input class="mt-1.5 block w-full rounded-xl border border-slate-300 bg-slate-50/40 py-2.5 px-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10 transition" id="business_name" name="business_name" type="text" value="{{ old('business_name') }}" placeholder="Ej. Calzados Pérez" required autocomplete="organization">
+                        @error('business_name')<p class="mt-1.5 text-xs font-semibold text-red-600">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700" for="business_type">¿Qué vendes?</label>
+                        <select class="mt-1.5 block w-full rounded-xl border border-slate-300 bg-slate-50/40 py-2.5 px-3.5 text-sm text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10 transition" id="business_type" name="business_type" required>
+                            <option value="">Selecciona el tipo de negocio</option>
+                            @foreach (app(\App\Services\BusinessProfileService::class)->types() as $key => $profile)
+                                <option value="{{ $key }}" @selected(old('business_type') === $key)>{{ $profile['label'] }}</option>
+                            @endforeach
+                        </select>
+                        @error('business_type')<p class="mt-1.5 text-xs font-semibold text-red-600">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700" for="whatsapp_country_code">Código de país</label>
+                            <input class="mt-1.5 block w-full rounded-xl border border-slate-300 bg-slate-50/40 py-2.5 px-3.5 text-sm text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10 transition" id="whatsapp_country_code" name="whatsapp_country_code" type="text" value="{{ old('whatsapp_country_code', '1809') }}" inputmode="numeric" maxlength="5" required>
+                            @error('whatsapp_country_code')<p class="mt-1.5 text-xs font-semibold text-red-600">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700" for="whatsapp_number">WhatsApp</label>
+                            <input class="mt-1.5 block w-full rounded-xl border border-slate-300 bg-slate-50/40 py-2.5 px-3.5 text-sm text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10 transition" id="whatsapp_number" name="whatsapp_number" type="tel" value="{{ old('whatsapp_number') }}" placeholder="8095550100" inputmode="numeric" required autocomplete="tel">
+                            @error('whatsapp_number')<p class="mt-1.5 text-xs font-semibold text-red-600">{{ $message }}</p>@enderror
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700" for="slug">Enlace de tu tienda <span class="font-normal normal-case tracking-normal text-slate-400">(opcional)</span></label>
+                        <div class="mt-1.5 flex items-center rounded-xl border border-slate-300 bg-slate-50/40 focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-600/10">
+                            <span class="pl-3.5 text-xs text-slate-400">/tienda/</span>
+                            <input class="min-w-0 flex-1 rounded-xl border-0 bg-transparent py-2.5 px-2 text-sm text-slate-900 focus:outline-none focus:ring-0" id="slug" name="slug" type="text" x-model="slug" placeholder="mi-negocio" autocomplete="off">
+                        </div>
+                        @error('slug')<p class="mt-1.5 text-xs font-semibold text-red-600">{{ $message }}</p>@enderror
                     </div>
 
                     <!-- Email Input -->
@@ -136,6 +175,12 @@
                         </label>
                     </div>
 
+                    <label class="flex items-start gap-2 text-xs text-slate-600 cursor-pointer select-none">
+                        <input class="mt-0.5 h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-600" type="checkbox" name="terms_accepted" value="1" @checked(old('terms_accepted')) required>
+                        <span>Acepto los términos de uso y la política de privacidad de MiCatalogo.</span>
+                    </label>
+                    @error('terms_accepted')<p class="mt-1.5 text-xs font-semibold text-red-600">{{ $message }}</p>@enderror
+
                     <!-- Turnstile Widget -->
                     @if (config('services.turnstile.enabled'))
                         <div class="pt-1">
@@ -150,7 +195,7 @@
 
                     <!-- Submit Button -->
                     <button class="w-full rounded-xl bg-blue-600 py-3 px-4 text-sm font-bold text-white shadow-md shadow-blue-500/20 hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-600/20 active:scale-[0.99] transition duration-150 cursor-pointer" type="submit">
-                        Crear mi cuenta y vitrina gratis
+                        Crear mi negocio
                     </button>
                 </form>
 

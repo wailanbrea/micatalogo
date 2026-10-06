@@ -8,6 +8,7 @@ use App\Models\ShopSeller;
 use App\Models\User;
 use App\Notifications\SellerInvitationNotification;
 use App\Services\PlanLimitsService;
+use App\Services\BusinessCapabilityService;
 use App\Services\SellerMenuService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,7 +17,7 @@ use Illuminate\Validation\Rule;
 
 class ShopController extends Controller
 {
-    public function index(Request $request, PlanLimitsService $limits, SellerMenuService $menus): JsonResponse
+    public function index(Request $request, PlanLimitsService $limits, SellerMenuService $menus, BusinessCapabilityService $capabilities): JsonResponse
     {
         $query = Shop::query()
             ->with(['user', 'sellers.user'])
@@ -36,15 +37,16 @@ class ShopController extends Controller
         });
 
         $shops = $query->get(['id', 'user_id', 'public_id', 'name', 'slug'])
-            ->map(function ($shop) use ($limits, $menus, $request): array {
+            ->map(function ($shop) use ($limits, $menus, $request, $capabilities): array {
                 $canManage = $menus->canManage($shop, $request->user());
 
                 return [
                     'id' => $shop->public_id,
                     'name' => $shop->name,
                     'slug' => $shop->slug,
+                    ...$capabilities->payload($shop),
                     'quota' => $limits->shopQuota($shop, $shop->products_count),
-                    'menu_permissions' => $menus->forUser($shop, $request->user()),
+                    'menu_permissions' => $menus->visibleForUser($shop, $request->user()),
                     'can_manage_sellers' => $canManage,
                     'sellers' => $canManage ? $shop->sellers->map(fn ($seller): array => [
                         'id' => (string) $seller->id,

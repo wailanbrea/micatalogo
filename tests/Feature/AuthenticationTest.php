@@ -45,6 +45,11 @@ test('a visitor can register an active account', function () {
     $response = $this->post('/register', [
         'name' => 'Vendedor Demo',
         'email' => 'vendedor@example.com',
+        'business_name' => 'Negocio Demo',
+        'business_type' => 'general_retail',
+        'whatsapp_country_code' => '1809',
+        'whatsapp_number' => '8095550100',
+        'terms_accepted' => '1',
         'password' => 'password',
         'password_confirmation' => 'password',
     ]);
@@ -62,6 +67,11 @@ test('registration is limited by IP address', function () {
         $this->post('/register', [
             'name' => "Vendedor {$attempt}",
             'email' => "vendedor{$attempt}@example.com",
+            'business_name' => "Negocio {$attempt}",
+            'business_type' => 'general_retail',
+            'whatsapp_country_code' => '1809',
+            'whatsapp_number' => "80955501{$attempt}0",
+            'terms_accepted' => '1',
             'password' => 'password',
             'password_confirmation' => 'password',
         ])->assertRedirect('/panel');
@@ -72,6 +82,11 @@ test('registration is limited by IP address', function () {
     $this->post('/register', [
         'name' => 'Vendedor Bloqueado',
         'email' => 'bloqueado@example.com',
+        'business_name' => 'Negocio Bloqueado',
+        'business_type' => 'general_retail',
+        'whatsapp_country_code' => '1809',
+        'whatsapp_number' => '8095550199',
+        'terms_accepted' => '1',
         'password' => 'password',
         'password_confirmation' => 'password',
     ])->assertStatus(429);

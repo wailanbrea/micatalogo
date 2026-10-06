@@ -334,7 +334,7 @@
                 <div class="mt-6 space-y-3">
                     <?php foreach ($shops as $shop): ?>
                         <?php
-                            $visibleMenus = app(\App\Services\SellerMenuService::class)->forUser($shop, auth()->user());
+                            $visibleMenus = app(\App\Services\SellerMenuService::class)->visibleForUser($shop, auth()->user());
                             $canSeeMenu = fn (string $key): bool => in_array($key, $visibleMenus, true);
                             $canManageShop = app(\App\Services\SellerMenuService::class)->canManage($shop, auth()->user());
                         ?>

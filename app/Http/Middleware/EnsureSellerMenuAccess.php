@@ -14,7 +14,7 @@ class EnsureSellerMenuAccess
         $shop = $request->route('shop');
         $user = $request->user();
         $visibleMenus = $shop && $user
-            ? app(SellerMenuService::class)->forUser($shop, $user)
+            ? app(SellerMenuService::class)->visibleForUser($shop, $user)
             : [];
 
         abort_unless(in_array($menu, $visibleMenus, true), 403);

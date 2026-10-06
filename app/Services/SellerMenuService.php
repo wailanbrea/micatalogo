@@ -8,6 +8,8 @@ use App\Models\User;
 
 class SellerMenuService
 {
+    public function __construct(private readonly BusinessProfileService $profiles) {}
+
     /** @return array<string, string> */
     public function options(): array
     {
@@ -66,6 +68,32 @@ class SellerMenuService
             ->first();
 
         return $this->forAssignment($assignment);
+    }
+
+    /** @return list<string> */
+    public function visibleForUser(Shop $shop, User $user): array
+    {
+        $menus = $this->forUser($shop, $user);
+
+        return array_values(array_filter($menus, fn (string $menu): bool => $this->menuIsAvailable($shop, $menu)));
+    }
+
+    private function menuIsAvailable(Shop $shop, string $menu): bool
+    {
+        $capability = match ($menu) {
+            'products' => 'products',
+            'inventory' => 'inventory',
+            'sales' => 'sales',
+            'customers' => 'customers',
+            'collections' => 'credit',
+            'cash' => 'cash',
+            'finance' => 'finance',
+            'expenses' => 'expenses',
+            'public_catalog', 'metrics' => 'public_catalog',
+            default => null,
+        };
+
+        return $capability === null || $this->profiles->allows($shop, $capability);
     }
 
     /** @return list<string> */

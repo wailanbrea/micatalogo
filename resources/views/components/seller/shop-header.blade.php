@@ -8,7 +8,7 @@
 @php
     $product = $product ?? request()->route('product');
     $user = auth()->user();
-    $visibleMenus = app(\App\Services\SellerMenuService::class)->forUser($shop, $user);
+    $visibleMenus = app(\App\Services\SellerMenuService::class)->visibleForUser($shop, $user);
     $canSeeMenu = fn (string $key): bool => in_array($key, $visibleMenus, true);
 @endphp
 

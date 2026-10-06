@@ -30,7 +30,7 @@ class ShopPolicy
     public function viewFinance(User $user, Shop $shop): bool
     {
         return ($user->isAdmin() || $user->canSellAtShop($shop))
-            && in_array('finance', app(\App\Services\SellerMenuService::class)->forUser($shop, $user), true);
+            && in_array('finance', app(\App\Services\SellerMenuService::class)->visibleForUser($shop, $user), true);
     }
 
     public function sell(User $user, Shop $shop): bool
