@@ -101,7 +101,7 @@
     ] : [];
 @endphp
 
-<aside class="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-white/5 bg-[#171411] text-white md:flex" aria-label="Navegación del panel">
+<aside class="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-slate-800 bg-[#111827] text-white md:flex" aria-label="Navegación del panel">
     <div class="border-b border-white/10 px-4 py-4">
         <a wire:navigate.hover class="flex items-center gap-3" href="{{ $contextShop ? route('seller.shops.products.index', $contextShop) : route('seller.dashboard') }}">
             @if ($contextShop?->logo_url)
