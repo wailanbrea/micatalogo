@@ -128,7 +128,31 @@ class PdfCatalogReader
             $this->fail('El PDF no contiene una tabla de productos legible. Usa un PDF con texto seleccionable y columnas de nombre y precio, o conviértelo a Excel.');
         }
 
-        return ['type' => 'pdf', 'sheets' => $sheets, 'warnings' => array_values(array_unique($warnings))];
+        // A catalogue PDF is one logical import even when it spans several
+        // pages. The existing importer intentionally selects one workbook
+        // sheet, so combine all PDF pages into that single sheet here.
+        $firstHeader = $sheets[0]['rows'][0];
+        $combinedRows = [$firstHeader];
+        $combinedImageRows = [];
+        foreach ($sheets as $sheet) {
+            $dataRows = array_slice($sheet['rows'], 1);
+            foreach ($sheet['image_rows'] as $oldRow => $images) {
+                $combinedImageRows[count($combinedRows) + ((int) $oldRow - 1)] = $images;
+            }
+            $combinedRows = [...$combinedRows, ...$dataRows];
+        }
+
+        return [
+            'type' => 'pdf',
+            'sheets' => [[
+                'name' => 'Catálogo PDF',
+                'index' => 0,
+                'rows' => $combinedRows,
+                'image_rows' => $combinedImageRows,
+                'unformatted_numeric_columns' => [],
+            ]],
+            'warnings' => array_values(array_unique($warnings)),
+        ];
     }
 
     /** @return array<int, string> */
