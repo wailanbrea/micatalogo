@@ -66,8 +66,9 @@
                     <form method="POST" action="{{ route('seller.shops.products.import.preview', $shop) }}" enctype="multipart/form-data" class="rounded-xl border border-dashed border-indigo-300 bg-indigo-50/40 p-6">
                         @csrf
                         <label for="inventory-file" class="block text-sm font-bold text-slate-900">Archivo de inventario</label>
-                        <p class="mt-1 text-xs text-slate-500">CSV, TXT, XLSX o XLS. Máximo 10MB y 5000 productos. Puedes revisar el mismo archivo sin volver a subirlo.</p>
-                        <input id="inventory-file" name="file" type="file" accept=".csv,.txt,.xlsx,.xls" @required(!isset($detection)) onchange="if(this.files.length) { for(const el of this.form.elements) { if(el.name !== 'file' &amp;&amp; el.name !== '_token' &amp;&amp; el.type !== 'submit') el.disabled = true; } }" class="mt-4 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+                        <p class="mt-1 text-xs text-slate-500">CSV, TXT, XLSX, XLS o PDF. Máximo 10MB y 5000 productos. Puedes incluir precio de venta, stock, costo e imagen por URL o dentro del archivo.</p>
+                        <input id="inventory-file" name="file" type="file" accept=".csv,.txt,.xlsx,.xls,.pdf,application/pdf" @required(!isset($detection)) onchange="if(this.files.length) { for(const el of this.form.elements) { if(el.name !== 'file' &amp;&amp; el.name !== '_token' &amp;&amp; el.type !== 'submit') el.disabled = true; } }" class="mt-4 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+                        <p class="mt-2 text-[11px] text-slate-500">En PDF usa texto seleccionable y, de ser posible, una tabla separada por punto y coma, tabulaciones o barras verticales. Los PDF escaneados requieren OCR y no se importan automáticamente.</p>
                         @isset($detection)
                             <input type="hidden" name="upload_token" value="{{ $detection['upload_token'] }}">
                             <input type="hidden" name="sheet_index" value="{{ $detection['sheet']['index'] }}">

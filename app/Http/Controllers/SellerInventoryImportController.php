@@ -48,7 +48,7 @@ class SellerInventoryImportController extends Controller
         $limits->assertFeature($shop->user, 'bulk_import');
 
         $request->validate([
-            'file' => ['required_without:upload_token', 'file', 'mimes:csv,txt,xlsx,xls', 'extensions:csv,txt,xlsx,xls', 'max:10240'],
+            'file' => ['required_without:upload_token', 'file', 'mimes:csv,txt,xlsx,xls,pdf', 'extensions:csv,txt,xlsx,xls,pdf', 'max:10240'],
             'upload_token' => ['nullable', 'uuid'],
             'mapping' => ['nullable', 'array'],
             'mapping.*' => ['nullable', 'string', 'max:500'],

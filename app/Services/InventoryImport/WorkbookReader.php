@@ -25,11 +25,14 @@ class WorkbookReader
             $this->fail('El archivo supera 10 MB.');
         }
         $type = strtolower($file->getClientOriginalExtension());
+        if ($type === 'pdf') {
+            return app(PdfCatalogReader::class)->read($file);
+        }
         if (in_array($type, ['csv', 'txt'], true)) {
             return $this->csv($file->getRealPath(), $type);
         }
         if (! in_array($type, ['xlsx', 'xls'], true)) {
-            $this->fail('Usa XLSX, XLS, CSV o TXT. No se admiten documentos ni imágenes.');
+            $this->fail('Usa XLSX, XLS, CSV, TXT o PDF. El PDF debe tener texto seleccionable.');
         }
         if ($type === 'xlsx') {
             $this->checkArchive($file->getRealPath());
@@ -96,7 +99,13 @@ class WorkbookReader
                 }
                 $rows[] = $values;
             }
-            $sheets[] = ['name' => $sheet->getTitle(), 'index' => $index, 'rows' => $rows, 'unformatted_numeric_columns' => array_keys($numericColumns)];
+            $sheets[] = [
+                'name' => $sheet->getTitle(),
+                'index' => $index,
+                'rows' => $rows,
+                'image_rows' => $this->worksheetImages($sheet),
+                'unformatted_numeric_columns' => array_keys($numericColumns),
+            ];
         }
         $book->disconnectWorksheets();
 
@@ -173,6 +182,53 @@ class WorkbookReader
         fclose($handle);
 
         return ['type' => $type, 'sheets' => [['name' => 'Inventario', 'index' => 0, 'rows' => $best]], 'warnings' => $warnings];
+    }
+
+    /**
+     * Keep small embedded spreadsheet images associated with their row. URLs
+     * in an Imagen column remain the preferred option for large workbooks.
+     *
+     * @return array<int, array<int, array{bytes: string, mime_type: string}>>
+     */
+    private function worksheetImages($sheet): array
+    {
+        $imageRows = [];
+        $totalBytes = 0;
+        foreach ($sheet->getDrawingCollection() as $drawing) {
+            $bytes = null;
+            $mime = null;
+            if (method_exists($drawing, 'getPath')) {
+                $drawingPath = (string) $drawing->getPath();
+                // PhpSpreadsheet exposes embedded XLSX media through a
+                // zip:// stream after the workbook is loaded.
+                $bytes = @file_get_contents($drawingPath) ?: null;
+                $mime = method_exists($drawing, 'getMimeType') ? $drawing->getMimeType() : null;
+            } elseif (method_exists($drawing, 'getImageResource')) {
+                $resource = $drawing->getImageResource();
+                if ($resource) {
+                    ob_start();
+                    imagepng($resource);
+                    $bytes = ob_get_clean() ?: null;
+                    $mime = 'image/png';
+                }
+            }
+            if (! is_string($bytes) || $bytes === '' || strlen($bytes) > 2_000_000 || $totalBytes + strlen($bytes) > 5_000_000) {
+                continue;
+            }
+            $info = @getimagesizefromstring($bytes);
+            $detectedMime = (string) ($info['mime'] ?? $mime ?? '');
+            if (! in_array($detectedMime, ['image/jpeg', 'image/png', 'image/webp', 'image/avif'], true)) {
+                continue;
+            }
+            $row = (int) preg_replace('/\D+/', '', (string) $drawing->getCoordinates());
+            if ($row < 1) {
+                continue;
+            }
+            $totalBytes += strlen($bytes);
+            $imageRows[$row][] = ['bytes' => $bytes, 'mime_type' => $detectedMime];
+        }
+
+        return $imageRows;
     }
 
     private function fail(string $message): never

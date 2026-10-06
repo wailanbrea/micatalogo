@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\UserPlan;
+use App\Jobs\ProcessImportedProductImageJob;
 use App\Models\InventoryImportSession;
 use App\Models\Shop;
 use App\Models\User;
@@ -9,12 +10,14 @@ use App\Services\InventoryImport\ColumnDetector;
 use App\Services\InventoryImport\WorkbookReader;
 use App\Services\InventoryImportService;
 use App\Services\PlanLimitsService;
+use Dompdf\Dompdf;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Validation\ValidationException;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\Support\InventoryWorkbookFixture;
@@ -173,6 +176,76 @@ test('safe file limits reject excessive columns rows and unsupported formats', f
     expect(fn () => $reader->read(UploadedFile::fake()->createWithContent('bad.csv', implode(';', array_fill(0, 101, 'name')))))->toThrow(ValidationException::class);
     expect(fn () => $reader->read(UploadedFile::fake()->createWithContent('bad.txt', str_repeat("Nombre;Precio\n", 5051))))->toThrow(ValidationException::class);
     expect(fn () => $reader->read(UploadedFile::fake()->createWithContent('bad.pdf', 'content')))->toThrow(ValidationException::class);
+});
+
+test('PDF catalogue imports selectable text rows with sale price and optional stock', function () {
+    $dompdf = new Dompdf;
+    $dompdf->loadHtml(<<<'HTML'
+        <div>Nombre;Precio de venta;Stock;Imagen</div>
+        <div>Perfume A;RD$ 2500.00;10;https://images.example.test/perfume-a.jpg</div>
+        <div>Crema B;1250;5;</div>
+    HTML);
+    $dompdf->render();
+    $path = tempnam(sys_get_temp_dir(), 'catalog-pdf-');
+    file_put_contents($path, $dompdf->output());
+
+    $result = app(InventoryImportService::class)->preview(new UploadedFile($path, 'catalogo.pdf', 'application/pdf', null, true));
+
+    expect($result['file']['type'])->toBe('pdf')
+        ->and($result['valid_rows'])->toBe(2)
+        ->and($result['mapping']['name'])->toBe('nombre')
+        ->and($result['mapping']['price'])->toBe('precio de venta')
+        ->and($result['mapping']['image'])->toBe('imagen')
+        ->and($result['rows'][0]['price'])->toBe('2500.00')
+        ->and($result['rows'][0]['stock'])->toBe(10)
+        ->and($result['rows'][0]['image'])->toBe('https://images.example.test/perfume-a.jpg');
+});
+
+test('catalogue image URL is kept in the preview and queued only after confirmation', function () {
+    $owner = User::factory()->create(['plan' => UserPlan::Pro]);
+    $shop = Shop::factory()->for($owner)->create();
+    $service = app(InventoryImportService::class);
+    $preview = $service->preview(
+        UploadedFile::fake()->createWithContent('catalogo.csv', "Nombre;Precio de venta;Stock;Imagen\nProducto con foto;2500;4;https://images.example.test/producto.jpg\n"),
+        [],
+        $shop,
+        $owner,
+    );
+
+    expect($preview['rows'][0]['image'])->toBe('https://images.example.test/producto.jpg');
+
+    $summary = $service->confirmSession($shop, $preview['session'], ['duplicate_strategy' => 'create'], app(PlanLimitsService::class), app(CatalogMediaService::class), $owner);
+    $product = $shop->products()->where('name', 'Producto con foto')->firstOrFail();
+
+    expect($summary['created'])->toBe(1)->and($product->price)->toBe('2500.00');
+    Queue::assertPushed(ProcessImportedProductImageJob::class, fn ($job): bool => $job->productId === $product->id && $job->url === 'https://images.example.test/producto.jpg');
+});
+
+test('embedded Excel product image follows its product row into the import session', function () {
+    $imagePath = tempnam(sys_get_temp_dir(), 'catalog-image-').'.png';
+    $image = imagecreatetruecolor(12, 12);
+    imagepng($image, $imagePath);
+    imagedestroy($image);
+
+    $workbook = new Spreadsheet;
+    $sheet = $workbook->getActiveSheet();
+    $sheet->fromArray([
+        ['Nombre', 'Precio de venta', 'Stock'],
+        ['Producto embebido', '1800', '3'],
+    ]);
+    $drawing = new Drawing;
+    $drawing->setPath($imagePath);
+    $drawing->setCoordinates('A2');
+    $drawing->setWorksheet($sheet);
+    $xlsxPath = tempnam(sys_get_temp_dir(), 'catalog-xlsx-').'.xlsx';
+    (new Xlsx($workbook))->save($xlsxPath);
+    $workbook->disconnectWorksheets();
+
+    $result = app(InventoryImportService::class)->preview(new UploadedFile($xlsxPath, 'catalogo.xlsx', null, null, true));
+
+    expect($result['valid_rows'])->toBe(1)
+        ->and($result['rows'][0]['embedded_image']['mime_type'])->toBe('image/png')
+        ->and($result['rows'][0]['price'])->toBe('1800.00');
 });
 
 test('1500 row workbook preview has bounded query count and reports benchmark', function () {

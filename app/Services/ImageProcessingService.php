@@ -78,7 +78,7 @@ class ImageProcessingService
         return $productImage;
     }
 
-    public function storeRemoteAndDispatch(Product $product, string $bytes, string $mimeType): ProductImage
+    public function storeRemoteAndDispatch(Product $product, string $bytes, string $mimeType, string $source = 'web_search'): ProductImage
     {
         $maxSizeBytes = (int) config('catalog.uploads.max_file_size_mb', 10) * 1024 * 1024;
         if (strlen($bytes) > $maxSizeBytes) {
@@ -107,7 +107,7 @@ class ImageProcessingService
         Storage::disk('temp')->put($tempPath, $bytes);
 
         $productImage = $product->images()->create([
-            'source' => 'web_search',
+            'source' => $source,
             'object_key' => "temp/{$tempPath}",
             'thumbnail_object_key' => null,
             'mime_type' => (string) ($imageInfo['mime'] ?? $mimeType),

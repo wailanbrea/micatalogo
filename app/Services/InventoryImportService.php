@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductModerationStatus;
+use App\Jobs\ProcessImportedProductImageJob;
 use App\Jobs\ResolveProductCatalogMediaJob;
 use App\Models\AttributeDefinition;
 use App\Models\GlobalCategory;
@@ -145,6 +146,7 @@ class InventoryImportService
                 $seenSkus,
                 $seenNames,
                 $missingCategories,
+                $selected['image_rows'][$index + 1] ?? [],
             );
             foreach ($attributeColumns as $source) {
                 $column = array_search($source, $headers, true);
@@ -294,6 +296,7 @@ class InventoryImportService
 
         $summary = [];
         $productIdsToResolveMedia = [];
+        $productImageImports = [];
 
         DB::transaction(function () use (
             $shop,
@@ -307,6 +310,7 @@ class InventoryImportService
             $user,
             &$summary,
             &$productIdsToResolveMedia,
+            &$productImageImports,
         ): void {
             $lockedShop = Shop::query()->lockForUpdate()->findOrFail($shop->id);
             $lockedSession = InventoryImportSession::query()->lockForUpdate()->findOrFail($session->id);
@@ -448,7 +452,12 @@ class InventoryImportService
                         'published_at' => now(),
                     ]);
 
-                    $productIdsToResolveMedia[] = $product->id;
+                    $imageImport = $this->imageImportPayload($row);
+                    if ($imageImport !== null) {
+                        $productImageImports[] = ['product_id' => $product->id, ...$imageImport];
+                    } else {
+                        $productIdsToResolveMedia[] = $product->id;
+                    }
 
                     $product->inventory()->create([
                         'track_inventory' => $trackInventory,
@@ -507,6 +516,11 @@ class InventoryImportService
                     }
 
                     $product->update($updateData);
+
+                    $imageImport = $this->imageImportPayload($row);
+                    if ($imageImport !== null) {
+                        $productImageImports[] = ['product_id' => $product->id, ...$imageImport];
+                    }
 
                     // Update inventory
                     $inventory = $product->inventory()->first();
@@ -585,6 +599,23 @@ class InventoryImportService
             }
         }
 
+        foreach ($productImageImports as $imageImport) {
+            try {
+                ProcessImportedProductImageJob::dispatch(
+                    (int) $imageImport['product_id'],
+                    $imageImport['bytes'] ?? null,
+                    $imageImport['mime_type'] ?? null,
+                    $imageImport['url'] ?? null,
+                );
+            } catch (\Throwable $error) {
+                Log::warning('Inventory import image dispatch unavailable', [
+                    'shop_id' => $shop->id,
+                    'product_id' => $imageImport['product_id'],
+                    'exception_type' => $error::class,
+                ]);
+            }
+        }
+
         return $summary;
     }
 
@@ -655,6 +686,7 @@ class InventoryImportService
             'stock' => 'Stock',
             'notes' => 'Notas',
             'attributes' => 'Atributos',
+            'image' => 'Imagen (URL o incluida)',
         ];
     }
 
@@ -823,6 +855,7 @@ class InventoryImportService
         array &$seenSkus,
         array &$seenNames,
         array &$missingCategories,
+        array $embeddedImages = [],
     ): array {
         $data = [];
         foreach ($headers as $index => $header) {
@@ -835,6 +868,7 @@ class InventoryImportService
         $rawSku = $value('product_code');
         $rawBarcode = $value('barcode');
         $rawCategory = $value('category');
+        $rawImage = $value('image');
 
         $price = self::parseMoney($value('price'));
         $costPrice = self::parseMoney($value('cost_price'));
@@ -851,10 +885,13 @@ class InventoryImportService
         if ($name === '') {
             $errors[] = 'Falta el nombre.';
         }
-        foreach (['name' => [$name, 255], 'product_code' => [$rawSku, 100], 'barcode' => [$rawBarcode, 32], 'brand' => [$value('brand'), 120], 'category' => [$rawCategory, 255]] as $field => [$text, $maximum]) {
+        foreach (['name' => [$name, 255], 'product_code' => [$rawSku, 100], 'barcode' => [$rawBarcode, 32], 'brand' => [$value('brand'), 120], 'category' => [$rawCategory, 255], 'image' => [$rawImage, 2000]] as $field => [$text, $maximum]) {
             if (mb_strlen($text) > $maximum) {
                 $errors[] = "El campo {$field} supera {$maximum} caracteres.";
             }
+        }
+        if ($rawImage !== '' && ! filter_var($rawImage, FILTER_VALIDATE_URL)) {
+            $warnings[] = 'La imagen indicada no es una URL válida; se importará el producto y se omitirá esa imagen.';
         }
         if ($rawBarcode !== '' && ! preg_match('/^\d(?:[0-9\s-]*\d)?$/D', $rawBarcode)) {
             $errors[] = 'El código de barras debe contener dígitos, sin letras ni notación científica. Revisa el archivo original.';
@@ -979,6 +1016,8 @@ class InventoryImportService
             'price' => $price,
             'cost_price' => $costPrice,
             'stock' => $stock,
+            'image' => $rawImage ?: null,
+            'embedded_image' => $embeddedImages[0] ?? null,
             'attributes' => $parsedAttributes['items'],
             'status' => $status,
             'match_type' => $matchType,
@@ -990,6 +1029,22 @@ class InventoryImportService
             'valid' => empty($errors),
             'action' => $defaultAction,
         ];
+    }
+
+    /** @return array{bytes?: string, mime_type?: string, url?: string}|null */
+    private function imageImportPayload(array $row): ?array
+    {
+        $embedded = $row['embedded_image'] ?? null;
+        if (is_array($embedded) && is_string($embedded['bytes'] ?? null) && $embedded['bytes'] !== '') {
+            return [
+                'bytes' => $embedded['bytes'],
+                'mime_type' => (string) ($embedded['mime_type'] ?? 'application/octet-stream'),
+            ];
+        }
+
+        $url = trim((string) ($row['image'] ?? ''));
+
+        return $url !== '' && filter_var($url, FILTER_VALIDATE_URL) ? ['url' => $url] : null;
     }
 
     private function attributes(string $value): array

@@ -20,6 +20,7 @@ class ColumnDetector
         'notes' => ['notas', 'observaciones', 'notes', 'remarks'],
         'description' => ['descripcion', 'description', 'detalle'],
         'attributes' => ['atributos', 'caracteristicas', 'attributes', 'variantes'],
+        'image' => ['imagen', 'imagen del producto', 'foto', 'fotografia', 'image', 'product image', 'photo', 'url imagen', 'imagen url', 'image url', 'foto url'],
     ];
 
     public function normalize(string $header): string
