@@ -175,6 +175,33 @@ test('a shop owner can configure the menus returned to an assigned seller', func
         ->assertForbidden();
 });
 
+test('feature modules are available to an owner but obey seller menu permissions', function () {
+    $owner = User::factory()->create();
+    $shop = Shop::factory()->for($owner)->create();
+    $seller = User::factory()->create(['email' => 'feature-seller@example.com']);
+    ShopSeller::create([
+        'shop_id' => $shop->id,
+        'user_id' => $seller->id,
+        'commission_type' => 'percentage',
+        'commission_value' => 5,
+        'is_active' => true,
+        'menu_permissions' => ['sales'],
+    ]);
+
+    $this->withToken($owner->createToken('owner')->plainTextToken)
+        ->getJson("/api/v1/shops/{$shop->public_id}/features/quotes")
+        ->assertOk()
+        ->assertJsonPath('feature_key', 'quotes')
+        ->assertJsonPath('feature.title', 'Cotizaciones')
+        ->assertJsonPath('module.kind', 'table');
+
+    expect(app(SellerMenuService::class)->visibleForUser($shop, $seller))->not->toContain('quotes');
+
+    $response = $this->actingAs($seller, 'sanctum')
+        ->getJson("/api/v1/shops/{$shop->public_id}/features/quotes");
+    $response->assertForbidden();
+});
+
 test('a shop owner can create a seller from the Android API', function () {
     $owner = User::factory()->create();
     $shop = Shop::factory()->for($owner)->create();

@@ -18,6 +18,7 @@ return [
         'storefront' => 'Mi tienda',
         'services' => 'Servicios',
         'price_health' => 'Salud de precios',
+        'pricing' => 'Precios automáticos',
         'decants' => 'Decants',
         'attributes' => 'Marcas y atributos',
         'import' => 'Importar',

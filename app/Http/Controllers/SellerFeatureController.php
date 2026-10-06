@@ -18,6 +18,7 @@ use App\Models\SupportRequest;
 use App\Models\Supplier;
 use App\Services\BusinessDashboardService;
 use App\Services\SellerMenuService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -52,6 +53,14 @@ class SellerFeatureController extends Controller
         'help' => ['group' => 'Ajustes', 'title' => 'Ayuda', 'description' => 'Encuentra guías rápidas para aprender a usar cada parte de tu negocio.', 'status' => 'En preparación'],
         'practice' => ['group' => 'Ajustes', 'title' => 'Practicar sin miedo', 'description' => 'Aprende los flujos principales con datos de práctica sin tocar tu operación real.', 'status' => 'En preparación'],
         'support' => ['group' => 'Ajustes', 'title' => 'Soporte', 'description' => 'Envía una solicitud y consulta el estado de la ayuda de tu equipo.', 'status' => 'En preparación'],
+        'storefront' => ['group' => 'Catálogo', 'title' => 'Mi tienda', 'description' => 'Revisa la vitrina pública y la experiencia que ven tus clientes.', 'status' => 'En preparación'],
+        'metrics' => ['group' => 'Catálogo', 'title' => 'Métricas y QR', 'description' => 'Consulta visitas, contactos de WhatsApp y el código QR de tu catálogo.', 'status' => 'En preparación'],
+        'public_catalog' => ['group' => 'Catálogo', 'title' => 'Compartir catálogo', 'description' => 'Comparte el enlace de tu catálogo público con tus clientes.', 'status' => 'En preparación'],
+        'pricing' => ['group' => 'Catálogo', 'title' => 'Precios automáticos', 'description' => 'Define margen y redondeo para actualizar precios al recibir nuevos costos.', 'status' => 'En preparación'],
+        'import' => ['group' => 'Catálogo', 'title' => 'Importar', 'description' => 'Carga productos desde Excel, CSV o PDF y revisa la previsualización antes de guardar.', 'status' => 'En preparación'],
+        'expenses' => ['group' => 'Finanzas', 'title' => 'Gastos', 'description' => 'Registra y consulta los gastos que afectan la caja y la rentabilidad.', 'status' => 'En preparación'],
+        'shop_settings' => ['group' => 'Ajustes', 'title' => 'Configuración de tienda', 'description' => 'Personaliza identidad, catálogo, pedidos y reglas operativas de la tienda.', 'status' => 'En preparación'],
+        'sellers' => ['group' => 'Ajustes', 'title' => 'Equipo', 'description' => 'Administra vendedores, permisos y comisiones sin exponer funciones administrativas.', 'status' => 'En preparación'],
     ];
 
     public function show(
@@ -105,6 +114,28 @@ class SellerFeatureController extends Controller
             'featureKey' => $feature,
             'feature' => self::FEATURES[$feature],
             'related' => $related,
+            'module' => $this->moduleData($feature, $shop, $dashboard ?: app(BusinessDashboardService::class)),
+        ]);
+    }
+
+    /**
+     * Mobile read model for the same feature modules exposed by the web panel.
+     * Mutations continue to use their dedicated API resources so this endpoint
+     * cannot accidentally create or alter accounting data.
+     */
+    public function api(
+        Request $request,
+        Shop $shop,
+        string $feature,
+        SellerMenuService $menus,
+        ?BusinessDashboardService $dashboard = null
+    ): JsonResponse {
+        abort_unless(isset(self::FEATURES[$feature]), 404);
+        abort_unless(in_array($feature, $menus->visibleForUser($shop, $request->user()), true), 403);
+
+        return response()->json([
+            'feature_key' => $feature,
+            'feature' => self::FEATURES[$feature],
             'module' => $this->moduleData($feature, $shop, $dashboard ?: app(BusinessDashboardService::class)),
         ]);
     }

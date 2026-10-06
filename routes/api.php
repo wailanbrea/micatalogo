@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\InventoryImportController;
 use App\Http\Controllers\Api\V1\MobileOperationController;
 use App\Http\Controllers\Api\V1\PosSaleController;
 use App\Http\Controllers\Api\V1\ShopController;
+use App\Http\Controllers\SellerFeatureController;
 use App\Http\Middleware\EnsureApiAccountIsActive;
 use Illuminate\Support\Facades\Route;
 
@@ -29,6 +30,8 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/shops/{shop}/sellers', [ShopController::class, 'storeSeller']);
         Route::put('/shops/{shop}/sellers/{seller}/menus', [ShopController::class, 'updateSellerMenus']);
         Route::get('/shops/{shop}/catalog', [CatalogController::class, 'show']);
+        Route::get('/shops/{shop}/features/{feature}', [SellerFeatureController::class, 'api'])
+            ->where('feature', '[a-z_]+');
         Route::post('/shops/{shop}/inventory-import/preview', [InventoryImportController::class, 'preview']);
         Route::post('/shops/{shop}/inventory-import', [InventoryImportController::class, 'store']);
         Route::post('/shops/{shop}/inventory-import/{session}/confirm', [InventoryImportController::class, 'confirm']);
