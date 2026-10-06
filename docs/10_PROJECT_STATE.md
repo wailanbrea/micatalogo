@@ -6,10 +6,10 @@ Corte: 2026-10-05. Este archivo describe el estado vigente; el historial queda e
 
 - Web/API: Laravel 12 y PHP 8.2; repositorio micatalogo.
 - Android: repositorio micatalogowebApp, paquete com.bsolutions.micatalogo, Room 21.
-- Última versión pública comprobada: 1.0.23 (24), mínimo compatible 23.
-- Nueva versión local: 1.0.24 (25), importador adaptativo implementado y APK de release preparada.
-- Esta tarea no modifica el VPS ni el manifiesto público. No hay migraciones backend,
-  seeders, borrados ni alteraciones de usuarios/tiendas/productos existentes en producción.
+- Versión pública comprobada: 1.0.24 (25), mínimo compatible 23; Web/API y APK publicadas.
+- VPS: Composer instalado, Vite compilado y cachés Laravel regeneradas.
+- Sin migraciones backend, seeders, borrados ni cambios de datos comerciales; conteos e
+  identificadores antes/después idénticos (11 usuarios, 8 tiendas, 298 productos, 6 facturas).
 - Release financiera anterior: FINANCIAL_ALIGNMENT_RELEASE_1.0.23.md.
 
 ## Capacidades vigentes
@@ -26,7 +26,7 @@ Corte: 2026-10-05. Este archivo describe el estado vigente; el historial queda e
 - Caja remota exige conexión y no cierra con operaciones pendientes de la tienda.
 - Updater conserva mínimo real y bloqueo persistente cuando comenzó la instalación.
 
-## Importador adaptativo terminado en código local
+## Importador adaptativo publicado
 
 - XLSX/XLS/CSV/TXT; hoja real y encabezados detectados hasta fila 50, con selección manual.
 - NFKC/BOM/aliases español-inglés y clasificación EAN/UPC frente a SKU.
@@ -58,7 +58,7 @@ Corte: 2026-10-05. Este archivo describe el estado vigente; el historial queda e
 
 ## Límites y trabajo externo
 
-La publicación de 1.0.24 es independiente de completar esta implementación local.
+Publicación verificada por HTTP, hash/firma de la APK y lectura real del XLSX en el VPS.
 No admite ODS/PDF/imágenes/Word ni reconstruye dígitos que Excel ya perdió.
 R2 es opcional y no está configurado localmente; el fallback de imágenes permanece.
-El caché temporal requiere un driver persistente entre peticiones en la instalación destino.
+El VPS usa caché database, persistente entre peticiones.

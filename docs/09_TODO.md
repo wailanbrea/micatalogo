@@ -11,7 +11,8 @@
 - [x] 7. Android: DTO aditivo, layout manual, sesión autoritativa y catálogo sincronizado.
 - [x] 8. Regresiones, contratos, benchmark 1500 y E2E real Android→Laravel.
 
-Esta tarea no publica ni modifica producción. Estado actual: 10_PROJECT_STATE.md.
+- [x] Publicar Web/API y APK 1.0.24 (25), comprobar HTTP/manifiesto/firma y continuidad de datos.
+No hubo migraciones ni cambios de datos comerciales. Estado actual: 10_PROJECT_STATE.md.
 Las fases siguientes son el registro de funcionalidades previas, no tareas nuevas pendientes.
 
 ## Phase 0
