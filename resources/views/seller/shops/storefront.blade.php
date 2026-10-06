@@ -18,8 +18,19 @@
             <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
                 <div class="space-y-5">
                     <nav class="flex gap-1 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm" aria-label="Secciones de Mi tienda">
-                        @foreach (['resumen' => 'Resumen', 'apariencia' => 'Apariencia', 'contacto' => 'Contacto y horario', 'catalogo' => 'Catálogo', 'vitrinas' => 'Vitrinas', 'anuncios' => 'Anuncios', 'google' => 'Google'] as $anchor => $label)
-                            <a href="#{{ $anchor }}" class="shrink-0 rounded-xl px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-blue-50 hover:text-blue-700 {{ $anchor === 'resumen' ? 'bg-blue-600 text-white hover:bg-blue-600 hover:text-white' : '' }}">{{ $label }}</a>
+                        @php
+                            $storefrontTabs = [
+                                'resumen' => ['label' => 'Resumen', 'url' => '#resumen'],
+                                'apariencia' => ['label' => 'Apariencia', 'url' => route('seller.shops.edit', $shop).'#appearance'],
+                                'contacto' => ['label' => 'Contacto y horario', 'url' => route('seller.shops.edit', $shop).'#contact'],
+                                'catalogo' => ['label' => 'Catálogo', 'url' => '#catalogo'],
+                                'vitrinas' => ['label' => 'Vitrinas', 'url' => '#vitrinas'],
+                                'anuncios' => ['label' => 'Anuncios', 'url' => route('seller.shops.metrics.index', $shop)],
+                                'google' => ['label' => 'Google', 'url' => route('seller.shops.edit', $shop).'#google'],
+                            ];
+                        @endphp
+                        @foreach ($storefrontTabs as $anchor => $tab)
+                            <a href="{{ $tab['url'] }}" class="shrink-0 rounded-xl px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-blue-50 hover:text-blue-700 {{ $anchor === 'resumen' ? 'bg-blue-600 text-white hover:bg-blue-600 hover:text-white' : '' }}">{{ $tab['label'] }}</a>
                         @endforeach
                     </nav>
 

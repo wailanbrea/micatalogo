@@ -9,6 +9,7 @@ use App\Http\Controllers\CatalogHomeController;
 use App\Http\Controllers\EmailVerificationCodeController;
 use App\Http\Controllers\ProductCatalogMediaController;
 use App\Http\Controllers\PublicDownloadController;
+use App\Http\Controllers\PublicLegalController;
 use App\Http\Controllers\PublicOrderController;
 use App\Http\Controllers\PublicProductController;
 use App\Http\Controllers\PublicReportController;
@@ -55,6 +56,8 @@ Route::get('/descargas', [PublicDownloadController::class, 'index'])->name('down
 Route::get('/descargas/android/{versionCode}', [PublicDownloadController::class, 'android'])
     ->whereNumber('versionCode')
     ->name('downloads.android');
+Route::get('/terminos', [PublicLegalController::class, 'terms'])->name('legal.terms');
+Route::get('/privacidad', [PublicLegalController::class, 'privacy'])->name('legal.privacy');
 
 Route::get('/email/verify', [EmailVerificationCodeController::class, 'show'])->name('verification.notice');
 Route::post('/email/verify-code', [EmailVerificationCodeController::class, 'verify'])->middleware('throttle:10,1')->name('verification.verify-code');

@@ -1471,8 +1471,8 @@
                     <div class="flex flex-col gap-2.5">
                         <span class="text-xs font-bold text-slate-900 uppercase tracking-wider">Legal</span>
                         <ul class="flex flex-col gap-2 text-xs text-slate-600">
-                            <li><a class="hover:text-blue-600 transition-colors" href="#">Términos y condiciones</a></li>
-                            <li><a class="hover:text-blue-600 transition-colors" href="#">Política de privacidad</a></li>
+                            <li><a class="hover:text-blue-600 transition-colors" href="{{ route('legal.terms') }}">Términos y condiciones</a></li>
+                            <li><a class="hover:text-blue-600 transition-colors" href="{{ route('legal.privacy') }}">Política de privacidad</a></li>
                         </ul>
                     </div>
 

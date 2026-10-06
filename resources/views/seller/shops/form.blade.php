@@ -54,7 +54,7 @@
                         @error('slug') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                     </div>
 
-                    <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+                    <div id="appearance" class="scroll-mt-24 rounded-xl border border-slate-200 bg-slate-50/60 p-4">
                         <div class="flex items-center justify-between gap-3">
                             <div>
                                 <p class="text-sm font-bold text-slate-900">Identidad visual</p>
@@ -118,7 +118,7 @@
                         @error('logo') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                     </div>
 
-                    <div class="grid gap-5 sm:grid-cols-2">
+                    <div id="contact" class="scroll-mt-24 grid gap-5 sm:grid-cols-2">
                         <div>
                             <label class="text-sm font-medium text-slate-700" for="whatsapp_country_code">Codigo de pais</label>
                             <input class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-600 focus:ring-blue-600" id="whatsapp_country_code" name="whatsapp_country_code" type="text" inputmode="numeric" value="{{ old('whatsapp_country_code', $shop->whatsapp_country_code ?: '1') }}" required>
@@ -130,7 +130,7 @@
                             @error('whatsapp_number') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
                     </div>
-                    <div>
+                    <div id="google" class="scroll-mt-24">
                         <label class="text-sm font-medium text-slate-700" for="instagram">Instagram (opcional)</label>
                         <input class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-600 focus:ring-blue-600" id="instagram" name="instagram" type="text" value="{{ old('instagram', $shop->instagram) }}" placeholder="mi.tienda">
                         @error('instagram') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror

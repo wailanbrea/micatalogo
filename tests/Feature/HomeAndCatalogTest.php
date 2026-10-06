@@ -35,6 +35,16 @@ test('homepage renders seller landing page and never displays cross-store produc
     $response->assertDontSee('TicketPro');
 });
 
+test('homepage legal footer links lead to real pages', function () {
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee(route('legal.terms'), false)
+        ->assertSee(route('legal.privacy'), false);
+
+    $this->get(route('legal.terms'))->assertOk()->assertSee('Términos y condiciones');
+    $this->get(route('legal.privacy'))->assertOk()->assertSee('Política de privacidad');
+});
+
 test('product detail view renders product image when available', function () {
     $this->seed(DatabaseSeeder::class);
 

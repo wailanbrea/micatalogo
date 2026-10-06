@@ -136,6 +136,22 @@ test('mi tienda stays inside the panel and explains how to complete the storefro
         ->assertSee('Navegación del panel');
 });
 
+test('mi tienda tabs link to executable appearance contact and metrics screens', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->for($user)->create();
+
+    $response = $this->actingAs($user)->get(route('seller.shops.storefront', $shop));
+
+    $response->assertOk()
+        ->assertSee(route('seller.shops.edit', $shop).'#appearance', false)
+        ->assertSee(route('seller.shops.edit', $shop).'#contact', false)
+        ->assertSee(route('seller.shops.edit', $shop).'#google', false)
+        ->assertSee(route('seller.shops.metrics.index', $shop), false)
+        ->assertSee('id="apariencia"', false)
+        ->assertSee('id="contacto"', false)
+        ->assertSee('id="google"', false);
+});
+
 test('a seller can update and delete their shop', function () {
     $seller = User::factory()->create();
     $shop = Shop::factory()->for($seller)->create();
