@@ -134,6 +134,26 @@ class Shop extends Model
         return $this->hasMany(Expense::class)->latest('occurred_at');
     }
 
+    public function quotes(): HasMany
+    {
+        return $this->hasMany(CommercialQuote::class)->latest();
+    }
+
+    public function suppliers(): HasMany
+    {
+        return $this->hasMany(Supplier::class)->where('is_active', true)->orderBy('name');
+    }
+
+    public function purchaseDocuments(): HasMany
+    {
+        return $this->hasMany(PurchaseDocument::class)->latest('received_at');
+    }
+
+    public function partners(): HasMany
+    {
+        return $this->hasMany(BusinessPartner::class)->where('is_active', true)->orderBy('name');
+    }
+
     public function expensePayments(): HasMany
     {
         return $this->hasMany(ExpensePayment::class);

@@ -31,6 +31,53 @@
                             @endforeach
                         </div>
 
+                        @if (session('status'))
+                            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-800">{{ session('status') }}</div>
+                        @endif
+                        @if ($errors->any())
+                            <div class="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-800"><ul class="list-disc space-y-1 pl-5">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
+                        @endif
+
+                        @if ($featureKey === 'quotes')
+                            <div class="rounded-2xl border border-blue-100 bg-blue-50/50 p-4 sm:p-5">
+                                <div class="mb-4"><h2 class="text-base font-black text-slate-900">Nueva cotización</h2><p class="mt-1 text-xs text-slate-500">Guárdala como borrador y conviértela en venta cuando el cliente confirme.</p></div>
+                                <form method="POST" action="{{ route('seller.shops.quotes.store', $shop) }}" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                    @csrf
+                                    <input name="customer_name" value="{{ old('customer_name') }}" placeholder="Nombre del cliente" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm">
+                                    <input name="customer_phone" value="{{ old('customer_phone') }}" placeholder="Teléfono" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm">
+                                    <select name="items[0][product_id]" required class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><option value="">Producto</option>@foreach (($module['quoteProducts'] ?? []) as $product)<option value="{{ $product['id'] }}">{{ $product['name'] }} · RD$ {{ $product['price'] }}</option>@endforeach</select>
+                                    <div class="flex gap-2"><input name="items[0][quantity]" value="1" min="1" required type="number" placeholder="Cantidad" class="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><input name="items[0][unit_price]" placeholder="Precio" type="number" min="0" step="0.01" class="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"></div>
+                                    <textarea name="notes" placeholder="Notas (opcional)" class="sm:col-span-2 lg:col-span-3 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"></textarea>
+                                    <button class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-black text-white hover:bg-blue-700">Guardar cotización</button>
+                                </form>
+                            </div>
+                        @endif
+
+                        @if (in_array($featureKey, ['containers', 'loads', 'purchase_invoices'], true))
+                            <div class="rounded-2xl border border-amber-100 bg-amber-50/50 p-4 sm:p-5">
+                                <div class="mb-4"><h2 class="text-base font-black text-slate-900">Registrar recepción de compra</h2><p class="mt-1 text-xs text-slate-500">La recepción crea un lote separado y conserva el costo exacto de esta compra.</p></div>
+                                <form method="POST" action="{{ route('seller.shops.purchases.store', $shop) }}" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+                                    @csrf
+                                    <input type="hidden" name="type" value="{{ $featureKey === 'containers' ? 'container' : ($featureKey === 'loads' ? 'load' : 'purchase_invoice') }}">
+                                    <input required name="document_number" placeholder="No. documento" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm">
+                                    <select name="supplier_id" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><option value="">Suplidor (opcional)</option>@foreach (($module['suppliers'] ?? []) as $supplier)<option value="{{ $supplier['id'] }}">{{ $supplier['name'] }}</option>@endforeach</select>
+                                    <select required name="product_id" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><option value="">Producto</option>@foreach (($module['purchaseProducts'] ?? []) as $product)<option value="{{ $product['id'] }}">{{ $product['name'] }}</option>@endforeach</select>
+                                    <input required name="quantity" type="number" min="1" placeholder="Cantidad" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm">
+                                    <input required name="unit_cost" type="number" min="0" step="0.01" placeholder="Costo unitario" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm">
+                                    <button class="rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-black text-white hover:bg-amber-700">Recibir inventario</button>
+                                </form>
+                            </div>
+                        @elseif ($featureKey === 'suppliers')
+                            <div class="rounded-2xl border border-blue-100 bg-blue-50/50 p-4 sm:p-5"><div class="mb-4"><h2 class="text-base font-black text-slate-900">Nuevo suplidor</h2><p class="mt-1 text-xs text-slate-500">Guarda sus datos para asociarlos a futuras recepciones.</p></div><form method="POST" action="{{ route('seller.shops.suppliers.store', $shop) }}" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">@csrf<input required name="name" placeholder="Nombre del suplidor" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><input name="phone" placeholder="Teléfono" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><input name="email" type="email" placeholder="Correo" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><button class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-black text-white hover:bg-blue-700">Guardar suplidor</button></form></div>
+                        @endif
+
+                        @if ($featureKey === 'partners')
+                            <div class="grid gap-4 lg:grid-cols-2">
+                                <div class="rounded-2xl border border-blue-100 bg-blue-50/50 p-4 sm:p-5"><h2 class="mb-4 text-base font-black text-slate-900">Nuevo socio</h2><form method="POST" action="{{ route('seller.shops.partners.store', $shop) }}" class="grid gap-3 sm:grid-cols-2">@csrf<input required name="name" placeholder="Nombre" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><input name="ownership_percent" type="number" min="0" max="100" step="0.01" placeholder="Participación %" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><input name="email" type="email" placeholder="Correo" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><input name="phone" placeholder="Teléfono" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><button class="sm:col-span-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-black text-white hover:bg-blue-700">Guardar socio</button></form></div>
+                                <div class="rounded-2xl border border-amber-100 bg-amber-50/50 p-4 sm:p-5"><h2 class="mb-4 text-base font-black text-slate-900">Aporte o retiro</h2><form method="POST" action="{{ route('seller.shops.partners.transactions.store', [$shop, 'partner' => '__partner__']) }}" onsubmit="this.action=this.action.replace('__partner__',this.partner_id.value)" class="grid gap-3 sm:grid-cols-2">@csrf<select required name="partner_id" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><option value="">Socio</option>@foreach (($module['partners'] ?? []) as $partner)<option value="{{ $partner['id'] }}">{{ $partner['name'] }}</option>@endforeach</select><select required name="type" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><option value="contribution">Aporte</option><option value="withdrawal">Retiro</option><option value="distribution">Distribución</option></select><input required name="amount" type="number" min="0.01" step="0.01" placeholder="Monto" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><input name="notes" placeholder="Nota" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><button class="sm:col-span-2 rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-black text-white hover:bg-amber-700">Registrar en caja</button></form></div>
+                            </div>
+                        @endif
+
                         @if ($featureKey === 'day_close')
                             <div class="rounded-2xl border {{ $module['session'] ? 'border-emerald-200 bg-emerald-50/60' : 'border-slate-200 bg-slate-50' }} p-4 sm:p-5">
                                 @if ($module['session'])
@@ -87,6 +134,12 @@
                                                     <form method="POST" action="{{ route('seller.shops.orders.confirm', [$shop, $row['id']]) }}">
                                                         @csrf
                                                         <button class="rounded-xl bg-emerald-600 px-3 py-2 text-[11px] font-black text-white hover:bg-emerald-700">Confirmar venta</button>
+                                                    </form>
+                                                @endif
+                                                @if (($row['can_convert'] ?? false) && $featureKey === 'quotes')
+                                                    <form method="POST" action="{{ route('seller.shops.quotes.convert', [$shop, 'quote' => $row['id']]) }}">
+                                                        @csrf
+                                                        <button class="rounded-xl bg-emerald-600 px-3 py-2 text-[11px] font-black text-white hover:bg-emerald-700">Convertir en venta</button>
                                                     </form>
                                                 @endif
                                             </div>

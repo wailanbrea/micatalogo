@@ -17,6 +17,7 @@ use App\Http\Controllers\PublicSupportController;
 use App\Http\Controllers\SellerBulkProductController;
 use App\Http\Controllers\SellerBusinessController;
 use App\Http\Controllers\SellerCashRegisterController;
+use App\Http\Controllers\SellerCommerceController;
 use App\Http\Controllers\SellerCustomerController;
 use App\Http\Controllers\SellerExpenseController;
 use App\Http\Controllers\SellerFeatureController;
@@ -125,6 +126,12 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
         Route::get('/tiendas/{shop}/modulo/{feature}', [SellerFeatureController::class, 'show'])->name('shops.feature');
     });
     Route::scopeBindings()->middleware('can:update,shop')->group(function () {
+        Route::post('/tiendas/{shop}/cotizaciones', [SellerCommerceController::class, 'storeQuote'])->name('shops.quotes.store');
+        Route::post('/tiendas/{shop}/cotizaciones/{quote}/convertir', [SellerCommerceController::class, 'convertQuote'])->name('shops.quotes.convert');
+        Route::post('/tiendas/{shop}/suplidores', [SellerCommerceController::class, 'storeSupplier'])->name('shops.suppliers.store');
+        Route::post('/tiendas/{shop}/compras', [SellerCommerceController::class, 'storePurchaseDocument'])->name('shops.purchases.store');
+        Route::post('/tiendas/{shop}/socios', [SellerCommerceController::class, 'storePartner'])->name('shops.partners.store');
+        Route::post('/tiendas/{shop}/socios/{partner}/movimientos', [SellerCommerceController::class, 'storePartnerTransaction'])->name('shops.partners.transactions.store');
         Route::get('/tiendas/{shop}/vendedores', [SellerManagementController::class, 'index'])->name('shops.sellers.index');
         Route::post('/tiendas/{shop}/vendedores', [SellerManagementController::class, 'store'])->name('shops.sellers.store');
         Route::patch('/tiendas/{shop}/vendedores/{seller}', [SellerManagementController::class, 'update'])->name('shops.sellers.update');

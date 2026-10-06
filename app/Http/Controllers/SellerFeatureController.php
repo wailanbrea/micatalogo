@@ -3,16 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\AttributeDefinition;
+use App\Models\BusinessPartner;
 use App\Models\CashRegisterSession;
+use App\Models\CommercialQuote;
 use App\Models\Customer;
 use App\Models\Expense;
 use App\Models\Invoice;
-use App\Models\InventoryLot;
 use App\Models\InventoryMovement;
 use App\Models\Order;
+use App\Models\PurchaseDocument;
 use App\Models\Product;
 use App\Models\Shop;
 use App\Models\SupportRequest;
+use App\Models\Supplier;
 use App\Services\BusinessDashboardService;
 use App\Services\SellerMenuService;
 use Illuminate\Http\Request;
@@ -151,24 +154,27 @@ class SellerFeatureController extends Controller
 
     private function quotesData(Shop $shop): array
     {
-        $pending = $shop->orders()->where('status', 'pending')->latest()->limit(30)->get();
+        $quotes = $shop->quotes()->with('items')->latest()->limit(30)->get();
 
         return [
             'kind' => 'table',
             'kpis' => [
-                ['label' => 'Solicitudes por atender', 'value' => number_format($pending->count()), 'tone' => 'amber'],
-                ['label' => 'Valor en seguimiento', 'value' => $this->money($pending->sum('total')), 'tone' => 'blue'],
-                ['label' => 'Convertidas a venta', 'value' => number_format($shop->invoices()->where('channel', 'pos')->count()), 'tone' => 'emerald'],
+                ['label' => 'Cotizaciones', 'value' => number_format($shop->quotes()->count()), 'tone' => 'blue'],
+                ['label' => 'En seguimiento', 'value' => number_format($shop->quotes()->whereIn('status', ['draft', 'sent'])->count()), 'tone' => 'amber'],
+                ['label' => 'Convertidas a venta', 'value' => number_format($shop->quotes()->where('status', 'converted')->count()), 'tone' => 'emerald'],
             ],
-            'rows' => $pending->map(fn (Order $order) => [
-                'primary' => $order->order_number,
-                'secondary' => ($order->customer_name ?: 'Cliente sin nombre').' · '.($order->delivery_type ?: 'Retiro'),
-                'value' => $this->money($order->total),
-                'status' => 'Pendiente de atención',
-                'can_confirm' => $order->invoice_id === null && $order->status !== 'cancelled',
-                'id' => $order->id,
+            'rows' => $quotes->map(fn (CommercialQuote $quote) => [
+                'primary' => $quote->quote_number,
+                'secondary' => ($quote->customer_name ?: 'Cliente sin nombre').' · '.number_format($quote->items->sum('quantity')).' artículo(s)',
+                'value' => $this->money($quote->total),
+                'status' => match ($quote->status) { 'converted' => 'Convertida', 'sent' => 'Enviada', default => 'Borrador' },
+                'can_convert' => $quote->converted_invoice_id === null && $quote->status !== 'cancelled',
+                'id' => $quote->public_id,
             ])->all(),
-            'note' => 'Las solicitudes recibidas por el catálogo se pueden revisar y confirmar desde aquí. Las cotizaciones formales persistentes se incorporarán sin mezclarlas con ventas contabilizadas.',
+            'quoteProducts' => $shop->products()->whereIn('availability_status', ['available', 'out_of_stock'])->orderBy('name')->limit(300)->get()->map(fn (Product $product) => [
+                'id' => $product->public_id, 'name' => $product->name, 'price' => number_format($product->currentPrice(), 2, '.', ''),
+            ])->all(),
+            'note' => 'Cada cotización queda separada de la contabilidad hasta que la conviertas. Al convertirla se valida stock, se consume FIFO y se crea una venta única.',
             'actions' => [
                 ['label' => 'Ir a Terminal', 'url' => route('seller.shops.pos', $shop), 'tone' => 'primary'],
                 ['label' => 'Ver pedidos', 'url' => route('seller.shops.feature', [$shop, 'feature' => 'orders']), 'tone' => 'secondary'],
@@ -178,14 +184,9 @@ class SellerFeatureController extends Controller
 
     private function purchasingData(Shop $shop, string $feature): array
     {
-        $lots = $shop->products()->with(['inventory', 'inventoryLots'])->get()->flatMap(fn (Product $product) => $product->inventoryLots->map(fn (InventoryLot $lot) => [
-            'primary' => $product->name,
-            'secondary' => 'Lote '.($lot->lot_code ?: $lot->id).' · '.($lot->received_at?->format('d/m/Y') ?: 'Sin fecha'),
-            'value' => number_format((int) $lot->remaining_quantity).' unidad(es)',
-            'status' => $lot->remaining_quantity > 0 ? 'Disponible' : 'Agotado',
-        ]))->take(30)->values();
-        $restocks = InventoryMovement::query()->whereIn('product_id', $shop->products()->select('id'))->where('type', 'restock')->latest()->limit(30)->with('product')->get();
-        $productsWithCost = $shop->products()->whereHas('inventory', fn ($query) => $query->whereNotNull('cost_price'))->count();
+        $documents = $shop->purchaseDocuments()->with(['supplier', 'items.product'])->latest()->limit(30)->get();
+        $suppliers = $shop->suppliers()->get();
+        $products = $shop->products()->whereHas('inventory', fn ($query) => $query->where('track_inventory', true))->orderBy('name')->limit(300)->get();
 
         $labels = [
             'containers' => ['Contenedores', 'Agrupaciones de recepción', 'Compras agrupadas'],
@@ -194,25 +195,37 @@ class SellerFeatureController extends Controller
             'purchase_invoices' => ['Facturas de compra', 'Recepciones valorizadas', 'Lotes con costo'],
         ];
         [$title, $primaryLabel, $secondaryLabel] = $labels[$feature];
-        $rows = match ($feature) {
-            'loads' => $restocks->map(fn (InventoryMovement $movement) => [
-                'primary' => $movement->product?->name ?: 'Producto eliminado',
-                'secondary' => 'Reposición registrada · '.($movement->created_at?->format('d/m/Y H:i') ?: 'Sin fecha'),
-                'value' => '+'.number_format((int) $movement->quantity).' unidad(es)',
-                'status' => 'Recibida',
-            ])->all(),
-            default => $lots->all(),
-        };
+        $rows = $documents->filter(fn (PurchaseDocument $document) => match ($feature) {
+            'containers' => $document->type === 'container',
+            'loads' => $document->type === 'load',
+            'purchase_invoices' => $document->type === 'purchase_invoice',
+            default => true,
+        })->map(fn (PurchaseDocument $document) => [
+            'primary' => $document->document_number,
+            'secondary' => ($document->supplier?->name ?: 'Sin suplidor').' · '.($document->received_at?->format('d/m/Y H:i') ?: 'Sin fecha'),
+            'value' => $this->money($document->total),
+            'status' => 'Recibida',
+        ])->values()->all();
+        if ($feature === 'suppliers') {
+            $rows = $suppliers->map(fn (Supplier $supplier) => [
+                'primary' => $supplier->name,
+                'secondary' => $supplier->phone ?: ($supplier->email ?: 'Sin contacto'),
+                'value' => number_format($supplier->purchaseDocuments()->count()).' compra(s)',
+                'status' => 'Activo',
+            ])->all();
+        }
 
         return [
             'kind' => 'table',
             'kpis' => [
-                ['label' => $primaryLabel, 'value' => number_format($feature === 'loads' ? $restocks->count() : $lots->count()), 'tone' => 'blue'],
-                ['label' => $secondaryLabel, 'value' => number_format($feature === 'suppliers' ? $productsWithCost : $lots->where('status', 'Disponible')->count()), 'tone' => 'emerald'],
-                ['label' => 'Productos', 'value' => number_format($shop->products()->count()), 'tone' => 'slate'],
+                ['label' => $primaryLabel, 'value' => number_format(count($rows)), 'tone' => 'blue'],
+                ['label' => $secondaryLabel, 'value' => number_format($feature === 'suppliers' ? $suppliers->count() : $documents->where('status', 'received')->count()), 'tone' => 'emerald'],
+                ['label' => 'Productos controlados', 'value' => number_format($products->count()), 'tone' => 'slate'],
             ],
             'rows' => $rows,
-            'note' => "{$title} usa los lotes, costos FIFO y recepciones existentes. La pantalla no inventa suplidores ni facturas que todavía no estén registrados.",
+            'suppliers' => $suppliers->map(fn (Supplier $supplier) => ['id' => $supplier->public_id, 'name' => $supplier->name])->all(),
+            'purchaseProducts' => $products->map(fn (Product $product) => ['id' => $product->public_id, 'name' => $product->name, 'cost' => number_format((float) ($product->inventory?->cost_price ?? 0), 2, '.', '')])->all(),
+            'note' => "{$title} registra recepciones reales, crea un lote con el costo indicado y mantiene el historial FIFO. No se modifica ningún lote anterior.",
             'actions' => [
                 ['label' => 'Ver inventario', 'url' => route('seller.shops.inventory.index', $shop), 'tone' => 'primary'],
                 ['label' => 'Ver lotes y costos FIFO', 'url' => route('seller.shops.inventory.lots', $shop), 'tone' => 'secondary'],
@@ -269,24 +282,25 @@ class SellerFeatureController extends Controller
 
     private function partnersData(Shop $shop): array
     {
-        $members = $shop->members()->with('user')->where('is_active', true)->get();
-        $sellers = $shop->sellers()->with('user')->where('is_active', true)->get();
+        $partners = $shop->partners()->with('transactions')->get();
 
         return [
             'kind' => 'table',
             'kpis' => [
-                ['label' => 'Equipo activo', 'value' => number_format($members->count() + $sellers->count()), 'tone' => 'blue'],
-                ['label' => 'Vendedores', 'value' => number_format($sellers->count()), 'tone' => 'emerald'],
-                ['label' => 'Ventas del mes', 'value' => $this->money($shop->invoices()->whereMonth('issued_at', now()->month)->sum('total')), 'tone' => 'slate'],
+                ['label' => 'Socios activos', 'value' => number_format($partners->count()), 'tone' => 'blue'],
+                ['label' => 'Aportes', 'value' => $this->money($partners->flatMap->transactions->where('type', 'contribution')->sum('amount')), 'tone' => 'emerald'],
+                ['label' => 'Retiros', 'value' => $this->money($partners->flatMap->transactions->whereIn('type', ['withdrawal', 'distribution'])->sum('amount')), 'tone' => 'rose'],
             ],
-            'rows' => $members->concat($sellers)->map(fn ($member) => [
-                'primary' => $member->user?->name ?: 'Usuario del equipo',
-                'secondary' => $member instanceof \App\Models\ShopSeller ? 'Vendedor · '.($member->commission_type === 'percentage' ? $member->commission_value.'%' : $this->money($member->commission_value)) : 'Miembro del equipo',
-                'value' => 'Activo',
-                'status' => 'Acceso vigente',
-            ])->values()->all(),
-            'note' => 'La participación financiera se mantiene separada de las ventas y comisiones. Aquí puedes revisar quién tiene acceso antes de ampliar el módulo de socios.',
-            'actions' => [['label' => 'Administrar equipo', 'url' => route('seller.shops.sellers.index', $shop), 'tone' => 'primary']],
+            'rows' => $partners->map(fn (BusinessPartner $partner) => [
+                'primary' => $partner->name,
+                'secondary' => number_format((float) $partner->ownership_percent, 2).'% de participación · '.($partner->email ?: ($partner->phone ?: 'Sin contacto')),
+                'value' => $this->money($partner->transactions->where('type', 'contribution')->sum('amount') - $partner->transactions->whereIn('type', ['withdrawal', 'distribution'])->sum('amount')),
+                'status' => 'Activo',
+                'id' => $partner->public_id,
+            ])->all(),
+            'partners' => $partners->map(fn (BusinessPartner $partner) => ['id' => $partner->public_id, 'name' => $partner->name])->all(),
+            'note' => 'Los aportes y retiros se registran mediante la sesión de caja abierta y quedan enlazados al movimiento contable correspondiente.',
+            'actions' => [['label' => 'Ver caja', 'url' => route('seller.shops.cash.index', $shop), 'tone' => 'primary']],
         ];
     }
 

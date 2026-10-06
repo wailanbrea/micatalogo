@@ -63,7 +63,7 @@ test('all feature modules have a useful protected entry point', function () {
         ->get(route('seller.shops.feature', [$shop, 'feature' => 'quotes']))
         ->assertOk()
         ->assertSee('Cotizaciones')
-        ->assertSee('Solicitudes por atender')
+        ->assertSee('Nueva cotización')
         ->assertSee('Ir a Terminal');
 });
 
