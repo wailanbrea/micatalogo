@@ -9,6 +9,10 @@
     $product = $product ?? request()->route('product');
     $user = auth()->user();
     $visibleMenus = app(\App\Services\SellerMenuService::class)->visibleForUser($shop, $user);
+    $presentation = app(\App\Services\BusinessPresentationService::class)->resolve($shop);
+    $terminology = $presentation['terminology'] ?? [];
+    $productsLabel = $terminology['products'] ?? 'Productos';
+    $inventoryLabel = $terminology['inventory'] ?? 'Inventario';
     $canSeeMenu = fn (string $key): bool => in_array($key, $visibleMenus, true);
 @endphp
 
@@ -173,13 +177,13 @@
             <div>
                 <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Operacion</p>
                 @if ($canSeeMenu('sales'))<a wire:navigate href="{{ route('seller.shops.inventory.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'inventory' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Vender</a>@endif
-                @if ($canSeeMenu('inventory'))<a wire:navigate href="{{ route('seller.shops.inventory.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'inventory' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Inventario</a>@endif
+                @if ($canSeeMenu('inventory'))<a wire:navigate href="{{ route('seller.shops.inventory.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'inventory' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">{{ $inventoryLabel }}</a>@endif
                 @if ($canSeeMenu('customers'))<a wire:navigate href="{{ route('seller.shops.customers.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'customers' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Clientes y cobros</a>@endif
                 @if ($canSeeMenu('sellers') && ($user->isAdmin() || $user->ownsShop($shop)))<a wire:navigate href="{{ route('seller.shops.sellers.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'sellers' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Vendedores</a>@endif
             </div>
             <div class="border-t border-slate-100 pt-2">
                 <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Catalogo</p>
-                @if ($canSeeMenu('products'))<a wire:navigate href="{{ route('seller.shops.products.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'products' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Productos</a>@endif
+                @if ($canSeeMenu('products'))<a wire:navigate href="{{ route('seller.shops.products.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'products' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">{{ $productsLabel }}</a>@endif
                 @if ($canSeeMenu('products'))<a wire:navigate href="{{ route('seller.shops.categories.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'categories' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Categorías</a>@endif
                 @if ($canSeeMenu('products'))<a wire:navigate href="{{ route('seller.shops.products.bulk.create', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'bulk' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Subida masiva</a>@endif
             </div>

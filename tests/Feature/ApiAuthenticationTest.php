@@ -5,6 +5,7 @@ use App\Enums\UserStatus;
 use App\Models\Shop;
 use App\Models\ShopSeller;
 use App\Models\User;
+use App\Services\BusinessPresentationService;
 use App\Services\SellerMenuService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -83,6 +84,7 @@ test('a verified active seller can connect BSPOS and retrieve only their shops',
             'slug' => $shop->slug,
             'business_type' => 'general_retail',
             'business_type_label' => 'Tienda general',
+            'presentation' => app(BusinessPresentationService::class)->resolve($shop),
             'product_fields' => ['sku', 'barcode', 'cost_price', 'price', 'stock'],
             'categories' => ['Productos', 'Ofertas', 'Otros'],
             'capabilities' => [

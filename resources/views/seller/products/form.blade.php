@@ -1,10 +1,24 @@
-<x-layouts.app :title="($product->exists ? 'Editar producto' : 'Nuevo producto') . ' | ' . $shop->name">
+@php
+    $presentation = app(\App\Services\BusinessPresentationService::class)->resolve($shop);
+    $terminology = $presentation['terminology'] ?? [];
+    $productLabel = $terminology['product'] ?? 'Producto';
+    $newProductLabel = $terminology['new_product'] ?? 'Nuevo producto';
+    $capabilities = app(\App\Services\BusinessProfileService::class)->capabilities($shop);
+    $productFields = app(\App\Services\BusinessProfileService::class)->profile($shop)['product_fields'] ?? [];
+    $showInventory = ($capabilities['inventory'] ?? 'disabled') === 'enabled';
+    $showWholesale = ($capabilities['wholesale'] ?? 'disabled') === 'enabled';
+    $showSku = in_array('sku', $productFields, true);
+    $showBarcode = in_array('barcode', $productFields, true);
+    $showBrand = in_array('brand', $productFields, true);
+    $showPerfumePresentation = ($capabilities['perfume_fields'] ?? 'disabled') === 'enabled' || ($capabilities['decants'] ?? 'disabled') === 'enabled';
+@endphp
+<x-layouts.app :title="($product->exists ? 'Editar ' . $productLabel : $newProductLabel) . ' | ' . $shop->name">
     <!-- Persistent Unified Navigation -->
     <x-admin.header 
         :breadcrumbs="[
             ['label' => 'Mis tiendas', 'url' => route('seller.dashboard')],
             ['label' => $shop->name, 'url' => route('seller.shops.products.index', $shop)],
-            ['label' => $product->exists ? 'Editar ' . $product->name : 'Nuevo producto']
+            ['label' => $product->exists ? 'Editar ' . $product->name : $newProductLabel]
         ]" 
     />
 
@@ -14,7 +28,7 @@
             <section class="mt-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
                 <header class="border-b border-slate-200 pb-4">
                     <h1 class="text-2xl font-bold text-slate-900">
-                        {{ $product->exists ? 'Editar producto' : 'Nuevo producto' }}
+                        {{ $product->exists ? 'Editar ' . $productLabel : $newProductLabel }}
                     </h1>
                     <p class="mt-1 text-sm text-slate-600">
                         {{ $product->exists ? 'Actualiza los datos y disponibilidad de tu producto.' : 'Ingresa la información básica para publicarlo en tu catálogo.' }}
@@ -32,7 +46,7 @@
                     </div>
                 @endif
 
-                <form class="mt-6 space-y-6" method="POST" action="{{ $product->exists ? route('seller.shops.products.update', [$shop, $product]) : route('seller.shops.products.store', $shop) }}" x-data="{ trackInventory: {{ old('track_inventory', $product->exists ? ($product->inventory?->track_inventory ?? false) : true) ? 'true' : 'false' }}, saleUnit: '{{ old('sale_unit', $product->sale_unit ?? 'unit') }}' }">
+                <form class="mt-6 space-y-6" method="POST" action="{{ $product->exists ? route('seller.shops.products.update', [$shop, $product]) : route('seller.shops.products.store', $shop) }}" x-data="{ trackInventory: {{ $showInventory && old('track_inventory', $product->exists ? ($product->inventory?->track_inventory ?? false) : true) ? 'true' : 'false' }}, saleUnit: '{{ old('sale_unit', $product->sale_unit ?? 'unit') }}' }">
                     @csrf
                     @if ($product->exists)
                         @method('PUT')
@@ -40,26 +54,26 @@
 
                     <!-- Nombre -->
                     <div>
-                        <label class="block text-sm font-semibold text-slate-800" for="name">Nombre del producto *</label>
+                        <label class="block text-sm font-semibold text-slate-800" for="name">Nombre del {{ strtolower($productLabel) }} *</label>
                         <input class="mt-1.5 w-full rounded-md border border-slate-300 px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="name" name="name" required type="text" value="{{ old('name', $product->name) }}" placeholder="Ej: Zapatillas Urbanas Pro">
                     </div>
 
-                    <div>
+                    @if ($showSku)<div>
                         <label class="block text-sm font-semibold text-slate-800" for="product_code">Código interno / SKU</label>
                         <input class="mt-1.5 w-full rounded-md border border-slate-300 px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="product_code" name="product_code" type="text" value="{{ old('product_code', $product->product_code) }}" placeholder="Opcional">
-                    </div>
+                    </div>@endif
 
-                    <div>
+                    @if ($showBarcode)<div>
                         <label class="block text-sm font-semibold text-slate-800" for="barcode">Barcode / EAN / GTIN</label>
                         <input class="mt-1.5 w-full rounded-md border border-slate-300 px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="barcode" name="barcode" type="text" inputmode="numeric" value="{{ old('barcode', $product->barcode) }}" placeholder="Ej: 7501234567890">
                         <p class="mt-1 text-xs text-slate-500">Se usa para consultar Open Beauty Facts. No reemplaza tu SKU interno.</p>
                         @error('barcode') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
-                    </div>
+                    </div>@endif
 
-                    <div>
+                    @if ($showBrand)<div>
                         <label class="block text-sm font-semibold text-slate-800" for="brand">Marca</label>
                         <input class="mt-1.5 w-full rounded-md border border-slate-300 px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="brand" name="brand" type="text" value="{{ old('brand', $product->brand) }}" placeholder="Ej: Rasasi, Nike, Samsung">
-                    </div>
+                    </div>@endif
 
                     <!-- Precios: Venta y Costo (Contabilidad de Inventario) -->
                     <div class="grid gap-4 sm:grid-cols-3">
@@ -72,7 +86,7 @@
                             </div>
                         </div>
 
-                        <div>
+                        @if ($showWholesale)<div>
                             <label class="block text-sm font-semibold text-slate-800" for="wholesale_price">Precio por mayor (RD$)</label>
                             <p class="text-[11px] text-slate-500">Opcional; se usa en ventas mayoristas y no puede superar el precio regular.</p>
                             <div class="relative mt-1.5 rounded-md shadow-sm">
@@ -80,9 +94,9 @@
                                 <input class="w-full rounded-md border border-slate-300 pl-12 pr-3 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="wholesale_price" name="wholesale_price" step="0.01" min="0" max="99999999.99" type="number" value="{{ old('wholesale_price', $product->wholesale_price) }}" placeholder="Opcional">
                             </div>
                             @error('wholesale_price') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
-                        </div>
+                        </div>@endif
 
-                        <div>
+                        @if ($showInventory)<div>
                             <label class="block text-sm font-semibold text-slate-800" for="cost_price">
                                 Precio de Compra / Costo (RD$)
                                 <span class="text-xs font-normal text-slate-500">(Privado)</span>
@@ -92,7 +106,7 @@
                                 <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-slate-500">RD$</span>
                                 <input class="w-full rounded-md border border-slate-300 pl-12 pr-3 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="cost_price" name="cost_price" step="0.01" min="0" type="number" value="{{ old('cost_price', $product->inventory?->cost_price) }}" placeholder="0.00">
                             </div>
-                        </div>
+                        </div>@endif
                     </div>
 
                     <div class="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
@@ -116,6 +130,7 @@
                         @error('sale_ends_at') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                     </div>
 
+                    @if ($showPerfumePresentation)
                     <!-- Presentación y unidad de venta -->
                     <div class="rounded-xl border border-blue-200 bg-blue-50/50 p-4 sm:p-5">
                         <div>
@@ -152,6 +167,7 @@
                             <p class="mt-1 text-[11px] text-slate-500">Cada venta de este decant descontará sus ml de la botella seleccionada.</p>
                         </div>
                     </div>
+                    @endif
 
                     <!-- Slug -->
                     <div>
@@ -239,7 +255,7 @@
                     </div>
 
                     <!-- Control de Inventario (Inventory Lite) -->
-                    <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4 sm:p-5">
+                    @if ($showInventory)<div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4 sm:p-5">
                         <div class="flex items-center justify-between">
                             <div>
                                 <label class="text-sm font-bold text-slate-900 flex items-center gap-2 cursor-pointer" for="track_inventory">
@@ -292,7 +308,7 @@
                                 >
                             </div>
                         </div>
-                    </div>
+                    </div>@endif
 
                     <!-- Descripción -->
                     <div>

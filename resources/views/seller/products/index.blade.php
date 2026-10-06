@@ -1,4 +1,10 @@
-<x-layouts.app :title="'Productos | ' . $shop->name">
+@php
+    $presentation = app(\App\Services\BusinessPresentationService::class)->resolve($shop);
+    $productsLabel = $presentation['terminology']['products'] ?? 'Productos';
+    $newProductLabel = $presentation['terminology']['new_product'] ?? 'Nuevo producto';
+    $showStock = $presentation['catalog']['show_stock'] ?? true;
+@endphp
+<x-layouts.app :title="$productsLabel . ' | ' . $shop->name">
     <!-- Persistent Unified Navigation -->
     <x-admin.header 
         :breadcrumbs="[
@@ -21,7 +27,7 @@
 
                 <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-5">
                     <div>
-                        <h1 class="text-2xl font-bold text-slate-900">Productos</h1>
+                        <h1 class="text-2xl font-bold text-slate-900">{{ $productsLabel }}</h1>
                         <p class="mt-1 text-sm text-slate-600">
                             {{ $totalProducts }} de {{ $maxProducts }} productos en tu plan {{ $shop->planLabel() }}
                         </p>
@@ -36,7 +42,7 @@
                                 Subida masiva
                             </a>
                             <a class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-blue-700" href="{{ route('seller.shops.products.create', $shop) }}">
-                                + Nuevo producto
+                                + {{ $newProductLabel }}
                             </a>
                         </div>
                     @else
@@ -72,7 +78,7 @@
                                 <th class="px-4 py-3">Precio</th>
                                 <th class="px-4 py-3">Categoría</th>
                                 <th class="px-4 py-3">Disponibilidad</th>
-                                <th class="px-4 py-3">Stock disponible</th>
+                                @if ($showStock)<th class="px-4 py-3">Stock disponible</th>@endif
                                 <th class="px-4 py-3">Estado</th>
                                 <th class="px-4 py-3 text-right">Acciones</th>
                             </tr>
@@ -107,7 +113,11 @@
                                         @endif
                                     </td>
                                     <td class="px-4 py-3.5 whitespace-nowrap">
-                                        @if ($product->isInventoryTracked())
+                                        @if (! $showStock)
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                                                <i class="h-1.5 w-1.5 rounded-full bg-emerald-500"></i> Disponible
+                                            </span>
+                                        @elseif ($product->isInventoryTracked())
                                             @php $inv = $product->inventory; @endphp
                                             @if ($inv->stock_quantity <= 0)
                                                 <span class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-700">
@@ -141,14 +151,14 @@
                                             </span>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3.5 whitespace-nowrap">
+                                    @if ($showStock)<td class="px-4 py-3.5 whitespace-nowrap">
                                         @if ($product->inventory?->track_inventory)
                                             <span class="font-mono font-bold text-slate-900">{{ number_format($product->inventory->stock_quantity) }}</span>
                                             <span class="text-xs text-slate-500">{{ $product->stockUnitLabel() }}</span>
                                         @else
                                             <a class="text-xs font-semibold text-blue-700 hover:text-blue-900" href="{{ route('seller.shops.products.edit', [$shop, $product]) }}">Activar inventario</a>
                                         @endif
-                                    </td>
+                                    </td>@endif
                                     <td class="px-4 py-3.5 whitespace-nowrap">
                                         <span class="rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 capitalize">
                                             {{ $product->moderation_status->value }}

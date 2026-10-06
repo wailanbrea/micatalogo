@@ -26,7 +26,7 @@
                 <div>
                     <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200 mb-3">
                         <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        Plan Gratuito Permanente
+                        Empieza gratis
                     </span>
                     <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">Crea tu catálogo gratis</h1>
                     <p class="mt-1.5 text-xs sm:text-sm text-slate-500">Abre tu vitrina digital en menos de 3 minutos sin tarjeta de crédito.</p>
@@ -202,7 +202,7 @@
                 <!-- Value Highlights under form -->
                 <div class="mt-6 pt-5 border-t border-slate-100 grid grid-cols-3 gap-2 text-center text-[11px] text-slate-600">
                     <div class="p-2 rounded-lg bg-slate-50">
-                        <span class="block font-bold text-slate-900">100% Gratis</span>
+                        <span class="block font-bold text-slate-900">Plan gratis para comenzar</span>
                         <span>Sin comisiones</span>
                     </div>
                     <div class="p-2 rounded-lg bg-slate-50">
