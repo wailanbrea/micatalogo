@@ -124,6 +124,55 @@ test('mobile product creation and edits are scoped and keep offers meaningful', 
     $this->withToken($token)->postJson('/api/v1/shops/'.$other->public_id.'/mobile-operations', $create)->assertNotFound();
 });
 
+test('mobile product creation supports validated decant presentations linked to source ml', function () {
+    $user = User::factory()->create(['plan' => UserPlan::Pro]);
+    $shop = Shop::factory()->create(['user_id' => $user->id, 'business_type' => 'perfume_store']);
+    $source = Product::factory()->create([
+        'shop_id' => $shop->id,
+        'name' => 'Botella fuente',
+        'price' => 2800,
+        'sale_unit' => 'bottle',
+        'volume_ml' => 100,
+    ]);
+    ProductInventory::create([
+        'product_id' => $source->id,
+        'track_inventory' => true,
+        'stock_quantity' => 4,
+        'available_ml' => 400,
+        'cost_price' => 1200,
+    ]);
+    $token = $user->createToken('test', ['pos:write'])->plainTextToken;
+    $url = '/api/v1/shops/'.$shop->public_id.'/mobile-operations';
+    $id = (string) Str::ulid();
+    $payload = [
+        'client_operation_uuid' => (string) Str::uuid(),
+        'type' => 'product_upsert',
+        'product_id' => $id,
+        'name' => 'Decant fuente 5 ml',
+        'price' => '250.00',
+        'sale_unit' => 'decant',
+        'volume_ml' => 5,
+        'inventory_source_product_id' => $source->public_id,
+    ];
+
+    $this->withToken($token)->postJson($url, $payload)->assertCreated()->assertJsonPath('product_id', $id);
+    $this->withToken($token)->postJson($url, $payload)->assertCreated();
+
+    $decant = Product::where('public_id', $id)->firstOrFail();
+    expect($decant->sale_unit)->toBe('decant')
+        ->and($decant->volume_ml)->toBe(5)
+        ->and($decant->inventory_source_product_id)->toBe($source->id)
+        ->and($decant->inventory->stock_quantity)->toBe(0)
+        ->and(Product::where('shop_id', $shop->id)->count())->toBe(2);
+
+    $invalid = $payload;
+    $invalid['client_operation_uuid'] = (string) Str::uuid();
+    $invalid['product_id'] = (string) Str::ulid();
+    $invalid['volume_ml'] = 101;
+    $this->withToken($token)->postJson($url, $invalid)->assertUnprocessable();
+    expect(Product::where('public_id', $invalid['product_id'])->exists())->toBeFalse();
+});
+
 test('mobile archive is reversible and adjustment rejects stale inventory', function () {
     [$user, $shop, $product, $token] = mobileFixture();
     $url = '/api/v1/shops/'.$shop->public_id.'/mobile-operations';

@@ -83,8 +83,13 @@ menú limitado de un vendedor.
   Las mutaciones contables continúan en APIs dedicadas para evitar que una
   consulta móvil cree datos.
 - Decants ahora muestra acciones guiadas en web y Android: crear presentación,
-  ver inventario compartido y consultar lotes FIFO. La acción de crear
-  presentación navega al formulario de Productos nativo en Android.
+  ver inventario compartido y consultar lotes FIFO. Android cuenta con un
+  formulario nativo para seleccionar la fuente, indicar los ml y validar que
+  la presentación no supere el volumen disponible de la fuente.
+- La API móvil conserva las mismas invariantes del formulario web: capacidad
+  Decants del tipo/plan, fuente dentro de la misma tienda, botella o ml con
+  inventario controlado, volumen válido e impedimento de cambiar una
+  presentación que ya tiene lotes.
 - Importar abre el selector de archivos Android y el backend conserva el flujo
   de previsualización/confirmación.
 - Los roles administrativos y de vendedor se aplican en servidor y se reflejan
@@ -98,9 +103,10 @@ equivalente:
 1. Algunos módulos secundarios de Android son modelos de lectura y abren el
    panel web para mutaciones complejas; todavía no son formularios nativos
    completos como el Terminal.
-2. Decants tiene la creación de la presentación y la consulta de inventario
-   conectadas, pero aún falta un flujo nativo separado para “abrir botella” y
-   “preparar decant” si el negocio necesita registrar esas etapas como eventos.
+2. Decants ya permite crear la presentación nativamente. Siguen siendo
+   opcionales, y no se anuncian como completados, los eventos separados de
+   “abrir botella” y “preparar decant”; la venta descuenta directamente del
+   inventario fuente mediante el servicio común.
 3. La apariencia de la tienda abierta desde Android usa el navegador externo;
    si el navegador no comparte la sesión, solicita iniciar sesión de nuevo. No
    es una pérdida de sesión de la app, sino una sesión independiente del
@@ -111,14 +117,15 @@ equivalente:
 
 ## Evidencia de la release publicada
 
-- Web: `9d7520f release: publish Android 1.0.32 manifest`.
-- Android: `0c651ac feat: expose decant workflow in Android`.
-- APK: MiCatalogo `1.0.32`, código `33`, firmada y verificada con el certificado
+- Web: actualización de API móvil, manifiesto y pruebas de presentación decant.
+- Android: `4499501 feat: implement native decant presentation creation`.
+- APK: MiCatalogo `1.0.33`, código `34`, firmada y verificada con el certificado
   existente.
-- El manifiesto y los bytes descargados del VPS coinciden en hash SHA-256 y
-  tamaño.
+- El hash SHA-256 de la APK release es
+  `b03c2a57f299dea20cf9cbe738bfed585e6525d481ced5b17482f198153f362a` y su
+  tamaño es `39650497` bytes.
 - La comprobación remota de migraciones no reportó migraciones pendientes.
-- Suite web: 383 pruebas, 2049 aserciones. Suite Android unitaria: exitosa.
-- Emulador: login, menú, versión 1.0.32, módulo Decants y navegación a Productos
-  verificados sin excepción fatal.
+- Suite web: 384 pruebas, 2059 aserciones. Suite Android unitaria: exitosa.
+- La comprobación de versión mantiene el mínimo compatible en `23`; una
+  instalación `1.0.32` debe reconocer `1.0.33` como actualización.
 

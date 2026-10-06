@@ -12,6 +12,7 @@ use App\Models\PosSaleUpload;
 use App\Models\Product;
 use App\Models\Shop;
 use App\Models\User;
+use App\Models\InventoryLot;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
@@ -56,6 +57,16 @@ class MobileOperationService
     {
         $product = $shop->products()->withTrashed()->where('public_id', $data['product_id'])->lockForUpdate()->first();
         if ($data['type'] === 'product_upsert') {
+            $hasPresentationInput = array_key_exists('sale_unit', $data)
+                || array_key_exists('volume_ml', $data)
+                || array_key_exists('inventory_source_product_id', $data);
+            $presentation = ! $product || $hasPresentationInput
+                ? $this->mobilePresentation($shop, $data, $product)
+                : [
+                    'sale_unit' => $product->sale_unit ?: 'unit',
+                    'volume_ml' => $product->volume_ml,
+                    'inventory_source_product_id' => $product->inventory_source_product_id,
+                ];
             if (! $product) {
                 abort_if(Product::withTrashed()->where('public_id', $data['product_id'])->exists(), 409);
                 app(PlanLimitsService::class)->assertCanAddProducts($shop, 1);
@@ -63,15 +74,30 @@ class MobileOperationService
                 $price = $data['price'] ?? throw ValidationException::withMessages(['price' => 'Indica el precio.']);
                 $product = $shop->products()->make(['name' => $name, 'price' => $price,
                     'slug' => (Str::slug($name) ?: 'producto').'-'.strtolower($data['product_id']),
-                    'currency' => 'DOP', 'sale_unit' => 'unit', 'moderation_status' => ProductModerationStatus::Active,
+                    'currency' => 'DOP', 'sale_unit' => $presentation['sale_unit'], 'volume_ml' => $presentation['volume_ml'],
+                    'inventory_source_product_id' => $presentation['inventory_source_product_id'],
+                    'moderation_status' => ProductModerationStatus::Active,
                     'availability_status' => ProductAvailabilityStatus::OutOfStock, 'published_at' => now()]);
                 $product->forceFill(['public_id' => $data['product_id']])->save();
-                $product->inventory()->create(['track_inventory' => true, 'stock_quantity' => 0,
+                $product->inventory()->create(['track_inventory' => true, 'stock_quantity' => 0, 'available_ml' => null,
                     'cost_price' => $data['cost_price'] ?? null, 'sold_quantity' => 0, 'low_stock_threshold' => $data['minimum_stock'] ?? 3]);
             } else {
                 abort_if($product->trashed(), 409, 'El producto está en la papelera.');
                 if (isset($data['expected_price']) && (int) round($product->currentPrice() * 100) !== (int) round((float) $data['expected_price'] * 100)) {
                     throw new InvalidArgumentException('El precio remoto cambió; revisa el conflicto antes de editar.', 409);
+                }
+                if ($hasPresentationInput) {
+                    $hadLots = InventoryLot::where('product_id', $product->id)->exists();
+                    if ($hadLots && ($presentation['sale_unit'] !== $product->sale_unit
+                        || $presentation['volume_ml'] !== $product->volume_ml
+                        || $presentation['inventory_source_product_id'] !== $product->inventory_source_product_id)) {
+                        throw new InvalidArgumentException('No cambies la presentación de un producto con lotes; crea una presentación vinculada.', 422);
+                    }
+                    $product->fill([
+                        'sale_unit' => $presentation['sale_unit'],
+                        'volume_ml' => $presentation['volume_ml'],
+                        'inventory_source_product_id' => $presentation['inventory_source_product_id'],
+                    ]);
                 }
             }
             foreach (['name' => 'name', 'internal_code' => 'product_code', 'barcode' => 'barcode', 'description' => 'description'] as $input => $column) {
@@ -115,6 +141,52 @@ class MobileOperationService
 
         return ['product_id' => $product->public_id, 'price' => number_format($product->fresh()->currentPrice(), 2, '.', ''),
             'stock' => $product->inventory?->fresh()?->stock_quantity];
+    }
+
+    /**
+     * Normalize mobile product presentation data to the same invariants as the
+     * web product form. A decant never owns stock: it consumes the source
+     * bottle/ml product through InventoryService when sold.
+     */
+    private function mobilePresentation(Shop $shop, array $data, ?Product $product): array
+    {
+        $saleUnit = (string) ($data['sale_unit'] ?? $product?->sale_unit ?? 'unit');
+        $volume = array_key_exists('volume_ml', $data) ? $data['volume_ml'] : $product?->volume_ml;
+        $sourcePublicId = array_key_exists('inventory_source_product_id', $data)
+            ? $data['inventory_source_product_id']
+            : $product?->sourceProduct?->public_id;
+
+        if ($saleUnit === 'unit') {
+            return ['sale_unit' => 'unit', 'volume_ml' => null, 'inventory_source_product_id' => null];
+        }
+
+        if (! in_array($saleUnit, ['bottle', 'ml', 'decant'], true)) {
+            throw ValidationException::withMessages(['sale_unit' => 'La unidad de venta no es válida.']);
+        }
+        if (! $volume || (int) $volume < 1) {
+            throw ValidationException::withMessages(['volume_ml' => 'Indica el volumen en mililitros.']);
+        }
+
+        if ($saleUnit !== 'decant') {
+            return ['sale_unit' => $saleUnit, 'volume_ml' => (int) $volume, 'inventory_source_product_id' => null];
+        }
+
+        app(BusinessCapabilityService::class)->assert($shop, 'decants');
+        if (! $sourcePublicId) {
+            throw ValidationException::withMessages(['inventory_source_product_id' => 'Elige la botella o producto medido en ml que abastece el decant.']);
+        }
+        $source = $shop->products()->with('inventory')->where('public_id', $sourcePublicId)->lockForUpdate()->first();
+        if (! $source || ($product && $source->id === $product->id)) {
+            throw ValidationException::withMessages(['inventory_source_product_id' => 'La fuente debe ser un producto de esta tienda distinto al decant.']);
+        }
+        if (! in_array($source->sale_unit, ['bottle', 'ml'], true) || ! $source->volume_ml || ! $source->inventory?->track_inventory) {
+            throw ValidationException::withMessages(['inventory_source_product_id' => 'La fuente debe ser una botella o producto medido en ml con volumen y control de inventario.']);
+        }
+        if ((int) $volume > (int) $source->volume_ml) {
+            throw ValidationException::withMessages(['volume_ml' => 'El decant no puede superar el volumen de su fuente.']);
+        }
+
+        return ['sale_unit' => 'decant', 'volume_ml' => (int) $volume, 'inventory_source_product_id' => $source->id];
     }
 
     private function productImage(Shop $shop, Product $product, array $data): void
