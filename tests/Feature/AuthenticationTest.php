@@ -182,7 +182,20 @@ test('a seller does not see admin navigation', function () {
         ->get('/panel')
         ->assertOk()
         ->assertSee('Guía para administradores de tienda')
-        ->assertDontSee('Administración')
+        ->assertDontSee('Menú Administrativo')
         ->assertDontSee('Usuarios del sistema')
         ->assertSee('Vendedor');
+});
+
+test('an administrator sees the administrative navigation group', function () {
+    $admin = User::factory()->admin()->create([
+        'status' => UserStatus::Active,
+    ]);
+
+    $this->actingAs($admin)
+        ->get('/panel')
+        ->assertOk()
+        ->assertSee('Menú Administrativo')
+        ->assertSee('Panel administrativo')
+        ->assertSee('Usuarios del sistema');
 });

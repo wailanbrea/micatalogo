@@ -9,6 +9,7 @@
     }
     $productCount = $contextShop ? $contextShop->products()->count() : 0;
     $isDashboard = request()->routeIs('seller.dashboard', 'admin.dashboard');
+    $isViewAllShops = request()->routeIs('seller.dashboard') && request('view') === 'all';
     $isProducts = request()->routeIs('seller.shops.products.*');
     $isInventory = request()->routeIs('seller.shops.inventory.*');
     $isPos = request()->routeIs('seller.shops.pos');
@@ -267,16 +268,20 @@
             @if ($canCreateShop)<a wire:navigate.hover href="{{ route('seller.shops.create') }}" class="{{ $linkClass }} {{ $idleClass }}">Crear tienda</a>@endif
         @endif
 
-        @if ($isAdmin)
-            <div class="mt-5 border-t border-slate-100 pt-4">
-                <p class="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-rose-500">Administración</p>
-                <a wire:navigate.hover href="{{ route('admin.reports.index') }}" class="{{ $linkClass }} {{ request()->routeIs('admin.reports.*') ? $activeClass : $idleClass }}">Reportes</a>
-                <a wire:navigate.hover href="{{ route('admin.support.index') }}" class="{{ $linkClass }} {{ request()->routeIs('admin.support.*') ? $activeClass : $idleClass }}">Soporte</a>
-                <a wire:navigate.hover href="{{ route('admin.users.index') }}" class="{{ $linkClass }} {{ request()->routeIs('admin.users.*') ? $activeClass : $idleClass }}">Usuarios</a>
-            </div>
-        @endif
         @endif
         </div>
+
+        @if ($isAdmin)
+            <div class="mt-6 border-t border-blue-400/30 pt-4" aria-label="Menú Administrativo">
+                <p class="mx-3 border-b-2 border-blue-500 px-0 pb-2 text-[10px] font-black uppercase tracking-[0.16em] text-blue-300">Menú Administrativo</p>
+                <a wire:navigate.hover href="{{ route('admin.dashboard') }}" class="{{ $linkClass }} {{ request()->routeIs('admin.dashboard') ? $activeClass : $idleClass }}">Panel administrativo</a>
+                <a wire:navigate.hover href="{{ route('seller.dashboard', ['view' => 'all']) }}" class="{{ $linkClass }} {{ $isViewAllShops ? $activeClass : $idleClass }}">Todas las tiendas</a>
+                <a wire:navigate.hover href="{{ route('admin.categories.index') }}" class="{{ $linkClass }} {{ request()->routeIs('admin.categories.*') ? $activeClass : $idleClass }}">Categorías globales</a>
+                <a wire:navigate.hover href="{{ route('admin.reports.index') }}" class="{{ $linkClass }} {{ request()->routeIs('admin.reports.*') ? $activeClass : $idleClass }}">Reportes</a>
+                <a wire:navigate.hover href="{{ route('admin.support.index') }}" class="{{ $linkClass }} {{ request()->routeIs('admin.support.*') ? $activeClass : $idleClass }}">Soporte</a>
+                <a wire:navigate.hover href="{{ route('admin.users.index') }}" class="{{ $linkClass }} {{ request()->routeIs('admin.users.*') ? $activeClass : $idleClass }}">Usuarios del sistema</a>
+            </div>
+        @endif
     </nav>
 
     <div class="border-t border-white/10 p-3">

@@ -295,8 +295,8 @@
                 </div>
             @endif
             @if ($isAdmin)
-                <div class="border-t border-slate-100 pt-2">
-                    <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-rose-500">Administracion</p>
+                <div class="border-t border-blue-200 pt-2" aria-label="Menú Administrativo">
+                    <p class="mx-3 border-b-2 border-blue-500 px-0 pb-2 text-[11px] font-black uppercase tracking-wide text-blue-700">Menú Administrativo</p>
                     <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ $isViewAllShops ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.dashboard', ['view' => 'all']) }}">Todas las tiendas</a>
                     <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ $isAdminDashboard ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.dashboard') }}">Dashboard</a>
                     <a wire:navigate class="flex items-center justify-between rounded-lg px-3 py-2 transition {{ $isAdminReports ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.reports.index') }}">
