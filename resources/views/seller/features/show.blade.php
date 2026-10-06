@@ -224,6 +224,17 @@
                         @if ($module['note'])
                             <div class="rounded-2xl border border-blue-100 bg-blue-50/60 px-5 py-4 text-sm leading-6 text-blue-900">{{ $module['note'] }}</div>
                         @endif
+
+                        @if (! empty($related))
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                @foreach ($related as $item)
+                                    <a wire:navigate.hover href="{{ $item['url'] }}" class="group flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">
+                                        <span>{{ $item['label'] }}</span>
+                                        <span class="text-slate-400 transition group-hover:translate-x-1 group-hover:text-blue-600">→</span>
+                                    </a>
+                                @endforeach
+                            </div>
+                        @endif
                     </div>
                 @else
                 <div class="grid gap-5 p-6 sm:p-8 lg:grid-cols-[1.15fr_.85fr]">

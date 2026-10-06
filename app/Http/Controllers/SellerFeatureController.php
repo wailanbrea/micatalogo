@@ -228,7 +228,7 @@ class SellerFeatureController extends Controller
             'kpis' => [
                 ['label' => 'Visitas · 30 días', 'value' => number_format($metrics['views_30d']), 'tone' => 'blue'],
                 ['label' => 'Contactos WhatsApp · 30 días', 'value' => number_format($metrics['clicks_30d']), 'tone' => 'emerald'],
-                ['label' => 'Conversión a WhatsApp', 'value' => number_format($metrics['conversion_rate_30d'], 1).'% ', 'tone' => 'amber'],
+                ['label' => 'Conversión a WhatsApp', 'value' => number_format($metrics['conversion_rate_30d'], 1).'%', 'tone' => 'amber'],
             ],
             'rows' => collect($metrics['top_by_clicks'])->map(fn ($product) => [
                 'primary' => $product->name,
