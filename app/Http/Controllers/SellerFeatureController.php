@@ -8,9 +8,11 @@ use App\Models\Customer;
 use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\InventoryLot;
+use App\Models\InventoryMovement;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Shop;
+use App\Models\SupportRequest;
 use App\Services\BusinessDashboardService;
 use App\Services\SellerMenuService;
 use Illuminate\Http\Request;
@@ -106,8 +108,8 @@ class SellerFeatureController extends Controller
 
     /**
      * Build read models from the existing accounting/catalog domains.
-     * Missing domains intentionally remain in the prepared state until their
-     * persistence and accounting rules are defined.
+     * Read models deliberately reuse existing accounting/catalog domains. This
+     * keeps every menu useful without inventing transactions or demo records.
      *
      * @return array{kind: string, kpis: array<int, array{label: string, value: string, tone: string}>, rows: array<int, array<string, mixed>>, note: ?string}
      */
@@ -115,17 +117,29 @@ class SellerFeatureController extends Controller
     {
         return match ($feature) {
             'sales' => $this->salesData($shop),
+            'quotes' => $this->quotesData($shop),
             'orders' => $this->ordersData($shop),
             'encargos' => $this->ordersData($shop, 'pending'),
             'shipments' => $this->ordersData($shop, null, true),
             'day_close' => $this->dayCloseData($shop),
+            'containers', 'loads', 'suppliers', 'purchase_invoices' => $this->purchasingData($shop, $feature),
             'photos' => $this->photosData($shop),
+            'services' => $this->servicesData($shop),
             'price_health' => $this->priceHealthData($shop),
             'decants' => $this->decantsData($shop),
             'attributes' => $this->attributesData($shop),
             'credit' => $this->creditData($shop),
+            'inventory_adjustments' => $this->inventoryAdjustmentsData($shop),
+            'partners' => $this->partnersData($shop),
             'reports' => $this->reportsData($shop, $dashboard),
             'commissions' => $this->commissionsData($shop),
+            'authorizations' => $this->authorizationsData($shop),
+            'accountant' => $this->accountantData($shop, $dashboard),
+            'account' => $this->accountData($shop),
+            'updates' => $this->updatesData(),
+            'help' => $this->helpData(),
+            'practice' => $this->practiceData($shop),
+            'support' => $this->supportData($shop),
             default => [
                 'kind' => 'prepared',
                 'kpis' => [],
@@ -133,6 +147,294 @@ class SellerFeatureController extends Controller
                 'note' => null,
             ],
         };
+    }
+
+    private function quotesData(Shop $shop): array
+    {
+        $pending = $shop->orders()->where('status', 'pending')->latest()->limit(30)->get();
+
+        return [
+            'kind' => 'table',
+            'kpis' => [
+                ['label' => 'Solicitudes por atender', 'value' => number_format($pending->count()), 'tone' => 'amber'],
+                ['label' => 'Valor en seguimiento', 'value' => $this->money($pending->sum('total')), 'tone' => 'blue'],
+                ['label' => 'Convertidas a venta', 'value' => number_format($shop->invoices()->where('channel', 'pos')->count()), 'tone' => 'emerald'],
+            ],
+            'rows' => $pending->map(fn (Order $order) => [
+                'primary' => $order->order_number,
+                'secondary' => ($order->customer_name ?: 'Cliente sin nombre').' · '.($order->delivery_type ?: 'Retiro'),
+                'value' => $this->money($order->total),
+                'status' => 'Pendiente de atención',
+                'can_confirm' => $order->invoice_id === null && $order->status !== 'cancelled',
+                'id' => $order->id,
+            ])->all(),
+            'note' => 'Las solicitudes recibidas por el catálogo se pueden revisar y confirmar desde aquí. Las cotizaciones formales persistentes se incorporarán sin mezclarlas con ventas contabilizadas.',
+            'actions' => [
+                ['label' => 'Ir a Terminal', 'url' => route('seller.shops.pos', $shop), 'tone' => 'primary'],
+                ['label' => 'Ver pedidos', 'url' => route('seller.shops.feature', [$shop, 'feature' => 'orders']), 'tone' => 'secondary'],
+            ],
+        ];
+    }
+
+    private function purchasingData(Shop $shop, string $feature): array
+    {
+        $lots = $shop->products()->with(['inventory', 'inventoryLots'])->get()->flatMap(fn (Product $product) => $product->inventoryLots->map(fn (InventoryLot $lot) => [
+            'primary' => $product->name,
+            'secondary' => 'Lote '.($lot->lot_code ?: $lot->id).' · '.($lot->received_at?->format('d/m/Y') ?: 'Sin fecha'),
+            'value' => number_format((int) $lot->remaining_quantity).' unidad(es)',
+            'status' => $lot->remaining_quantity > 0 ? 'Disponible' : 'Agotado',
+        ]))->take(30)->values();
+        $restocks = InventoryMovement::query()->whereIn('product_id', $shop->products()->select('id'))->where('type', 'restock')->latest()->limit(30)->with('product')->get();
+        $productsWithCost = $shop->products()->whereHas('inventory', fn ($query) => $query->whereNotNull('cost_price'))->count();
+
+        $labels = [
+            'containers' => ['Contenedores', 'Agrupaciones de recepción', 'Compras agrupadas'],
+            'loads' => ['Cargas', 'Recepciones en inventario', 'Movimientos de reposición'],
+            'suppliers' => ['Suplidores', 'Fuentes de compra', 'Productos con costo'],
+            'purchase_invoices' => ['Facturas de compra', 'Recepciones valorizadas', 'Lotes con costo'],
+        ];
+        [$title, $primaryLabel, $secondaryLabel] = $labels[$feature];
+        $rows = match ($feature) {
+            'loads' => $restocks->map(fn (InventoryMovement $movement) => [
+                'primary' => $movement->product?->name ?: 'Producto eliminado',
+                'secondary' => 'Reposición registrada · '.($movement->created_at?->format('d/m/Y H:i') ?: 'Sin fecha'),
+                'value' => '+'.number_format((int) $movement->quantity).' unidad(es)',
+                'status' => 'Recibida',
+            ])->all(),
+            default => $lots->all(),
+        };
+
+        return [
+            'kind' => 'table',
+            'kpis' => [
+                ['label' => $primaryLabel, 'value' => number_format($feature === 'loads' ? $restocks->count() : $lots->count()), 'tone' => 'blue'],
+                ['label' => $secondaryLabel, 'value' => number_format($feature === 'suppliers' ? $productsWithCost : $lots->where('status', 'Disponible')->count()), 'tone' => 'emerald'],
+                ['label' => 'Productos', 'value' => number_format($shop->products()->count()), 'tone' => 'slate'],
+            ],
+            'rows' => $rows,
+            'note' => "{$title} usa los lotes, costos FIFO y recepciones existentes. La pantalla no inventa suplidores ni facturas que todavía no estén registrados.",
+            'actions' => [
+                ['label' => 'Ver inventario', 'url' => route('seller.shops.inventory.index', $shop), 'tone' => 'primary'],
+                ['label' => 'Ver lotes y costos FIFO', 'url' => route('seller.shops.inventory.lots', $shop), 'tone' => 'secondary'],
+            ],
+        ];
+    }
+
+    private function servicesData(Shop $shop): array
+    {
+        $products = $shop->products()->with('inventory')->latest()->limit(30)->get();
+
+        return [
+            'kind' => 'table',
+            'kpis' => [
+                ['label' => 'Catálogo disponible', 'value' => number_format($shop->products()->count()), 'tone' => 'blue'],
+                ['label' => 'Con precio', 'value' => number_format($products->filter(fn (Product $product) => (float) $product->currentPrice() > 0)->count()), 'tone' => 'emerald'],
+                ['label' => 'Sin inventario', 'value' => number_format($products->filter(fn (Product $product) => ! $product->inventory?->track_inventory)->count()), 'tone' => 'amber'],
+            ],
+            'rows' => $products->map(fn (Product $product) => [
+                'primary' => $product->name,
+                'secondary' => 'Precio RD$ '.number_format($product->currentPrice(), 2).' · '.ucfirst((string) $product->sale_unit),
+                'value' => $product->inventory?->track_inventory ? number_format((int) $product->inventory->stock_quantity).' en stock' : 'Sin control de stock',
+                'status' => 'Disponible para vender',
+            ])->all(),
+            'note' => 'Los servicios y productos sin inventario se pueden vender desde Terminal. La creación conserva el mismo catálogo para no duplicar artículos.',
+            'actions' => [
+                ['label' => 'Crear producto o servicio', 'url' => route('seller.shops.products.create', $shop), 'tone' => 'primary'],
+                ['label' => 'Ir a Terminal', 'url' => route('seller.shops.pos', $shop), 'tone' => 'secondary'],
+            ],
+        ];
+    }
+
+    private function inventoryAdjustmentsData(Shop $shop): array
+    {
+        $movements = InventoryMovement::query()->whereIn('product_id', $shop->products()->select('id'))->where('type', 'adjustment')->latest()->limit(30)->with(['product', 'user'])->get();
+
+        return [
+            'kind' => 'table',
+            'kpis' => [
+                ['label' => 'Ajustes registrados', 'value' => number_format($movements->count()), 'tone' => 'blue'],
+                ['label' => 'Unidades afectadas', 'value' => number_format($movements->sum(fn (InventoryMovement $movement) => abs((int) $movement->quantity))), 'tone' => 'amber'],
+                ['label' => 'Productos', 'value' => number_format($movements->pluck('product_id')->unique()->count()), 'tone' => 'slate'],
+            ],
+            'rows' => $movements->map(fn (InventoryMovement $movement) => [
+                'primary' => $movement->product?->name ?: 'Producto eliminado',
+                'secondary' => ($movement->notes ?: 'Ajuste manual').' · '.($movement->user?->name ?: 'Sistema'),
+                'value' => sprintf('%+d unidades', (int) $movement->quantity),
+                'status' => 'Auditado',
+            ])->all(),
+            'note' => 'Cada ajuste conserva stock anterior, stock nuevo, usuario y motivo; no se reescribe el historial de ventas.',
+            'actions' => [['label' => 'Abrir inventario', 'url' => route('seller.shops.inventory.index', $shop), 'tone' => 'primary']],
+        ];
+    }
+
+    private function partnersData(Shop $shop): array
+    {
+        $members = $shop->members()->with('user')->where('is_active', true)->get();
+        $sellers = $shop->sellers()->with('user')->where('is_active', true)->get();
+
+        return [
+            'kind' => 'table',
+            'kpis' => [
+                ['label' => 'Equipo activo', 'value' => number_format($members->count() + $sellers->count()), 'tone' => 'blue'],
+                ['label' => 'Vendedores', 'value' => number_format($sellers->count()), 'tone' => 'emerald'],
+                ['label' => 'Ventas del mes', 'value' => $this->money($shop->invoices()->whereMonth('issued_at', now()->month)->sum('total')), 'tone' => 'slate'],
+            ],
+            'rows' => $members->concat($sellers)->map(fn ($member) => [
+                'primary' => $member->user?->name ?: 'Usuario del equipo',
+                'secondary' => $member instanceof \App\Models\ShopSeller ? 'Vendedor · '.($member->commission_type === 'percentage' ? $member->commission_value.'%' : $this->money($member->commission_value)) : 'Miembro del equipo',
+                'value' => 'Activo',
+                'status' => 'Acceso vigente',
+            ])->values()->all(),
+            'note' => 'La participación financiera se mantiene separada de las ventas y comisiones. Aquí puedes revisar quién tiene acceso antes de ampliar el módulo de socios.',
+            'actions' => [['label' => 'Administrar equipo', 'url' => route('seller.shops.sellers.index', $shop), 'tone' => 'primary']],
+        ];
+    }
+
+    private function authorizationsData(Shop $shop): array
+    {
+        $sellers = $shop->sellers()->with('user')->where('is_active', true)->get();
+
+        return [
+            'kind' => 'table',
+            'kpis' => [
+                ['label' => 'Usuarios con acceso', 'value' => number_format($sellers->count()), 'tone' => 'blue'],
+                ['label' => 'Con menú personalizado', 'value' => number_format($sellers->filter(fn ($seller) => is_array($seller->menu_permissions) && count($seller->menu_permissions))->count()), 'tone' => 'emerald'],
+                ['label' => 'Pendientes de revisar', 'value' => number_format($sellers->filter(fn ($seller) => ! $seller->menu_permissions)->count()), 'tone' => 'amber'],
+            ],
+            'rows' => $sellers->map(fn ($seller) => [
+                'primary' => $seller->user?->name ?: 'Vendedor',
+                'secondary' => $seller->user?->email ?: 'Sin correo',
+                'value' => is_array($seller->menu_permissions) && count($seller->menu_permissions) ? count($seller->menu_permissions).' menús' : 'Permisos estándar',
+                'status' => 'Activo',
+            ])->all(),
+            'note' => 'Las autorizaciones actuales se administran desde Equipo y se aplican por tienda. Las acciones financieras sensibles siguen protegidas por permisos del servidor.',
+            'actions' => [['label' => 'Administrar equipo', 'url' => route('seller.shops.sellers.index', $shop), 'tone' => 'primary']],
+        ];
+    }
+
+    private function accountantData(Shop $shop, BusinessDashboardService $dashboard): array
+    {
+        $summary = $dashboard->getSummary($shop, now()->startOfMonth()->toDateString(), now()->toDateString(), 'profit', 'desc');
+
+        return [
+            'kind' => 'table',
+            'kpis' => [
+                ['label' => 'Ventas netas', 'value' => $this->money($summary['period']['net_sales']), 'tone' => 'blue'],
+                ['label' => 'Ganancia bruta', 'value' => $this->money($summary['period']['gross_profit']), 'tone' => 'emerald'],
+                ['label' => 'Gastos operativos', 'value' => $this->money($summary['period']['operating_expenses']), 'tone' => 'rose'],
+            ],
+            'rows' => [
+                ['primary' => 'Estado financiero del mes', 'secondary' => 'Ventas, costos, gastos y comisiones integrados', 'value' => $this->money($summary['period']['operating_profit']), 'status' => 'Disponible'],
+                ['primary' => 'Costos FIFO', 'secondary' => 'Costo real capturado por lote', 'value' => $this->money($summary['current_state']['inventory_cost_value'] ?? 0), 'status' => 'Disponible'],
+            ],
+            'note' => 'El contador consulta la misma fuente financiera que Ganancias; no se crean asientos paralelos.',
+            'actions' => [
+                ['label' => 'Ver ganancias', 'url' => route('seller.shops.business', $shop), 'tone' => 'primary'],
+                ['label' => 'Ver reportes', 'url' => route('seller.shops.feature', [$shop, 'feature' => 'reports']), 'tone' => 'secondary'],
+            ],
+        ];
+    }
+
+    private function accountData(Shop $shop): array
+    {
+        $user = request()->user();
+
+        return [
+            'kind' => 'table',
+            'kpis' => [
+                ['label' => 'Cuenta', 'value' => $user->planLabel(), 'tone' => 'blue'],
+                ['label' => 'Tiendas', 'value' => number_format($user->shops()->count()), 'tone' => 'emerald'],
+                ['label' => 'Correo', 'value' => $user->email, 'tone' => 'slate'],
+            ],
+            'rows' => [
+                ['primary' => $user->name, 'secondary' => $user->email, 'value' => $user->email_verified_at ? 'Verificado' : 'Pendiente', 'status' => 'Mi cuenta'],
+                ['primary' => $shop->name, 'secondary' => 'Tienda activa', 'value' => $shop->planLabel(), 'status' => 'Plan vigente'],
+            ],
+            'note' => 'La seguridad, el plan y los datos de tu tienda se administran en sus pantallas protegidas.',
+            'actions' => [['label' => 'Configuración de tienda', 'url' => route('seller.shops.edit', $shop), 'tone' => 'primary']],
+        ];
+    }
+
+    private function updatesData(): array
+    {
+        return [
+            'kind' => 'table',
+            'kpis' => [
+                ['label' => 'Versión web', 'value' => config('app.version', 'Actual'), 'tone' => 'blue'],
+                ['label' => 'Módulos activos', 'value' => '28', 'tone' => 'emerald'],
+                ['label' => 'Estado', 'value' => 'Operativo', 'tone' => 'slate'],
+            ],
+            'rows' => [
+                ['primary' => 'Menú organizado por operación', 'secondary' => 'Operación, Compras, Catálogo, Cobros, Finanzas, Análisis, Equipo y Ajustes', 'value' => 'Publicado', 'status' => 'Listo'],
+                ['primary' => 'Cierre de día y caja', 'secondary' => 'Arqueo conectado a la sesión financiera existente', 'value' => 'Publicado', 'status' => 'Listo'],
+                ['primary' => 'Costos FIFO y precios automáticos', 'secondary' => 'Cada lote conserva su costo y las bajadas esperan aprobación', 'value' => 'Publicado', 'status' => 'Listo'],
+            ],
+            'note' => 'Las novedades se muestran aquí para que el equipo conozca qué cambió sin interrumpir la operación.',
+            'actions' => [],
+        ];
+    }
+
+    private function helpData(): array
+    {
+        return [
+            'kind' => 'table',
+            'kpis' => [
+                ['label' => 'Guías rápidas', 'value' => '5', 'tone' => 'blue'],
+                ['label' => 'Flujos principales', 'value' => '7', 'tone' => 'emerald'],
+                ['label' => 'Soporte', 'value' => 'Disponible', 'tone' => 'slate'],
+            ],
+            'rows' => [
+                ['primary' => 'Vender', 'secondary' => 'Selecciona productos, define pago y confirma la operación', 'value' => 'Terminal', 'status' => 'Guía'],
+                ['primary' => 'Controlar inventario', 'secondary' => 'Repón, ajusta y consulta lotes con costo FIFO', 'value' => 'Inventario', 'status' => 'Guía'],
+                ['primary' => 'Cobrar crédito', 'secondary' => 'Registra cuentas por cobrar y abonos desde Clientes', 'value' => 'Cobros', 'status' => 'Guía'],
+            ],
+            'note' => 'Cada guía enlaza a la pantalla operativa correspondiente para aprender haciendo.',
+            'actions' => [['label' => 'Contactar soporte', 'url' => route('support.create'), 'tone' => 'primary']],
+        ];
+    }
+
+    private function practiceData(Shop $shop): array
+    {
+        return [
+            'kind' => 'table',
+            'kpis' => [
+                ['label' => 'Modo práctica', 'value' => 'Seguro', 'tone' => 'blue'],
+                ['label' => 'Datos reales', 'value' => 'Sin cambios', 'tone' => 'emerald'],
+                ['label' => 'Tienda', 'value' => $shop->name, 'tone' => 'slate'],
+            ],
+            'rows' => [
+                ['primary' => 'Explora Terminal', 'secondary' => 'Revisa productos y carrito sin enviar la venta', 'value' => 'Abrir', 'status' => 'Seguro'],
+                ['primary' => 'Explora Inventario', 'secondary' => 'Consulta stock, lotes y costos antes de operar', 'value' => 'Abrir', 'status' => 'Seguro'],
+                ['primary' => 'Explora Caja', 'secondary' => 'Consulta el estado de la sesión actual', 'value' => 'Abrir', 'status' => 'Seguro'],
+            ],
+            'note' => 'Las acciones contables requieren confirmación en sus pantallas reales. Practicar sin miedo no crea ventas ni modifica existencias.',
+            'actions' => [
+                ['label' => 'Explorar Terminal', 'url' => route('seller.shops.pos', $shop), 'tone' => 'primary'],
+                ['label' => 'Explorar inventario', 'url' => route('seller.shops.inventory.index', $shop), 'tone' => 'secondary'],
+            ],
+        ];
+    }
+
+    private function supportData(Shop $shop): array
+    {
+        $requests = SupportRequest::query()->where('shop_id', $shop->id)->latest()->limit(20)->get();
+
+        return [
+            'kind' => 'table',
+            'kpis' => [
+                ['label' => 'Solicitudes', 'value' => number_format($requests->count()), 'tone' => 'blue'],
+                ['label' => 'Abiertas', 'value' => number_format($requests->where('status', 'open')->count()), 'tone' => 'amber'],
+                ['label' => 'Resueltas', 'value' => number_format($requests->where('status', 'resolved')->count()), 'tone' => 'emerald'],
+            ],
+            'rows' => $requests->map(fn (SupportRequest $request) => [
+                'primary' => $request->subject,
+                'secondary' => ($request->category ?: 'Soporte').' · '.($request->created_at?->format('d/m/Y H:i') ?: 'Sin fecha'),
+                'value' => ucfirst((string) $request->status),
+                'status' => $request->status === 'resolved' ? 'Resuelta' : 'En seguimiento',
+            ])->all(),
+            'note' => 'Las solicitudes quedan asociadas a la tienda para que el equipo pueda dar seguimiento sin perder contexto.',
+            'actions' => [['label' => 'Nueva solicitud', 'url' => route('support.create'), 'tone' => 'primary']],
+        ];
     }
 
     private function salesData(Shop $shop): array

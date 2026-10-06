@@ -55,7 +55,7 @@ test('operational modules read existing sales and orders without duplicating dat
         ->and(Product::where('shop_id', $shop->id)->count())->toBe(1);
 });
 
-test('prepared modules have a protected entry point instead of a broken link', function () {
+test('all feature modules have a useful protected entry point', function () {
     $user = User::factory()->create(['plan' => 'pro']);
     $shop = Shop::factory()->for($user)->create();
 
@@ -63,8 +63,28 @@ test('prepared modules have a protected entry point instead of a broken link', f
         ->get(route('seller.shops.feature', [$shop, 'feature' => 'quotes']))
         ->assertOk()
         ->assertSee('Cotizaciones')
-        ->assertSee('Estamos preparando este espacio')
-        ->assertSee('Prepara cotizaciones');
+        ->assertSee('Solicitudes por atender')
+        ->assertSee('Ir a Terminal');
+});
+
+test('every panel feature route renders for a shop owner', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->for($user)->create();
+    $features = [
+        'sales', 'quotes', 'orders', 'encargos', 'shipments', 'day_close',
+        'containers', 'loads', 'suppliers', 'purchase_invoices', 'photos',
+        'services', 'price_health', 'decants', 'attributes', 'credit',
+        'inventory_adjustments', 'partners', 'reports', 'commissions',
+        'authorizations', 'accountant', 'account', 'updates', 'help',
+        'practice', 'support',
+    ];
+
+    foreach ($features as $feature) {
+        $this->actingAs($user)
+            ->get(route('seller.shops.feature', [$shop, 'feature' => $feature]))
+            ->assertOk()
+            ->assertSee('Operativo');
+    }
 });
 
 test('day close exposes the existing cash session reconciliation flow', function () {

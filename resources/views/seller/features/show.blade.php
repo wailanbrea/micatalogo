@@ -2,7 +2,7 @@
     <x-admin.header />
 
     <main class="min-h-screen bg-[#f7f7f6] px-4 py-6 sm:px-6 lg:px-8">
-        <div class="mx-auto max-w-6xl space-y-5">
+        <div class="mx-auto max-w-[1600px] space-y-5">
             <x-seller.shop-header :shop="$shop" activeTab="feature" />
 
             <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
@@ -21,7 +21,7 @@
                 </div>
 
                 @if ($module['kind'] !== 'prepared')
-                    <div class="space-y-6 p-6 sm:p-8">
+                    <div class="space-y-6 p-4 sm:p-6 lg:p-8">
                         <div class="grid gap-4 sm:grid-cols-3">
                             @foreach ($module['kpis'] as $kpi)
                                 <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -32,17 +32,17 @@
                         </div>
 
                         @if ($featureKey === 'day_close')
-                            <div class="rounded-2xl border {{ $module['session'] ? 'border-emerald-200 bg-emerald-50/60' : 'border-slate-200 bg-slate-50' }} p-5">
+                            <div class="rounded-2xl border {{ $module['session'] ? 'border-emerald-200 bg-emerald-50/60' : 'border-slate-200 bg-slate-50' }} p-4 sm:p-5">
                                 @if ($module['session'])
-                                    <div class="flex flex-wrap items-end justify-between gap-4">
+                                    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                                         <div>
                                             <p class="text-[11px] font-black uppercase tracking-[0.14em] text-emerald-700">Sesión de caja activa</p>
                                             <p class="mt-1 text-sm text-slate-600">Efectivo esperado: <strong class="text-lg text-emerald-800">RD$ {{ $module['session']['expected'] }}</strong></p>
                                         </div>
-                                        <form method="POST" action="{{ route('seller.shops.cash.close', [$shop, $module['session']['id']]) }}" class="flex flex-wrap items-end gap-2">
+                                        <form method="POST" action="{{ route('seller.shops.cash.close', [$shop, $module['session']['id']]) }}" class="grid w-full gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-end">
                                             @csrf
-                                            <div><label class="block text-[11px] font-bold text-slate-600" for="day-close-counted">Efectivo contado</label><input id="day-close-counted" name="counted_amount" required min="0" step="0.01" type="number" placeholder="0.00" class="mt-1 w-36 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-black tabular-nums"></div>
-                                            <button class="rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-black text-white hover:bg-emerald-800">Cerrar caja</button>
+                                            <div><label class="block text-[11px] font-bold text-slate-600" for="day-close-counted">Efectivo contado</label><input id="day-close-counted" name="counted_amount" required min="0" step="0.01" type="number" placeholder="0.00" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-black tabular-nums sm:w-40"></div>
+                                            <button class="w-full rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-black text-white hover:bg-emerald-800 sm:w-auto">Cerrar caja</button>
                                         </form>
                                     </div>
                                 @else
@@ -52,12 +52,18 @@
                         @endif
 
                         <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+                            <div class="flex flex-col gap-3 border-b border-slate-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                                 <div>
                                     <h2 class="text-base font-black text-slate-900">Actividad reciente</h2>
                                     <p class="mt-1 text-xs text-slate-500">Datos tomados de los módulos contables y de inventario existentes.</p>
                                 </div>
-                                @if ($featureKey === 'sales')
+                                @if (! empty($module['actions']))
+                                    <div class="flex w-full flex-wrap gap-2 sm:w-auto">
+                                        @foreach ($module['actions'] as $action)
+                                            <a wire:navigate.hover href="{{ $action['url'] }}" class="flex-1 rounded-xl px-3.5 py-2 text-center text-xs font-black sm:flex-none {{ ($action['tone'] ?? 'secondary') === 'primary' ? 'bg-blue-600 text-white hover:bg-blue-700' : 'border border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700' }}">{{ $action['label'] }}</a>
+                                        @endforeach
+                                    </div>
+                                @elseif ($featureKey === 'sales')
                                     <a wire:navigate.hover href="{{ route('seller.shops.pos', $shop) }}" class="rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-black text-white hover:bg-blue-700">Nueva venta</a>
                                 @elseif (in_array($featureKey, ['orders', 'encargos', 'shipments'], true))
                                     <a wire:navigate.hover href="{{ route('seller.shops.pos', $shop) }}" class="rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-black text-white hover:bg-blue-700">Ir a Terminal</a>
@@ -69,12 +75,12 @@
                             @if (count($module['rows']))
                                 <div class="divide-y divide-slate-100">
                                     @foreach ($module['rows'] as $row)
-                                        <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+                                        <div class="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                                             <div class="min-w-0">
                                                 <p class="truncate text-sm font-black text-slate-900">{{ $row['primary'] }}</p>
                                                 <p class="mt-1 text-xs text-slate-500">{{ $row['secondary'] }}</p>
                                             </div>
-                                            <div class="flex items-center gap-3">
+                                            <div class="flex flex-wrap items-center gap-3 sm:justify-end">
                                                 <span class="text-sm font-black tabular-nums text-slate-900">{{ $row['value'] }}</span>
                                                 <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">{{ $row['status'] }}</span>
                                                 @if (($row['can_confirm'] ?? false) && in_array($featureKey, ['orders', 'encargos', 'shipments'], true))

@@ -188,6 +188,11 @@ class Product extends Model
         return $this->hasMany(InventoryMovement::class)->orderByDesc('created_at')->orderByDesc('id');
     }
 
+    public function inventoryLots(): HasMany
+    {
+        return $this->hasMany(InventoryLot::class)->orderBy('received_at')->orderBy('id');
+    }
+
     public function isInventoryTracked(): bool
     {
         return (bool) ($this->inventory?->track_inventory ?? false);
