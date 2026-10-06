@@ -39,16 +39,62 @@
                         @endif
 
                         @if ($featureKey === 'quotes')
-                            <div class="rounded-2xl border border-blue-100 bg-blue-50/50 p-4 sm:p-5">
-                                <div class="mb-4"><h2 class="text-base font-black text-slate-900">Nueva cotización</h2><p class="mt-1 text-xs text-slate-500">Guárdala como borrador y conviértela en venta cuando el cliente confirme.</p></div>
-                                <form method="POST" action="{{ route('seller.shops.quotes.store', $shop) }}" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                            <div class="rounded-2xl border border-blue-100 bg-blue-50/50 p-4 sm:p-5" x-data="{
+                                products: @js($module['quoteProducts'] ?? []),
+                                search: '',
+                                category: '',
+                                cart: [],
+                                get categories() { return [...new Set(this.products.map(product => product.category).filter(Boolean))].sort(); },
+                                get filteredProducts() {
+                                    const query = this.search.trim().toLowerCase();
+                                    return this.products.filter(product => (!this.category || product.category === this.category) && (!query || `${product.name} ${product.brand} ${product.category}`.toLowerCase().includes(query))).slice(0, 60);
+                                },
+                                add(product) {
+                                    const line = this.cart.find(item => item.id === product.id);
+                                    if (line) { line.quantity += 1; return; }
+                                    this.cart.push({ id: product.id, name: product.name, price: Number(product.price) || 0, quantity: 1 });
+                                },
+                                remove(index) { this.cart.splice(index, 1); },
+                                total() { return this.cart.reduce((total, line) => total + ((Number(line.price) || 0) * (Number(line.quantity) || 0)), 0); }
+                            }">
+                                <div class="mb-4"><h2 class="text-base font-black text-slate-900">Nueva cotización</h2><p class="mt-1 text-xs text-slate-500">Busca por nombre, marca o categoría y agrega varios productos al carrito.</p></div>
+                                <form method="POST" action="{{ route('seller.shops.quotes.store', $shop) }}" @submit="if (!cart.length) $event.preventDefault()" class="space-y-4">
                                     @csrf
-                                    <input name="customer_name" value="{{ old('customer_name') }}" placeholder="Nombre del cliente" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm">
-                                    <input name="customer_phone" value="{{ old('customer_phone') }}" placeholder="Teléfono" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm">
-                                    <select name="items[0][product_id]" required class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><option value="">Producto</option>@foreach (($module['quoteProducts'] ?? []) as $product)<option value="{{ $product['id'] }}">{{ $product['name'] }} · RD$ {{ $product['price'] }}</option>@endforeach</select>
-                                    <div class="flex gap-2"><input name="items[0][quantity]" value="1" min="1" required type="number" placeholder="Cantidad" class="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><input name="items[0][unit_price]" placeholder="Precio" type="number" min="0" step="0.01" class="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"></div>
-                                    <textarea name="notes" placeholder="Notas (opcional)" class="sm:col-span-2 lg:col-span-3 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"></textarea>
-                                    <button class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-black text-white hover:bg-blue-700">Guardar cotización</button>
+                                    <div class="grid gap-3 sm:grid-cols-2">
+                                        <input name="customer_name" value="{{ old('customer_name') }}" placeholder="Nombre del cliente" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm">
+                                        <input name="customer_phone" value="{{ old('customer_phone') }}" placeholder="Teléfono" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm">
+                                    </div>
+                                    <div class="grid gap-4 lg:grid-cols-[1.2fr_.8fr]">
+                                        <div class="rounded-xl border border-slate-200 bg-white p-3">
+                                            <div class="grid gap-2 sm:grid-cols-[1fr_220px]">
+                                                <input x-model="search" placeholder="Buscar producto o marca..." class="rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                                <select x-model="category" class="rounded-xl border border-slate-300 px-3 py-2.5 text-sm"><option value="">Todas las categorías</option><template x-for="item in categories" :key="item"><option :value="item" x-text="item"></option></template></select>
+                                            </div>
+                                            <div class="mt-3 grid max-h-64 gap-2 overflow-y-auto sm:grid-cols-2">
+                                                <template x-for="product in filteredProducts" :key="product.id">
+                                                    <button type="button" @click="add(product)" class="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-slate-200 px-3 py-2.5 text-left transition hover:border-blue-300 hover:bg-blue-50">
+                                                        <span class="min-w-0"><span class="block truncate text-xs font-black text-slate-800" x-text="product.name"></span><span class="mt-0.5 block truncate text-[11px] text-slate-500" x-text="`${product.category}${product.brand ? ' · '+product.brand : ''}`"></span></span><span class="shrink-0 text-xs font-black text-blue-700" x-text="`RD$ ${Number(product.price).toLocaleString('es-DO', {minimumFractionDigits: 2})}`"></span>
+                                                    </button>
+                                                </template>
+                                                <p x-show="filteredProducts.length === 0" class="sm:col-span-2 px-3 py-8 text-center text-xs text-slate-500">No encontramos productos con esos filtros.</p>
+                                            </div>
+                                        </div>
+                                        <div class="rounded-xl border border-slate-200 bg-white p-3">
+                                            <div class="flex items-center justify-between"><h3 class="text-sm font-black text-slate-900">Carrito de cotización</h3><span class="rounded-full bg-blue-50 px-2 py-1 text-[11px] font-bold text-blue-700" x-text="`${cart.length} producto(s)`"></span></div>
+                                            <div class="mt-3 space-y-2">
+                                                <template x-for="(line, index) in cart" :key="line.id">
+                                                    <div class="rounded-xl border border-slate-200 p-3">
+                                                        <div class="flex items-start justify-between gap-2"><p class="text-xs font-black text-slate-800" x-text="line.name"></p><button type="button" @click="remove(index)" class="text-xs font-bold text-rose-600">Quitar</button></div>
+                                                        <div class="mt-2 grid grid-cols-2 gap-2"><label class="text-[11px] text-slate-500">Cantidad<input type="number" min="1" x-model.number="line.quantity" :name="`items[${index}][quantity]`" class="mt-1 w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm"></label><label class="text-[11px] text-slate-500">Precio unitario<input type="number" min="0" step="0.01" x-model="line.price" :name="`items[${index}][unit_price]`" class="mt-1 w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm"></label></div>
+                                                        <input type="hidden" :name="`items[${index}][product_id]`" :value="line.id">
+                                                    </div>
+                                                </template>
+                                                <p x-show="cart.length === 0" class="rounded-xl border border-dashed border-slate-300 px-3 py-8 text-center text-xs text-slate-500">Agrega productos desde la búsqueda.</p>
+                                            </div>
+                                            <div class="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-sm"><span class="font-bold text-slate-500">Total</span><strong class="text-lg text-slate-900" x-text="`RD$ ${total().toLocaleString('es-DO', {minimumFractionDigits: 2})}`"></strong></div>
+                                        </div>
+                                    </div>
+                                    <div class="grid gap-3 sm:grid-cols-[1fr_auto]"><textarea name="notes" placeholder="Notas (opcional)" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"></textarea><button :disabled="cart.length === 0" :class="cart.length === 0 ? 'cursor-not-allowed bg-slate-300' : 'bg-blue-600 hover:bg-blue-700'" class="rounded-xl px-4 py-2.5 text-sm font-black text-white">Guardar cotización</button></div>
                                 </form>
                             </div>
                         @endif

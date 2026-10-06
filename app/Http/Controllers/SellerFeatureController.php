@@ -171,8 +171,12 @@ class SellerFeatureController extends Controller
                 'can_convert' => $quote->converted_invoice_id === null && $quote->status !== 'cancelled',
                 'id' => $quote->public_id,
             ])->all(),
-            'quoteProducts' => $shop->products()->whereIn('availability_status', ['available', 'out_of_stock'])->orderBy('name')->limit(300)->get()->map(fn (Product $product) => [
-                'id' => $product->public_id, 'name' => $product->name, 'price' => number_format($product->currentPrice(), 2, '.', ''),
+            'quoteProducts' => $shop->products()->with('shopCategory')->whereIn('availability_status', ['available', 'out_of_stock'])->orderBy('name')->limit(300)->get()->map(fn (Product $product) => [
+                'id' => $product->public_id,
+                'name' => $product->name,
+                'price' => number_format($product->currentPrice(), 2, '.', ''),
+                'category' => $product->shopCategory?->name ?: 'Sin categoría',
+                'brand' => $product->brand ?: '',
             ])->all(),
             'note' => 'Cada cotización queda separada de la contabilidad hasta que la conviertas. Al convertirla se valida stock, se consume FIFO y se crea una venta única.',
             'actions' => [
