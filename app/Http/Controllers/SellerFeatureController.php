@@ -756,7 +756,7 @@ class SellerFeatureController extends Controller
                 ['label' => 'Valor recibido', 'value' => $this->money($shop->orders()->sum('total')), 'tone' => 'blue'],
             ],
             'rows' => $orders->map(fn (Order $order) => [
-                'id' => $order->id,
+                'id' => (string) $order->id,
                 'primary' => $order->order_number,
                 'secondary' => ($order->customer_name ?: 'Cliente sin nombre').' · '.($order->delivery_type ?: 'Retiro'),
                 'value' => $this->money($order->total),

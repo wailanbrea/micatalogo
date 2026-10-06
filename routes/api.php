@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\InventoryImportController;
 use App\Http\Controllers\Api\V1\MobileOperationController;
 use App\Http\Controllers\Api\V1\PosSaleController;
 use App\Http\Controllers\Api\V1\QuoteController;
+use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\ShopController;
 use App\Http\Controllers\SellerFeatureController;
 use App\Http\Middleware\EnsureApiAccountIsActive;
@@ -43,6 +44,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/shops/{shop}/pos-sales', [PosSaleController::class, 'store'])->middleware('abilities:pos:write');
         Route::post('/shops/{shop}/quotes', [QuoteController::class, 'store'])->middleware('abilities:pos:write');
         Route::post('/shops/{shop}/quotes/{quote}/convert', [QuoteController::class, 'convert'])->middleware('abilities:pos:write');
+        Route::post('/shops/{shop}/orders/{order}/confirm', [OrderController::class, 'confirm'])->middleware(['abilities:pos:write', 'menu:orders']);
         Route::post('/shops/{shop}/mobile-operations', [MobileOperationController::class, 'store'])->middleware(['abilities:pos:write', 'throttle:60,1']);
         Route::get('/shops/{shop}/customers', [CustomerController::class, 'index'])->middleware('abilities:customers:read');
         Route::post('/shops/{shop}/customers', [CustomerController::class, 'store'])->middleware('abilities:customers:write');

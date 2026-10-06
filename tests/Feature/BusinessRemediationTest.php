@@ -49,6 +49,45 @@ test('dashboard renders actual costs and order confirmation is idempotent', func
     $this->actingAs($user)->get(route('seller.shops.business', $shop))->assertOk()->assertSee('Ventas y ganancia por producto')->assertSee($product->name);
 });
 
+test('mobile order confirmation reuses the accounting transaction and is idempotent', function () {
+    [$user, $shop, $product] = businessFixture();
+    $order = $shop->orders()->create([
+        'order_number' => 'MC-MOBILE-ORDER',
+        'currency' => 'DOP',
+        'subtotal' => 300,
+        'total' => 300,
+        'status' => 'sent_to_whatsapp',
+    ]);
+    $order->items()->create([
+        'product_id' => $product->id,
+        'product_name' => $product->name,
+        'quantity' => 1,
+        'unit_price' => 300,
+        'line_total' => 300,
+    ]);
+    $token = $user->createToken('BSPOS', ['pos:write'])->plainTextToken;
+    $url = "/api/v1/shops/{$shop->public_id}/orders/{$order->id}/confirm";
+
+    $this->withToken($token)->postJson($url, [
+        'payment_kind' => 'paid',
+        'payment_method' => 'cash',
+    ])->assertOk()
+        ->assertJsonPath('order_number', 'MC-MOBILE-ORDER')
+        ->assertJsonPath('invoice_number', fn (?string $value) => is_string($value) && $value !== '');
+
+    $invoiceCount = Invoice::count();
+    $invoiceNumber = Invoice::query()->sole()->invoice_number;
+
+    $this->withToken($token)->postJson($url, [
+        'payment_kind' => 'paid',
+        'payment_method' => 'cash',
+    ])->assertOk()->assertJsonPath('invoice_number', $invoiceNumber);
+
+    expect(Invoice::count())->toBe($invoiceCount)
+        ->and($product->fresh()->inventory->stock_quantity)->toBe(4)
+        ->and($order->fresh()->status)->toBe('confirmed');
+});
+
 test('whatsapp order opens a signed payment screen and records a credit invoice', function () {
     [$user, $shop, $product] = businessFixture();
     $customer = Customer::create([

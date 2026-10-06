@@ -9,8 +9,8 @@ use App\Models\Product;
 use App\Models\Shop;
 use App\Services\BusinessDashboardService;
 use App\Services\InventoryService;
+use App\Services\OrderConfirmationService;
 use App\Services\ProductPricingService;
-use App\Support\Money;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
@@ -140,7 +140,7 @@ class SellerBusinessController extends Controller
         return back()->with('status', 'Precio aprobado.');
     }
 
-    public function confirm(Request $request, Shop $shop, Order $order, InventoryService $inventory)
+    public function confirm(Request $request, Shop $shop, Order $order, OrderConfirmationService $confirmation)
     {
         abort_unless($order->shop_id === $shop->id, 404);
         $data = $request->validate([
@@ -155,65 +155,7 @@ class SellerBusinessController extends Controller
             'reference' => ['nullable', 'string', 'max:120'],
         ]);
 
-        DB::transaction(function () use ($request, $order, $shop, $inventory, $data) {
-            $order = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
-            if ($order->invoice_id !== null) {
-                return;
-            }
-
-            $paymentKind = $data['payment_kind'] ?? 'paid';
-            $paymentKind = $paymentKind === 'cash' ? 'paid' : $paymentKind;
-            $totalCents = Money::toCents($order->total);
-            $creditCents = match ($paymentKind) {
-                'credit' => $totalCents,
-                'mixed' => Money::toCents($data['credit_amount'] ?? 0),
-                default => 0,
-            };
-
-            if ($paymentKind === 'mixed' && ($creditCents <= 0 || $creditCents >= $totalCents)) {
-                throw ValidationException::withMessages(['credit_amount' => 'En un pago mixto, el crédito debe ser menor que el total y mayor que cero.']);
-            }
-            if ($creditCents > $totalCents) {
-                throw ValidationException::withMessages(['credit_amount' => 'El crédito no puede superar el total del pedido.']);
-            }
-
-            $customer = null;
-            if ($creditCents > 0) {
-                if (empty($data['customer_id'])) {
-                    throw ValidationException::withMessages(['customer_id' => 'Selecciona el cliente que asumirá el crédito.']);
-                }
-                $customer = $shop->customers()->whereKey($data['customer_id'])->where('is_active', true)->firstOrFail();
-            } elseif (! empty($data['customer_id'])) {
-                $customer = $shop->customers()->whereKey($data['customer_id'])->where('is_active', true)->firstOrFail();
-            }
-
-            $paymentMethod = $data['payment_method'] ?? 'cash';
-            if ($paymentMethod === 'credit') {
-                $paymentMethod = 'cash';
-            }
-            $lines = $order->items()->get()->map(function ($item) use ($shop) {
-                $product = $shop->products()->find($item->product_id);
-                if (! $product) {
-                    throw ValidationException::withMessages(['order' => 'Un producto del pedido ya no está disponible.']);
-                }
-
-                return ['product' => $product, 'quantity' => $item->quantity, 'unit_price' => (float) $item->unit_price];
-            })->all();
-            $initialStatus = $creditCents === 0 ? 'paid' : ($totalCents === $creditCents ? 'pending' : 'partial');
-            $movements = $inventory->recordCartSales(
-                $lines,
-                $request->user()->id,
-                'whatsapp',
-                $initialStatus,
-                0,
-                0,
-                $paymentMethod,
-                $customer,
-                Money::toDecimal($creditCents),
-                $data['reference'] ?? null,
-            );
-            $order->update(['status' => 'confirmed', 'invoice_id' => $movements[0]->invoice_id]);
-        });
+        $confirmation->confirm($shop, $order, $request->user(), $data);
 
         return back()->with('status', 'Pedido confirmado como venta.');
     }
