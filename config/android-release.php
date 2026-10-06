@@ -2,13 +2,13 @@
 
 // Verified against the signed artifact; no credentials belong in this manifest.
 return [
-    'version_code' => 27,
-    'version_name' => '1.0.26',
+    'version_code' => 28,
+    'version_name' => '1.0.27',
     'minimum_supported_version_code' => 23,
-    'apk_url' => 'https://micatalogo.bsolutions.dev/downloads/bspos-1.0.26-pos-shop-switch.apk',
-    'apk_sha256' => '972b2d9c7b67509e8caa9a640f7d726caddbbb5116e670310b1bac8d44b30692',
-    'release_notes' => 'Menú agrupado y coherente con el panel web, selección de tienda activa para cuentas con varias tiendas, POS y catálogo filtrados por tienda, Finanzas por tienda e importación PDF/CSV/XLSX.',
+    'apk_url' => 'https://micatalogo.bsolutions.dev/downloads/bspos-1.0.27-pos-shop-switch.apk',
+    'apk_sha256' => '23ca5fca4cdf70e8ea8214e00875832e1e27da491bf6f3c646b96e0a1f220230',
+    'release_notes' => 'Menú completo alineado con Puntto, módulos operativos por tienda, pantalla de cotizaciones desde la app y permisos separados para propietarios, administradores y vendedores.',
     'release_date' => '2026-10-06',
     'min_sdk' => 26,
-    'size_bytes' => 16443220,
+    'size_bytes' => 16475988,
 ];
