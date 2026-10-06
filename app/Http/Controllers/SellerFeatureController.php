@@ -204,7 +204,11 @@ class SellerFeatureController extends Controller
                 ['primary' => 'Gastos registrados', 'secondary' => 'Egresos con fecha de hoy', 'value' => number_format((clone $expenses)->count()), 'status' => 'Listo'],
                 ['primary' => 'Sesión de caja', 'secondary' => $session?->opened_at?->format('d/m/Y H:i') ?: 'No hay una sesión abierta', 'value' => $session ? 'Abierta' : 'Revisar', 'status' => $session ? 'Activa' : 'Pendiente'],
             ],
-            'note' => 'El cierre resume datos existentes. El botón de cierre definitivo se implementará junto con la política de reapertura y auditoría.',
+            'session' => $session ? [
+                'id' => $session->public_id,
+                'expected' => number_format($session->calculateExpectedBalance() / 100, 2, '.', ''),
+            ] : null,
+            'note' => 'El cierre resume ventas, gastos y caja. El arqueo usa la misma sesión financiera y conserva la diferencia registrada.',
         ];
     }
 

@@ -31,6 +31,26 @@
                             @endforeach
                         </div>
 
+                        @if ($featureKey === 'day_close')
+                            <div class="rounded-2xl border {{ $module['session'] ? 'border-emerald-200 bg-emerald-50/60' : 'border-slate-200 bg-slate-50' }} p-5">
+                                @if ($module['session'])
+                                    <div class="flex flex-wrap items-end justify-between gap-4">
+                                        <div>
+                                            <p class="text-[11px] font-black uppercase tracking-[0.14em] text-emerald-700">Sesión de caja activa</p>
+                                            <p class="mt-1 text-sm text-slate-600">Efectivo esperado: <strong class="text-lg text-emerald-800">RD$ {{ $module['session']['expected'] }}</strong></p>
+                                        </div>
+                                        <form method="POST" action="{{ route('seller.shops.cash.close', [$shop, $module['session']['id']]) }}" class="flex flex-wrap items-end gap-2">
+                                            @csrf
+                                            <div><label class="block text-[11px] font-bold text-slate-600" for="day-close-counted">Efectivo contado</label><input id="day-close-counted" name="counted_amount" required min="0" step="0.01" type="number" placeholder="0.00" class="mt-1 w-36 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-black tabular-nums"></div>
+                                            <button class="rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-black text-white hover:bg-emerald-800">Cerrar caja</button>
+                                        </form>
+                                    </div>
+                                @else
+                                    <div class="flex flex-wrap items-center justify-between gap-3"><div><p class="text-sm font-black text-slate-800">No hay una sesión de caja abierta</p><p class="mt-1 text-xs text-slate-500">Abre la caja para que los cobros en efectivo queden conciliados.</p></div><a wire:navigate.hover href="{{ route('seller.shops.cash.index', $shop) }}" class="rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-black text-white hover:bg-blue-700">Abrir caja</a></div>
+                                @endif
+                            </div>
+                        @endif
+
                         <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
                             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
                                 <div>

@@ -5,6 +5,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\Shop;
 use App\Models\User;
+use App\Services\CashRegisterService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -64,6 +65,19 @@ test('prepared modules have a protected entry point instead of a broken link', f
         ->assertSee('Cotizaciones')
         ->assertSee('Estamos preparando este espacio')
         ->assertSee('Prepara cotizaciones');
+});
+
+test('day close exposes the existing cash session reconciliation flow', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->for($user)->create();
+    $session = app(CashRegisterService::class)->openSession($shop, $user, '500.00', 'Turno de prueba');
+
+    $this->actingAs($user)
+        ->get(route('seller.shops.feature', [$shop, 'feature' => 'day_close']))
+        ->assertOk()
+        ->assertSee('Sesión de caja activa')
+        ->assertSee('Efectivo contado')
+        ->assertSee(route('seller.shops.cash.close', [$shop, $session->public_id]));
 });
 
 test('feature modules remain tenant isolated', function () {
