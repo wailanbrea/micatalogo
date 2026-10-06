@@ -249,7 +249,7 @@ test('seller dashboard renders unified persistent navigation and account dropdow
         ->assertSee('Configuración')
         ->assertSee('Vendedores')
         ->assertDontSee('Usuarios del sistema')
-        ->assertDontSee('Reportes')
+        ->assertSee('Reportes')
         ->assertSee(route('seller.shops.inventory.index', $shop))
         ->assertSee(route('seller.shops.categories.index', $shop))
         ->assertSee(route('seller.shops.products.import.create', $shop))

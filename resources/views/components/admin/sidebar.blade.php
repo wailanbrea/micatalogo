@@ -31,6 +31,74 @@
     $isAssignedSellerOnly = $user?->isAssignedSellerOnly() ?? false;
     $canManageShops = ! $isAssignedSellerOnly;
     $canCreateShop = $isAdmin || ! ($user?->hasActiveShopAssignment() ?? false);
+    $featureUrl = fn (string $feature): string => route('seller.shops.feature', ['shop' => $contextShop, 'feature' => $feature]);
+    $featureActive = fn (string $feature): bool => request()->routeIs('seller.shops.feature') && request('feature') === $feature;
+    $iconPath = 'M4 5h16v14H4zM8 9h8M8 13h5';
+    $menuSections = $contextShop ? [
+        ['label' => 'Operación', 'items' => [
+            ['key' => 'summary', 'label' => 'Resumen', 'url' => route('seller.dashboard'), 'active' => request()->routeIs('seller.dashboard')],
+            ['key' => 'sales', 'label' => 'Terminal', 'url' => route('seller.shops.pos', $contextShop), 'active' => $isPos, 'path' => 'M3 5h18v14H3zM7 9h4m-4 4h2m5-4h3m-3 4h3'],
+            ['key' => 'sales', 'label' => 'Ventas', 'url' => $featureUrl('sales'), 'active' => $featureActive('sales')],
+            ['key' => 'quotes', 'label' => 'Cotizaciones', 'url' => $featureUrl('quotes'), 'active' => $featureActive('quotes')],
+            ['key' => 'orders', 'label' => 'Pedidos', 'url' => $featureUrl('orders'), 'active' => $featureActive('orders')],
+            ['key' => 'encargos', 'label' => 'Encargos', 'url' => $featureUrl('encargos'), 'active' => $featureActive('encargos')],
+            ['key' => 'shipments', 'label' => 'Envíos', 'url' => $featureUrl('shipments'), 'active' => $featureActive('shipments')],
+            ['key' => 'day_close', 'label' => 'Cierre de día', 'url' => $featureUrl('day_close'), 'active' => $featureActive('day_close')],
+        ]],
+        ['label' => 'Compras', 'items' => [
+            ['key' => 'containers', 'label' => 'Contenedores', 'url' => $featureUrl('containers'), 'active' => $featureActive('containers')],
+            ['key' => 'loads', 'label' => 'Cargas', 'url' => $featureUrl('loads'), 'active' => $featureActive('loads')],
+            ['key' => 'suppliers', 'label' => 'Suplidores', 'url' => $featureUrl('suppliers'), 'active' => $featureActive('suppliers')],
+            ['key' => 'purchase_invoices', 'label' => 'Facturas', 'url' => $featureUrl('purchase_invoices'), 'active' => $featureActive('purchase_invoices')],
+        ]],
+        ['label' => 'Catálogo', 'items' => [
+            ['key' => 'inventory', 'label' => 'Inventario', 'url' => route('seller.shops.inventory.index', $contextShop), 'active' => $isInventory && ! $isLots, 'path' => 'M4 7h16v13H4zM8 3h8v4H8zM8 12h8'],
+            ['key' => 'photos', 'label' => 'Fotos', 'url' => $featureUrl('photos'), 'active' => $featureActive('photos')],
+            ['key' => 'public_catalog', 'label' => 'Mi tienda', 'url' => route('shops.show', $contextShop), 'active' => false, 'external' => true],
+            ['key' => 'services', 'label' => 'Servicios', 'url' => $featureUrl('services'), 'active' => $featureActive('services')],
+            ['key' => 'price_health', 'label' => 'Salud de precios', 'url' => $featureUrl('price_health'), 'active' => $featureActive('price_health')],
+            ['key' => 'products', 'label' => 'Precios automáticos', 'url' => route('seller.shops.pricing.index', $contextShop), 'active' => $isPricing],
+            ['key' => 'decants', 'label' => 'Decants', 'url' => $featureUrl('decants'), 'active' => $featureActive('decants')],
+            ['key' => 'attributes', 'label' => 'Marcas y atributos', 'url' => $featureUrl('attributes'), 'active' => $featureActive('attributes')],
+            ['key' => 'products', 'label' => 'Importar', 'url' => route('seller.shops.products.import.create', $contextShop), 'active' => $isImport],
+        ]],
+        ['label' => 'Cobros', 'items' => [
+            ['key' => 'credit', 'label' => 'Crédito', 'url' => $featureUrl('credit'), 'active' => $featureActive('credit')],
+            ['key' => 'customers', 'label' => 'Clientes', 'url' => route('seller.shops.customers.index', $contextShop), 'active' => $isCustomers],
+        ]],
+        ['label' => 'Finanzas', 'items' => [
+            ['key' => 'finance', 'label' => 'Ganancias', 'url' => route('seller.shops.business', $contextShop), 'active' => request()->routeIs('seller.shops.business')],
+            ['key' => 'inventory_adjustments', 'label' => 'Ajustes de inventario', 'url' => $featureUrl('inventory_adjustments'), 'active' => $featureActive('inventory_adjustments')],
+            ['key' => 'expenses', 'label' => 'Gastos', 'url' => route('seller.shops.expenses.index', $contextShop), 'active' => request()->routeIs('seller.shops.expenses.*')],
+            ['key' => 'partners', 'label' => 'Socios', 'url' => $featureUrl('partners'), 'active' => $featureActive('partners')],
+        ]],
+        ['label' => 'Análisis', 'items' => [
+            ['key' => 'reports', 'label' => 'Reportes', 'url' => $featureUrl('reports'), 'active' => $featureActive('reports')],
+        ]],
+        ['label' => 'Equipo', 'items' => [
+            ['key' => 'commissions', 'label' => 'Comisiones', 'url' => $featureUrl('commissions'), 'active' => $featureActive('commissions')],
+            ['key' => 'authorizations', 'label' => 'Autorizaciones', 'url' => $featureUrl('authorizations'), 'active' => $featureActive('authorizations')],
+        ]],
+        ['label' => 'Ajustes', 'items' => [
+            ['key' => 'shop_settings', 'label' => 'Configuración', 'url' => route('seller.shops.edit', $contextShop), 'active' => $isSettings],
+            ['key' => 'sellers', 'label' => 'Equipo', 'aria' => 'Vendedores', 'url' => route('seller.shops.sellers.index', $contextShop), 'active' => $isSellers],
+            ['key' => 'accountant', 'label' => 'Contador', 'url' => $featureUrl('accountant'), 'active' => $featureActive('accountant')],
+            ['key' => 'account', 'label' => 'Mi cuenta', 'url' => $featureUrl('account'), 'active' => $featureActive('account')],
+            ['key' => 'updates', 'label' => 'Novedades', 'url' => $featureUrl('updates'), 'active' => $featureActive('updates')],
+            ['key' => 'help', 'label' => 'Ayuda', 'url' => $featureUrl('help'), 'active' => $featureActive('help')],
+            ['key' => 'practice', 'label' => 'Practicar sin miedo', 'url' => $featureUrl('practice'), 'active' => $featureActive('practice')],
+            ['key' => 'support', 'label' => 'Soporte', 'url' => $featureUrl('support'), 'active' => $featureActive('support')],
+        ]],
+        ['label' => 'Herramientas MiCatalogo', 'items' => [
+            ['key' => 'cash', 'label' => 'Control de caja', 'url' => route('seller.shops.cash.index', $contextShop), 'active' => request()->routeIs('seller.shops.cash.*')],
+            ['key' => 'metrics', 'label' => 'Métricas y QR', 'url' => route('seller.shops.metrics.index', $contextShop), 'active' => $isMetrics],
+            ['key' => 'public_catalog', 'label' => 'Compartir catálogo', 'url' => route('shops.show', $contextShop), 'active' => false, 'external' => true],
+            ['key' => 'products', 'label' => 'Productos', 'url' => route('seller.shops.products.index', $contextShop), 'active' => $isProducts],
+            ['key' => 'products', 'label' => 'Categorías', 'url' => route('seller.shops.categories.index', $contextShop), 'active' => $isCategories],
+            ['key' => 'products', 'label' => 'Subida masiva', 'url' => route('seller.shops.products.bulk.create', $contextShop), 'active' => $isBulkImport],
+            ['key' => 'inventory', 'label' => 'Lotes y costos FIFO', 'url' => route('seller.shops.inventory.lots', $contextShop), 'active' => $isLots],
+        ]],
+    ] : [];
 @endphp
 
 <aside class="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-white/5 bg-[#171411] text-white md:flex" aria-label="Navegación del panel">
@@ -51,6 +119,31 @@
     </div>
 
     <nav class="flex-1 space-y-0.5 overflow-y-auto px-2 py-4" aria-label="Navegación principal">
+        @if ($contextShop)
+            @foreach ($menuSections as $section)
+                <p class="{{ $loop->first ? 'px-3 pb-2' : 'mt-4 border-t border-white/10 px-3 pb-2 pt-4' }} text-[10px] font-bold uppercase tracking-[0.18em] text-stone-500">{{ $section['label'] }}</p>
+                @foreach ($section['items'] as $item)
+                    @if ($item['key'] === 'summary' || $canSeeMenu($item['key']))
+                        <a wire:navigate.hover href="{{ $item['url'] }}" @if ($item['external'] ?? false) target="_blank" @endif @if ($item['aria'] ?? false) aria-label="{{ $item['aria'] }}" @endif class="{{ $linkClass }} {{ ($item['active'] ?? false) ? $activeClass : $idleClass }}" @if ($item['label'] === 'Contenedores') title="Agrupa compras y recepciones grandes" @endif>
+                            <svg class="h-4 w-4 shrink-0 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $item['path'] ?? $iconPath }}"/></svg>
+                            <span class="truncate">{{ $item['label'] }}</span>
+                            @if ($item['label'] === 'Productos')<span class="ml-auto rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold text-stone-200">{{ $productCount }}</span>@endif
+                        </a>
+                    @endif
+                @endforeach
+            @endforeach
+            <a href="{{ route('shops.show', $contextShop) }}" target="_blank" class="{{ $linkClass }} {{ $idleClass }}">
+                <svg class="h-4 w-4 shrink-0 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8.7 13.3 6.6-6.6m-7.1 2.1-2.8 2.8a3 3 0 1 0 4.2 4.2l2.8-2.8m3.6-2 2.8-2.8a3 3 0 1 0-4.2-4.2l-2.8 2.8"/></svg>
+                <span>Ver tienda</span>
+            </a>
+        @else
+            <p class="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-stone-500">Operación</p>
+            @if ($canManageShops)<a wire:navigate.hover href="{{ route('seller.dashboard') }}" class="{{ $linkClass }} {{ $idleClass }}">Mis tiendas</a>@endif
+            @if ($canCreateShop)<a wire:navigate.hover href="{{ route('seller.shops.create') }}" class="{{ $linkClass }} {{ $idleClass }}">Crear tienda</a>@endif
+        @endif
+
+        <div class="hidden">
+        @if (false)
         <p class="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-stone-500">Operación</p>
         <a wire:navigate.hover href="{{ $isAdmin ? route('admin.dashboard') : route('seller.dashboard') }}" class="{{ $linkClass }} {{ $isDashboard ? $activeClass : $idleClass }}">
             <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m3 12 9-9 9 9M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10M9 21v-6h6v6"/></svg>
@@ -182,6 +275,8 @@
                 <a wire:navigate.hover href="{{ route('admin.users.index') }}" class="{{ $linkClass }} {{ request()->routeIs('admin.users.*') ? $activeClass : $idleClass }}">Usuarios</a>
             </div>
         @endif
+        @endif
+        </div>
     </nav>
 
     <div class="border-t border-white/10 p-3">

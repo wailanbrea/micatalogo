@@ -19,6 +19,7 @@ use App\Http\Controllers\SellerBusinessController;
 use App\Http\Controllers\SellerCashRegisterController;
 use App\Http\Controllers\SellerCustomerController;
 use App\Http\Controllers\SellerExpenseController;
+use App\Http\Controllers\SellerFeatureController;
 use App\Http\Controllers\SellerInventoryController;
 use App\Http\Controllers\SellerInventoryImportController;
 use App\Http\Controllers\SellerInvitationController;
@@ -119,6 +120,9 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
         Route::get('/tiendas/{shop}/metricas', [SellerShopMetricController::class, 'index'])->name('shops.metrics.index');
         Route::get('/tiendas/{shop}/qr/descargar', [SellerShopMetricController::class, 'downloadQr'])->name('shops.qr.download');
         Route::get('/tiendas/{shop}/qr/imprimir', [SellerShopMetricController::class, 'print'])->name('shops.qr.print');
+    });
+    Route::scopeBindings()->middleware('can:sell,shop')->group(function () {
+        Route::get('/tiendas/{shop}/modulo/{feature}', [SellerFeatureController::class, 'show'])->name('shops.feature');
     });
     Route::scopeBindings()->middleware('can:update,shop')->group(function () {
         Route::get('/tiendas/{shop}/vendedores', [SellerManagementController::class, 'index'])->name('shops.sellers.index');
