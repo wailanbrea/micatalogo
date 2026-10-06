@@ -18,8 +18,10 @@ use App\Models\SupportRequest;
 use App\Models\Supplier;
 use App\Services\BusinessDashboardService;
 use App\Services\SellerMenuService;
+use App\Services\ShopAnalyticsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class SellerFeatureController extends Controller
@@ -53,14 +55,14 @@ class SellerFeatureController extends Controller
         'help' => ['group' => 'Ajustes', 'title' => 'Ayuda', 'description' => 'Encuentra guías rápidas para aprender a usar cada parte de tu negocio.', 'status' => 'En preparación'],
         'practice' => ['group' => 'Ajustes', 'title' => 'Practicar sin miedo', 'description' => 'Aprende los flujos principales con datos de práctica sin tocar tu operación real.', 'status' => 'En preparación'],
         'support' => ['group' => 'Ajustes', 'title' => 'Soporte', 'description' => 'Envía una solicitud y consulta el estado de la ayuda de tu equipo.', 'status' => 'En preparación'],
-        'storefront' => ['group' => 'Catálogo', 'title' => 'Mi tienda', 'description' => 'Revisa la vitrina pública y la experiencia que ven tus clientes.', 'status' => 'En preparación'],
-        'metrics' => ['group' => 'Catálogo', 'title' => 'Métricas y QR', 'description' => 'Consulta visitas, contactos de WhatsApp y el código QR de tu catálogo.', 'status' => 'En preparación'],
-        'public_catalog' => ['group' => 'Catálogo', 'title' => 'Compartir catálogo', 'description' => 'Comparte el enlace de tu catálogo público con tus clientes.', 'status' => 'En preparación'],
-        'pricing' => ['group' => 'Catálogo', 'title' => 'Precios automáticos', 'description' => 'Define margen y redondeo para actualizar precios al recibir nuevos costos.', 'status' => 'En preparación'],
-        'import' => ['group' => 'Catálogo', 'title' => 'Importar', 'description' => 'Carga productos desde Excel, CSV o PDF y revisa la previsualización antes de guardar.', 'status' => 'En preparación'],
-        'expenses' => ['group' => 'Finanzas', 'title' => 'Gastos', 'description' => 'Registra y consulta los gastos que afectan la caja y la rentabilidad.', 'status' => 'En preparación'],
-        'shop_settings' => ['group' => 'Ajustes', 'title' => 'Configuración de tienda', 'description' => 'Personaliza identidad, catálogo, pedidos y reglas operativas de la tienda.', 'status' => 'En preparación'],
-        'sellers' => ['group' => 'Ajustes', 'title' => 'Equipo', 'description' => 'Administra vendedores, permisos y comisiones sin exponer funciones administrativas.', 'status' => 'En preparación'],
+        'storefront' => ['group' => 'Catálogo', 'title' => 'Mi tienda', 'description' => 'Revisa la vitrina pública y la experiencia que ven tus clientes.', 'status' => 'Operativo'],
+        'metrics' => ['group' => 'Catálogo', 'title' => 'Métricas y QR', 'description' => 'Consulta visitas, contactos de WhatsApp y el código QR de tu catálogo.', 'status' => 'Operativo'],
+        'public_catalog' => ['group' => 'Catálogo', 'title' => 'Compartir catálogo', 'description' => 'Comparte el enlace de tu catálogo público con tus clientes.', 'status' => 'Operativo'],
+        'pricing' => ['group' => 'Catálogo', 'title' => 'Precios automáticos', 'description' => 'Define margen y redondeo para actualizar precios al recibir nuevos costos.', 'status' => 'Operativo'],
+        'import' => ['group' => 'Catálogo', 'title' => 'Importar', 'description' => 'Carga productos desde Excel, CSV o PDF y revisa la previsualización antes de guardar.', 'status' => 'Operativo'],
+        'expenses' => ['group' => 'Finanzas', 'title' => 'Gastos', 'description' => 'Registra y consulta los gastos que afectan la caja y la rentabilidad.', 'status' => 'Operativo'],
+        'shop_settings' => ['group' => 'Ajustes', 'title' => 'Configuración de tienda', 'description' => 'Personaliza identidad, catálogo, pedidos y reglas operativas de la tienda.', 'status' => 'Operativo'],
+        'sellers' => ['group' => 'Ajustes', 'title' => 'Equipo', 'description' => 'Administra vendedores, permisos y comisiones sin exponer funciones administrativas.', 'status' => 'Operativo'],
     ];
 
     public function show(
@@ -174,6 +176,14 @@ class SellerFeatureController extends Controller
             'help' => $this->helpData(),
             'practice' => $this->practiceData($shop),
             'support' => $this->supportData($shop),
+            'storefront' => $this->storefrontData($shop),
+            'metrics' => $this->metricsData($shop),
+            'public_catalog' => $this->publicCatalogData($shop),
+            'pricing' => $this->pricingData($shop),
+            'import' => $this->importData($shop),
+            'expenses' => $this->expensesData($shop),
+            'shop_settings' => $this->shopSettingsData($shop),
+            'sellers' => $this->sellersData($shop),
             default => [
                 'kind' => 'prepared',
                 'kpis' => [],
@@ -181,6 +191,222 @@ class SellerFeatureController extends Controller
                 'note' => null,
             ],
         };
+    }
+
+    private function storefrontData(Shop $shop): array
+    {
+        $products = $shop->products();
+        $published = (clone $products)->where('availability_status', 'available')->where('moderation_status', 'active')->count();
+        $withPhoto = (clone $products)->whereHas('images')->count();
+
+        return [
+            'kind' => 'table',
+            'kpis' => [
+                ['label' => 'Productos publicados', 'value' => number_format($published), 'tone' => 'blue'],
+                ['label' => 'Con fotografía', 'value' => number_format($withPhoto), 'tone' => 'emerald'],
+                ['label' => 'Pedidos recibidos', 'value' => number_format($shop->orders()->count()), 'tone' => 'amber'],
+            ],
+            'rows' => [
+                ['primary' => 'Vitrina pública', 'secondary' => route('shops.show', $shop), 'value' => 'Abrir', 'status' => 'Disponible'],
+                ['primary' => 'Identidad de la tienda', 'secondary' => filled($shop->logo_url) && filled($shop->cover_url) ? 'Logo y portada configurados' : 'Faltan elementos de presentación', 'value' => filled($shop->description) ? 'Completa' : 'Revisar', 'status' => 'Configuración'],
+                ['primary' => 'Pedidos por WhatsApp', 'secondary' => filled($shop->whatsapp_number) ? $shop->whatsapp_number : 'Número no configurado', 'value' => filled($shop->whatsapp_number) ? 'Activo' : 'Revisar', 'status' => 'Canal de venta'],
+            ],
+            'note' => 'La vitrina usa los mismos productos, precios, imágenes y disponibilidad del catálogo operativo; no mantiene una copia separada.',
+            'actions' => [
+                ['label' => 'Abrir mi tienda', 'url' => route('seller.shops.storefront', $shop), 'tone' => 'primary'],
+                ['label' => 'Configurar apariencia', 'url' => route('seller.shops.edit', $shop), 'tone' => 'secondary'],
+            ],
+        ];
+    }
+
+    private function metricsData(Shop $shop): array
+    {
+        $metrics = app(ShopAnalyticsService::class)->getMetricsSummary($shop);
+
+        return [
+            'kind' => 'table',
+            'kpis' => [
+                ['label' => 'Visitas · 30 días', 'value' => number_format($metrics['views_30d']), 'tone' => 'blue'],
+                ['label' => 'Contactos WhatsApp · 30 días', 'value' => number_format($metrics['clicks_30d']), 'tone' => 'emerald'],
+                ['label' => 'Conversión a WhatsApp', 'value' => number_format($metrics['conversion_rate_30d'], 1).'% ', 'tone' => 'amber'],
+            ],
+            'rows' => collect($metrics['top_by_clicks'])->map(fn ($product) => [
+                'primary' => $product->name,
+                'secondary' => number_format($product->views_count).' visita(s) en catálogo',
+                'value' => number_format($product->clicks_count).' contacto(s)',
+                'status' => 'Más consultado',
+            ])->all(),
+            'note' => 'Las métricas se agregan por día y por producto. El QR y el enlace público llevan a la misma vitrina de la tienda.',
+            'actions' => [
+                ['label' => 'Abrir métricas completas', 'url' => route('seller.shops.metrics.index', $shop), 'tone' => 'primary'],
+                ['label' => 'Descargar QR', 'url' => route('seller.shops.qr.download', $shop), 'tone' => 'secondary'],
+            ],
+        ];
+    }
+
+    private function publicCatalogData(Shop $shop): array
+    {
+        $url = route('shops.show', $shop);
+        $active = $shop->products()->where('availability_status', 'available')->where('moderation_status', 'active')->count();
+
+        return [
+            'kind' => 'table',
+            'kpis' => [
+                ['label' => 'Estado del catálogo', 'value' => $shop->status === 'active' ? 'Activo' : ucfirst((string) $shop->status), 'tone' => $shop->status === 'active' ? 'emerald' : 'amber'],
+                ['label' => 'Productos visibles', 'value' => number_format($active), 'tone' => 'blue'],
+                ['label' => 'Enlace', 'value' => 'Listo para compartir', 'tone' => 'slate'],
+            ],
+            'rows' => [
+                ['primary' => 'Enlace público', 'secondary' => $url, 'value' => 'Copiar/abrir', 'status' => 'Disponible'],
+                ['primary' => 'Pedidos online', 'secondary' => filled($shop->whatsapp_number) ? 'WhatsApp configurado' : 'Configura el WhatsApp para recibir pedidos', 'value' => filled($shop->whatsapp_number) ? 'Activo' : 'Pendiente', 'status' => 'Canal de venta'],
+            ],
+            'note' => 'El enlace público siempre refleja los cambios de inventario, precios e imágenes sin republicar manualmente.',
+            'actions' => [
+                ['label' => 'Abrir catálogo público', 'url' => $url, 'tone' => 'primary'],
+                ['label' => 'Ver QR y métricas', 'url' => route('seller.shops.metrics.index', $shop), 'tone' => 'secondary'],
+            ],
+        ];
+    }
+
+    private function pricingData(Shop $shop): array
+    {
+        $products = $shop->products()->where('sale_unit', '!=', 'decant')->with('inventory')->orderBy('name')->limit(100)->get();
+        $rules = DB::table('product_price_rules')->whereIn('product_id', $products->pluck('id'))->get()->keyBy('product_id');
+        $pending = $rules->filter(fn ($rule) => $rule->pending_price !== null)->count();
+
+        return [
+            'kind' => 'table',
+            'kpis' => [
+                ['label' => 'Productos evaluados', 'value' => number_format($products->count()), 'tone' => 'blue'],
+                ['label' => 'Reglas configuradas', 'value' => number_format($rules->count()), 'tone' => 'emerald'],
+                ['label' => 'Bajadas por aprobar', 'value' => number_format($pending), 'tone' => $pending ? 'amber' : 'slate'],
+            ],
+            'rows' => $products->map(fn (Product $product) => [
+                'primary' => $product->name,
+                'secondary' => $product->inventory?->cost_price !== null ? 'Costo actual RD$ '.number_format((float) $product->inventory->cost_price, 2) : 'Sin costo registrado',
+                'value' => 'Venta RD$ '.number_format($product->currentPrice(), 2),
+                'status' => isset($rules[$product->id]) ? ($rules[$product->id]->pending_price !== null ? 'Aprobación pendiente' : 'Regla activa') : 'Sin regla',
+            ])->all(),
+            'note' => 'Cada lote conserva su costo. Las subidas automáticas pueden aplicarse según la regla y las bajadas quedan pendientes de aprobación.',
+            'actions' => [
+                ['label' => 'Administrar reglas', 'url' => route('seller.shops.pricing.index', $shop), 'tone' => 'primary'],
+                ['label' => 'Ver ganancias', 'url' => route('seller.shops.business', $shop), 'tone' => 'secondary'],
+            ],
+        ];
+    }
+
+    private function importData(Shop $shop): array
+    {
+        $sessions = $shop->importSessions()->with('user')->limit(10)->get();
+        $records = DB::table('product_import_records')->where('shop_id', $shop->id);
+
+        return [
+            'kind' => 'table',
+            'kpis' => [
+                ['label' => 'Importaciones recientes', 'value' => number_format($sessions->count()), 'tone' => 'blue'],
+                ['label' => 'Filas importadas', 'value' => number_format((clone $records)->where('data_status', 'imported')->count()), 'tone' => 'emerald'],
+                ['label' => 'Con advertencias/error', 'value' => number_format((clone $records)->whereIn('data_status', ['warning', 'error', 'invalid'])->count()), 'tone' => 'amber'],
+            ],
+            'rows' => $sessions->map(fn ($session) => [
+                'primary' => $session->original_filename,
+                'secondary' => ($session->user?->name ?: 'Sistema').' · '.($session->created_at?->format('d/m/Y H:i') ?: 'Sin fecha'),
+                'value' => number_format($session->valid_rows).' válidas / '.number_format($session->total_rows).' filas',
+                'status' => $session->status === 'confirmed' ? 'Confirmada' : ($session->isExpired() ? 'Expirada' : 'Previsualizada'),
+            ])->all(),
+            'note' => 'El importador acepta Excel, CSV y PDF con previsualización, mapeo de columnas, detección de categorías y carga opcional de imágenes. Confirmar es el único paso que escribe en el catálogo.',
+            'actions' => [
+                ['label' => 'Abrir importador', 'url' => route('seller.shops.products.import.create', $shop), 'tone' => 'primary'],
+                ['label' => 'Ver productos', 'url' => route('seller.shops.products.index', $shop), 'tone' => 'secondary'],
+            ],
+        ];
+    }
+
+    private function expensesData(Shop $shop): array
+    {
+        $expenses = $shop->expenses()->with('category')->latest('occurred_at')->limit(30)->get();
+        $incurred = (float) $shop->expenses()->sum('amount');
+        $paid = (float) $shop->expenses()->sum('amount_paid');
+
+        return [
+            'kind' => 'table',
+            'kpis' => [
+                ['label' => 'Gastos registrados', 'value' => number_format($shop->expenses()->count()), 'tone' => 'blue'],
+                ['label' => 'Total incurrido', 'value' => $this->money($incurred), 'tone' => 'rose'],
+                ['label' => 'Pendiente de pago', 'value' => $this->money(max(0, $incurred - $paid)), 'tone' => 'amber'],
+            ],
+            'rows' => $expenses->map(fn (Expense $expense) => [
+                'primary' => $expense->description,
+                'secondary' => ($expense->category?->name ?: 'Sin categoría').' · '.($expense->occurred_at?->format('d/m/Y H:i') ?: 'Sin fecha'),
+                'value' => $this->money($expense->amount),
+                'status' => $expense->statusLabel(),
+            ])->all(),
+            'note' => 'Los gastos afectan la rentabilidad al registrarse y afectan caja solo cuando se paga el importe correspondiente.',
+            'actions' => [
+                ['label' => 'Registrar gasto', 'url' => route('seller.shops.expenses.index', $shop), 'tone' => 'primary'],
+                ['label' => 'Ver caja', 'url' => route('seller.shops.cash.index', $shop), 'tone' => 'secondary'],
+            ],
+        ];
+    }
+
+    private function shopSettingsData(Shop $shop): array
+    {
+        $checks = [
+            ['label' => 'Identidad visual', 'value' => filled($shop->logo_url) && filled($shop->cover_url) ? 'Logo y portada listos' : 'Falta logo o portada', 'status' => filled($shop->logo_url) && filled($shop->cover_url) ? 'Completo' : 'Revisar'],
+            ['label' => 'Datos de contacto', 'value' => filled($shop->whatsapp_number) ? $shop->whatsapp_number : 'WhatsApp no configurado', 'status' => filled($shop->whatsapp_number) ? 'Completo' : 'Revisar'],
+            ['label' => 'Entrega', 'value' => $shop->offers_shipping ? 'Ofrece envíos' : 'Retiro/entrega por coordinar', 'status' => 'Configurado'],
+            ['label' => 'Perfil de negocio', 'value' => $shop->business_type ?: 'General', 'status' => 'Activo'],
+        ];
+
+        return [
+            'kind' => 'table',
+            'kpis' => [
+                ['label' => 'Estado', 'value' => $shop->status === 'active' ? 'Activo' : ucfirst((string) $shop->status), 'tone' => $shop->status === 'active' ? 'emerald' : 'amber'],
+                ['label' => 'Catálogo', 'value' => number_format($shop->products()->count()).' productos', 'tone' => 'blue'],
+                ['label' => 'Plan', 'value' => $shop->planLabel(), 'tone' => 'slate'],
+            ],
+            'rows' => array_map(fn (array $check) => ['primary' => $check['label'], 'secondary' => $check['value'], 'value' => $check['status'], 'status' => 'Configuración'], $checks),
+            'note' => 'Los cambios de configuración se aplican sobre la tienda activa y se reflejan en la vitrina pública y en la aplicación.',
+            'actions' => [
+                ['label' => 'Editar configuración', 'url' => route('seller.shops.edit', $shop), 'tone' => 'primary'],
+                ['label' => 'Ver mi tienda', 'url' => route('seller.shops.storefront', $shop), 'tone' => 'secondary'],
+            ],
+        ];
+    }
+
+    private function sellersData(Shop $shop): array
+    {
+        $sellers = $shop->sellers()->with('user')->where('is_active', true)->get();
+        $stats = Invoice::query()
+            ->where('shop_id', $shop->id)
+            ->whereNotNull('salesperson_id')
+            ->selectRaw('salesperson_id, COUNT(*) as sales_count, COALESCE(SUM(total), 0) as sales_total, COALESCE(SUM(commission_amount), 0) as commission_total')
+            ->groupBy('salesperson_id')
+            ->get()
+            ->keyBy('salesperson_id');
+
+        return [
+            'kind' => 'table',
+            'kpis' => [
+                ['label' => 'Vendedores activos', 'value' => number_format($sellers->count()), 'tone' => 'blue'],
+                ['label' => 'Ventas asignadas', 'value' => number_format($stats->sum('sales_count')), 'tone' => 'emerald'],
+                ['label' => 'Comisiones calculadas', 'value' => $this->money($stats->sum('commission_total')), 'tone' => 'amber'],
+            ],
+            'rows' => $sellers->map(function ($seller) use ($stats): array {
+                $stat = $stats->get($seller->user_id);
+
+                return [
+                    'primary' => $seller->user?->name ?: 'Vendedor',
+                    'secondary' => ($seller->user?->email ?: 'Sin correo').' · '.($seller->commission_type === 'fixed' ? 'Monto fijo' : 'Porcentaje').' '.number_format((float) $seller->commission_value, 2),
+                    'value' => number_format((int) ($stat?->sales_count ?? 0)).' venta(s) · '.$this->money($stat?->commission_total ?? 0),
+                    'status' => 'Activo',
+                ];
+            })->all(),
+            'note' => 'Los permisos se asignan por tienda. Cada venta conserva el tipo y valor de comisión vigente al momento de cobrar.',
+            'actions' => [
+                ['label' => 'Administrar equipo', 'url' => route('seller.shops.sellers.index', $shop), 'tone' => 'primary'],
+                ['label' => 'Ver comisiones', 'url' => route('seller.shops.feature', [$shop, 'feature' => 'commissions']), 'tone' => 'secondary'],
+            ],
+        ];
     }
 
     private function quotesData(Shop $shop): array
