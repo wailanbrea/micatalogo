@@ -107,3 +107,39 @@ if (document.readyState === 'loading') {
 document.addEventListener('livewire:navigated', initializeDashboardWidgets);
 document.addEventListener('livewire:navigating', startNavigationProgress);
 document.addEventListener('livewire:navigated', finishNavigationProgress);
+
+// Keep full-page fallbacks feeling like the same app as wire:navigate. Some
+// admin actions intentionally use a normal request (exports, forms and new
+// tabs), so only panel links without modifiers get the immediate response cue.
+document.addEventListener('click', (event) => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+    }
+
+    const link = event.target.closest?.('a[href]');
+    if (!link || link.target === '_blank' || link.hasAttribute('download') || link.hasAttribute('wire:navigate')) {
+        return;
+    }
+
+    try {
+        const url = new URL(link.href, window.location.href);
+        if (url.origin === window.location.origin && (/^\/panel\//.test(url.pathname) || /^\/admin\//.test(url.pathname))) {
+            startNavigationProgress();
+        }
+    } catch {
+        // Ignore malformed or javascript links.
+    }
+});
+
+// Puntto-style keyboard affordance for the most frequent action in the POS.
+document.addEventListener('keydown', (event) => {
+    if (event.key !== 'F2' || event.defaultPrevented) {
+        return;
+    }
+
+    const search = document.querySelector('#pos-search');
+    if (search) {
+        event.preventDefault();
+        search.focus();
+    }
+});

@@ -23,9 +23,9 @@
     $isCategories = request()->routeIs('seller.shops.categories.*');
     $isImport = request()->routeIs('seller.shops.products.import.*');
     $isBulkImport = request()->routeIs('seller.shops.products.bulk.*');
-    $linkClass = 'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition duration-200';
-    $activeClass = 'bg-blue-600 text-white shadow-lg shadow-blue-950/20';
-    $idleClass = 'text-slate-300 hover:bg-white/10 hover:text-white';
+    $linkClass = 'group flex items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2.5 text-sm font-semibold transition duration-200';
+    $activeClass = 'border-l-orange-500 bg-white/10 text-white shadow-none';
+    $idleClass = 'text-stone-300 hover:bg-white/10 hover:text-white';
     $visibleMenus = $contextShop ? app(\App\Services\SellerMenuService::class)->visibleForUser($contextShop, $user) : [];
     $canSeeMenu = fn (string $key): bool => ! $contextShop || in_array($key, $visibleMenus, true);
     $isAssignedSellerOnly = $user?->isAssignedSellerOnly() ?? false;
@@ -33,25 +33,25 @@
     $canCreateShop = $isAdmin || ! ($user?->hasActiveShopAssignment() ?? false);
 @endphp
 
-<aside class="fixed inset-y-0 left-0 z-40 hidden w-80 flex-col border-r border-slate-800 bg-[#111827] text-white md:flex" aria-label="Navegación del panel">
-    <div class="border-b border-white/10 px-5 py-5">
+<aside class="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-white/5 bg-[#171411] text-white md:flex" aria-label="Navegación del panel">
+    <div class="border-b border-white/10 px-4 py-4">
         <a wire:navigate.hover class="flex items-center gap-3" href="{{ $contextShop ? route('seller.shops.products.index', $contextShop) : route('seller.dashboard') }}">
             @if ($contextShop?->logo_url)
                 <img src="{{ $contextShop->logo_url }}" alt="{{ $contextShop->name }}" class="h-14 w-14 rounded-full border border-slate-200 object-cover shadow-sm">
             @else
-                <span class="flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-xl font-black text-white shadow-lg shadow-blue-950/30">
+                <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-600 text-lg font-black text-white shadow-lg shadow-blue-950/30">
                     {{ strtoupper(substr($contextShop?->name ?? 'M', 0, 1)) }}
                 </span>
             @endif
             <span class="min-w-0">
-                <span class="block truncate text-lg font-black tracking-tight text-white">{{ $contextShop?->name ?? 'MiCatalogo' }}</span>
-                <span class="mt-0.5 block truncate text-xs font-medium text-slate-400">{{ $contextShop ? 'Tu catálogo, siempre contigo' : 'Tu negocio, siempre contigo' }}</span>
+                <span class="block truncate text-[15px] font-black tracking-tight text-white">{{ $contextShop?->name ?? 'MiCatalogo' }}</span>
+                <span class="mt-0.5 block truncate text-[11px] font-medium text-stone-400">{{ $contextShop ? 'Tu catálogo, siempre contigo' : 'Tu negocio, siempre contigo' }}</span>
             </span>
         </a>
     </div>
 
-    <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-5" aria-label="Navegación principal">
-        <p class="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Operación</p>
+    <nav class="flex-1 space-y-0.5 overflow-y-auto px-2 py-4" aria-label="Navegación principal">
+        <p class="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-stone-500">Operación</p>
         <a wire:navigate.hover href="{{ $isAdmin ? route('admin.dashboard') : route('seller.dashboard') }}" class="{{ $linkClass }} {{ $isDashboard ? $activeClass : $idleClass }}">
             <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m3 12 9-9 9 9M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10M9 21v-6h6v6"/></svg>
             <span>Dashboard</span>
@@ -184,7 +184,7 @@
         @endif
     </nav>
 
-    <div class="border-t border-white/10 p-4">
+    <div class="border-t border-white/10 p-3">
         @if ($contextShop)
             <a wire:navigate.hover href="{{ route('seller.shops.edit', $contextShop) }}" class="mb-3 flex items-center gap-3 rounded-2xl bg-white/10 p-3 text-white transition hover:bg-white/15">
                 <span class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-lg text-white shadow-sm">&#9733;</span>

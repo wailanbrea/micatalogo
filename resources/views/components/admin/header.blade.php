@@ -32,14 +32,27 @@
     $canSeeMenu = fn (string $key): bool => ! $activeShop || in_array($key, $visibleMenus, true);
     $dashboardUrl = $isAdmin ? route('admin.dashboard') : route('seller.dashboard');
     $isDashboard = $isAdmin ? $isAdminDashboard : request()->routeIs('seller.dashboard') && request('view') !== 'all';
+    $contextLabel = match (true) {
+        request()->routeIs('seller.shops.pos') => 'Punto de venta',
+        request()->routeIs('seller.shops.products.*') => 'Productos',
+        request()->routeIs('seller.shops.inventory.*') => 'Inventario',
+        request()->routeIs('seller.shops.customers.*') => 'Clientes y cobros',
+        request()->routeIs('seller.shops.cash.*') => 'Control de caja',
+        request()->routeIs('seller.shops.expenses.*') => 'Gastos operativos',
+        request()->routeIs('seller.shops.metrics.*') => 'Estadísticas',
+        request()->routeIs('seller.shops.pricing.*') => 'Precios automáticos',
+        request()->routeIs('seller.shops.edit') => 'Configuración',
+        request()->routeIs('seller.shops.business') => 'Ganancias y resumen',
+        default => null,
+    };
 @endphp
 
 <!-- Main Unified Topbar -->
-<header class="border-b border-slate-200 bg-white sticky top-0 z-30 shadow-2xs">
-    <div class="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-2.5 sm:px-6">
+<header class="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 shadow-[0_1px_0_rgba(15,23,42,0.03)] backdrop-blur-xl">
+    <div class="mx-auto flex min-h-14 max-w-[1600px] items-center justify-between gap-2 px-4 py-2 sm:px-6">
         <!-- Brand & Nav Links -->
         <div class="flex min-w-0 items-center gap-2 sm:gap-6">
-            <a wire:navigate class="flex min-w-0 shrink items-center gap-2 text-base font-black text-slate-900 hover:opacity-90 transition" href="{{ $isAdmin ? route('admin.dashboard') : route('seller.dashboard') }}">
+            <a wire:navigate.hover class="flex min-w-0 shrink items-center gap-2 text-base font-black text-slate-900 hover:opacity-90 transition" href="{{ $isAdmin ? route('admin.dashboard') : route('seller.dashboard') }}">
                 <span class="truncate">Mi<span class="text-blue-600">Catalogo</span></span>
                 @if ($isAdmin)
                     <span class="rounded bg-rose-100 px-1.5 py-0.5 text-[11px] font-bold text-rose-700">Admin</span>
@@ -312,6 +325,16 @@
             </div>
         </nav>
     </div>
+
+    @if ($activeShop && $contextLabel)
+        <div class="hidden border-t border-slate-200/70 bg-white px-4 py-2 sm:px-6 md:block">
+            <div class="mx-auto flex max-w-[1600px] items-center gap-2 text-[11px] text-slate-400">
+                <span>Operación</span>
+                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 5 7 7-7 7"/></svg>
+                <span class="font-semibold text-slate-700">{{ $contextLabel }}</span>
+            </div>
+        </div>
+    @endif
 
     <!-- Contextual Breadcrumb Wayfinding Bar -->
     @if (!empty($breadcrumbs))

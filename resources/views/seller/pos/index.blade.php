@@ -8,7 +8,7 @@
     <x-admin.header />
 
     <main
-        class="min-h-screen bg-[#f5f8fc] px-4 py-5 text-slate-900 sm:px-6 lg:px-8"
+        class="min-h-screen bg-[#f7f7f6] px-4 py-5 text-slate-900 sm:px-6 lg:px-8"
         x-data="webPos(@js($products), @js($customers), @js($clientSaleUuid), @js($posPresentation), @js($posSummary))"
     >
         <div class="mx-auto max-w-[1500px] space-y-5">
@@ -47,12 +47,13 @@
                         type="search"
                         autocomplete="off"
                         class="h-14 w-full rounded-2xl border border-slate-200 bg-white px-12 text-base text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                        placeholder="Buscar producto, código o categoría"
+                        placeholder="Buscar o escanear producto"
                     >
                     <svg class="pointer-events-none absolute left-4 top-4 h-6 w-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.3-4.3m1.8-5.2a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"/>
                     </svg>
                     <button x-show="search" x-cloak type="button" @click="search = ''" class="absolute right-4 top-4 text-xs font-bold text-slate-400 hover:text-slate-700">Limpiar</button>
+                    <kbd x-show="!search" x-cloak class="pointer-events-none absolute right-4 top-4 rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-bold text-slate-400">F2</kbd>
                 </div>
             </div>
 
@@ -98,7 +99,7 @@
                 <input type="hidden" name="payments[0][method]" :value="paymentMethod">
                 <input type="hidden" name="payments[0][amount]" :value="paidAmount.toFixed(2)">
 
-                <section class="min-w-0 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+                <section class="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
                     <div class="flex flex-col gap-4 border-b border-slate-100 pb-5 lg:flex-row lg:items-center lg:justify-between">
                         <div>
                             <h2 class="text-xl font-black text-slate-950">Productos</h2>
@@ -121,7 +122,7 @@
 
                     <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
                         <template x-for="product in filteredProducts" :key="product.id">
-                            <article class="group relative flex min-h-[285px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg hover:shadow-blue-100/60">
+                            <article class="group relative flex min-h-[285px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg hover:shadow-blue-100/60">
                                 <div class="relative flex h-40 items-center justify-center overflow-hidden bg-slate-50">
                                     <template x-if="product.image_url"><img :src="product.image_url" :alt="product.name" class="h-full w-full object-contain p-3 transition duration-300 group-hover:scale-105"></template>
                                     <template x-if="!product.image_url"><div class="flex h-20 w-20 items-center justify-center rounded-3xl bg-blue-50 text-3xl font-black text-blue-300" x-text="product.name.charAt(0).toUpperCase()"></div></template>
@@ -148,7 +149,7 @@
                     </div>
                 </section>
 
-                <aside class="h-fit overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm xl:sticky xl:top-5">
+                <aside class="h-fit overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm xl:sticky xl:top-5">
                     <div class="flex items-center justify-between border-b border-slate-100 px-5 py-5 sm:px-6">
                         <div>
                             <h2 class="text-xl font-black text-slate-950">Carrito de venta</h2>

@@ -54,6 +54,70 @@
     .navigation-progress.is-active { animation: none; }
 }
 
+/*
+ * Panel visual system
+ *
+ * Puntto keeps the workspace quiet: charcoal navigation, warm-white canvas,
+ * thin borders and short, deliberate motion. These primitives are scoped to
+ * the authenticated panel so the public storefront keeps its own identity.
+ */
+.panel-shell {
+    background: #f7f8fa;
+    color: #171717;
+}
+
+.panel-shell main {
+    animation: panel-page-enter 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.panel-shell .shadow-sm,
+.panel-shell .shadow-xs {
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px rgb(15 23 42 / 0.035);
+}
+
+.panel-shell .border-slate-200 {
+    border-color: #e5e7eb;
+}
+
+.panel-shell .bg-white {
+    background-color: #fff;
+}
+
+.panel-shell .rounded-3xl {
+    border-radius: 1.15rem;
+}
+
+.panel-shell .rounded-2xl {
+    border-radius: 0.95rem;
+}
+
+.panel-shell button,
+.panel-shell a,
+.panel-shell input,
+.panel-shell select,
+.panel-shell textarea {
+    -webkit-tap-highlight-color: transparent;
+}
+
+.panel-shell button:not(:disabled),
+.panel-shell a {
+    transition-duration: 160ms;
+}
+
+.panel-shell .panel-fade-up {
+    animation: panel-page-enter 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes panel-page-enter {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .panel-shell main,
+    .panel-shell .panel-fade-up { animation: none; }
+}
+
 .storefront-shell {
     --shop-primary: #1d4ed8;
     --shop-secondary: #0f172a;
