@@ -59,7 +59,7 @@
         'settings' => ['eyebrow' => 'Ajustes', 'title' => 'Configura tu negocio una vez', 'description' => 'Nombre, contacto, identidad visual y datos públicos se controlan desde aquí.', 'steps' => [['title' => 'Completa datos básicos', 'text' => 'Nombre, URL, dirección y WhatsApp.'], ['title' => 'Personaliza la vitrina', 'text' => 'Logo, portada y colores.'], ['title' => 'Guarda y revisa', 'text' => 'Abre Mi tienda para ver el resultado.']]],
     ];
     $guide = $guides[$guideKey] ?? null;
-    $storageKey = 'micatalogo_guide_'.$guideKey;
+    $storageKey = 'micatalogo_guide_'.$guideKey.'_'.($shop?->public_id ?? $shop?->id ?? 'panel');
 @endphp
 
 @if ($guide)
