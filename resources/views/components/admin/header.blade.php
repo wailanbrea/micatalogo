@@ -229,10 +229,20 @@
                     @if ($canSeeMenu('sales'))
                         <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.inventory.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.inventory.index', $activeShop) }}">Inventario</a>
                     @endif
+                    @if ($canSeeMenu('inventory') && $canSeeMenu('sales'))
+                        <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.inventory.*') && request('stock') === 'low' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.inventory.index', [$activeShop, 'stock' => 'low']) }}">Stock bajo</a>
+                        <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.inventory.*') && request('stock') === 'out' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.inventory.index', [$activeShop, 'stock' => 'out']) }}">Agotados</a>
+                    @endif
+                    @if ($canSeeMenu('cash'))
+                        <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.cash.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.cash.index', $activeShop) }}">Control de caja</a>
+                    @endif
+                    @if ($canSeeMenu('expenses'))
+                        <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.expenses.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.expenses.index', $activeShop) }}">Gastos operativos</a>
+                    @endif
                     @if ($canSeeMenu('customers'))
                         <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.customers.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.customers.index', $activeShop) }}">Clientes y cobros</a>
                     @endif
-                    @if ($isAdmin || $user->ownsShop($activeShop))
+                    @if ($canSeeMenu('sellers') && ($isAdmin || $user->ownsShop($activeShop)))
                         <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.sellers.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.sellers.index', $activeShop) }}">Vendedores</a>
                     @endif
                 </div>
@@ -241,7 +251,7 @@
                     @if ($canSeeMenu('products'))
                         <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.products.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.products.index', $activeShop) }}">Productos</a>
                         <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.categories.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.categories.index', $activeShop) }}">Categorías</a>
-                        @if ($user->isAdmin() || $user->ownsShop($activeShop))
+                        @if ($isAdmin || $user->ownsShop($activeShop))
                             <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.products.bulk.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.products.bulk.create', $activeShop) }}">Subida masiva</a>
                             <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.products.import.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.products.import.create', $activeShop) }}">Importar inventario</a>
                         @endif
@@ -249,8 +259,14 @@
                 </div>
                 <div class="border-t border-slate-100 pt-2">
                     <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Analisis</p>
+                    @if ($canSeeMenu('sales') && $canSeeMenu('finance'))
+                        <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.business') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.business', $activeShop) }}">Negocio y ganancias</a>
+                    @endif
                     @if ($canSeeMenu('metrics'))
                         <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.metrics.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.metrics.index', $activeShop) }}">Métricas y QR</a>
+                    @endif
+                    @if ($canSeeMenu('public_catalog'))
+                        <a class="block rounded-lg px-3 py-2 text-slate-700 transition hover:bg-slate-100" href="{{ route('shops.show', $activeShop) }}" target="_blank">Compartir catálogo</a>
                     @endif
                 </div>
                 <div class="border-t border-slate-100 pt-2">

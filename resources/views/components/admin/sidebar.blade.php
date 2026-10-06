@@ -51,10 +51,12 @@
         </a>
 
         @if ($contextShop)
-            @if ($canSeeMenu('sales'))
+            @if ($canSeeMenu('sales') && $canSeeMenu('finance'))
             <a wire:navigate href="{{ route('seller.shops.business', $contextShop) }}" class="{{ $linkClass }} {{ request()->routeIs('seller.shops.business') ? $activeClass : $idleClass }}">
                 <span aria-hidden="true" class="w-5 text-center">↗</span><span>Negocio y ganancias</span>
             </a>
+            @endif
+            @if ($canSeeMenu('sales'))
             <a wire:navigate href="{{ route('seller.shops.inventory.index', $contextShop) }}" class="{{ $linkClass }} {{ $isInventory && ! $isLowStock && ! $isOutOfStock ? $activeClass : $idleClass }}">
                 <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16v13H4zM8 3h8v4H8zM8 12h8"/></svg>
                 <span>Inventario</span>
@@ -67,7 +69,7 @@
                 <span class="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{{ $productCount }}</span>
             </a>
             @endif
-            @if ($canSeeMenu('inventory'))
+            @if ($canSeeMenu('inventory') && $canSeeMenu('sales'))
             <a wire:navigate href="{{ route('seller.shops.inventory.index', [$contextShop, 'stock' => 'low']) }}" class="{{ $linkClass }} {{ $isLowStock ? $activeClass : $idleClass }}">
                 <svg class="h-5 w-5 shrink-0 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3Z"/></svg>
                 <span>Stock bajo</span>
@@ -83,7 +85,7 @@
                 <span>Control de caja</span>
             </a>
             @endif
-            @if ($canSeeMenu('expenses') || $canSeeMenu('sales'))
+            @if ($canSeeMenu('expenses'))
             <a wire:navigate href="{{ route('seller.shops.expenses.index', $contextShop) }}" class="{{ $linkClass }} {{ request()->routeIs('seller.shops.expenses.*') ? $activeClass : $idleClass }}">
                 <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/></svg>
                 <span>Gastos operativos</span>
