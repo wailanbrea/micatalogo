@@ -126,7 +126,7 @@ test('a verified active seller can connect BSPOS and retrieve only their shops',
                 'additional_seat_price_usd' => 5,
                 'features' => ['catalog', 'whatsapp_orders', 'basic_inventory', 'bulk_import'],
             ],
-            'menu_permissions' => array_keys(config('bspos.seller_menu_options')),
+            'menu_permissions' => app(SellerMenuService::class)->visibleForUser($shop, $user),
             'can_manage_sellers' => true,
             'sellers' => [],
         ]]);

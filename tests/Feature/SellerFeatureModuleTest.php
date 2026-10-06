@@ -70,7 +70,7 @@ test('all feature modules have a useful protected entry point', function () {
 
 test('every panel feature route renders for a shop owner', function () {
     $user = User::factory()->create(['plan' => 'pro']);
-    $shop = Shop::factory()->for($user)->create();
+    $shop = Shop::factory()->for($user)->create(['business_type' => 'perfume_store']);
     $features = [
         'sales', 'quotes', 'orders', 'encargos', 'shipments', 'day_close',
         'containers', 'loads', 'suppliers', 'purchase_invoices', 'photos',
@@ -132,6 +132,17 @@ test('decants expose the guided presentation and shared inventory actions', func
         ->assertSee('Ver inventario compartido')
         ->assertSee('100 ml de origen')
         ->assertSee('5 ml · 0 listos');
+});
+
+test('barber shops hide and protect the decants module', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->for($user)->create(['business_type' => 'barbershop']);
+
+    expect(app(\App\Services\SellerMenuService::class)->visibleForUser($shop, $user))->not->toContain('decants');
+
+    $this->actingAs($user)
+        ->get(route('seller.shops.feature', [$shop, 'feature' => 'decants']))
+        ->assertForbidden();
 });
 
 test('feature modules remain tenant isolated', function () {

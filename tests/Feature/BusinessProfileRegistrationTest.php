@@ -6,6 +6,7 @@ use App\Models\Shop;
 use App\Models\User;
 use App\Services\BusinessProfileService;
 use App\Services\RegistrationService;
+use App\Services\SellerMenuService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -60,6 +61,7 @@ test('unsupported business types and paid capabilities are enforced centrally', 
     $shop = Shop::factory()->create(['business_type' => 'barbershop']);
 
     expect(app(BusinessProfileService::class)->allows($shop, 'decants'))->toBeFalse()
+        ->and(app(SellerMenuService::class)->visibleForUser($shop, $shop->user))->not->toContain('decants')
         ->and(app(BusinessProfileService::class)->capabilities($shop)['services'])->toBe('unsupported');
 
     $perfumeShop = Shop::factory()->create([

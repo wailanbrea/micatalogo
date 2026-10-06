@@ -91,6 +91,7 @@ class SellerMenuService
             'cash' => 'cash',
             'finance' => 'finance',
             'expenses' => 'expenses',
+            'decants' => 'decants',
             'public_catalog', 'metrics' => 'public_catalog',
             default => null,
         };
