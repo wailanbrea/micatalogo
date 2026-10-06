@@ -58,11 +58,6 @@
         </a>
 
         @if ($contextShop)
-            @if ($canSeeMenu('sales') && $canSeeMenu('finance'))
-            <a wire:navigate.hover href="{{ route('seller.shops.business', $contextShop) }}" class="{{ $linkClass }} {{ request()->routeIs('seller.shops.business') ? $activeClass : $idleClass }}">
-                <span aria-hidden="true" class="w-5 text-center">↗</span><span>Negocio y ganancias</span>
-            </a>
-            @endif
             @if ($canSeeMenu('sales'))
             <a wire:navigate.hover href="{{ route('seller.shops.pos', $contextShop) }}" class="{{ $linkClass }} {{ $isPos ? $activeClass : $idleClass }}">
                 <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h18v14H3zM7 9h4m-4 4h2m5-4h3m-3 4h3M7 17h10"/></svg>
@@ -119,8 +114,20 @@
                     <span>Precios automáticos</span>
                 </a>
             @endif
-            @if ($canSeeMenu('cash') || $canSeeMenu('expenses') || $canSeeMenu('customers'))
-                <p class="mt-5 border-t border-white/10 px-3 pb-2 pt-5 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Control financiero</p>
+            @if ($canSeeMenu('customers'))
+                <p class="mt-5 border-t border-white/10 px-3 pb-2 pt-5 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Cobros</p>
+                <a wire:navigate.hover href="{{ route('seller.shops.customers.index', $contextShop) }}" class="{{ $linkClass }} {{ $isCustomers ? $activeClass : $idleClass }}">
+                    <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 0 0-4-4h-1m-4 6H3v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2Zm-3-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg>
+                    <span>Clientes y cobros</span>
+                </a>
+            @endif
+            @if ($canSeeMenu('cash') || $canSeeMenu('expenses') || ($canSeeMenu('sales') && $canSeeMenu('finance')))
+                <p class="mt-5 border-t border-white/10 px-3 pb-2 pt-5 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Finanzas</p>
+            @endif
+            @if ($canSeeMenu('sales') && $canSeeMenu('finance'))
+                <a wire:navigate.hover href="{{ route('seller.shops.business', $contextShop) }}" class="{{ $linkClass }} {{ request()->routeIs('seller.shops.business') ? $activeClass : $idleClass }}">
+                    <span aria-hidden="true" class="w-5 text-center">↗</span><span>Ganancias y resumen</span>
+                </a>
             @endif
             @if ($canSeeMenu('cash'))
             <a wire:navigate.hover href="{{ route('seller.shops.cash.index', $contextShop) }}" class="{{ $linkClass }} {{ request()->routeIs('seller.shops.cash.*') ? $activeClass : $idleClass }}">
@@ -134,13 +141,8 @@
                 <span>Gastos operativos</span>
             </a>
             @endif
-            @if ($canSeeMenu('customers'))
-            <a wire:navigate.hover href="{{ route('seller.shops.customers.index', $contextShop) }}" class="{{ $linkClass }} {{ $isCustomers ? $activeClass : $idleClass }}">
-                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 0 0-4-4h-1m-4 6H3v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2Zm-3-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg>
-                <span>Clientes y cobros</span>
-            </a>
-            @endif
             @if ($canSeeMenu('metrics'))
+            <p class="mt-5 border-t border-white/10 px-3 pb-2 pt-5 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Análisis</p>
             <a wire:navigate.hover href="{{ route('seller.shops.metrics.index', $contextShop) }}" class="{{ $linkClass }} {{ $isMetrics ? $activeClass : $idleClass }}">
                 <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 19V9m6 10V5m6 14v-7m4 7H2"/></svg>
                 <span>Estadísticas</span>
@@ -151,6 +153,9 @@
                 <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8.7 13.3 6.6-6.6m-7.1 2.1-2.8 2.8a3 3 0 1 0 4.2 4.2l2.8-2.8m3.6-2 2.8-2.8a3 3 0 1 0-4.2-4.2l-2.8 2.8"/></svg>
                 <span>Compartir catálogo</span>
             </a>
+            @endif
+            @if ($canSeeMenu('shop_settings') || (($isAdmin || $user->ownsShop($contextShop)) && $canSeeMenu('sellers')))
+            <p class="mt-5 border-t border-white/10 px-3 pb-2 pt-5 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Equipo y ajustes</p>
             @endif
             @if ($canSeeMenu('shop_settings'))
             <a wire:navigate.hover href="{{ route('seller.shops.edit', $contextShop) }}" class="{{ $linkClass }} {{ $isSettings ? $activeClass : $idleClass }}">
