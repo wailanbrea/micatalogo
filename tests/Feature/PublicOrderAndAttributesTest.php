@@ -120,6 +120,72 @@ class PublicOrderAndAttributesTest extends TestCase
         ])->assertStatus(422);
     }
 
+    public function test_public_decant_order_uses_live_source_ml_and_snapshots_the_selected_presentation(): void
+    {
+        $owner = User::factory()->create();
+        $shop = Shop::factory()->create([
+            'user_id' => $owner->id,
+            'slug' => 'decants-live-stock',
+            'status' => 'active',
+        ]);
+        $source = Product::factory()->create([
+            'shop_id' => $shop->id,
+            'name' => 'Botella fuente',
+            'price' => 3000,
+            'sale_unit' => 'bottle',
+            'volume_ml' => 100,
+            'moderation_status' => ProductModerationStatus::Active,
+            'availability_status' => ProductAvailabilityStatus::Available,
+        ]);
+        ProductInventory::create([
+            'product_id' => $source->id,
+            'track_inventory' => true,
+            'stock_quantity' => 1,
+            'available_ml' => 37,
+            'cost_price' => 1000,
+        ]);
+        $decant = Product::factory()->create([
+            'shop_id' => $shop->id,
+            'name' => 'Botella fuente 5 ml',
+            'price' => 100,
+            'sale_unit' => 'decant',
+            'volume_ml' => 5,
+            'inventory_source_product_id' => $source->id,
+            'moderation_status' => ProductModerationStatus::Active,
+            'availability_status' => ProductAvailabilityStatus::Available,
+        ]);
+        ProductInventory::create([
+            'product_id' => $decant->id,
+            'track_inventory' => true,
+            'stock_quantity' => 99,
+        ]);
+
+        $this->postJson(route('orders.store', $shop), [
+            'items' => [['id' => $decant->public_id, 'quantity' => 8]],
+        ])->assertStatus(422);
+
+        $created = $this->postJson(route('orders.store', $shop), [
+            'items' => [['id' => $decant->public_id, 'quantity' => 2]],
+        ])->assertCreated();
+
+        $order = \App\Models\Order::query()
+            ->where('order_number', $created->json('order_number'))
+            ->with('items')
+            ->firstOrFail();
+
+        expect($order->items->sole()->product_name)->toBe('Botella fuente 5 ml (5 ml)')
+            ->and((float) $order->items->sole()->unit_price)->toBe(100.0)
+            ->and($created->json('whatsapp_url'))->toContain('5%20ml');
+
+        $this->actingAs($owner)
+            ->post(route('seller.shops.orders.confirm', [$shop, $order]))
+            ->assertRedirect();
+
+        expect($source->fresh()->inventory->available_ml)->toBe(27)
+            ->and($decant->fresh()->inventory->stock_quantity)->toBe(5)
+            ->and($decant->fresh()->inventory->sold_quantity)->toBe(2);
+    }
+
     public function test_dynamic_attribute_values_filter_only_products_in_the_current_shop(): void
     {
         $shop = Shop::factory()->create(['slug' => 'perfumes-filtro']);

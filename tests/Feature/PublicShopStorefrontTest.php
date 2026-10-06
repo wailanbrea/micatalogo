@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductModerationStatus;
 use App\Models\Product;
+use App\Models\ProductInventory;
 use App\Models\Shop;
 use App\Models\ShopCategory;
 use App\Models\User;
@@ -201,5 +202,73 @@ class PublicShopStorefrontTest extends TestCase
             ->assertSee('RD$ 2,800')
             ->assertSee('RD$ 3,300')
             ->assertSee('-15%');
+    }
+
+    public function test_product_detail_lists_live_decant_ml_options_and_keeps_bottle_as_a_choice(): void
+    {
+        $shop = Shop::factory()->create([
+            'slug' => 'aroma-decants',
+            'status' => 'active',
+        ]);
+        $source = Product::factory()->create([
+            'shop_id' => $shop->id,
+            'name' => 'Hawas Ice botella',
+            'sale_unit' => 'bottle',
+            'volume_ml' => 100,
+            'moderation_status' => ProductModerationStatus::Active,
+            'availability_status' => ProductAvailabilityStatus::Available,
+        ]);
+        ProductInventory::create([
+            'product_id' => $source->id,
+            'track_inventory' => true,
+            'stock_quantity' => 1,
+            'available_ml' => 37,
+        ]);
+
+        $fiveMl = Product::factory()->create([
+            'shop_id' => $shop->id,
+            'name' => 'Hawas Ice 5 ml',
+            'price' => 100,
+            'sale_price' => 80,
+            'sale_starts_at' => now()->subDay(),
+            'sale_unit' => 'decant',
+            'volume_ml' => 5,
+            'inventory_source_product_id' => $source->id,
+            'moderation_status' => ProductModerationStatus::Active,
+            'availability_status' => ProductAvailabilityStatus::Available,
+        ]);
+        ProductInventory::create([
+            'product_id' => $fiveMl->id,
+            'track_inventory' => true,
+            'stock_quantity' => 99,
+        ]);
+
+        $tenMl = Product::factory()->create([
+            'shop_id' => $shop->id,
+            'name' => 'Hawas Ice 10 ml',
+            'price' => 150,
+            'sale_unit' => 'decant',
+            'volume_ml' => 10,
+            'inventory_source_product_id' => $source->id,
+            'moderation_status' => ProductModerationStatus::Active,
+            'availability_status' => ProductAvailabilityStatus::Available,
+        ]);
+        ProductInventory::create([
+            'product_id' => $tenMl->id,
+            'track_inventory' => true,
+            'stock_quantity' => 99,
+        ]);
+
+        $response = $this->get(route('products.show', [$shop, $source]));
+
+        $response->assertOk()
+            ->assertSee('Botella completa')
+            ->assertSee('5 ml')
+            ->assertSee('10 ml')
+            ->assertSee('RD$ 80')
+            ->assertSee('7 disponibles')
+            ->assertSee('3 disponibles')
+            ->assertSee('selectedDecantId: null', false)
+            ->assertDontSee('99 disponibles');
     }
 }

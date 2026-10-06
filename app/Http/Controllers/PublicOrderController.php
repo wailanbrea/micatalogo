@@ -6,6 +6,8 @@ use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductModerationStatus;
 use App\Http\Requests\StoreOrderRequest;
 use App\Models\Order;
+use App\Models\Product;
+use App\Models\ProductInventory;
 use App\Models\Shop;
 use App\Services\MetricRecordingService;
 use Illuminate\Http\JsonResponse;
@@ -27,7 +29,7 @@ class PublicOrderController extends Controller
             $products = $shop->products()
                 ->where('moderation_status', ProductModerationStatus::Active)
                 ->whereIn('public_id', $requestedItems->keys()->all())
-                ->with('inventory')
+                ->with(['inventory', 'sourceProduct.inventory'])
                 ->lockForUpdate()
                 ->get()
                 ->keyBy('public_id');
@@ -36,18 +38,29 @@ class PublicOrderController extends Controller
                 abort(422, 'Uno o más productos ya no están disponibles. Actualiza tu pedido e inténtalo de nuevo.');
             }
 
+            $sourceInventories = ProductInventory::query()
+                ->whereIn('product_id', $products->filter(fn (Product $product) => $product->isDecant())
+                    ->map(fn (Product $product) => $product->inventory_source_product_id)
+                    ->filter()
+                    ->unique()
+                    ->values())
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('product_id');
+
             $lines = [];
             foreach ($requestedItems as $publicId => $quantity) {
                 $product = $products->get($publicId);
+                $availableQuantity = $this->availableQuantity($product, $sourceInventories);
                 $available = $product->isInventoryTracked()
-                    ? $product->inventory->stock_quantity > 0 && $product->availability_status !== ProductAvailabilityStatus::OutOfStock
+                    ? $availableQuantity > 0 && ($product->isDecant() || $product->availability_status !== ProductAvailabilityStatus::OutOfStock)
                     : $product->availability_status === ProductAvailabilityStatus::Available;
 
                 if (! $available) {
                     abort(422, "El producto {$product->name} ya no está disponible.");
                 }
 
-                if ($product->isInventoryTracked() && $quantity > $product->inventory->stock_quantity) {
+                if ($product->isInventoryTracked() && $quantity > $availableQuantity) {
                     abort(422, "La cantidad solicitada de {$product->name} supera el stock disponible.");
                 }
 
@@ -76,7 +89,9 @@ class PublicOrderController extends Controller
                 $product = $line['product'];
                 $order->items()->create([
                     'product_id' => $product->id,
-                    'product_name' => $product->name,
+                    'product_name' => $product->isDecant()
+                        ? $product->name.' ('.$product->volume_ml.' ml)'
+                        : $product->name,
                     'product_code' => $product->product_code,
                     'quantity' => $line['quantity'],
                     'unit_price' => $line['unit_price'],
@@ -99,6 +114,33 @@ class PublicOrderController extends Controller
         }
 
         return redirect()->away($whatsappUrl);
+    }
+
+    private function availableQuantity(Product $product, $sourceInventories): int
+    {
+        if (! $product->isInventoryTracked()) {
+            return 10000;
+        }
+
+        if ($product->isDecant() && (int) $product->volume_ml > 0) {
+            $source = $product->sourceProduct;
+            $sourceInventory = $source ? ($sourceInventories->get($source->id) ?? $source->inventory) : null;
+
+            if ($source && $sourceInventory?->track_inventory) {
+                $availableMl = $sourceInventory->available_ml;
+                if ($availableMl === null) {
+                    $availableMl = match ($source->sale_unit) {
+                        'bottle' => (int) $source->volume_ml * (int) $sourceInventory->stock_quantity,
+                        'ml' => (int) $sourceInventory->stock_quantity,
+                        default => 0,
+                    };
+                }
+
+                return intdiv(max(0, (int) $availableMl), (int) $product->volume_ml);
+            }
+        }
+
+        return max(0, (int) ($product->inventory?->stock_quantity ?? 0));
     }
 
     private function nextOrderNumber(): string

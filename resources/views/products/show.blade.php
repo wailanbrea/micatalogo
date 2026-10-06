@@ -9,11 +9,13 @@
         'id' => $decant->public_id,
         'name' => $decant->name,
         'volume' => (int) $decant->volume_ml,
-        'price' => (float) $decant->price,
-        'stock' => (int) ($decant->inventory?->stock_quantity ?? 0),
+        'price' => (float) $decant->currentPrice(),
+        'regularPrice' => (float) $decant->price,
+        'tracked' => (bool) ($decant->inventory?->track_inventory ?? false),
+        'stock' => (int) ($decant->getAttribute('public_available_decants') ?? ($decant->inventory?->track_inventory ? ($decant->inventory?->stock_quantity ?? 0) : 10000)),
         'waUrl' => route('track.wa.product', [$shop, $decant]),
     ])->all();
-    $selectedDecantId = $isDecant ? $product->public_id : ($decantOptions->first()?->public_id);
+    $selectedDecantId = $isDecant ? $product->public_id : null;
 @endphp
 
 <x-layouts.app
@@ -82,7 +84,9 @@
                     return this.decantOptions.find((option) => option.id === this.selectedDecantId) || null;
                 },
                 get quantityMax() {
-                    return this.selectedDecant ? Math.max(1, this.selectedDecant.stock) : {{ $maxQuantity }};
+                    return this.selectedDecant
+                        ? (this.selectedDecant.tracked ? Math.max(1, this.selectedDecant.stock) : 10000)
+                        : {{ $maxQuantity }};
                 },
                 get totalMl() {
                     return this.selectedDecant ? this.quantity * this.selectedDecant.volume : 0;
@@ -91,11 +95,10 @@
                     return this.selectedDecant ? this.quantity * this.selectedDecant.price : 0;
                 },
                 get whatsappUrl() {
-                    if (! this.selectedDecant) {
-                        return '{{ route('track.wa.product', [$shop, $product]) }}';
-                    }
-
-                    return `${this.selectedDecant.waUrl}?quantity=${this.quantity}`;
+                    const url = this.selectedDecant
+                        ? this.selectedDecant.waUrl
+                        : '{{ route('track.wa.product', [$shop, $product]) }}';
+                    return `${url}?quantity=${Math.max(1, Number(this.quantity) || 1)}`;
                 },
                 get cartCount() {
                     return this.cart.reduce((t, i) => t + i.quantity, 0);
@@ -128,6 +131,14 @@
 
                     this.addedFeedback = true;
                     setTimeout(() => { this.addedFeedback = false; }, 3000);
+                },
+                selectPresentation(id) {
+                    this.selectedDecantId = id;
+                    this.quantity = 1;
+                },
+                normalizeQuantity() {
+                    const max = this.quantityMax;
+                    this.quantity = Math.max(1, Math.min(max, Number(this.quantity) || 1));
                 }
             }"
             class="mx-auto max-w-[1300px] px-4 py-6 sm:px-6 lg:px-8 pb-24 sm:pb-8"
@@ -329,24 +340,33 @@
 
                         @if ($decantOptions->isNotEmpty())
                             <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                                <label class="text-xs font-bold text-slate-700" for="decant-presentation">Presentación del decant</label>
-                                <select id="decant-presentation" x-model="selectedDecantId" @change="quantity = 1" class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+                                <p class="text-xs font-bold text-slate-700">Elige la presentación</p>
+                                <div class="mt-2 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Mililitros disponibles">
+                                    @if (! $isDecant)
+                                        <button type="button" @click="selectPresentation(null)" :aria-checked="selectedDecantId === null" role="radio" :class="selectedDecantId === null ? 'border-blue-600 bg-blue-50 text-blue-900 ring-2 ring-blue-100' : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300'" class="rounded-lg border px-3 py-2 text-left transition">
+                                            <span class="block text-sm font-black">Botella completa</span>
+                                            <span class="block text-[11px] text-slate-500">RD$ {{ number_format($publicPrice, 0) }}</span>
+                                        </button>
+                                    @endif
                                     @foreach ($decantOptions as $decantOption)
-                                        <option value="{{ $decantOption->public_id }}">{{ $decantOption->volume_ml }} ml · RD$ {{ number_format((float) $decantOption->price, 0) }} · {{ $decantOption->inventory?->stock_quantity ?? 0 }} disponibles</option>
+                                        <button type="button" @click="selectPresentation('{{ $decantOption->public_id }}')" :aria-checked="selectedDecantId === '{{ $decantOption->public_id }}'" role="radio" :class="selectedDecantId === '{{ $decantOption->public_id }}' ? 'border-blue-600 bg-blue-50 text-blue-900 ring-2 ring-blue-100' : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300'" class="rounded-lg border px-3 py-2 text-left transition">
+                                            <span class="block text-sm font-black">{{ $decantOption->volume_ml }} ml</span>
+                                            <span class="block text-[11px] text-slate-500">RD$ {{ number_format((float) $decantOption->currentPrice(), 0) }} · {{ $decantOption->inventory?->track_inventory ? (int) ($decantOption->getAttribute('public_available_decants') ?? $decantOption->inventory->stock_quantity).' disponibles' : 'Disponible' }}</span>
+                                        </button>
                                     @endforeach
-                                </select>
+                                </div>
                             </div>
                         @endif
 
-                        @if ($decantOptions->isNotEmpty())
+                        @if ($decantOptions->isNotEmpty() || $product->isInventoryTracked())
                             <div class="rounded-xl border border-blue-100 bg-blue-50/60 p-3">
-                                <label class="text-xs font-bold text-slate-700" for="decant-quantity">Cantidad de decants</label>
+                                <label class="text-xs font-bold text-slate-700" for="decant-quantity" x-text="selectedDecant ? 'Cantidad de decants' : 'Cantidad'"></label>
                                 <div class="mt-2 flex items-center gap-2">
                                     <button type="button" @click="quantity = Math.max(1, quantity - 1)" class="h-9 w-9 rounded-lg border border-blue-200 bg-white text-lg font-black text-slate-700">-</button>
-                                    <input id="decant-quantity" x-model.number="quantity" type="number" min="1" x-bind:max="quantityMax" class="h-9 w-16 rounded-lg border border-blue-200 bg-white text-center text-sm font-black text-slate-900" required>
+                                    <input id="decant-quantity" x-model.number="quantity" @change="normalizeQuantity()" type="number" min="1" x-bind:max="quantityMax" class="h-9 w-16 rounded-lg border border-blue-200 bg-white text-center text-sm font-black text-slate-900" required>
                                     <button type="button" @click="quantity = Math.min(quantityMax, quantity + 1)" class="h-9 w-9 rounded-lg border border-blue-200 bg-white text-lg font-black text-slate-700">+</button>
                                 </div>
-                                <p class="mt-2 text-[11px] text-slate-600">
+                                <p class="mt-2 text-[11px] text-slate-600" x-show="selectedDecant">
                                     <span x-text="totalMl"></span> ml total · máximo <span x-text="quantityMax"></span> decants disponibles.
                                 </p>
                             </div>

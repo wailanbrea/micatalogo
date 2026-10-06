@@ -30,7 +30,9 @@ class SellerPosController extends Controller
                 'wholesale_price' => $product->wholesale_price === null ? null : (float) $product->wholesale_price,
                 'stock' => (int) $product->inventory->stock_quantity,
                 'sale_unit' => $product->sale_unit ?: 'unit',
-                'sale_unit_label' => $product->saleUnitLabel(),
+                'sale_unit_label' => $product->isDecant() && $product->volume_ml
+                    ? 'Decant · '.$product->volume_ml.' ml'
+                    : $product->saleUnitLabel(),
                 'volume_ml' => $product->volume_ml,
                 'source_product_id' => $product->sourceProduct?->public_id,
                 'image_url' => $product->image_url,

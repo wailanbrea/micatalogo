@@ -133,6 +133,7 @@
                                     <p class="truncate text-[11px] font-semibold uppercase tracking-wide text-slate-400" x-text="product.category"></p>
                                     <h3 class="mt-1 truncate text-sm font-black text-slate-900" x-text="product.name"></h3>
                                     <p class="mt-1 text-lg font-black text-blue-950" x-text="money(priceFor(product))"></p>
+                                    <p x-show="product.sale_unit === 'decant' && product.volume_ml" x-cloak class="mt-0.5 text-xs font-bold text-blue-600" x-text="product.volume_ml + ' ml por decant'"></p>
                                     <div class="mt-auto flex items-center justify-between gap-2 pt-3">
                                         <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold" :class="stockClass(product)" x-text="stockLabel(product)"></span>
                                         <span class="truncate text-[10px] text-slate-400" x-text="product.code || product.sale_unit_label"></span>
@@ -172,7 +173,7 @@
                                     <div class="flex items-start justify-between gap-2">
                                         <div class="min-w-0">
                                             <p class="truncate text-sm font-black text-slate-900" x-text="item.name"></p>
-                                            <p class="mt-0.5 text-xs text-slate-500" x-text="money(item.unitPrice)"></p>
+                                            <p class="mt-0.5 text-xs text-slate-500" x-text="(item.saleUnit === 'decant' && item.volumeMl ? item.volumeMl + ' ml · ' : '') + money(item.unitPrice)"></p>
                                         </div>
                                         <button type="button" @click="removeItem(item.id)" class="shrink-0 text-slate-400 transition hover:text-rose-600" aria-label="Quitar producto">
                                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16m-10 4v6m4-6v6M9 7V4h6v3m-9 0 1 13h8l1-13"/></svg>
