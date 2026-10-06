@@ -18,6 +18,11 @@
     $isSellers = request()->routeIs('seller.shops.sellers.*');
     $isMetrics = request()->routeIs('seller.shops.metrics.*');
     $isSettings = request()->routeIs('seller.shops.edit');
+    $isPricing = request()->routeIs('seller.shops.pricing.*');
+    $isLots = request()->routeIs('seller.shops.inventory.lots');
+    $isCategories = request()->routeIs('seller.shops.categories.*');
+    $isImport = request()->routeIs('seller.shops.products.import.*');
+    $isBulkImport = request()->routeIs('seller.shops.products.bulk.*');
     $linkClass = 'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition duration-200';
     $activeClass = 'bg-blue-600 text-white shadow-lg shadow-blue-950/20';
     $idleClass = 'text-slate-300 hover:bg-white/10 hover:text-white';
@@ -68,12 +73,29 @@
                 <span>Inventario</span>
             </a>
             @endif
+            @if ($canSeeMenu('products') || $canSeeMenu('inventory'))
+                <p class="mt-5 px-3 pb-2 pt-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Catálogo</p>
+            @endif
             @if ($canSeeMenu('products'))
             <a wire:navigate.hover href="{{ route('seller.shops.products.index', $contextShop) }}" class="{{ $linkClass }} {{ $isProducts ? $activeClass : $idleClass }}">
                 <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m20 7-8-4-8 4m16 0-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                 <span>Productos</span>
                 <span class="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{{ $productCount }}</span>
             </a>
+            <a wire:navigate.hover href="{{ route('seller.shops.categories.index', $contextShop) }}" class="{{ $linkClass }} {{ $isCategories ? $activeClass : $idleClass }}">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h10"/></svg>
+                <span>Categorías</span>
+            </a>
+            @if ($isAdmin || $user->ownsShop($contextShop))
+                <a wire:navigate.hover href="{{ route('seller.shops.products.import.create', $contextShop) }}" class="{{ $linkClass }} {{ $isImport ? $activeClass : $idleClass }}">
+                    <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg>
+                    <span>Importar inventario</span>
+                </a>
+                <a wire:navigate.hover href="{{ route('seller.shops.products.bulk.create', $contextShop) }}" class="{{ $linkClass }} {{ $isBulkImport ? $activeClass : $idleClass }}">
+                    <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5h16v14H4zM8 9h8m-8 4h5"/></svg>
+                    <span>Subida masiva</span>
+                </a>
+            @endif
             @endif
             @if ($canSeeMenu('inventory') && $canSeeMenu('sales'))
             <a wire:navigate.hover href="{{ route('seller.shops.inventory.index', [$contextShop, 'stock' => 'low']) }}" class="{{ $linkClass }} {{ $isLowStock ? $activeClass : $idleClass }}">
@@ -84,6 +106,21 @@
                 <svg class="h-5 w-5 shrink-0 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 9l-6 6m0-6 6 6m6 3a9 9 0 1 1 0-12.73A9 9 0 0 1 21 18Z"/></svg>
                 <span>Agotados</span>
             </a>
+            @endif
+            @if (($isAdmin || $user->ownsShop($contextShop)) && $canSeeMenu('inventory'))
+                <a wire:navigate.hover href="{{ route('seller.shops.inventory.lots', $contextShop) }}" class="{{ $linkClass }} {{ $isLots ? $activeClass : $idleClass }}">
+                    <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5h14v14H5zM8 9h8m-8 3h5m-5 3h8"/></svg>
+                    <span>Lotes y costos FIFO</span>
+                </a>
+            @endif
+            @if (($isAdmin || $user->ownsShop($contextShop)) && $canSeeMenu('products'))
+                <a wire:navigate.hover href="{{ route('seller.shops.pricing.index', $contextShop) }}" class="{{ $linkClass }} {{ $isPricing ? $activeClass : $idleClass }}">
+                    <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h8"/></svg>
+                    <span>Precios automáticos</span>
+                </a>
+            @endif
+            @if ($canSeeMenu('cash') || $canSeeMenu('expenses') || $canSeeMenu('customers'))
+                <p class="mt-5 border-t border-white/10 px-3 pb-2 pt-5 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Control financiero</p>
             @endif
             @if ($canSeeMenu('cash'))
             <a wire:navigate.hover href="{{ route('seller.shops.cash.index', $contextShop) }}" class="{{ $linkClass }} {{ request()->routeIs('seller.shops.cash.*') ? $activeClass : $idleClass }}">

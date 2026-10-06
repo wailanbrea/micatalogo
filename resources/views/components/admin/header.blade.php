@@ -255,6 +255,10 @@
                         @if ($isAdmin || $user->ownsShop($activeShop))
                             <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.products.bulk.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.products.bulk.create', $activeShop) }}">Subida masiva</a>
                             <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.products.import.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.products.import.create', $activeShop) }}">Importar inventario</a>
+                            <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.pricing.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.pricing.index', $activeShop) }}">Precios automáticos</a>
+                        @endif
+                        @if ($canSeeMenu('inventory'))
+                            <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.inventory.lots') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.inventory.lots', $activeShop) }}">Lotes y costos FIFO</a>
                         @endif
                     @endif
                 </div>

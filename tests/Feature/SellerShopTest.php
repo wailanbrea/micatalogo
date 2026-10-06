@@ -251,6 +251,11 @@ test('seller dashboard renders unified persistent navigation and account dropdow
         ->assertDontSee('Usuarios del sistema')
         ->assertDontSee('Reportes')
         ->assertSee(route('seller.shops.inventory.index', $shop))
+        ->assertSee(route('seller.shops.categories.index', $shop))
+        ->assertSee(route('seller.shops.products.import.create', $shop))
+        ->assertSee(route('seller.shops.products.bulk.create', $shop))
+        ->assertSee(route('seller.shops.inventory.lots', $shop))
+        ->assertSee(route('seller.shops.pricing.index', $shop))
         ->assertSee('data-navigation-progress')
         ->assertSee('wire:navigate.hover');
 });
