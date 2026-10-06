@@ -86,3 +86,26 @@ test('business and earnings dashboard renders styled kpis and sections', functio
         ->assertSee('Reglas de precio · Pro')
         ->assertSee('Pedidos pendientes de confirmar');
 });
+
+test('business dashboard links pending orders to the existing orders module', function () {
+    [$user, $shop, $product] = businessFixture();
+    $order = $shop->orders()->create([
+        'order_number' => 'MC-PENDING',
+        'currency' => 'DOP',
+        'subtotal' => 300,
+        'total' => 300,
+        'status' => 'sent_to_whatsapp',
+    ]);
+    $order->items()->create([
+        'product_id' => $product->id,
+        'product_name' => $product->name,
+        'quantity' => 1,
+        'unit_price' => 300,
+        'line_total' => 300,
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('seller.shops.business', $shop))
+        ->assertOk()
+        ->assertSee(route('seller.shops.feature', [$shop, 'orders'], false), false);
+});

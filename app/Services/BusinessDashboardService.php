@@ -421,7 +421,7 @@ class BusinessDashboardService
                 'count' => $currentState['pending_orders_count'],
                 'label' => "{$currentState['pending_orders_count']} pedidos pendientes de confirmar",
                 'action_label' => 'Revisar',
-                'url' => route('seller.shops.orders.confirm.list', $shop, false) ?: '#orders',
+                'url' => route('seller.shops.feature', [$shop, 'orders'], false),
                 'severity' => 'warning',
             ];
         }
