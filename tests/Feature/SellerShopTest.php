@@ -115,6 +115,27 @@ test('a seller cannot edit another sellers shop', function () {
         ->assertForbidden();
 });
 
+test('mi tienda stays inside the panel and explains how to complete the storefront', function () {
+    $seller = User::factory()->create();
+    $shop = Shop::factory()->for($seller)->create([
+        'description' => null,
+        'address' => null,
+        'instagram' => null,
+    ]);
+
+    $response = $this->actingAs($seller)
+        ->get(route('seller.shops.storefront', $shop));
+
+    $response->assertOk()
+        ->assertSee('Mi tienda')
+        ->assertSee('Tu tienda se prepara aquí')
+        ->assertSee('Para que tu tienda se vea bien')
+        ->assertSee('Ver mi tienda')
+        ->assertSee(route('shops.show', $shop), false)
+        ->assertSee(route('seller.shops.storefront', $shop), false)
+        ->assertSee('Navegación del panel');
+});
+
 test('a seller can update and delete their shop', function () {
     $seller = User::factory()->create();
     $shop = Shop::factory()->for($seller)->create();

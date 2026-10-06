@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ProductImageProcessingStatus;
 use App\Http\Requests\StoreShopRequest;
 use App\Http\Requests\UpdateShopRequest;
 use App\Models\ProductImage;
@@ -10,6 +11,7 @@ use App\Models\User;
 use App\Services\ImageProcessingService;
 use App\Services\MediaStorageService;
 use App\Services\PlanLimitsService;
+use App\Services\QrCodeSvgService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -149,6 +151,72 @@ class SellerShopController extends Controller
     public function edit(Shop $shop): View
     {
         return view('seller.shops.form', compact('shop'));
+    }
+
+    public function storefront(Shop $shop, QrCodeSvgService $qrCodeService): View
+    {
+        $shopUrl = route('shops.show', $shop);
+        $products = $shop->products()
+            ->with('primaryImage')
+            ->latest('id')
+            ->limit(6)
+            ->get();
+        $productCount = $shop->products()->count();
+        $readyPhoto = fn ($query) => $query->where('processing_status', ProductImageProcessingStatus::Ready);
+        $withoutPhotoCount = $shop->products()->whereDoesntHave('images', $readyPhoto)->count();
+        $publishedCount = $shop->products()->where('moderation_status', 'active')->count();
+
+        $checklist = [
+            [
+                'label' => 'Sube tu logo',
+                'description' => 'Es lo primero que ve el cliente al abrir.',
+                'done' => filled($shop->logo_url),
+                'url' => route('seller.shops.edit', $shop).'#logo',
+            ],
+            [
+                'label' => 'Pon tu WhatsApp',
+                'description' => 'Sin él, el cliente no tiene cómo preguntarte.',
+                'done' => filled($shop->whatsapp_number),
+                'url' => route('seller.shops.edit', $shop).'#whatsapp_number',
+            ],
+            [
+                'label' => $withoutPhotoCount > 0 ? $withoutPhotoCount.' producto(s) sin foto' : 'Revisa las fotos',
+                'description' => 'Un producto sin foto casi nunca se vende.',
+                'done' => $withoutPhotoCount === 0 && $productCount > 0,
+                'url' => route('seller.shops.products.index', $shop),
+            ],
+            [
+                'label' => 'Completa la presentación',
+                'description' => 'Una descripción clara explica qué vendes y por qué elegirte.',
+                'done' => filled($shop->description) && filled($shop->cover_url),
+                'url' => route('seller.shops.edit', $shop).'#description',
+            ],
+            [
+                'label' => 'Escribe tu dirección',
+                'description' => 'Si vendes en local, es cómo te encuentran.',
+                'done' => filled($shop->address),
+                'url' => route('seller.shops.edit', $shop).'#address',
+            ],
+            [
+                'label' => 'Enlaza tus redes',
+                'description' => 'Tu tienda y tu Instagram se apuntan el uno al otro.',
+                'done' => filled($shop->instagram),
+                'url' => route('seller.shops.edit', $shop).'#instagram',
+            ],
+        ];
+
+        return view('seller.shops.storefront', [
+            'shop' => $shop,
+            'shopUrl' => $shopUrl,
+            'products' => $products,
+            'productCount' => $productCount,
+            'publishedCount' => $publishedCount,
+            'withoutPhotoCount' => $withoutPhotoCount,
+            'orderCount' => $shop->orders()->count(),
+            'checklist' => $checklist,
+            'completedChecklist' => collect($checklist)->where('done', true)->count(),
+            'qrSvg' => $qrCodeService->generateSvg($shopUrl, 220),
+        ]);
     }
 
     public function update(UpdateShopRequest $request, Shop $shop, ImageProcessingService $imageService, MediaStorageService $mediaStorage): RedirectResponse

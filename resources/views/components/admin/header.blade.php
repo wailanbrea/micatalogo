@@ -41,6 +41,7 @@
         request()->routeIs('seller.shops.expenses.*') => 'Gastos operativos',
         request()->routeIs('seller.shops.metrics.*') => 'Estadísticas',
         request()->routeIs('seller.shops.pricing.*') => 'Precios automáticos',
+        request()->routeIs('seller.shops.storefront') => 'Mi tienda',
         request()->routeIs('seller.shops.edit') => 'Configuración',
         request()->routeIs('seller.shops.business') => 'Ganancias y resumen',
         default => null,
@@ -265,6 +266,9 @@
                     @if ($canSeeMenu('products'))
                         <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.products.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.products.index', $activeShop) }}">Productos</a>
                         <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.categories.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.categories.index', $activeShop) }}">Categorías</a>
+                        @if ($canSeeMenu('storefront'))
+                            <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.storefront') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.storefront', $activeShop) }}">Mi tienda</a>
+                        @endif
                         @if ($isAdmin || $user->ownsShop($activeShop))
                             <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.products.bulk.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.products.bulk.create', $activeShop) }}">Subida masiva</a>
                             <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.products.import.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.products.import.create', $activeShop) }}">Importar inventario</a>
@@ -356,3 +360,7 @@
         </div>
     @endif
 </header>
+
+@if ($activeShop && ! request()->routeIs('admin.*'))
+    <x-seller.guide :shop="$activeShop" />
+@endif

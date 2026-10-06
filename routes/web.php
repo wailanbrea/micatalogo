@@ -70,6 +70,9 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
     Route::get('/tiendas/{shop}/editar', [SellerShopController::class, 'edit'])
         ->middleware('can:update,shop')
         ->name('shops.edit');
+    Route::get('/tiendas/{shop}/mi-tienda', [SellerShopController::class, 'storefront'])
+        ->middleware('can:sell,shop')
+        ->name('shops.storefront');
     Route::put('/tiendas/{shop}', [SellerShopController::class, 'update'])
         ->middleware('can:update,shop')
         ->name('shops.update');

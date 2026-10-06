@@ -19,6 +19,7 @@
     $isSellers = request()->routeIs('seller.shops.sellers.*');
     $isMetrics = request()->routeIs('seller.shops.metrics.*');
     $isSettings = request()->routeIs('seller.shops.edit');
+    $isStorefront = request()->routeIs('seller.shops.storefront');
     $isPricing = request()->routeIs('seller.shops.pricing.*');
     $isLots = request()->routeIs('seller.shops.inventory.lots');
     $isCategories = request()->routeIs('seller.shops.categories.*');
@@ -55,7 +56,7 @@
         ['label' => 'Catálogo', 'items' => [
             ['key' => 'inventory', 'label' => 'Inventario', 'url' => route('seller.shops.inventory.index', $contextShop), 'active' => $isInventory && ! $isLots, 'path' => 'M4 7h16v13H4zM8 3h8v4H8zM8 12h8'],
             ['key' => 'photos', 'label' => 'Fotos', 'url' => $featureUrl('photos'), 'active' => $featureActive('photos')],
-            ['key' => 'public_catalog', 'label' => 'Mi tienda', 'url' => route('shops.show', $contextShop), 'active' => false, 'external' => true],
+            ['key' => 'storefront', 'label' => 'Mi tienda', 'url' => route('seller.shops.storefront', $contextShop), 'active' => $isStorefront],
             ['key' => 'services', 'label' => 'Servicios', 'url' => $featureUrl('services'), 'active' => $featureActive('services')],
             ['key' => 'price_health', 'label' => 'Salud de precios', 'url' => $featureUrl('price_health'), 'active' => $featureActive('price_health')],
             ['key' => 'products', 'label' => 'Precios automáticos', 'url' => route('seller.shops.pricing.index', $contextShop), 'active' => $isPricing],
