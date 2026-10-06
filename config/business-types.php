@@ -22,6 +22,7 @@ return [
         'tattoo_studio' => 'service_retail',
         'professional_services' => 'service_retail',
         'electronics' => 'electronics',
+        'appliance_store' => 'appliances',
         'food_restaurant' => 'food',
         'pastry' => 'food',
         'grocery' => 'grocery',
@@ -94,6 +95,10 @@ return [
             'terminology' => ['catalog' => 'Catálogo de tecnología', 'product' => 'Equipo', 'products' => 'Equipos', 'new_product' => 'Nuevo equipo'],
             'pos' => ['search_placeholder' => 'Buscar equipo, marca, modelo o código'],
         ],
+        'appliances' => [
+            'terminology' => ['catalog' => 'Catálogo de electrodomésticos', 'product' => 'Electrodoméstico', 'products' => 'Electrodomésticos', 'new_product' => 'Nuevo electrodoméstico'],
+            'pos' => ['search_placeholder' => 'Buscar electrodoméstico, marca, modelo o código'],
+        ],
         'food' => [
             'terminology' => ['catalog' => 'Menú', 'product' => 'Artículo del menú', 'products' => 'Artículos del menú', 'new_product' => 'Nuevo artículo del menú'],
             'dashboard' => ['widgets' => ['sales_today', 'collections_today', 'active_customers']],
@@ -145,6 +150,7 @@ return [
         'barbershop' => ['label' => 'Barbería', 'categories' => ['Cortes', 'Barba', 'Tratamientos', 'Cuidado capilar', 'Cuidado de barba', 'Accesorios'], 'capabilities' => ['products' => true, 'catalog' => true, 'inventory' => true, 'sales' => true, 'customers' => true, 'credit' => true, 'cash' => true, 'expenses' => true, 'finance' => true, 'public_catalog' => true, 'services' => 'unsupported', 'appointments' => 'unsupported'], 'product_fields' => ['brand', 'size', 'cost_price', 'price', 'stock']],
         'beauty_salon' => ['label' => 'Salón de belleza y uñas', 'categories' => ['Cabello', 'Uñas', 'Maquillaje', 'Tratamientos', 'Productos'], 'capabilities' => ['products' => true, 'catalog' => true, 'inventory' => true, 'sales' => true, 'customers' => true, 'credit' => true, 'cash' => true, 'expenses' => true, 'finance' => true, 'public_catalog' => true, 'services' => 'unsupported', 'appointments' => 'unsupported'], 'product_fields' => ['brand', 'size', 'cost_price', 'price', 'stock']],
         'electronics' => ['label' => 'Tecnología y electrónica', 'categories' => ['Celulares', 'Computadoras', 'Accesorios', 'Audio', 'Redes', 'Otros'], 'capabilities' => ['products' => true, 'catalog' => true, 'inventory' => true, 'sales' => true, 'customers' => true, 'credit' => true, 'cash' => true, 'expenses' => true, 'finance' => true, 'brand' => true, 'model' => true, 'sku' => true, 'barcode' => true, 'wholesale' => true, 'public_catalog' => true, 'serial_tracking' => 'unsupported'], 'product_fields' => ['brand', 'model', 'sku', 'barcode', 'cost_price', 'price', 'stock']],
+        'appliance_store' => ['label' => 'Electrodomésticos', 'categories' => ['Neveras y refrigeradores', 'Estufas y hornos', 'Lavadoras y secadoras', 'Aires acondicionados', 'Microondas', 'Pequeños electrodomésticos', 'Televisores y entretenimiento', 'Otros'], 'capabilities' => ['products' => true, 'catalog' => true, 'inventory' => true, 'sales' => true, 'customers' => true, 'credit' => true, 'cash' => true, 'expenses' => true, 'finance' => true, 'brand' => true, 'model' => true, 'sku' => true, 'barcode' => true, 'wholesale' => true, 'public_catalog' => true, 'shipping' => true, 'serial_tracking' => 'unsupported'], 'product_fields' => ['brand', 'model', 'sku', 'barcode', 'cost_price', 'price', 'stock']],
         'accessories_jewelry' => ['label' => 'Accesorios y joyería', 'categories' => ['Relojes', 'Cadenas', 'Pulseras', 'Aretes', 'Bolsos', 'Otros'], 'capabilities' => ['products' => true, 'catalog' => true, 'inventory' => true, 'sales' => true, 'customers' => true, 'credit' => true, 'cash' => true, 'expenses' => true, 'finance' => true, 'brand' => true, 'sku' => true, 'barcode' => true, 'public_catalog' => true], 'product_fields' => ['brand', 'model', 'color', 'sku', 'barcode', 'cost_price', 'price', 'stock']],
         'food_restaurant' => ['label' => 'Restaurante y alimentos', 'categories' => ['Entradas', 'Platos', 'Bebidas', 'Postres', 'Combos'], 'capabilities' => ['products' => true, 'catalog' => true, 'sales' => true, 'customers' => true, 'cash' => true, 'expenses' => true, 'finance' => true, 'public_catalog' => true, 'inventory' => 'unsupported', 'recipes_or_ingredients' => 'unsupported', 'weighted_products' => 'unsupported'], 'product_fields' => ['description', 'price', 'stock']],
         'grocery' => ['label' => 'Colmado y minimarket', 'categories' => ['Alimentos', 'Bebidas', 'Higiene', 'Limpieza', 'Hogar', 'Otros'], 'capabilities' => ['products' => true, 'catalog' => true, 'inventory' => true, 'sales' => true, 'customers' => true, 'credit' => true, 'cash' => true, 'expenses' => true, 'finance' => true, 'sku' => true, 'barcode' => true, 'public_catalog' => true, 'weighted_products' => 'unsupported'], 'product_fields' => ['sku', 'barcode', 'cost_price', 'price', 'stock']],

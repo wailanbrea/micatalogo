@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateShopRequest;
 use App\Models\ProductImage;
 use App\Models\Shop;
 use App\Models\User;
+use App\Services\BusinessPresetService;
 use App\Services\ImageProcessingService;
 use App\Services\MediaStorageService;
 use App\Services\PlanLimitsService;
@@ -123,16 +124,19 @@ class SellerShopController extends Controller
         return view('seller.shops.form', ['shop' => new Shop]);
     }
 
-    public function store(StoreShopRequest $request, ImageProcessingService $imageService, MediaStorageService $mediaStorage, PlanLimitsService $limits): RedirectResponse
+    public function store(StoreShopRequest $request, ImageProcessingService $imageService, MediaStorageService $mediaStorage, PlanLimitsService $limits, BusinessPresetService $presets): RedirectResponse
     {
-        $shop = DB::transaction(function () use ($request, $limits): Shop {
+        $shop = DB::transaction(function () use ($request, $limits, $presets): Shop {
             $user = User::query()->lockForUpdate()->findOrFail($request->user()->id);
             $activeShops = $user->shops()->where('status', 'active')->count();
 
             $limit = $limits->activeShopLimit($user);
             abort_if($activeShops >= $limit, 422, "Tu plan {$limits->planFor($user)->label()} permite {$limit} tienda activa.");
 
-            return $user->shops()->create($this->attributes($request->validated()));
+            $shop = $user->shops()->create($this->attributes($request->validated()));
+            $presets->apply($shop);
+
+            return $shop;
         });
 
         if ($request->hasFile('logo')) {
@@ -219,7 +223,7 @@ class SellerShopController extends Controller
         ]);
     }
 
-    public function update(UpdateShopRequest $request, Shop $shop, ImageProcessingService $imageService, MediaStorageService $mediaStorage): RedirectResponse
+    public function update(UpdateShopRequest $request, Shop $shop, ImageProcessingService $imageService, MediaStorageService $mediaStorage, BusinessPresetService $presets): RedirectResponse
     {
         $attributes = $this->attributes($request->validated(), $shop);
 
@@ -238,6 +242,7 @@ class SellerShopController extends Controller
         }
 
         $shop->update($attributes);
+        $presets->apply($shop->fresh());
 
         return to_route('seller.shops.edit', $shop)->with('status', 'Cambios guardados.');
     }
@@ -253,6 +258,7 @@ class SellerShopController extends Controller
     {
         return [
             ...$input,
+            'business_type' => $input['business_type'] ?? $shop?->business_type ?? 'general_retail',
             'slug' => $this->availableSlug($input['slug'] ?: $input['name'], $shop),
             'instagram' => $input['instagram'] ?: null,
             'offers_shipping' => $input['offers_shipping'] ?? false,

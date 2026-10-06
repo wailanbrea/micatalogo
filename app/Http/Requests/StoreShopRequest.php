@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\Shop;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreShopRequest extends FormRequest
 {
@@ -25,6 +26,7 @@ class StoreShopRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'min:2', 'max:120'],
+            'business_type' => ['nullable', Rule::in(array_keys(config('business-types.types', [])))],
             'slug' => ['nullable', 'string', 'min:2', 'max:120'],
             'description' => ['nullable', 'string', 'max:2000'],
             'whatsapp_country_code' => ['required', 'regex:/^[1-9][0-9]{0,4}$/'],

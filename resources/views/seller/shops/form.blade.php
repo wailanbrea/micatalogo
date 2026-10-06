@@ -35,6 +35,17 @@
                         @error('name') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                     </div>
 
+                    <div>
+                        <label class="text-sm font-medium text-slate-700" for="business_type">Tipo de negocio</label>
+                        <select class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-600 focus:ring-blue-600" id="business_type" name="business_type">
+                            @foreach (app(\App\Services\BusinessProfileService::class)->types() as $type => $profile)
+                                <option value="{{ $type }}" @selected(old('business_type', $shop->business_type ?: 'general_retail') === $type)>{{ $profile['label'] }}</option>
+                            @endforeach
+                        </select>
+                        <p class="mt-1 text-xs text-slate-500">Preconfigura categorías y la presentación del panel. Cambiarlo agrega las nuevas categorías sin borrar las existentes.</p>
+                        @error('business_type') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                    </div>
+
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div>
                             <label class="text-sm font-medium text-slate-700" for="address">Ubicación o dirección (opcional)</label>

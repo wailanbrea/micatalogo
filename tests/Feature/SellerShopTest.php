@@ -43,6 +43,23 @@ test('a verified seller can create a shop with normalized contact data', functio
     ]);
 });
 
+test('creating an appliance shop applies its categories and profile', function () {
+    $seller = User::factory()->create(['plan' => UserPlan::Pro]);
+
+    $this->actingAs($seller)
+        ->post(route('seller.shops.store'), shopPayload([
+            'name' => 'Electro Hogar Brea',
+            'business_type' => 'appliance_store',
+        ]))
+        ->assertRedirect();
+
+    $shop = $seller->shops()->where('name', 'Electro Hogar Brea')->firstOrFail();
+
+    expect($shop->business_type)->toBe('appliance_store')
+        ->and($shop->categories()->orderBy('sort_order')->pluck('name')->all())
+        ->toBe(['Neveras y refrigeradores', 'Estufas y hornos', 'Lavadoras y secadoras', 'Aires acondicionados', 'Microondas', 'Pequeños electrodomésticos', 'Televisores y entretenimiento', 'Otros']);
+});
+
 test('shop slugs resolve collisions deterministically', function () {
     Shop::factory()->create(['slug' => 'brea-fashion']);
     $seller = User::factory()->create();

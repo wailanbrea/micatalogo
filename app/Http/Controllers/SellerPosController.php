@@ -19,13 +19,19 @@ class SellerPosController extends Controller
     {
         $products = $shop->products()
             ->whereHas('inventory', fn ($query) => $query->where('track_inventory', true))
-            ->with(['inventory', 'images', 'primaryImage', 'sourceProduct.inventory', 'shopCategory', 'globalCategory'])
+            ->with(['inventory', 'images', 'primaryImage', 'sourceProduct.inventory', 'shopCategory', 'globalCategory', 'attributeValues.attributeDefinition'])
             ->orderBy('name')
             ->get()
             ->map(fn ($product): array => [
                 'id' => $product->public_id,
                 'name' => $product->name,
                 'code' => $product->product_code,
+                'brand' => $product->brand,
+                'attributes' => $product->attributeValues
+                    ->map(fn ($attribute) => $attribute->value)
+                    ->filter()
+                    ->values()
+                    ->all(),
                 'price' => (float) $product->currentPrice(),
                 'wholesale_price' => $product->wholesale_price === null ? null : (float) $product->wholesale_price,
                 'stock' => (int) $product->inventory->stock_quantity,

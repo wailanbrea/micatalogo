@@ -54,6 +54,43 @@ test('seller can open the web POS and register a paid sale', function () {
         ->and($product->fresh()->inventory->stock_quantity)->toBe(6);
 });
 
+test('an appliance shop presents appliance terminology and completes a POS sale', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->create([
+        'user_id' => $user->id,
+        'business_type' => 'appliance_store',
+    ]);
+    $product = Product::factory()->create([
+        'shop_id' => $shop->id,
+        'name' => 'Nevera Samsung Frost Free',
+        'brand' => 'Samsung',
+        'product_code' => 'NEV-SAM-001',
+        'price' => 38900,
+    ]);
+    ProductInventory::create(['product_id' => $product->id, 'track_inventory' => true, 'stock_quantity' => 3]);
+
+    $this->actingAs($user)
+        ->get(route('seller.shops.pos', $shop))
+        ->assertOk()
+        ->assertSee('Buscar electrodoméstico, marca, modelo o código')
+        ->assertSee('Nevera Samsung Frost Free');
+
+    $this->actingAs($user)
+        ->post(route('seller.shops.pos.store', $shop), [
+            'client_sale_uuid' => (string) Str::uuid(),
+            'payment_status' => 'paid',
+            'sale_mode' => 'retail',
+            'credit_amount' => '0.00',
+            'payments' => [['method' => 'cash', 'amount' => '38900.00']],
+            'items' => [webPosProductPayload($product)],
+        ])
+        ->assertRedirect(route('seller.shops.pos', $shop))
+        ->assertSessionHas('status');
+
+    expect($product->fresh()->inventory->stock_quantity)->toBe(2)
+        ->and(Invoice::query()->sole()->total)->toBe('38900.00');
+});
+
 test('web POS supports wholesale mixed payment and customer credit', function () {
     $user = User::factory()->create(['plan' => 'pro']);
     $shop = Shop::factory()->create(['user_id' => $user->id]);

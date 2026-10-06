@@ -47,7 +47,7 @@
                         type="search"
                         autocomplete="off"
                         class="h-14 w-full rounded-2xl border border-slate-200 bg-white px-12 text-base text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                        placeholder="Buscar o escanear producto"
+                        placeholder="{{ $posPresentation['search_placeholder'] ?? 'Buscar o escanear producto' }}"
                     >
                     <svg class="pointer-events-none absolute left-4 top-4 h-6 w-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.3-4.3m1.8-5.2a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"/>
@@ -293,7 +293,7 @@
                         if (this.saleMode === 'wholesale' && product.wholesale_price === null) return false;
                         if (this.selectedCategory !== 'all' && product.category !== this.selectedCategory) return false;
                         if (!query) return true;
-                        return [product.name, product.code, product.category, product.sale_unit_label]
+                        return [product.name, product.code, product.brand, ...(product.attributes || []), product.category, product.sale_unit_label]
                             .filter(Boolean)
                             .some((value) => String(value).toLowerCase().includes(query));
                     });

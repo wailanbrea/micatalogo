@@ -7,7 +7,6 @@ use App\Models\User;
 use App\Services\BusinessProfileService;
 use App\Services\RegistrationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Validation\ValidationException;
 
 uses(RefreshDatabase::class);
 
@@ -75,4 +74,20 @@ test('legacy general shops with decants keep their existing capability', functio
     Product::factory()->for($shop)->create(['sale_unit' => 'decant']);
 
     expect(app(BusinessProfileService::class)->allows($shop, 'decants'))->toBeTrue();
+});
+
+test('appliance profile exposes the fields and capabilities needed for retail sales', function () {
+    $shop = Shop::factory()->create([
+        'business_type' => 'appliance_store',
+        'user_id' => User::factory()->create(['plan' => UserPlan::Pro])->id,
+    ]);
+    $profile = app(BusinessProfileService::class)->profile($shop);
+
+    expect($profile['business_type_label'])->toBe('Electrodomésticos')
+        ->and($profile['categories'])->toContain('Neveras y refrigeradores', 'Aires acondicionados')
+        ->and($profile['product_fields'])->toContain('brand', 'model', 'sku', 'barcode', 'cost_price', 'price', 'stock')
+        ->and(app(BusinessProfileService::class)->allows($shop, 'inventory'))->toBeTrue()
+        ->and(app(BusinessProfileService::class)->allows($shop, 'sales'))->toBeTrue()
+        ->and(app(BusinessProfileService::class)->allows($shop, 'credit'))->toBeTrue()
+        ->and(app(BusinessProfileService::class)->allows($shop, 'wholesale'))->toBeTrue();
 });
