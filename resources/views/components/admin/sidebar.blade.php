@@ -23,9 +23,9 @@
     $isCategories = request()->routeIs('seller.shops.categories.*');
     $isImport = request()->routeIs('seller.shops.products.import.*');
     $isBulkImport = request()->routeIs('seller.shops.products.bulk.*');
-    $linkClass = 'group flex items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2.5 text-sm font-semibold transition duration-200';
-    $activeClass = 'border-l-orange-500 bg-white/10 text-white shadow-none';
-    $idleClass = 'text-stone-300 hover:bg-white/10 hover:text-white';
+    $linkClass = 'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition duration-200';
+    $activeClass = 'bg-blue-600 text-white shadow-lg shadow-blue-950/20';
+    $idleClass = 'text-slate-300 hover:bg-white/10 hover:text-white';
     $visibleMenus = $contextShop ? app(\App\Services\SellerMenuService::class)->visibleForUser($contextShop, $user) : [];
     $canSeeMenu = fn (string $key): bool => ! $contextShop || in_array($key, $visibleMenus, true);
     $isAssignedSellerOnly = $user?->isAssignedSellerOnly() ?? false;
@@ -101,8 +101,8 @@
     ] : [];
 @endphp
 
-<aside class="panel-sidebar fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-slate-800 text-white md:flex" aria-label="Navegación del panel">
-    <div class="border-b border-white/10 px-4 py-4">
+<aside class="panel-sidebar fixed inset-y-0 left-0 z-40 hidden w-80 flex-col border-r border-slate-800 text-white md:flex" aria-label="Navegación del panel">
+    <div class="border-b border-white/10 px-5 py-5">
         <a wire:navigate.hover class="flex items-center gap-3" href="{{ $contextShop ? route('seller.shops.products.index', $contextShop) : route('seller.dashboard') }}">
             @if ($contextShop?->logo_url)
                 <img src="{{ $contextShop->logo_url }}" alt="{{ $contextShop->name }}" class="h-14 w-14 rounded-full border border-slate-200 object-cover shadow-sm">
@@ -118,10 +118,10 @@
         </a>
     </div>
 
-    <nav class="flex-1 space-y-0.5 overflow-y-auto px-2 py-4" aria-label="Navegación principal">
+    <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-5" aria-label="Navegación principal">
         @if ($contextShop)
             @foreach ($menuSections as $section)
-                <p class="{{ $loop->first ? 'px-3 pb-2' : 'mt-4 border-t border-white/10 px-3 pb-2 pt-4' }} text-[10px] font-bold uppercase tracking-[0.18em] text-stone-500">{{ $section['label'] }}</p>
+                <p class="{{ $loop->first ? 'px-3 pb-2' : 'mt-5 px-3 pb-2 pt-2' }} text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">{{ $section['label'] }}</p>
                 @foreach ($section['items'] as $item)
                     @if ($item['key'] === 'summary' || $canSeeMenu($item['key']))
                         <a wire:navigate.hover href="{{ $item['url'] }}" @if ($item['external'] ?? false) target="_blank" @endif @if ($item['aria'] ?? false) aria-label="{{ $item['aria'] }}" @endif class="{{ $linkClass }} {{ ($item['active'] ?? false) ? $activeClass : $idleClass }}" @if ($item['label'] === 'Contenedores') title="Agrupa compras y recepciones grandes" @endif>
