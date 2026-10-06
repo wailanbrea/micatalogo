@@ -22,9 +22,11 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use App\Services\WebImageSearchService;
 
 class SellerProductController extends Controller
 {
@@ -68,7 +70,7 @@ class SellerProductController extends Controller
         ]);
     }
 
-    public function store(ProductRequest $request, Shop $shop, PlanLimitsService $limits, CatalogMediaService $catalogMedia): RedirectResponse
+    public function store(ProductRequest $request, Shop $shop, PlanLimitsService $limits, CatalogMediaService $catalogMedia, ImageProcessingService $imageService, WebImageSearchService $webImages): RedirectResponse
     {
         $product = DB::transaction(function () use ($request, $shop, $limits, $catalogMedia): Product {
             $lockedShop = Shop::query()->lockForUpdate()->findOrFail($shop->id);
@@ -132,6 +134,17 @@ class SellerProductController extends Controller
 
         if ($product->barcode) {
             ResolveProductCatalogMediaJob::dispatch($product->id)->afterCommit();
+        }
+
+        if ($request->hasFile('image')) {
+            $imageService->storeTempAndDispatch($product, $request->file('image'));
+        } elseif ($request->filled('image_source_url')) {
+            $webImages->assertSafeImageUrl((string) $request->string('image_source_url'));
+            $response = Http::timeout((int) config('catalog.web_image_search.timeout', 8))
+                ->withOptions(['allow_redirects' => false])
+                ->get((string) $request->string('image_source_url'));
+            abort_unless($response->successful(), 422, 'No se pudo descargar la imagen seleccionada. Vuelve a intentarlo.');
+            $imageService->storeRemoteAndDispatch($product, $response->body(), (string) $response->header('Content-Type'));
         }
 
         return to_route('seller.shops.products.index', $shop)->with('status', 'Producto creado exitosamente.');
@@ -308,6 +321,30 @@ class SellerProductController extends Controller
         $imageService->storeTempAndDispatch($product, $file);
 
         return back()->with('status', 'Imagen subida correctamente. Se está procesando en segundo plano.');
+    }
+
+    public function searchImage(Request $request, Shop $shop, WebImageSearchService $webImages): \Illuminate\Http\JsonResponse
+    {
+        $data = $request->validate(['q' => ['required', 'string', 'min:2', 'max:120']]);
+
+        return response()->json(['results' => $webImages->search($data['q'])]);
+    }
+
+    public function importRemoteImage(Request $request, Shop $shop, Product $product, ImageProcessingService $imageService, PlanLimitsService $limits, WebImageSearchService $webImages): RedirectResponse
+    {
+        abort_unless($product->shop_id === $shop->id, 404);
+        abort_if($product->images()->count() >= $limits->imageLimit($shop), 422, 'Has alcanzado el límite de imágenes de este producto.');
+
+        $data = $request->validate(['url' => ['required', 'url', 'max:2000']]);
+        $webImages->assertSafeImageUrl($data['url']);
+        $response = Http::timeout((int) config('catalog.web_image_search.timeout', 8))
+            ->withOptions(['allow_redirects' => false])
+            ->get($data['url']);
+        abort_unless($response->successful(), 422, 'No se pudo descargar la imagen seleccionada. Vuelve a intentarlo.');
+
+        $imageService->storeRemoteAndDispatch($product, $response->body(), (string) $response->header('Content-Type'));
+
+        return back()->with('status', 'Imagen seleccionada correctamente. Se está optimizando en segundo plano.');
     }
 
     public function destroyImage(Request $request, Shop $shop, Product $product, ProductImage $image, MediaStorageService $mediaStorage): RedirectResponse

@@ -157,6 +157,8 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
         Route::delete('/tiendas/{shop}/productos/{product}', [SellerProductController::class, 'destroy'])->middleware('can:delete,product')->name('shops.products.destroy');
         Route::post('/tiendas/{shop}/productos/{product}/restaurar', [SellerProductController::class, 'restore'])->name('shops.products.restore');
         Route::post('/tiendas/{shop}/productos/{product}/imagenes', [SellerProductController::class, 'uploadImage'])->middleware('can:update,product')->name('shops.products.images.store');
+        Route::get('/tiendas/{shop}/productos/imagenes/buscar', [SellerProductController::class, 'searchImage'])->middleware('throttle:catalog-media')->name('shops.products.images.search');
+        Route::post('/tiendas/{shop}/productos/{product}/imagenes/web', [SellerProductController::class, 'importRemoteImage'])->middleware(['can:update,product', 'throttle:catalog-media'])->name('shops.products.images.web.store');
         Route::delete('/tiendas/{shop}/productos/{product}/imagenes/{image}', [SellerProductController::class, 'destroyImage'])->middleware('can:update,product')->name('shops.products.images.destroy');
         Route::post('/tiendas/{shop}/productos/{product}/catalog-media/resolve', [ProductCatalogMediaController::class, 'resolve'])->name('shops.products.catalog-media.resolve');
         Route::post('/tiendas/{shop}/productos/{product}/catalog-media/{catalogImage}/use', [ProductCatalogMediaController::class, 'use'])->middleware('can:update,product')->name('shops.products.catalog-media.use');

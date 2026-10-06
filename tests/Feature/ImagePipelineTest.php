@@ -13,6 +13,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
 
 uses(RefreshDatabase::class);
 
@@ -55,6 +56,32 @@ test('a seller can upload an image for their product and job is dispatched', fun
         'processing_status' => ProductImageProcessingStatus::Pending->value,
     ]);
 
+    Queue::assertPushed(ProcessProductImageJob::class);
+});
+
+test('a seller can include the first image while creating a product', function () {
+    Queue::fake();
+    Storage::fake('temp');
+    $seller = User::factory()->create(['email_verified_at' => now()]);
+    $shop = Shop::factory()->for($seller)->create();
+
+    $response = $this->actingAs($seller)->post(route('seller.shops.products.store', $shop), [
+        'name' => 'Producto con foto',
+        'price' => '250.00',
+        'availability_status' => 'available',
+        'moderation_status' => 'active',
+        'track_inventory' => '1',
+        'stock_quantity' => '4',
+        'image' => UploadedFile::fake()->image('producto.jpg', 800, 800),
+    ]);
+
+    $response->assertRedirect(route('seller.shops.products.index', $shop));
+    $product = Product::query()->where('shop_id', $shop->id)->sole();
+    $this->assertDatabaseHas('product_images', [
+        'product_id' => $product->id,
+        'source' => 'manual',
+        'processing_status' => ProductImageProcessingStatus::Pending->value,
+    ]);
     Queue::assertPushed(ProcessProductImageJob::class);
 });
 
@@ -157,4 +184,53 @@ test('a seller can delete an image from their product', function () {
     $this->assertDatabaseMissing('product_images', ['id' => $image->id]);
     expect(Storage::disk('public')->exists('products/test/main.webp'))->toBeFalse()
         ->and(Storage::disk('public')->exists('products/test/thumb.webp'))->toBeFalse();
+});
+
+test('a seller can search web images without mutating the catalog', function () {
+    $seller = User::factory()->create(['email_verified_at' => now()]);
+    $shop = Shop::factory()->for($seller)->create();
+    Http::fake([
+        config('catalog.web_image_search.endpoint').'?' . '*' => Http::response([
+            'results' => [[
+                'id' => 'openverse-1',
+                'title' => 'Perfume azul',
+                'thumbnail' => 'https://images.unsplash.com/photo-1?w=200',
+                'url' => 'https://images.unsplash.com/photo-1',
+                'creator' => 'Fotógrafo',
+                'license' => 'CC0',
+                'source' => 'Unsplash',
+            ]],
+        ]),
+    ]);
+
+    $this->actingAs($seller)
+        ->getJson(route('seller.shops.products.images.search', $shop).'?q=perfume%20azul')
+        ->assertOk()
+        ->assertJsonPath('results.0.title', 'Perfume azul')
+        ->assertJsonPath('results.0.url', 'https://images.unsplash.com/photo-1');
+
+    expect($shop->products()->count())->toBe(0);
+});
+
+test('a seller can import a selected web image and queue the same optimizer as uploads', function () {
+    Queue::fake();
+    Storage::fake('temp');
+    $seller = User::factory()->create(['email_verified_at' => now()]);
+    $shop = Shop::factory()->for($seller)->create();
+    $product = Product::factory()->for($shop)->create();
+    $file = UploadedFile::fake()->image('web.jpg', 600, 600);
+    $url = 'https://images.unsplash.com/photo-selected';
+
+    Http::fake([$url => Http::response($file->getContent(), 200, ['Content-Type' => 'image/jpeg'])]);
+
+    $this->actingAs($seller)
+        ->post(route('seller.shops.products.images.web.store', [$shop, $product]), ['url' => $url])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('product_images', [
+        'product_id' => $product->id,
+        'source' => 'web_search',
+        'processing_status' => ProductImageProcessingStatus::Pending->value,
+    ]);
+    Queue::assertPushed(ProcessProductImageJob::class);
 });

@@ -7,9 +7,11 @@ use App\Enums\ProductModerationStatus;
 use App\Enums\UserPlan;
 use App\Models\AttributeDefinition;
 use App\Models\Product;
+use App\Models\ProductInventory;
 use App\Models\ProductAttributeValue;
 use App\Models\Shop;
 use App\Models\User;
+use App\Services\CashRegisterService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
@@ -53,6 +55,55 @@ class PublicOrderAndAttributesTest extends TestCase
             'unit_price' => 2800,
             'line_total' => 5600,
         ]);
+    }
+
+    public function test_public_order_can_be_confirmed_into_stock_invoice_and_a_balanced_cash_close(): void
+    {
+        $owner = User::factory()->create(['plan' => UserPlan::Pro]);
+        $shop = Shop::factory()->for($owner)->create([
+            'whatsapp_country_code' => '1',
+            'whatsapp_number' => '8298144525',
+        ]);
+        $product = Product::factory()->create([
+            'shop_id' => $shop->id,
+            'price' => 400,
+            'moderation_status' => ProductModerationStatus::Active,
+            'availability_status' => ProductAvailabilityStatus::Available,
+        ]);
+        ProductInventory::create([
+            'product_id' => $product->id,
+            'track_inventory' => true,
+            'stock_quantity' => 5,
+            'cost_price' => 150,
+            'sold_quantity' => 0,
+        ]);
+
+        $cash = app(CashRegisterService::class);
+        $session = $cash->openSession($shop, $owner, 0, 'Prueba de pedido público');
+
+        $created = $this->postJson(route('orders.store', $shop), [
+            'items' => [['id' => $product->public_id, 'quantity' => 2]],
+            'customer_name' => 'Cliente WhatsApp',
+        ])->assertCreated()
+            ->assertJsonPath('whatsapp_url', fn (string $url) => str_contains($url, 'wa.me/18298144525'));
+
+        $order = \App\Models\Order::query()->where('order_number', $created->json('order_number'))->firstOrFail();
+
+        $this->actingAs($owner)
+            ->post(route('seller.shops.orders.confirm', [$shop, $order]))
+            ->assertRedirect();
+
+        $invoice = $order->fresh()->invoice_id ? \App\Models\Invoice::findOrFail($order->fresh()->invoice_id) : null;
+        expect($order->fresh()->status)->toBe('confirmed')
+            ->and($invoice)->not->toBeNull()
+            ->and((float) $invoice->total)->toBe(800.0)
+            ->and($product->fresh()->inventory->stock_quantity)->toBe(3)
+            ->and($session->fresh()->calculateExpectedBalance())->toBe(80000);
+
+        $closed = $cash->closeSession($session->fresh(), $owner, 800, 'Cuadre automático de prueba');
+        expect($closed->status)->toBe('closed')
+            ->and($closed->difference_cents)->toBe(0);
+        $this->assertDatabaseHas('cash_register_sessions', ['id' => $session->id, 'status' => 'closed']);
     }
 
     public function test_order_rejects_a_product_from_another_shop(): void

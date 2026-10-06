@@ -62,6 +62,8 @@ class ProductRequest extends FormRequest
             'attributes.*.name' => ['nullable', 'string', 'max:100'],
             'attributes.*.value' => ['nullable', 'string', 'max:255'],
             'attributes.*.filterable' => ['nullable', 'boolean'],
+            'image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,avif', 'max:'.((int) config('catalog.uploads.max_file_size_mb', 10) * 1024)],
+            'image_source_url' => ['nullable', 'url', 'max:2000'],
         ];
     }
 

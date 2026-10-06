@@ -46,7 +46,7 @@
                     </div>
                 @endif
 
-                <form class="mt-6 space-y-6" method="POST" action="{{ $product->exists ? route('seller.shops.products.update', [$shop, $product]) : route('seller.shops.products.store', $shop) }}" x-data="{ trackInventory: {{ $showInventory && old('track_inventory', $product->exists ? ($product->inventory?->track_inventory ?? false) : true) ? 'true' : 'false' }}, saleUnit: '{{ old('sale_unit', $product->sale_unit ?? 'unit') }}' }">
+                <form class="mt-6 space-y-6" method="POST" enctype="multipart/form-data" action="{{ $product->exists ? route('seller.shops.products.update', [$shop, $product]) : route('seller.shops.products.store', $shop) }}" x-data="{ trackInventory: {{ $showInventory && old('track_inventory', $product->exists ? ($product->inventory?->track_inventory ?? false) : true) ? 'true' : 'false' }}, saleUnit: '{{ old('sale_unit', $product->sale_unit ?? 'unit') }}', imagePreview: null, imageSearch: { query: '', results: [], selected: null, loading: false, error: '', endpoint: '{{ route('seller.shops.products.images.search', $shop) }}' }, async searchImages() { const query = (this.imageSearch.query || document.getElementById('name')?.value || '').trim(); if (query.length < 2) { this.imageSearch.error = 'Escribe primero el nombre del producto.'; return; } this.imageSearch.query = query; this.imageSearch.loading = true; this.imageSearch.error = ''; try { const response = await fetch(`${this.imageSearch.endpoint}?q=${encodeURIComponent(query)}`, { headers: { Accept: 'application/json' } }); const payload = await response.json(); if (!response.ok) throw new Error(payload.message || 'No se pudieron consultar imágenes.'); this.imageSearch.results = payload.results || []; if (!this.imageSearch.results.length) this.imageSearch.error = 'No encontramos imágenes para ese nombre. Prueba con otra búsqueda.'; } catch (error) { this.imageSearch.error = error.message; } finally { this.imageSearch.loading = false; } } }">
                     @csrf
                     @if ($product->exists)
                         @method('PUT')
@@ -74,6 +74,55 @@
                         <label class="block text-sm font-semibold text-slate-800" for="brand">Marca</label>
                         <input class="mt-1.5 w-full rounded-md border border-slate-300 px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="brand" name="brand" type="text" value="{{ old('brand', $product->brand) }}" placeholder="Ej: Rasasi, Nike, Samsung">
                     </div>@endif
+
+                    @if (!$product->exists)
+                        <section class="rounded-2xl border border-blue-200 bg-blue-50/40 p-4 sm:p-5">
+                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                    <h2 class="text-sm font-bold text-slate-900">Foto del {{ strtolower($productLabel) }}</h2>
+                                    <p class="mt-1 text-xs text-slate-600">Sube una imagen cuadrada o búscala por el nombre. La optimizamos automáticamente al publicar.</p>
+                                </div>
+                                <span class="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-blue-700">WebP optimizado</span>
+                            </div>
+
+                            <div class="mt-4 grid gap-4 sm:grid-cols-[180px_1fr]">
+                                <div class="aspect-square overflow-hidden rounded-xl border border-dashed border-blue-300 bg-white">
+                                    <template x-if="imagePreview || imageSearch.selected">
+                                        <img class="h-full w-full object-cover" :src="imagePreview || imageSearch.selected?.thumbnail" alt="Vista previa del producto">
+                                    </template>
+                                    <div x-show="!imagePreview && !imageSearch.selected" class="flex h-full flex-col items-center justify-center px-4 text-center text-xs text-slate-500">
+                                        <span class="text-3xl">📷</span>
+                                        <span class="mt-2">Aún no has elegido una foto</span>
+                                    </div>
+                                </div>
+                                <div class="space-y-3">
+                                    <input class="block w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-600 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white" id="image" name="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" @change="imagePreview = $event.target.files[0] ? URL.createObjectURL($event.target.files[0]) : null; imageSearch.selected = null">
+                                    <p class="text-[11px] text-slate-500">JPG, PNG, WEBP o AVIF · máximo {{ config('catalog.uploads.max_file_size_mb', 10) }} MB.</p>
+                                    <div class="flex items-center gap-2 text-xs text-slate-400"><span class="h-px flex-1 bg-slate-200"></span><span>o busca en la web</span><span class="h-px flex-1 bg-slate-200"></span></div>
+                                    <div class="flex gap-2">
+                                        <input class="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900" type="search" x-model="imageSearch.query" @keydown.enter.prevent="searchImages()" placeholder="Ej. perfume azul 100 ml">
+                                        <button class="rounded-xl border border-blue-200 bg-white px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100 disabled:opacity-60" type="button" @click="searchImages()" :disabled="imageSearch.loading">
+                                            <span x-show="!imageSearch.loading">Buscar</span><span x-show="imageSearch.loading" x-cloak>Buscando…</span>
+                                        </button>
+                                    </div>
+                                    <input type="hidden" name="image_source_url" :value="imageSearch.selected?.url || ''">
+                                    <p x-show="imageSearch.error" x-text="imageSearch.error" class="text-xs font-semibold text-rose-600" x-cloak></p>
+                                </div>
+                            </div>
+
+                            <div x-show="imageSearch.results.length" class="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-6" x-cloak>
+                                <template x-for="result in imageSearch.results" :key="result.id + result.url">
+                                    <button type="button" class="group overflow-hidden rounded-xl border border-slate-200 bg-white text-left transition hover:border-blue-500 hover:ring-2 hover:ring-blue-100" :class="imageSearch.selected?.url === result.url ? 'border-blue-600 ring-2 ring-blue-200' : ''" @click="imageSearch.selected = result; imagePreview = null">
+                                        <img class="aspect-square w-full object-cover" :src="result.thumbnail" :alt="result.title" loading="lazy">
+                                        <span class="block truncate px-2 py-1.5 text-[10px] font-semibold text-slate-600" x-text="result.source || 'Openverse'"></span>
+                                    </button>
+                                </template>
+                            </div>
+                            <p class="mt-3 text-[11px] text-slate-500">Las imágenes se consultan mediante Openverse y se descargan al servidor para optimizarlas; selecciona solo material que puedas usar comercialmente.</p>
+                            @error('image') <p class="mt-2 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                            @error('image_source_url') <p class="mt-2 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                        </section>
+                    @endif
 
                     <!-- Precios: Venta y Costo (Contabilidad de Inventario) -->
                     <div class="grid gap-4 sm:grid-cols-3">
@@ -439,6 +488,34 @@
                             Has alcanzado el límite máximo de {{ config('catalog.free.max_images_per_product', 3) }} fotos para este producto.
                         </p>
                     @endif
+
+                    <section class="mt-5 rounded-xl border border-blue-200 bg-blue-50/40 p-4" x-data="{ query: '', results: [], loading: false, error: '', endpoint: '{{ route('seller.shops.products.images.search', $shop) }}', async search() { if (this.query.trim().length < 2) { this.error = 'Escribe al menos 2 caracteres.'; return; } this.loading = true; this.error = ''; try { const response = await fetch(`${this.endpoint}?q=${encodeURIComponent(this.query.trim())}`, { headers: { Accept: 'application/json' } }); const payload = await response.json(); if (!response.ok) throw new Error(payload.message || 'No se pudo buscar.'); this.results = payload.results || []; if (!this.results.length) this.error = 'No encontramos resultados para esa búsqueda.'; } catch (error) { this.error = error.message; } finally { this.loading = false; } } }">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-900">Buscar una foto en la web</h3>
+                                <p class="mt-1 text-xs text-slate-600">Busca por nombre y agrégala sin reemplazar tus fotos.</p>
+                            </div>
+                            <span class="text-[11px] font-semibold text-blue-700">Openverse</span>
+                        </div>
+                        <div class="mt-3 flex gap-2">
+                            <input class="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900" type="search" x-model="query" @keydown.enter.prevent="search()" placeholder="Ej. perfume Rasasi">
+                            <button class="rounded-lg bg-blue-700 px-4 py-2 text-xs font-bold text-white hover:bg-blue-800 disabled:opacity-60" type="button" @click="search()" :disabled="loading"><span x-show="!loading">Buscar</span><span x-show="loading" x-cloak>Buscando…</span></button>
+                        </div>
+                        <p x-show="error" x-text="error" class="mt-2 text-xs font-semibold text-rose-600" x-cloak></p>
+                        <div x-show="results.length" class="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-6" x-cloak>
+                            <template x-for="result in results" :key="result.id + result.url">
+                                <div class="overflow-hidden rounded-lg border border-slate-200 bg-white">
+                                    <img class="aspect-square w-full object-cover" :src="result.thumbnail" :alt="result.title" loading="lazy">
+                                    <form class="p-2" method="POST" action="{{ route('seller.shops.products.images.web.store', [$shop, $product]) }}">
+                                        @csrf
+                                        <input type="hidden" name="url" :value="result.url">
+                                        <button class="w-full rounded-md border border-blue-200 px-2 py-1 text-[10px] font-bold text-blue-700 hover:bg-blue-50" type="submit">Agregar foto</button>
+                                    </form>
+                                </div>
+                            </template>
+                        </div>
+                        <p class="mt-3 text-[11px] text-slate-500">Verifica que tengas permiso para usar la imagen antes de publicarla.</p>
+                    </section>
                 </section>
 
                 @if ($product->barcode)

@@ -137,6 +137,23 @@ return [
         ],
     ],
 
+    'web_image_search' => [
+        'endpoint' => env('WEB_IMAGE_SEARCH_ENDPOINT', 'https://api.openverse.org/v1/images/'),
+        'timeout' => (int) env('WEB_IMAGE_SEARCH_TIMEOUT', 8),
+        'cache_minutes' => (int) env('WEB_IMAGE_SEARCH_CACHE_MINUTES', 10),
+        'page_size' => (int) env('WEB_IMAGE_SEARCH_PAGE_SIZE', 12),
+        'allowed_hosts' => [
+            'images.unsplash.com',
+            'images.pexels.com',
+            'upload.wikimedia.org',
+            'live.staticflickr.com',
+            'i.imgur.com',
+            'images.openbeautyfacts.org',
+            'images.openfoodfacts.org',
+            'world.openbeautyfacts.org',
+        ],
+    ],
+
     'media' => [
         'soft_delete_retention_days' => 30,
     ],

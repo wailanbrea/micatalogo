@@ -61,6 +61,7 @@ class ImageProcessingService
         $checksum = hash_file('sha256', $file->getRealPath());
 
         $productImage = $product->images()->create([
+            'source' => 'manual',
             'object_key' => "temp/{$tempFileName}",
             'thumbnail_object_key' => null,
             'mime_type' => $file->getMimeType() ?: 'application/octet-stream',
@@ -73,6 +74,52 @@ class ImageProcessingService
         ]);
 
         ProcessProductImageJob::dispatch($productImage->id, $tempPath)->afterCommit();
+
+        return $productImage;
+    }
+
+    public function storeRemoteAndDispatch(Product $product, string $bytes, string $mimeType): ProductImage
+    {
+        $maxSizeBytes = (int) config('catalog.uploads.max_file_size_mb', 10) * 1024 * 1024;
+        if (strlen($bytes) > $maxSizeBytes) {
+            throw new InvalidArgumentException('La imagen externa excede el tamaño máximo permitido.');
+        }
+
+        $imageInfo = @getimagesizefromstring($bytes);
+        if ($imageInfo === false || ! in_array((string) ($imageInfo['mime'] ?? $mimeType), $this->allowedMimes, true)) {
+            throw new InvalidArgumentException('La respuesta externa no contiene una imagen compatible.');
+        }
+
+        $width = (int) ($imageInfo[0] ?? 0);
+        $height = (int) ($imageInfo[1] ?? 0);
+        if (($width * $height) > (int) config('catalog.uploads.max_input_pixels', 60_000_000)) {
+            throw new InvalidArgumentException('La resolución de la imagen externa es demasiado grande.');
+        }
+
+        $extension = match ((string) ($imageInfo['mime'] ?? $mimeType)) {
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            'image/avif' => 'avif',
+            default => 'bin',
+        };
+        $tempPath = 'product-images/'.Str::ulid().'.'.$extension;
+        Storage::disk('temp')->put($tempPath, $bytes);
+
+        $productImage = $product->images()->create([
+            'source' => 'web_search',
+            'object_key' => "temp/{$tempPath}",
+            'thumbnail_object_key' => null,
+            'mime_type' => (string) ($imageInfo['mime'] ?? $mimeType),
+            'width' => 0,
+            'height' => 0,
+            'size_bytes' => strlen($bytes),
+            'checksum_sha256' => hash('sha256', $bytes),
+            'sort_order' => ($product->images()->max('sort_order') ?? -1) + 1,
+            'processing_status' => ProductImageProcessingStatus::Pending,
+        ]);
+
+        ProcessProductImageJob::dispatch($productImage->id, $tempPath);
 
         return $productImage;
     }
