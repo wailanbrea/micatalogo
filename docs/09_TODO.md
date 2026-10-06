@@ -1,5 +1,19 @@
 # Project TODO
 
+## Implementación vigente — importador adaptativo (2026-10-05)
+
+- [x] 1. Auditoría del lector, sesiones, cupos, API/Web y Android.
+- [x] 2. XLSX/XLS maduros y CSV/TXT, hojas reales, formatos y límites de seguridad.
+- [x] 3. Header row, aliases, muestras, EAN/UPC/SKU y confianza.
+- [x] 4. Dinero exacto, stock sin redondeo, duplicados, categorías y tenants.
+- [x] 5. UX revisable con originales, ejemplos, ignoradas y conteos.
+- [x] 6. Web: elección hoja/fila/mapping y upload_token privado.
+- [x] 7. Android: DTO aditivo, layout manual, sesión autoritativa y catálogo sincronizado.
+- [x] 8. Regresiones, contratos, benchmark 1500 y E2E real Android→Laravel.
+
+Esta tarea no publica ni modifica producción. Estado actual: 10_PROJECT_STATE.md.
+Las fases siguientes son el registro de funcionalidades previas, no tareas nuevas pendientes.
+
 ## Phase 0
 
 - [x] Review project requirements and visual references.

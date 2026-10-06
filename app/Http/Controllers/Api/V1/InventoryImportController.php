@@ -23,22 +23,30 @@ class InventoryImportController extends Controller
     ): JsonResponse {
         $this->authorizeImport($shop, $request, $limits, $menus);
         $request->validate([
-            'file' => ['required', 'file', 'mimes:csv,txt,xlsx', 'max:10240'],
+            'file' => ['required_without:upload_token', 'file', 'mimes:csv,txt,xlsx,xls', 'extensions:csv,txt,xlsx,xls', 'max:10240'],
+            'upload_token' => ['nullable', 'uuid'],
             'mapping' => ['nullable', 'array'],
+            'mapping.*' => ['nullable', 'string', 'max:500'],
+            'header_row' => ['nullable', 'integer', 'min:1', 'max:5050'],
+            'sheet_index' => ['nullable', 'integer', 'min:0', 'max:19'],
+            'attribute_columns' => ['nullable', 'array', 'max:100'],
+            'attribute_columns.*' => ['required', 'string', 'max:500'],
         ]);
 
         $preview = $importer->preview(
             $request->file('file'),
             $request->input('mapping', $shop->inventory_import_mapping ?? []),
             $shop,
-            $request->user()
+            $request->user(),
+            $request->only(['header_row', 'sheet_index', 'attribute_columns', 'upload_token']) + ['manual_mapping' => $request->has('mapping')]
         );
 
-        if ($request->has('mapping')) {
+        if ($request->has('mapping') && $preview['session_id']) {
             $shop->update(['inventory_import_mapping' => $preview['mapping']]);
         }
 
         return response()->json([
+            ...array_diff_key($preview, ['session' => true]),
             'session_id' => $preview['session_id'],
             'quota' => $limits->shopQuota($shop),
             'headers' => $preview['headers'],

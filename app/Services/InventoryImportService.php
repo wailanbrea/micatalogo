@@ -11,14 +11,15 @@ use App\Models\InventoryImportSession;
 use App\Models\Product;
 use App\Models\Shop;
 use App\Models\User;
+use App\Services\InventoryImport\ColumnDetector;
+use App\Services\InventoryImport\WorkbookReader;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
-use RuntimeException;
-use ZipArchive;
 
 class InventoryImportService
 {
@@ -27,37 +28,70 @@ class InventoryImportService
      *
      * @return array<string, mixed>
      */
-    public function preview(UploadedFile $file, array $mapping = [], ?Shop $shop = null, ?User $user = null): array
+    public function preview(?UploadedFile $file, array $mapping = [], ?Shop $shop = null, ?User $user = null, array $options = []): array
     {
-        $extension = strtolower($file->getClientOriginalExtension());
-        $rawRows = match ($extension) {
-            'csv', 'txt' => $this->readCsv($file->getRealPath()),
-            'xlsx' => $this->readXlsx($file->getRealPath()),
-            default => throw new RuntimeException('El archivo debe ser CSV o XLSX.'),
-        };
-
-        if ($rawRows === []) {
-            return [
-                'headers' => [],
-                'mapping' => [],
-                'rows' => [],
-                'session_id' => null,
-                'valid_rows' => 0,
-                'invalid_rows' => 0,
-                'missing_categories' => [],
-                'mojibake_warning' => false,
-            ];
+        $started = microtime(true);
+        $uploadToken = $options['upload_token'] ?? null;
+        if ($file) {
+            $book = app(WorkbookReader::class)->read($file);
+            $filename = basename($file->getClientOriginalName());
+            if ($shop && $user) {
+                $uploadToken = (string) Str::uuid();
+                Cache::put('inventory-upload:'.$uploadToken, ['shop_id' => $shop->id, 'user_id' => $user->id, 'book' => $book, 'filename' => $filename], now()->addHours(2));
+            }
+        } else {
+            $cached = Cache::get('inventory-upload:'.$uploadToken);
+            if (! $cached) {
+                throw ValidationException::withMessages(['file' => 'El archivo temporal ha expirado. Vuelve a cargarlo.']);
+            }
+            abort_unless($shop && $user && $cached['shop_id'] === $shop->id && $cached['user_id'] === $user->id, 403);
+            $book = $cached['book'];
+            $filename = $cached['filename'];
+        }
+        $detector = app(ColumnDetector::class);
+        $sheets = [];
+        foreach ($book['sheets'] as $sheet) {
+            $header = $detector->header($sheet['rows']);
+            $sheets[] = ['name' => $sheet['name'], 'index' => $sheet['index'], 'confidence' => $header['confidence'], 'header_row' => $header['row'], 'data_rows' => count(array_filter(array_slice($sheet['rows'], $header['row']), fn ($r) => count(array_filter($r, fn ($v) => trim((string) $v) !== '')) > 0))];
+        }
+        $ranked = $sheets;
+        usort($ranked, fn ($a, $b) => ($b['confidence'] <=> $a['confidence']) ?: ($b['data_rows'] <=> $a['data_rows']) ?: ($a['index'] <=> $b['index']));
+        $selectedIndex = isset($options['sheet_index']) ? (int) $options['sheet_index'] : ($ranked[0]['index'] ?? 0);
+        $selected = $book['sheets'][$selectedIndex] ?? null;
+        if (! $selected) {
+            throw ValidationException::withMessages(['sheet_index' => 'Selecciona una hoja válida del archivo.']);
+        }
+        $rawRows = $selected['rows'];
+        $header = $detector->header($rawRows, isset($options['header_row']) ? (int) $options['header_row'] : null);
+        $originalHeaders = $header['values'];
+        $filteredRows = array_filter(array_slice($rawRows, $header['row'], null, true), fn ($row) => count(array_filter($row, fn ($value) => trim((string) $value) !== '')) > 0);
+        if (count($filteredRows) > 5000) {
+            throw ValidationException::withMessages(['file' => 'Solo se permiten 5000 productos por importación.']);
+        }
+        $detection = $detector->mapping($originalHeaders, array_values($filteredRows), $mapping, (bool) ($options['manual_mapping'] ?? true));
+        $headers = $detection['headers'];
+        $mapping = $detection['mapping'];
+        $attributeColumns = (array) ($options['attribute_columns'] ?? []);
+        foreach ($attributeColumns as $source) {
+            if (! in_array($source, $headers, true) || in_array($source, $mapping, true)) {
+                throw ValidationException::withMessages(['attribute_columns' => 'Selecciona columnas ignoradas válidas para los atributos.']);
+            }
+        }
+        $warnings = array_merge($book['warnings'], $detection['warnings']);
+        foreach (['barcode', 'product_code'] as $field) {
+            $column = array_search($mapping[$field], $headers, true);
+            if ($mapping[$field] !== '' && in_array($column, $selected['unformatted_numeric_columns'] ?? [], true)) {
+                $warnings[] = "La columna {$originalHeaders[$column]} contiene códigos numéricos sin formato de ceros. No podemos recuperar ceros que Excel haya eliminado; comprueba la muestra.";
+            }
+        }
+        if ($header['needs_selection']) {
+            $warnings[] = 'No pudimos reconocer los encabezados con suficiente confianza. Selecciona la fila manualmente.';
         }
 
-        $headers = array_map(fn ($header) => $this->normaliseHeader((string) $header), array_shift($rawRows));
-        $mapping = $this->normaliseMapping($headers, $mapping);
-
-        $filteredRows = collect($rawRows)
-            ->filter(fn ($row) => collect($row)->filter(fn ($value) => trim((string) $value) !== '')->isNotEmpty())
-            ->values()
-            ->all();
-
-        $mojibakeWarning = $this->detectMojibake($headers, $filteredRows);
+        $mojibakeWarning = $this->detectMojibake($originalHeaders, $filteredRows);
+        if ($mojibakeWarning) {
+            $warnings[] = 'Se detectaron caracteres posiblemente dañados por codificación. Revisa encabezados y ejemplos antes de importar.';
+        }
 
         // Preload shop data for duplicate & category matching if shop provided
         $existingByBarcode = collect();
@@ -96,7 +130,7 @@ class InventoryImportService
         $rows = [];
 
         foreach ($filteredRows as $index => $rawRow) {
-            $line = $index + 2;
+            $line = $index + 1;
             $row = $this->normaliseRow(
                 $headers,
                 $mapping,
@@ -112,6 +146,18 @@ class InventoryImportService
                 $seenNames,
                 $missingCategories,
             );
+            foreach ($attributeColumns as $source) {
+                $column = array_search($source, $headers, true);
+                $attributeValue = trim((string) ($rawRow[$column] ?? ''));
+                if ($attributeValue !== '') {
+                    $row['attributes'][] = ['name' => $originalHeaders[$column], 'value' => $attributeValue];
+                }
+            }
+            if ($header['needs_selection']) {
+                $row['valid'] = false;
+                $row['status'] = 'invalid';
+                $row['errors'][] = 'Selecciona la fila de encabezados antes de confirmar.';
+            }
             $rows[] = $row;
         }
 
@@ -120,11 +166,11 @@ class InventoryImportService
 
         // Create a server-side import session if shop is present
         $session = null;
-        if ($shop) {
+        if ($shop && ! $header['needs_selection'] && $mapping['name'] !== '' && $mapping['price'] !== '' && $rows !== []) {
             $session = InventoryImportSession::create([
                 'shop_id' => $shop->id,
                 'user_id' => $user?->id,
-                'original_filename' => $file->getClientOriginalName(),
+                'original_filename' => $filename,
                 'status' => 'previewed',
                 'total_rows' => count($rows),
                 'valid_rows' => $validRowsCount,
@@ -144,6 +190,13 @@ class InventoryImportService
             'valid_rows' => $validRowsCount,
             'invalid_rows' => $invalidRowsCount,
             'missing_categories' => array_keys($missingCategories),
+            'filename' => $filename,
+            'file_type' => $book['type'],
+            'sheet' => $selected['name'],
+            'header_row' => $header['row'],
+            'mapping' => $mapping,
+            'mapping_confidence' => array_map(fn ($detail) => $detail['confidence'], $detection['mapping_confidence']),
+            'duration_ms' => (int) round((microtime(true) - $started) * 1000),
         ]);
 
         return [
@@ -160,6 +213,19 @@ class InventoryImportService
             'duplicate_rows_count' => collect($rows)->where('status', 'possible_duplicate')->where('valid', true)->count(),
             'missing_categories' => array_keys($missingCategories),
             'mojibake_warning' => $mojibakeWarning,
+            'file' => ['type' => $book['type']],
+            'upload_token' => $uploadToken,
+            'sheet' => ['name' => $selected['name'], 'index' => $selectedIndex, 'confidence' => $header['confidence']],
+            'sheets' => $sheets,
+            'header_row' => $header['row'],
+            'header_candidates' => $header['candidates'],
+            'needs_header_selection' => $header['needs_selection'],
+            'original_headers' => $originalHeaders,
+            'mapping_confidence' => $detection['mapping_confidence'],
+            'ignored_columns' => $detection['ignored_columns'],
+            'warnings' => $warnings,
+            'sample_rows' => array_slice($rows, 0, 10),
+            'counts' => ['total' => count($rows), 'valid' => $validRowsCount, 'invalid' => $invalidRowsCount, 'new' => collect($rows)->where('status', 'new')->where('valid', true)->count(), 'existing' => collect($rows)->where('status', 'existing')->where('valid', true)->count(), 'duplicates' => collect($rows)->where('status', 'possible_duplicate')->count(), 'missing_categories' => count($missingCategories)],
         ];
     }
 
@@ -186,6 +252,7 @@ class InventoryImportService
         ?User $user = null,
     ): array {
         abort_unless($session->shop_id === $shop->id, 403, 'La sesión de importación no pertenece a esta tienda.');
+        abort_unless(! $session->user_id || ($user && $session->user_id === $user->id), 403, 'La sesión pertenece a otro usuario.');
 
         // Idempotency: if already confirmed, return existing summary immediately
         if ($session->isConfirmed()) {
@@ -242,8 +309,18 @@ class InventoryImportService
             &$productIdsToResolveMedia,
         ): void {
             $lockedShop = Shop::query()->lockForUpdate()->findOrFail($shop->id);
+            $lockedSession = InventoryImportSession::query()->lockForUpdate()->findOrFail($session->id);
+            if ($lockedSession->isConfirmed()) {
+                $summary = $lockedSession->summary;
+
+                return;
+            }
+            if ($lockedSession->isExpired() || $lockedSession->status !== 'previewed') {
+                throw ValidationException::withMessages(['session' => 'La sesión ya no está disponible.']);
+            }
 
             // Determine effective action for each row
+            $currentBarcodes = $lockedShop->products()->whereNotNull('barcode')->pluck('barcode')->mapWithKeys(fn ($barcode) => [$catalogMedia->normalizeBarcode($barcode) => true])->all();
             $rowsToProcess = [];
             foreach ($rows as $row) {
                 $line = (int) ($row['line'] ?? 0);
@@ -257,6 +334,15 @@ class InventoryImportService
                     $action = $duplicateStrategy;
                 } else {
                     $action = 'create';
+                }
+
+                // Recheck identities under the shop lock before quota accounting, including stale previews.
+                $barcode = $catalogMedia->normalizeBarcode($row['barcode'] ?? null);
+                if ($action === 'create' && $barcode && isset($currentBarcodes[$barcode])) {
+                    $action = 'skip';
+                    $row['valid'] = false;
+                } elseif ($action === 'create' && $barcode) {
+                    $currentBarcodes[$barcode] = true;
                 }
 
                 $row['effective_action'] = $action;
@@ -491,7 +577,12 @@ class InventoryImportService
         });
 
         foreach ($productIdsToResolveMedia as $productId) {
-            ResolveProductCatalogMediaJob::dispatch($productId)->afterCommit();
+            try {
+                ResolveProductCatalogMediaJob::dispatch($productId)->afterCommit();
+            } catch (\Throwable $error) {
+                // Products and session are already committed. Optional media must not turn success into a 500.
+                Log::warning('Inventory import media resolution unavailable', ['shop_id' => $shop->id, 'product_id' => $productId, 'exception_type' => $error::class]);
+            }
         }
 
         return $summary;
@@ -691,7 +782,10 @@ class InventoryImportService
             return null;
         }
 
-        return number_format((float) $canonical, 2, '.', '');
+        // Round half-up using decimal arithmetic, never binary floating point.
+        $rounded = bcadd($canonical, str_starts_with($canonical, '-') ? '-0.005' : '0.005', 2);
+
+        return $rounded === '-0.00' ? '0.00' : $rounded;
     }
 
     /**
@@ -706,120 +800,13 @@ class InventoryImportService
         if ($val === '') {
             return null;
         }
-        if (! is_numeric($val)) {
+        if (! preg_match('/^\d+(?:[.,]0+)?$/D', $val)) {
             return -1; // Flag as negative / invalid
         }
 
-        return (int) round((float) $val);
-    }
+        $integer = preg_split('/[.,]/', $val)[0];
 
-    private function readCsv(string $path): array
-    {
-        $content = file_get_contents($path);
-        if ($content === false) {
-            throw new RuntimeException('No se pudo leer el archivo CSV.');
-        }
-
-        // Clean UTF-8 BOM if present
-        if (str_starts_with($content, "\xEF\xBB\xBF")) {
-            $content = substr($content, 3);
-        }
-
-        $lines = preg_split('/\r\n|\r|\n/', $content);
-        if ($lines === false || empty($lines)) {
-            return [];
-        }
-
-        // Detect delimiter based on first non-empty lines
-        $firstLine = '';
-        foreach ($lines as $line) {
-            if (trim($line) !== '') {
-                $firstLine = $line;
-                break;
-            }
-        }
-        $delimiter = substr_count($firstLine, ';') > substr_count($firstLine, ',') ? ';' : ',';
-
-        $handle = fopen('php://temp', 'r+');
-        fwrite($handle, $content);
-        rewind($handle);
-
-        $rows = [];
-        while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
-            $rows[] = array_map(fn ($value) => is_string($value) ? trim($value) : $value, $row);
-        }
-        fclose($handle);
-
-        return $rows;
-    }
-
-    private function readXlsx(string $path): array
-    {
-        if (! class_exists(ZipArchive::class)) {
-            throw new RuntimeException('El servidor no tiene habilitado el lector XLSX. Usa CSV mientras se habilita ZipArchive.');
-        }
-
-        $zip = new ZipArchive;
-        if ($zip->open($path) !== true) {
-            throw new RuntimeException('No se pudo abrir el archivo XLSX.');
-        }
-
-        $sharedStrings = [];
-        if (($xml = $zip->getFromName('xl/sharedStrings.xml')) !== false) {
-            $shared = simplexml_load_string($xml);
-            foreach ($shared->si as $item) {
-                $sharedStrings[] = trim(implode('', $item->xpath('.//t') ?: []));
-            }
-        }
-
-        $sheetXml = $zip->getFromName('xl/worksheets/sheet1.xml');
-        $zip->close();
-        if ($sheetXml === false) {
-            throw new RuntimeException('El XLSX no contiene una primera hoja válida.');
-        }
-
-        $sheet = simplexml_load_string($sheetXml);
-        $sheet->registerXPathNamespace('x', 'http://schemas.openxmlformats.org/spreadsheetml/2006/main');
-        $rows = [];
-        foreach ($sheet->xpath('//x:sheetData/x:row') ?: [] as $row) {
-            $cells = [];
-            foreach ($row->c as $cell) {
-                $reference = (string) $cell['r'];
-                preg_match('/^[A-Z]+/', $reference, $matches);
-                $column = $this->columnNumber($matches[0] ?? 'A');
-                $value = (string) ($cell->v ?? '');
-                if ((string) $cell['t'] === 's') {
-                    $value = $sharedStrings[(int) $value] ?? '';
-                } elseif ((string) $cell['t'] === 'inlineStr') {
-                    $value = trim(implode('', $cell->is->xpath('.//t') ?: []));
-                }
-                $cells[$column] = trim($value);
-            }
-            $rows[] = $cells === [] ? [] : array_replace(array_fill(0, max(array_keys($cells)) + 1, ''), $cells);
-        }
-
-        return $rows;
-    }
-
-    private function columnNumber(string $letters): int
-    {
-        $number = 0;
-        foreach (str_split($letters) as $letter) {
-            $number = ($number * 26) + (ord($letter) - 64);
-        }
-
-        return max(0, $number - 1);
-    }
-
-    private function normaliseHeader(string $header): string
-    {
-        return Str::of($header)
-            ->replace("\xEF\xBB\xBF", '')
-            ->ascii()
-            ->lower()
-            ->replace(['_', '-'], ' ')
-            ->squish()
-            ->value();
+        return strlen(ltrim($integer, '0')) > 9 || (int) $integer > 1000000000 ? -1 : (int) $integer;
     }
 
     private function normaliseRow(
@@ -864,19 +851,36 @@ class InventoryImportService
         if ($name === '') {
             $errors[] = 'Falta el nombre.';
         }
+        foreach (['name' => [$name, 255], 'product_code' => [$rawSku, 100], 'barcode' => [$rawBarcode, 32], 'brand' => [$value('brand'), 120], 'category' => [$rawCategory, 255]] as $field => [$text, $maximum]) {
+            if (mb_strlen($text) > $maximum) {
+                $errors[] = "El campo {$field} supera {$maximum} caracteres.";
+            }
+        }
+        if ($rawBarcode !== '' && ! preg_match('/^\d(?:[0-9\s-]*\d)?$/D', $rawBarcode)) {
+            $errors[] = 'El código de barras debe contener dígitos, sin letras ni notación científica. Revisa el archivo original.';
+        }
+        if ($normalizedBarcode && ! in_array(strlen($normalizedBarcode), [8, 12, 13, 14], true)) {
+            $warnings[] = 'La longitud del código no corresponde a EAN/UPC/GTIN estándar; revisa si es un código interno.';
+        }
 
         if ($price === null) {
             $errors[] = 'El precio debe ser un número válido no negativo (ej. 2500, 2500.50, 2.500,50).';
-        } elseif ((float) $price < 0) {
+        } elseif (str_contains($value('price'), '-')) {
             $errors[] = 'El precio no puede ser negativo.';
+        } elseif (bccomp($price, '9999999999.99', 2) > 0) {
+            $errors[] = 'El precio supera el máximo permitido (9999999999.99).';
         }
 
-        if ($costPrice !== null && (float) $costPrice < 0) {
+        if ($value('cost_price') !== '' && $costPrice === null) {
+            $errors[] = 'El costo debe ser un número válido.';
+        } elseif ($costPrice !== null && str_contains($value('cost_price'), '-')) {
             $errors[] = 'El costo no puede ser negativo.';
+        } elseif ($costPrice !== null && bccomp($costPrice, '9999999999.99', 2) > 0) {
+            $errors[] = 'El costo supera el máximo permitido (9999999999.99).';
         }
 
         if ($stock !== null && $stock < 0) {
-            $errors[] = 'El stock no puede ser negativo.';
+            $errors[] = 'El stock debe ser un entero no negativo; no se permiten fracciones ni redondeos.';
         }
 
         // Duplicate checks within file
@@ -986,39 +990,6 @@ class InventoryImportService
             'valid' => empty($errors),
             'action' => $defaultAction,
         ];
-    }
-
-    private function normaliseMapping(array $headers, array $mapping): array
-    {
-        $synonyms = [
-            'name' => ['nombre', 'producto', 'name', 'articulo', 'descripcion producto', 'item'],
-            'product_code' => ['codigo', 'sku', 'product code', 'code', 'referencia', 'ref', 'item code'],
-            'barcode' => ['barcode', 'ean', 'gtin', 'upc', 'codigo de barras', 'codigo barras'],
-            'brand' => ['marca', 'brand', 'fabricante'],
-            'category' => ['categoria', 'categoria interna', 'category', 'familia', 'departamento', 'seccion'],
-            'description' => ['descripcion', 'description', 'detalle'],
-            'price' => ['precio', 'price', 'precio venta', 'venta', 'p venta', 'precio unitario', 'pvp'],
-            'cost_price' => ['costo', 'precio costo', 'cost', 'p costo', 'precio compra'],
-            'stock' => ['stock', 'existencias', 'cantidad', 'quantity', 'inventario', 'disponible', 'unidades'],
-            'notes' => ['notas', 'observaciones', 'notes'],
-            'attributes' => ['atributos', 'caracteristicas', 'attributes', 'variantes'],
-        ];
-        $validHeaders = array_flip($headers);
-
-        return collect($this->fields())->mapWithKeys(function (string $label, string $field) use ($mapping, $synonyms, $validHeaders): array {
-            $selected = $this->normaliseHeader((string) ($mapping[$field] ?? ''));
-            if ($selected !== '' && isset($validHeaders[$selected])) {
-                return [$field => $selected];
-            }
-
-            foreach ($synonyms[$field] as $candidate) {
-                if (isset($validHeaders[$candidate])) {
-                    return [$field => $candidate];
-                }
-            }
-
-            return [$field => ''];
-        })->all();
     }
 
     private function attributes(string $value): array

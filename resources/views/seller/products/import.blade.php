@@ -40,15 +40,39 @@
                         <span class="rounded bg-white px-2 py-0.5 border border-slate-200 font-semibold text-slate-800">notas</span>
                         <span class="rounded bg-white px-2 py-0.5 border border-slate-200 font-semibold text-slate-800">atributos</span>
                     </div>
-                    <p class="mt-2 text-slate-500">Si tu archivo tiene una estructura poco común, puedes adaptarlo antes de subirlo o indicar qué columna corresponde a cada dato en el selector.</p>
+                    <p class="mt-2 text-slate-500">No necesitas modificar el archivo: puedes elegir su hoja, encabezados y columnas antes de confirmar.</p>
                 </div>
+
+                @isset($detection)
+                    <div class="mt-5 rounded-xl border border-indigo-200 bg-indigo-50 p-4 space-y-3">
+                        <p class="font-bold">Hoja {{ $detection['sheet']['name'] }} · Encabezados en fila {{ $detection['header_row'] }}</p>
+                        @foreach($detection['warnings'] as $warning)<p class="text-sm text-amber-900">{{ $warning }}</p>@endforeach
+                        <form method="POST" action="{{ route('seller.shops.products.import.preview', $shop) }}" class="flex flex-wrap items-end gap-3">
+                            @csrf
+                            <input type="hidden" name="upload_token" value="{{ $detection['upload_token'] }}">
+                            <label class="text-sm">Hoja<select name="sheet_index" class="block rounded-lg border-slate-200">
+                                @foreach($detection['sheets'] as $sheet)<option value="{{ $sheet['index'] }}" @selected($sheet['index'] === $detection['sheet']['index'])>{{ $sheet['name'] }} ({{ $sheet['data_rows'] }} filas)</option>@endforeach
+                            </select></label>
+                            <label class="text-sm">Fila de encabezados (opcional)<input name="header_row" type="number" min="1" max="5050" placeholder="Automática" class="block w-40 rounded-lg border-slate-200"></label>
+                            <button class="rounded-lg bg-indigo-600 text-white px-4 py-2">Volver a detectar</button>
+                        </form>
+                        @if($detection['needs_header_selection'])
+                            @foreach($detection['header_candidates'] as $candidate)<p class="text-xs">Fila {{ $candidate['row'] }}: {{ implode(' · ', array_slice($candidate['values'], 0, 8)) }}</p>@endforeach
+                        @endif
+                    </div>
+                @endisset
 
                 <div class="mt-6 grid gap-5 lg:grid-cols-[1fr_280px]">
                     <form method="POST" action="{{ route('seller.shops.products.import.preview', $shop) }}" enctype="multipart/form-data" class="rounded-xl border border-dashed border-indigo-300 bg-indigo-50/40 p-6">
                         @csrf
                         <label for="inventory-file" class="block text-sm font-bold text-slate-900">Archivo de inventario</label>
-                        <p class="mt-1 text-xs text-slate-500">Formatos soportados: CSV, TXT o Excel (.xlsx). Tamaño máximo 10MB.</p>
-                        <input id="inventory-file" name="file" type="file" accept=".csv,.txt,.xlsx" required class="mt-4 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-indigo-600 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-white">
+                        <p class="mt-1 text-xs text-slate-500">CSV, TXT, XLSX o XLS. Máximo 10MB y 5000 productos. Puedes revisar el mismo archivo sin volver a subirlo.</p>
+                        <input id="inventory-file" name="file" type="file" accept=".csv,.txt,.xlsx,.xls" @required(!isset($detection)) onchange="if(this.files.length) { for(const el of this.form.elements) { if(el.name !== 'file' &amp;&amp; el.name !== '_token' &amp;&amp; el.type !== 'submit') el.disabled = true; } }" class="mt-4 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+                        @isset($detection)
+                            <input type="hidden" name="upload_token" value="{{ $detection['upload_token'] }}">
+                            <input type="hidden" name="sheet_index" value="{{ $detection['sheet']['index'] }}">
+                            <input type="hidden" name="header_row" value="{{ $detection['header_row'] }}">
+                        @endisset
                         
                         @if ($headers !== [])
                             <div class="mt-5 border-t border-indigo-200 pt-4">
@@ -59,13 +83,24 @@
                                         <label class="block text-xs font-bold text-slate-700">{{ $label }}@if (in_array($field, ['name', 'price'], true)) <span class="text-rose-600">*</span>@endif
                                             <select name="mapping[{{ $field }}]" class="mt-1 block w-full rounded-lg border-slate-200 text-sm">
                                                 <option value="">No importar</option>
-                                                @foreach ($headers as $header)
-                                                    <option value="{{ $header }}" @selected(($mapping[$field] ?? '') === $header)>{{ $header }}</option>
+                                                @foreach ($headers as $column => $header)
+                                                    <option value="{{ $header }}" @selected(($mapping[$field] ?? '') === $header)>{{ $detection['original_headers'][$column] ?? $header }}</option>
                                                 @endforeach
                                             </select>
+                                            @isset($detection['mapping_confidence'][$field])
+                                                @php($detail = $detection['mapping_confidence'][$field])
+                                                <span class="block mt-1 font-normal text-slate-500">{{ round($detail['confidence'] * 100) }}% · {{ $detail['reason'] }}<br>Muestra: {{ implode(' · ', $detail['examples']) }}</span>
+                                            @endisset
                                         </label>
                                     @endforeach
                                 </div>
+                                @if(!empty($detection['ignored_columns']))
+                                    <details class="mt-4 text-xs"><summary class="font-bold cursor-pointer">Columnas ignoradas ({{ count($detection['ignored_columns']) }})</summary>
+                                        @foreach($detection['ignored_columns'] as $column)
+                                            <label class="block mt-2"><input type="checkbox" name="attribute_columns[]" value="{{ $column['source_column'] }}"> Importar como atributo: {{ $column['original_header'] }} · {{ implode(' · ', $column['examples']) }}</label>
+                                        @endforeach
+                                    </details>
+                                @endif
                             </div>
                         @endif
                         <button type="submit" class="mt-5 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-xs hover:bg-indigo-700 transition">Previsualizar archivo</button>
@@ -179,7 +214,7 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100 bg-white">
-                                @foreach ($rows as $row)
+                                @foreach (array_slice($rows, 0, 10) as $row)
                                     <tr class="hover:bg-slate-50/70 transition-colors">
                                         <td class="px-4 py-3 font-mono text-slate-400 font-bold">{{ $row['line'] }}</td>
                                         
@@ -251,6 +286,14 @@
                             </tbody>
                         </table>
                     </div>
+                    @if(count($rows) > 10)
+                        <p class="mt-3 text-xs text-slate-500">Muestra de las primeras 10 filas. La sesión conserva y valida las {{ count($rows) }} filas del archivo.</p>
+                        @if($invalidRows > 0)
+                            <details class="mt-3 text-xs text-rose-700"><summary class="cursor-pointer font-bold">Ver errores de todas las filas inválidas ({{ $invalidRows }})</summary>
+                                @foreach($rows as $row) @if(!$row['valid'])<p class="mt-2">Fila {{ $row['line'] }}: {{ implode(' ', $row['errors']) }}</p>@endif @endforeach
+                            </details>
+                        @endif
+                    @endif
                 @endif
             </section>
 

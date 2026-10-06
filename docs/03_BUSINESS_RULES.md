@@ -35,7 +35,10 @@
 
 ## Bulk Inventory Import & Quotas
 
-- **Supported File Formats**: CSV (comma or semicolon delimited, with or without UTF-8 BOM), TXT, and XLSX.
+- **Supported File Formats**: CSV/TXT (comma, semicolon, tab or pipe; UTF-8/BOM and Windows-1252 conversion), XLSX and genuine XLS BIFF. Maximum 10 MB, 5000 products, 5050 physical rows, 100 columns, 20 sheets and 100000 dimensioned workbook cells. No ODS/PDF/images/Word.
+- **Adaptive Detection**: Scan up to 50 rows and rank real workbook sheets; low confidence requires manual header selection. Original labels and examples remain visible; saved mapping is a hint, not a forced override. Calculated inventory totals never map automatically to unit price/cost; unknown columns are ignored unless explicitly selected as attributes.
+- **Column Classification**: Spanish/English aliases and abbreviations; ambiguous product codes become barcodes if ≥80% of sampled values are 8/12/13/14 digits, otherwise SKU. One source column per field; manual selection is explicit.
+- **Stock**: Nonnegative integers only, including 10.0/10,0; fractional stock is invalid, never rounded. Missing stock stays nullable.
 - **Monetary Precision & Parser**: Prices and costs are parsed using a robust parser that determines decimal vs thousand separators without binary float corruption. Supported patterns include `2500`, `2500.50`, `2500,50`, `2,500`, `2,500.50`, `2.500,50`, and currency prefixes (`RD$`, `DOP`, `$`, `USD`). Never interprets decimals as integers (e.g. `2500,50` evaluates to `2500.50`, never `250050`). Values are persisted as exact strings/DECIMAL(12,2).
 - **Identifier Preservation**: Barcode and SKU (`product_code`) are preserved as verbatim strings with leading zeros retained (e.g., `'000123'`).
 - **Internal Duplicate Detection**: The preview identifies duplicates within the file by normalized barcode, SKU, or identical name, flagging invalid duplicate rows to prevent accidental double-creation.
@@ -52,11 +55,12 @@
   - With `create_missing_categories = false`, the product is imported with `shop_category_id = null`.
 - **Duplicate Attributes**: Attributes repeated on the same row (e.g. `Marca=Rasasi;Marca=Lattafa`) trigger warnings and safely retain the first definition.
 - **Server-Side Import Sessions (`InventoryImportSession`)**:
-  - Previews create a short-lived server session (`status = 'previewed'`, 2-hour expiration).
+  - Valid layouts with required fields create a short-lived server session (`status = 'previewed'`, 2-hour expiration). Low-confidence layouts require review and cannot be confirmed.
   - Confirmations reference the server `session_id`, eliminating client-side payload tampering.
-  - Operations run inside `DB::transaction()` with `Shop::lockForUpdate()`.
+  - Operations verify creator and tenant and run inside `DB::transaction()` with Shop and session locks; idempotency and barcode collisions are rechecked under lock before quota accounting.
   - Re-submitting a confirmed session returns the existing summary idempotently.
   - API provides `POST /shops/{shop}/inventory-import/{session}/confirm` alongside backward-compatible `POST /shops/{shop}/inventory-import`.
+  - Android 1.0.24 confirms by session_id only. A private upload_token cache enables remapping without a second file upload; same creator/tenant and two-hour expiration.
 
 ## Financial Integrity & Accounting Rules (Phase 1)
 
