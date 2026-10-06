@@ -69,6 +69,13 @@
 .panel-shell .panel-sidebar {
     background-color: #111827;
     border-right-color: #1f2937;
+    width: 20rem;
+}
+
+@media (min-width: 48rem) {
+    .panel-shell {
+        padding-left: 20rem;
+    }
 }
 
 .panel-shell main {
