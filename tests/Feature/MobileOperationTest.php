@@ -162,7 +162,8 @@ test('mobile product creation supports validated decant presentations linked to 
     expect($decant->sale_unit)->toBe('decant')
         ->and($decant->volume_ml)->toBe(5)
         ->and($decant->inventory_source_product_id)->toBe($source->id)
-        ->and($decant->inventory->stock_quantity)->toBe(0)
+        ->and($decant->inventory->stock_quantity)->toBe(80)
+        ->and($decant->availability_status->value)->toBe('available')
         ->and(Product::where('shop_id', $shop->id)->count())->toBe(2);
 
     $invalid = $payload;

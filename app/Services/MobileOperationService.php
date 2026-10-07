@@ -79,8 +79,24 @@ class MobileOperationService
                     'moderation_status' => ProductModerationStatus::Active,
                     'availability_status' => ProductAvailabilityStatus::OutOfStock, 'published_at' => now()]);
                 $product->forceFill(['public_id' => $data['product_id']])->save();
-                $product->inventory()->create(['track_inventory' => true, 'stock_quantity' => 0, 'available_ml' => null,
+                $initialStock = 0;
+                $initialAvailableMl = null;
+                if ($presentation['sale_unit'] === 'decant') {
+                    $source = $shop->products()->with('inventory')->find($presentation['inventory_source_product_id']);
+                    $initialAvailableMl = $source?->inventory?->available_ml
+                        ?? (($source?->inventory?->stock_quantity ?? 0) * ($source?->volume_ml ?? 0));
+                    $initialStock = $presentation['volume_ml'] > 0
+                        ? intdiv((int) $initialAvailableMl, (int) $presentation['volume_ml'])
+                        : 0;
+                    $product->forceFill([
+                        'availability_status' => $initialStock > 0
+                            ? ProductAvailabilityStatus::Available
+                            : ProductAvailabilityStatus::OutOfStock,
+                    ])->save();
+                }
+                $product->inventory()->create(['track_inventory' => true, 'stock_quantity' => $initialStock, 'available_ml' => null,
                     'cost_price' => $data['cost_price'] ?? null, 'sold_quantity' => 0, 'low_stock_threshold' => $data['minimum_stock'] ?? 3]);
+                app(InventoryService::class)->synchronizeDecantStock($product);
             } else {
                 abort_if($product->trashed(), 409, 'El producto está en la papelera.');
                 if (isset($data['expected_price']) && (int) round($product->currentPrice() * 100) !== (int) round((float) $data['expected_price'] * 100)) {
@@ -114,6 +130,7 @@ class MobileOperationService
                 $product->shop_category_id = $category->id;
             }
             $product->save();
+            app(InventoryService::class)->synchronizeDecantStock($product);
             if (isset($data['minimum_stock'])) {
                 $product->inventory?->update(['low_stock_threshold' => $data['minimum_stock']]);
             }

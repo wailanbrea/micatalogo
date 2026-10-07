@@ -63,3 +63,34 @@ test('a seller cannot retrieve another sellers catalog snapshot', function () {
         ->getJson("/api/v1/shops/{$shop->public_id}/catalog")
         ->assertNotFound();
 });
+
+test('the catalog snapshot preserves bottle and decant presentation metadata', function () {
+    $user = User::factory()->create();
+    $shop = Shop::factory()->create(['user_id' => $user->id]);
+    $source = Product::factory()->for($shop)->create([
+        'name' => 'Perfume fuente 100 ml',
+        'sale_unit' => 'bottle',
+        'volume_ml' => 100,
+        'price' => 2500,
+    ]);
+    $decant = Product::factory()->for($shop)->create([
+        'name' => 'Perfume fuente 10 ml',
+        'sale_unit' => 'decant',
+        'volume_ml' => 10,
+        'inventory_source_product_id' => $source->id,
+        'price' => 500,
+    ]);
+    ProductInventory::create(['product_id' => $source->id, 'track_inventory' => true, 'cost_price' => 1000, 'stock_quantity' => 1, 'available_ml' => 100]);
+    ProductInventory::create(['product_id' => $decant->id, 'track_inventory' => true, 'cost_price' => 100, 'stock_quantity' => 10, 'available_ml' => 100]);
+
+    $token = $user->createToken('BSPOS', ['catalog:read'])->plainTextToken;
+
+    $this->withToken($token)
+        ->getJson("/api/v1/shops/{$shop->public_id}/catalog")
+        ->assertOk()
+        ->assertJsonPath('products.0.sale_unit', 'decant')
+        ->assertJsonPath('products.0.volume_ml', 10)
+        ->assertJsonPath('products.0.source_product_id', $source->public_id)
+        ->assertJsonPath('products.1.sale_unit', 'bottle')
+        ->assertJsonPath('products.1.volume_ml', 100);
+});

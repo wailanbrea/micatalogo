@@ -619,6 +619,31 @@ class InventoryService
         };
     }
 
+    /** Keep a decant's derived stock and availability aligned with its source bottle. */
+    public function synchronizeDecantStock(Product $decant): void
+    {
+        if (! $decant->isDecant()) {
+            return;
+        }
+
+        $decant->load(['inventory', 'sourceProduct.inventory']);
+        $source = $decant->sourceProduct;
+        $sourceInventory = $source?->inventory;
+
+        if (! $source || ! $sourceInventory?->track_inventory || ! $decant->inventory || ! $decant->volume_ml) {
+            return;
+        }
+
+        $availableMl = $this->availableMl($source, $sourceInventory);
+        if ($availableMl === null) {
+            return;
+        }
+
+        $stock = intdiv($availableMl, (int) $decant->volume_ml);
+        $decant->inventory->forceFill(['stock_quantity' => $stock])->save();
+        $this->syncAvailability($decant, $stock);
+    }
+
     private function syncDependentDecants(Product $source): void
     {
         if (! in_array($source->sale_unit, ['bottle', 'ml'], true)) {
