@@ -2,13 +2,13 @@
 
 // Verified against the signed artifact; no credentials belong in this manifest.
 return [
-    'version_code' => 60,
-    'version_name' => '1.0.59',
+    'version_code' => 61,
+    'version_name' => '1.0.60',
     'minimum_supported_version_code' => 23,
-    'apk_url' => 'https://micatalogo.bsolutions.dev/downloads/bspos-1.0.59-release.apk',
-    'apk_sha256' => '0c1c13375cab390d86af52da9ebcc18cd80d6a490069d4b28975619076868e35',
-    'release_notes' => 'Hace visible la entrada de mercancía por producto en Inventario y conserva el costo de cada lote.',
+    'apk_url' => 'https://micatalogo.bsolutions.dev/downloads/bspos-1.0.60-release.apk',
+    'apk_sha256' => '5fdb8a38bfc9600590edc0c9f251b98e0c799af9ec87765bfd131a71422e13bb',
+    'release_notes' => 'Corrige el título duplicado de Cotizaciones y evita que el teclado quede abierto al navegar.',
     'release_date' => '2026-10-07',
     'min_sdk' => 26,
-    'size_bytes' => 39748805,
+    'size_bytes' => 39748801,
 ];

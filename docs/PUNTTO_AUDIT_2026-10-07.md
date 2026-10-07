@@ -9,6 +9,35 @@
 
 ## Puntto observado
 
+### Pasada directa en el emulador — 7 de octubre de 2026
+
+Se volvió a recorrer el emulador `emulator-5554` con Puntto `com.puntto.app` 1.0.4
+(prueba Pro, 29 días restantes) y MiCatalogo 1.0.59 antes de esta corrección. La
+auditoría no confirmó ninguna venta ni envió mensajes; solo abrió formularios,
+agregó un artículo temporal al carrito de Puntto para inspeccionar el cobro y lo
+vació con la confirmación local de la aplicación.
+
+Puntto confirmó visualmente:
+
+- Terminal con Detalle/Mayoreo, búsqueda o escáner, Productos/Decants/Servicios,
+  recientes, cantidades, carrito y cobro en hoja inferior.
+- Cobro con cliente, fecha, descuento/nota, margen, Efectivo/Transferencia/Tarjeta,
+  recibido, vuelto, poner en espera y confirmación final.
+- Inventario con acciones de catálogo, precios y costos, movimientos, importar,
+  combos, producto nuevo, filtros y capital al costo. El formulario de producto
+  identifica el inventario inicial como un primer lote y permite costo por unidad.
+- Menú buscable y agrupado en Operación, Compras, Catálogo, Cobros, Finanzas,
+  Análisis, Equipo y Ajustes. El drawer de MiCatalogo contiene los mismos grupos;
+  algunos se alcanzan desplazando el panel, no son destinos ausentes.
+- Ganancias con períodos Hoy/Mes actual/Mes pasado, navegación mensual, ganancia
+  neta, ventas, costo FIFO, ganancia bruta, gastos y pérdidas de inventario.
+
+La pantalla Android de Cotizaciones de MiCatalogo todavía mostraba el título del
+shell y un segundo bloque `VENTAS / Cotizaciones`; además, al llegar desde la
+búsqueda del drawer el teclado podía quedar visible. Se eliminó el encabezado
+interno y se fuerza la pérdida de foco al entrar en la pantalla. La corrección se
+publica en Android 1.0.60, código 61, tras pruebas unitarias exitosas.
+
 ### Navegación
 
 El menú lateral está dividido en los mismos grupos que el panel web:
