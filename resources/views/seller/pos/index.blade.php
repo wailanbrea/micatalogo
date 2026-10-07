@@ -247,6 +247,28 @@
                             </div>
 
                             <div class="space-y-4 px-5 py-5 sm:px-7 sm:py-6">
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                            <div class="mb-3 flex items-center justify-between gap-3">
+                                <p class="text-xs font-black uppercase tracking-[0.16em] text-slate-500">Detalle de la venta</p>
+                                <span class="rounded-full bg-white px-2.5 py-1 text-[11px] font-black text-slate-500" x-text="cartItemCount + ' unidad(es)'"></span>
+                            </div>
+                            <div class="max-h-44 space-y-2 overflow-y-auto pr-1">
+                                <template x-for="item in cart" :key="'checkout-' + item.id">
+                                    <div class="flex items-center gap-3 rounded-xl bg-white px-3 py-2.5 shadow-sm">
+                                        <div class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100">
+                                            <template x-if="item.imageUrl"><img :src="item.imageUrl" :alt="item.name" class="h-full w-full object-contain p-1"></template>
+                                            <template x-if="!item.imageUrl"><span class="text-sm font-black text-blue-300" x-text="item.name.charAt(0).toUpperCase()"></span></template>
+                                        </div>
+                                        <div class="min-w-0 flex-1">
+                                            <p class="truncate text-xs font-black text-slate-900" x-text="item.name"></p>
+                                            <p class="mt-0.5 text-[11px] text-slate-500" x-text="item.quantity + ' × ' + money(item.unitPrice)"></p>
+                                        </div>
+                                        <span class="shrink-0 text-sm font-black tabular-nums text-slate-950" x-text="money(lineTotal(item))"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
                         @if ($showCredit)
                             <div>
                                 <label class="text-xs font-black text-slate-700" for="payment_kind">Forma de cobro</label>

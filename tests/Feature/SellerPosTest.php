@@ -34,6 +34,7 @@ test('seller can open the web POS and register a paid sale', function () {
         ->assertOk()
         ->assertSee('Punto de venta')
         ->assertSee('web-pos-checkout-title')
+        ->assertSee('Detalle de la venta')
         ->assertSee('Recibido')
         ->assertSee('payment_note')
         ->assertSee('cashChange')
