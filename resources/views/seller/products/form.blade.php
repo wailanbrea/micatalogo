@@ -351,7 +351,7 @@
                                     type="number"
                                     id="low_stock_threshold"
                                     name="low_stock_threshold"
-                                    min="1"
+                                    min="0"
                                     value="{{ old('low_stock_threshold', $product->inventory?->low_stock_threshold ?? 3) }}"
                                     class="mt-1.5 w-full rounded-md border border-slate-300 px-3.5 py-2 text-sm text-slate-900 font-mono focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
                                 >
