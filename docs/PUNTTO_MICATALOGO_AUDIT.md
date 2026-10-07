@@ -57,15 +57,15 @@ MiCatalogo ahora guarda `business_hours` como JSON, permite editar los siete dí
 
 ### Compras
 
-Puntto permite crear un contenedor como borrador, adjuntar o leer una factura, agregar varias líneas y recibirlo después. MiCatalogo tenía inicialmente una sola línea que recibía el inventario de inmediato. Ahora el módulo admite varias líneas, moneda, notas y dos caminos explícitos: “Guardar borrador” (sin movimiento de inventario) y “Recibir inventario”. La recepción posterior crea los lotes FIFO una sola vez y bloquea reintentos duplicados. La lectura automática de factura (foto/PDF/Excel) sigue siendo una fase posterior.
+Puntto permite crear un contenedor como borrador, adjuntar o leer una factura, agregar varias líneas y recibirlo después. MiCatalogo tenía inicialmente una sola línea que recibía el inventario de inmediato. Ahora el módulo admite varias líneas, moneda, notas y dos caminos explícitos: “Guardar borrador” (sin movimiento de inventario) y “Recibir inventario”. La recepción posterior crea los lotes FIFO una sola vez y bloquea reintentos duplicados. También se publicó “Leer factura” para Excel/CSV y PDF con texto seleccionable: prepara líneas, empareja por código/SKU/nombre y deja las no encontradas para revisión manual sin crear documentos ni movimientos. Las fotos siguen mostrando un rechazo seguro porque todavía no hay un motor OCR instalado/configurado.
 
 ## Faltantes detectados para la siguiente fase
 
-1. Auditar la lectura automática de facturas de compra desde foto/PDF/Excel y convertir su previsualización en líneas confirmables.
+1. Incorporar OCR controlado para fotos de facturas (sin aceptar resultados no verificables); Excel/CSV y PDF textual ya tienen previsualización confirmable.
 2. Verificar que el acceso a Decants coincida con la combinación de tipo de negocio, plan y productos existentes; no debe desaparecer por una resolución de capacidad incorrecta.
 3. Recorrer con datos controlados los estados de Ventas, Cotizaciones, Pedidos, Crédito, Cierre de día y Decants, verificando persistencia, inventario, caja y navegación posterior.
 4. Auditar los módulos de ayuda de Puntto que no aparecen como menú propio en MiCatalogo: Tandas, Insumos y Recetas. Primero se debe determinar si son funciones aplicables al perfil del negocio o módulos que deben incorporarse al modelo de capacidades.
 
 ## Evidencia de la corrección más reciente
 
-La guía de tres pasos de Mi tienda se publicó en `8ca20d4`; el horario semanal en `6acf420`; y la recepción de compras con borradores y múltiples líneas queda cubierta por las pruebas de `SellerCommerceWorkspaceTest`. Después de estos cambios, la suite completa pasa 395 pruebas y la publicación debe verificarse en el VPS antes de declarar cerrada la paridad.
+La guía de tres pasos de Mi tienda se publicó en `8ca20d4`; el horario semanal en `6acf420`; la recepción de compras con borradores y múltiples líneas queda cubierta por las pruebas de `SellerCommerceWorkspaceTest`; y la previsualización de facturas quedó publicada en `c7f8e1b`. Después de estos cambios, la suite completa pasa 397 pruebas y el VPS quedó verificado en ese mismo SHA.
