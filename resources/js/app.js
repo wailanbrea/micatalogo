@@ -70,6 +70,37 @@ const initializeDashboardWidgets = () => {
     initializeSalesCharts();
 };
 
+// HTML number inputs still allow characters such as `e`, `+` and `-` in many
+// browsers. Keep quantities and other numeric fields strict at the point of
+// entry; server-side validation remains the final authority.
+const numericInputMode = (input) => {
+    const descriptor = `${input.name || ''} ${input.id || ''} ${input.getAttribute('aria-label') || ''}`.toLowerCase();
+    const integer = input.step === '1' || /quantity|cantidad|stock|existenc|volume|volumen|header_row|seats|unidades|ml/.test(descriptor);
+    return integer ? 'integer' : 'decimal';
+};
+
+const sanitizeNumericInput = (input) => {
+    if (!(input instanceof HTMLInputElement) || input.type !== 'number') {
+        return;
+    }
+
+    const integer = numericInputMode(input) === 'integer';
+    let value = input.value.replace(integer ? /[^0-9]/g : /[^0-9.,]/g, '');
+    if (!integer) {
+        value = value.replace(',', '.');
+        const firstDot = value.indexOf('.');
+        if (firstDot !== -1) {
+            value = value.slice(0, firstDot + 1) + value.slice(firstDot + 1).replace(/\./g, '');
+        }
+    }
+
+    input.inputMode = integer ? 'numeric' : 'decimal';
+    if (input.value !== value) {
+        input.value = value;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+};
+
 let navigationProgressTimer;
 
 const startNavigationProgress = () => {
@@ -107,6 +138,32 @@ if (document.readyState === 'loading') {
 document.addEventListener('livewire:navigated', initializeDashboardWidgets);
 document.addEventListener('livewire:navigating', startNavigationProgress);
 document.addEventListener('livewire:navigated', finishNavigationProgress);
+
+document.addEventListener('beforeinput', (event) => {
+    const input = event.target;
+    if (!(input instanceof HTMLInputElement) || input.type !== 'number' || !event.data) {
+        return;
+    }
+
+    const pattern = numericInputMode(input) === 'integer' ? /[^0-9]/ : /[^0-9.,]/;
+    if (pattern.test(event.data)) {
+        event.preventDefault();
+    }
+});
+
+document.addEventListener('keydown', (event) => {
+    const input = event.target;
+    if (!(input instanceof HTMLInputElement) || input.type !== 'number') {
+        return;
+    }
+
+    if (['e', 'E', '+', '-'].includes(event.key) || (numericInputMode(input) === 'integer' && ['.', ','].includes(event.key))) {
+        event.preventDefault();
+    }
+});
+
+document.addEventListener('input', (event) => sanitizeNumericInput(event.target));
+document.querySelectorAll('input[type="number"]').forEach(sanitizeNumericInput);
 
 // Keep full-page fallbacks feeling like the same app as wire:navigate. Some
 // admin actions intentionally use a normal request (exports, forms and new
