@@ -216,3 +216,63 @@ test('the product screens show available stock and allow adding units', function
         ->assertSee('Agregar al stock')
         ->assertSee(route('seller.shops.inventory.restock', [$shop, $product]));
 });
+
+test('bottle sources require their purchase cost and identify the source when creating a decant', function () {
+    $seller = User::factory()->create([
+        'email_verified_at' => now(),
+        'plan' => UserPlan::Pro,
+    ]);
+    $shop = Shop::factory()->for($seller)->create(['business_type' => 'perfume_store']);
+
+    $basePayload = [
+        'name' => 'Hawas Ice botella 100 ml',
+        'brand' => 'Rasasi',
+        'price' => 2800,
+        'sale_unit' => 'bottle',
+        'volume_ml' => 100,
+        'track_inventory' => 1,
+        'stock_quantity' => 2,
+        'availability_status' => ProductAvailabilityStatus::Available->value,
+        'moderation_status' => ProductModerationStatus::Active->value,
+    ];
+
+    $this->actingAs($seller)
+        ->post(route('seller.shops.products.store', $shop), $basePayload)
+        ->assertSessionHasErrors('cost_price');
+
+    expect($shop->products()->count())->toBe(0);
+
+    $this->actingAs($seller)
+        ->post(route('seller.shops.products.store', $shop), $basePayload + ['cost_price' => 1250])
+        ->assertRedirect();
+
+    $source = $shop->products()->where('name', 'Hawas Ice botella 100 ml')->firstOrFail();
+
+    $this->actingAs($seller)
+        ->get(route('seller.shops.products.create', $shop))
+        ->assertOk()
+        ->assertSee('Hawas Ice botella 100 ml')
+        ->assertSee('costo RD$ 1,250.00')
+        ->assertSee('200 ml disponibles');
+
+    $this->actingAs($seller)
+        ->post(route('seller.shops.products.store', $shop), [
+            'name' => 'Hawas Ice Decant 5 ml',
+            'price' => 300,
+            'sale_unit' => 'decant',
+            'volume_ml' => 5,
+            'inventory_source_product_id' => $source->id,
+            'track_inventory' => 1,
+            'availability_status' => ProductAvailabilityStatus::Available->value,
+            'moderation_status' => ProductModerationStatus::Active->value,
+        ])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('products', [
+        'shop_id' => $shop->id,
+        'name' => 'Hawas Ice Decant 5 ml',
+        'sale_unit' => 'decant',
+        'inventory_source_product_id' => $source->id,
+        'volume_ml' => 5,
+    ]);
+});

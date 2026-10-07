@@ -849,16 +849,30 @@ class SellerFeatureController extends Controller
                 ['label' => 'Con origen', 'value' => number_format($products->whereNotNull('inventory_source_product_id')->count()), 'tone' => 'emerald'],
                 ['label' => 'Sin origen', 'value' => number_format($products->whereNull('inventory_source_product_id')->count()), 'tone' => 'amber'],
             ],
-            'rows' => $products->map(fn (Product $product) => [
-                'primary' => $product->name,
-                'secondary' => $product->sourceProduct?->name
-                    ? $product->sourceProduct->name.' · '.($product->sourceProduct->inventory?->available_ml ?? 0).' ml de origen'
-                    : 'Botella de origen no configurada',
-                'value' => $product->volume_ml
-                    ? $product->volume_ml.' ml · '.number_format((int) ($product->inventory?->stock_quantity ?? 0)).' listos'
-                    : 'Volumen pendiente',
-                'status' => $product->sourceProduct ? 'Vinculado' : 'Revisar',
-            ])->all(),
+            'rows' => $products->map(function (Product $product): array {
+                $source = $product->sourceProduct;
+                $sourceInventory = $source?->inventory;
+                $availableMl = $sourceInventory?->available_ml;
+                if ($availableMl === null && $sourceInventory?->track_inventory) {
+                    $availableMl = $source->sale_unit === 'bottle'
+                        ? (int) $sourceInventory->stock_quantity * (int) $source->volume_ml
+                        : (int) $sourceInventory->stock_quantity;
+                }
+
+                return [
+                    'primary' => $product->name,
+                    'secondary' => $source?->name
+                        ? 'Botella fuente: '.$source->name
+                            .' · '.($source->volume_ml ? $source->volume_ml.' ml de origen' : 'volumen pendiente')
+                            .' · costo '.($sourceInventory?->cost_price !== null ? 'RD$ '.number_format((float) $sourceInventory->cost_price, 2) : 'pendiente')
+                            .' · '.($availableMl !== null ? number_format($availableMl).' ml disponibles' : 'ml no controlados')
+                        : 'Botella de origen no configurada',
+                    'value' => $product->volume_ml
+                        ? $product->volume_ml.' ml · '.number_format((int) ($product->inventory?->stock_quantity ?? 0)).' listos'
+                        : 'Volumen pendiente',
+                    'status' => $source ? 'Vinculado' : 'Revisar',
+                ];
+            })->all(),
             'note' => 'Los decants comparten el inventario de su producto de origen; no se duplica la valoración de la botella.',
             'actions' => [
                 ['label' => 'Crear presentación decant', 'url' => route('seller.shops.products.create', $shop).'?sale_unit=decant', 'tone' => 'primary'],

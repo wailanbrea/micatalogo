@@ -185,6 +185,12 @@ class MobileOperationService
         }
 
         if ($saleUnit !== 'decant') {
+            if ($saleUnit === 'bottle'
+                && (! is_numeric($data['cost_price'] ?? null) || (float) ($data['cost_price'] ?? 0) <= 0)
+                && (! $product || $product->inventory?->cost_price === null || (float) $product->inventory->cost_price <= 0)) {
+                throw ValidationException::withMessages(['cost_price' => 'Indica el costo de compra de la botella para calcular ganancias y recuperación de inversión.']);
+            }
+
             return ['sale_unit' => $saleUnit, 'volume_ml' => (int) $volume, 'inventory_source_product_id' => null];
         }
 
@@ -198,6 +204,9 @@ class MobileOperationService
         }
         if (! in_array($source->sale_unit, ['bottle', 'ml'], true) || ! $source->volume_ml || ! $source->inventory?->track_inventory) {
             throw ValidationException::withMessages(['inventory_source_product_id' => 'La fuente debe ser una botella o producto medido en ml con volumen y control de inventario.']);
+        }
+        if ($source->inventory->cost_price === null || (float) $source->inventory->cost_price <= 0) {
+            throw ValidationException::withMessages(['inventory_source_product_id' => 'La botella fuente no tiene costo de compra. Regístralo antes de crear el decant.']);
         }
         if ((int) $volume > (int) $source->volume_ml) {
             throw ValidationException::withMessages(['volume_ml' => 'El decant no puede superar el volumen de su fuente.']);

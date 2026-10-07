@@ -74,9 +74,24 @@ class ProductRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
+            $saleUnit = $this->input('sale_unit', 'unit');
+            $tracksInventory = $this->boolean('track_inventory');
+
+            if ($saleUnit === 'bottle' && $tracksInventory
+                && (! is_numeric($this->input('cost_price')) || (float) $this->input('cost_price') <= 0)) {
+                $validator->errors()->add('cost_price', 'Indica el costo de compra de cada botella para calcular la ganancia y el costo recuperado por decants.');
+            }
+
             if ($this->input('sale_unit') === 'decant'
-                && ! app(\App\Services\BusinessCapabilityService::class)->allows($this->route('shop'), 'decants')) {
+                && ! app(\App\Services\BusinessProfileService::class)->allows($this->route('shop'), 'decants')) {
                 $validator->errors()->add('sale_unit', 'Los decants no están disponibles para el tipo de negocio o plan de esta tienda.');
+            }
+
+            if ($saleUnit === 'decant' && $this->filled('inventory_source_product_id')) {
+                $source = $this->route('shop')?->products()->with('inventory')->find($this->input('inventory_source_product_id'));
+                if ($source && ($source->inventory?->cost_price === null || (float) $source->inventory->cost_price <= 0)) {
+                    $validator->errors()->add('inventory_source_product_id', 'La botella seleccionada no tiene costo de compra. Regístralo en la botella fuente antes de crear el decant.');
+                }
             }
         });
     }

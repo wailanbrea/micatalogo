@@ -11,6 +11,27 @@
     $showBarcode = in_array('barcode', $productFields, true);
     $showBrand = in_array('brand', $productFields, true);
     $showPerfumePresentation = ($capabilities['perfume_fields'] ?? 'disabled') === 'enabled' || ($capabilities['decants'] ?? 'disabled') === 'enabled';
+    $sourceOptions = $sourceProducts->map(function ($source) {
+        $inventory = $source->inventory;
+        $availableMl = $inventory?->available_ml;
+        if ($availableMl === null && $inventory?->track_inventory) {
+            $availableMl = $source->sale_unit === 'bottle'
+                ? (int) $inventory->stock_quantity * (int) $source->volume_ml
+                : (int) $inventory->stock_quantity;
+        }
+
+        return [
+            'id' => $source->id,
+            'name' => $source->name,
+            'brand' => $source->brand,
+            'sale_unit' => $source->sale_unit,
+            'volume_ml' => $source->volume_ml,
+            'cost_price' => $inventory?->cost_price !== null ? (float) $inventory->cost_price : null,
+            'stock_quantity' => $inventory?->stock_quantity,
+            'available_ml' => $availableMl,
+            'track_inventory' => (bool) $inventory?->track_inventory,
+        ];
+    })->values();
 @endphp
 <x-layouts.app :title="($product->exists ? 'Editar ' . $productLabel : $newProductLabel) . ' | ' . $shop->name">
     <!-- Persistent Unified Navigation -->
@@ -46,7 +67,7 @@
                     </div>
                 @endif
 
-                <form class="mt-6 space-y-6" method="POST" enctype="multipart/form-data" action="{{ $product->exists ? route('seller.shops.products.update', [$shop, $product]) : route('seller.shops.products.store', $shop) }}" x-data="{ trackInventory: {{ $showInventory && old('track_inventory', $product->exists ? ($product->inventory?->track_inventory ?? false) : true) ? 'true' : 'false' }}, saleUnit: '{{ old('sale_unit', $product->sale_unit ?? 'unit') }}', imagePreview: null, imageSearch: { query: '', results: [], selected: null, loading: false, error: '', endpoint: '{{ route('seller.shops.products.images.search', $shop) }}' }, async searchImages() { const query = (this.imageSearch.query || document.getElementById('name')?.value || '').trim(); if (query.length < 2) { this.imageSearch.error = 'Escribe primero el nombre del producto.'; return; } this.imageSearch.query = query; this.imageSearch.loading = true; this.imageSearch.error = ''; try { const response = await fetch(`${this.imageSearch.endpoint}?q=${encodeURIComponent(query)}`, { headers: { Accept: 'application/json' } }); const payload = await response.json(); if (!response.ok) throw new Error(payload.message || 'No se pudieron consultar imágenes.'); this.imageSearch.results = payload.results || []; if (!this.imageSearch.results.length) this.imageSearch.error = 'No encontramos imágenes para ese nombre. Prueba con otra búsqueda.'; } catch (error) { this.imageSearch.error = error.message; } finally { this.imageSearch.loading = false; } } }">
+                <form class="mt-6 space-y-6" method="POST" enctype="multipart/form-data" action="{{ $product->exists ? route('seller.shops.products.update', [$shop, $product]) : route('seller.shops.products.store', $shop) }}" x-data="{ trackInventory: {{ $showInventory && old('track_inventory', $product->exists ? ($product->inventory?->track_inventory ?? false) : true) ? 'true' : 'false' }}, saleUnit: '{{ old('sale_unit', $product->sale_unit ?? 'unit') }}', sourceProductId: '{{ old('inventory_source_product_id', $product->inventory_source_product_id) }}', sourceProducts: @js($sourceOptions), get selectedSource() { return this.sourceProducts.find(source => String(source.id) === String(this.sourceProductId)) || null }, imagePreview: null, imageSearch: { query: '', results: [], selected: null, loading: false, error: '', endpoint: '{{ route('seller.shops.products.images.search', $shop) }}' }, async searchImages() { const query = (this.imageSearch.query || document.getElementById('name')?.value || '').trim(); if (query.length < 2) { this.imageSearch.error = 'Escribe primero el nombre del producto.'; return; } this.imageSearch.query = query; this.imageSearch.loading = true; this.imageSearch.error = ''; try { const response = await fetch(`${this.imageSearch.endpoint}?q=${encodeURIComponent(query)}`, { headers: { Accept: 'application/json' } }); const payload = await response.json(); if (!response.ok) throw new Error(payload.message || 'No se pudieron consultar imágenes.'); this.imageSearch.results = payload.results || []; if (!this.imageSearch.results.length) this.imageSearch.error = 'No encontramos imágenes para ese nombre. Prueba con otra búsqueda.'; } catch (error) { this.imageSearch.error = error.message; } finally { this.imageSearch.loading = false; } } }">
                     @csrf
                     @if ($product->exists)
                         @method('PUT')
@@ -147,14 +168,15 @@
 
                         @if ($showInventory)<div>
                             <label class="block text-sm font-semibold text-slate-800" for="cost_price">
-                                Precio de Compra / Costo (RD$)
+                                <span x-text="saleUnit === 'bottle' ? 'Costo de compra por botella (RD$)' : (saleUnit === 'decant' ? 'Costo del decant (se calcula)' : 'Precio de Compra / Costo (RD$)')"></span>
                                 <span class="text-xs font-normal text-slate-500">(Privado)</span>
                             </label>
-                            <p class="text-[11px] text-slate-500">Solo tú lo ves. Para calcular valor de inventario y margen.</p>
+                            <p class="text-[11px] text-slate-500" x-text="saleUnit === 'bottle' ? 'Obligatorio para saber cuánto costó la botella y medir la recuperación por decants.' : (saleUnit === 'decant' ? 'Se obtiene de la botella fuente; no se registra como una compra independiente.' : 'Solo tú lo ves. Para calcular valor de inventario y margen.')"></p>
                             <div class="relative mt-1.5 rounded-md shadow-sm">
                                 <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-slate-500">RD$</span>
-                                <input class="w-full rounded-md border border-slate-300 pl-12 pr-3 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="cost_price" name="cost_price" step="0.01" min="0" type="number" value="{{ old('cost_price', $product->inventory?->cost_price) }}" placeholder="0.00">
+                                <input class="w-full rounded-md border border-slate-300 pl-12 pr-3 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 disabled:bg-slate-100 disabled:text-slate-400" id="cost_price" name="cost_price" step="0.01" min="0" type="number" value="{{ old('cost_price', $product->inventory?->cost_price) }}" placeholder="0.00" :required="saleUnit === 'bottle' && trackInventory" :disabled="saleUnit === 'decant'">
                             </div>
+                            @error('cost_price') <p class="mt-1 text-xs font-semibold text-red-600">{{ $message }}</p> @enderror
                         </div>@endif
                     </div>
 
@@ -204,16 +226,38 @@
                         </div>
 
                         <div class="mt-4" x-show="saleUnit === 'decant'" x-cloak>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700" for="inventory_source_product_id">Botella fuente</label>
-                            <select class="mt-1.5 w-full rounded-md border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="inventory_source_product_id" name="inventory_source_product_id" :required="saleUnit === 'decant'">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700" for="inventory_source_product_id">Botella fuente y costo de origen</label>
+                            <select x-model="sourceProductId" class="mt-1.5 w-full rounded-md border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="inventory_source_product_id" name="inventory_source_product_id" :required="saleUnit === 'decant'">
                                 <option value="">Selecciona la botella que se descontará</option>
                                 @foreach ($sourceProducts as $sourceProduct)
-                                    <option value="{{ $sourceProduct->id }}" @selected(old('inventory_source_product_id', $product->inventory_source_product_id) == $sourceProduct->id)>
-                                        {{ $sourceProduct->name }}{{ $sourceProduct->volume_ml ? ' · '.$sourceProduct->volume_ml.' ml' : '' }}
+                                    @php
+                                        $sourceInventory = $sourceProduct->inventory;
+                                        $sourceAvailableMl = $sourceInventory?->available_ml;
+                                        if ($sourceAvailableMl === null && $sourceInventory?->track_inventory) {
+                                            $sourceAvailableMl = $sourceProduct->sale_unit === 'bottle'
+                                                ? (int) $sourceInventory->stock_quantity * (int) $sourceProduct->volume_ml
+                                                : (int) $sourceInventory->stock_quantity;
+                                        }
+                                    @endphp
+                                    <option value="{{ $sourceProduct->id }}">
+                                        {{ $sourceProduct->name }}{{ $sourceProduct->brand ? ' · '.$sourceProduct->brand : '' }} · {{ $sourceProduct->volume_ml }} ml · costo {{ $sourceInventory?->cost_price !== null ? 'RD$ '.number_format((float) $sourceInventory->cost_price, 2) : 'no configurado' }} · {{ $sourceAvailableMl !== null ? number_format($sourceAvailableMl).' ml disponibles' : 'sin stock controlado' }}
                                     </option>
                                 @endforeach
                             </select>
-                            <p class="mt-1 text-[11px] text-slate-500">Cada venta de este decant descontará sus ml de la botella seleccionada.</p>
+                            <div x-show="selectedSource" x-cloak class="mt-3 rounded-xl border border-blue-200 bg-white p-3 text-xs text-slate-700">
+                                <p class="font-bold text-slate-900">Origen identificado</p>
+                                <p class="mt-1"><span x-text="selectedSource?.name"></span><span x-show="selectedSource?.brand" x-text="' · ' + selectedSource?.brand"></span></p>
+                                <div class="mt-2 grid gap-2 sm:grid-cols-3">
+                                    <span class="rounded-lg bg-slate-50 px-2 py-1"><strong>Presentación:</strong> <span x-text="selectedSource?.volume_ml + ' ml'"></span></span>
+                                    <span class="rounded-lg bg-slate-50 px-2 py-1"><strong>Costo:</strong> <span x-text="selectedSource?.cost_price == null ? 'No configurado' : 'RD$ ' + Number(selectedSource.cost_price).toLocaleString('es-DO', { minimumFractionDigits: 2 })"></span></span>
+                                    <span class="rounded-lg bg-slate-50 px-2 py-1"><strong>Disponible:</strong> <span x-text="selectedSource?.available_ml == null ? 'Sin control' : selectedSource.available_ml + ' ml'"></span></span>
+                                </div>
+                            </div>
+                            <p x-show="!selectedSource" class="mt-2 text-[11px] font-semibold text-amber-700">Selecciona una botella con volumen, inventario activo y costo de compra registrado.</p>
+                            @if ($sourceProducts->isEmpty())
+                                <p class="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-2 text-[11px] font-semibold text-amber-800">No hay botellas fuente configuradas. Crea primero el perfume como “Botella completa”, indica su contenido, activa el inventario y registra el costo de compra.</p>
+                            @endif
+                            @error('inventory_source_product_id') <p class="mt-1 text-xs font-semibold text-red-600">{{ $message }}</p> @enderror
                         </div>
                     </div>
                     @endif

@@ -65,7 +65,7 @@ class SellerProductController extends Controller
             'product' => new Product(['currency' => config('catalog.currency', 'DOP')]),
             'globalCategories' => GlobalCategory::query()->where('status', 'active')->orderBy('sort_order')->orderBy('name')->get(),
             'shopCategories' => $shop->categories()->where('status', 'active')->orderBy('name')->get(),
-            'sourceProducts' => $shop->products()->whereIn('sale_unit', ['bottle', 'ml'])->orderBy('name')->get(),
+            'sourceProducts' => $shop->products()->with('inventory')->whereIn('sale_unit', ['bottle', 'ml'])->orderBy('name')->get(),
             'attributeDefinitions' => $shop->attributeDefinitions()->get(),
         ]);
     }
@@ -159,7 +159,7 @@ class SellerProductController extends Controller
             'product' => $product,
             'globalCategories' => GlobalCategory::query()->where('status', 'active')->orderBy('sort_order')->orderBy('name')->get(),
             'shopCategories' => $shop->categories()->where('status', 'active')->orderBy('name')->get(),
-            'sourceProducts' => $shop->products()->whereKeyNot($product->id)->whereIn('sale_unit', ['bottle', 'ml'])->orderBy('name')->get(),
+            'sourceProducts' => $shop->products()->with('inventory')->whereKeyNot($product->id)->whereIn('sale_unit', ['bottle', 'ml'])->orderBy('name')->get(),
             'attributeDefinitions' => $shop->attributeDefinitions()->get(),
         ]);
     }
@@ -447,6 +447,10 @@ class SellerProductController extends Controller
 
         if (! $source->volume_ml || ! $source->inventory?->track_inventory) {
             throw ValidationException::withMessages(['inventory_source_product_id' => 'La botella fuente debe tener volumen en ml y control de inventario activo.']);
+        }
+
+        if ($source->inventory->cost_price === null || (float) $source->inventory->cost_price <= 0) {
+            throw ValidationException::withMessages(['inventory_source_product_id' => 'La botella fuente debe tener un costo de compra mayor que RD$ 0 para calcular la ganancia y recuperar su inversión.']);
         }
     }
 
