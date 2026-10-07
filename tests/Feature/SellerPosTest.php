@@ -181,6 +181,8 @@ test('web POS sells a decant and reports when its source bottle is recovered', f
         ->get(route('seller.shops.pos', $shop))
         ->assertOk()
         ->assertSee('Nueva venta')
+        ->assertSee('Productos')
+        ->assertSee('Decants')
         ->assertSee('is_decant');
 
     $source->load('sourceProduct');

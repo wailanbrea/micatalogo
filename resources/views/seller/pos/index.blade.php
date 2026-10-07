@@ -128,7 +128,13 @@
                         </div>
                     </div>
 
-                    <div class="mt-5 flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Filtrar por categoría">
+                    <div class="mt-5 flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Filtrar por tipo de producto">
+                        <button type="button" @click="catalogTab = 'all'" :class="catalogTab === 'all' ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700'" class="shrink-0 rounded-full px-4 py-2 text-xs font-black transition">Todos</button>
+                        <button type="button" @click="catalogTab = 'products'" :class="catalogTab === 'products' ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700'" class="shrink-0 rounded-full px-4 py-2 text-xs font-black transition">Productos</button>
+                        <button x-show="hasDecants" x-cloak type="button" @click="catalogTab = 'decants'" :class="catalogTab === 'decants' ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700'" class="shrink-0 rounded-full px-4 py-2 text-xs font-black transition">Decants</button>
+                    </div>
+
+                    <div class="mt-3 flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Filtrar por categoría">
                         <button type="button" @click="selectedCategory = 'all'" :class="selectedCategory === 'all' ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700'" class="shrink-0 rounded-full px-5 py-2.5 text-sm font-bold transition">Todos</button>
                         <template x-for="category in categories" :key="category">
                             <button type="button" @click="selectedCategory = category" :class="selectedCategory === category ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700'" class="shrink-0 rounded-full px-5 py-2.5 text-sm font-bold transition" x-text="category"></button>
@@ -416,6 +422,7 @@
                 summary,
                 cart: [],
                 search: '',
+                catalogTab: 'all',
                 selectedCategory: 'all',
                 saleMode: 'retail',
                 paymentKind: 'cash',
@@ -434,10 +441,16 @@
                     return [...new Set(this.products.map((product) => product.category).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
                 },
 
+                get hasDecants() {
+                    return this.products.some((product) => product.is_decant);
+                },
+
                 get filteredProducts() {
                     const query = this.search.trim().toLowerCase();
                     return this.products.filter((product) => {
                         if (this.saleMode === 'wholesale' && product.wholesale_price === null) return false;
+                        if (this.catalogTab === 'products' && product.is_decant) return false;
+                        if (this.catalogTab === 'decants' && !product.is_decant) return false;
                         if (this.selectedCategory !== 'all' && product.category !== this.selectedCategory) return false;
                         if (!query) return true;
                         return [product.name, product.code, product.brand, ...(product.attributes || []), product.category, product.sale_unit_label]

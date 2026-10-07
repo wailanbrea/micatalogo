@@ -2,12 +2,12 @@
 
 // Verified against the signed artifact; no credentials belong in this manifest.
 return [
-    'version_code' => 57,
-    'version_name' => '1.0.56',
+    'version_code' => 58,
+    'version_name' => '1.0.57',
     'minimum_supported_version_code' => 23,
-    'apk_url' => 'https://micatalogo.bsolutions.dev/downloads/bspos-1.0.56-release.apk',
-    'apk_sha256' => '5f19996bdcb0210e2dd805c8fd7a2990a09719e6a653491fdaa23b75098b4e0b',
-    'release_notes' => 'Agrega productos recientes al punto de venta y mejora la navegación de cobro.',
+    'apk_url' => 'https://micatalogo.bsolutions.dev/downloads/bspos-1.0.57-release.apk',
+    'apk_sha256' => '9d50931b3db273c0ae7d68303007b39bd6982c5ff0732a623ce31aa00ec5727f',
+    'release_notes' => 'Agrega filtros de Productos y Decants al punto de venta y mejora la navegación.',
     'release_date' => '2026-10-07',
     'min_sdk' => 26,
     'size_bytes' => 39748801,
