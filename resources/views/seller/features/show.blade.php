@@ -39,7 +39,7 @@
                         @endif
 
                         @if ($featureKey === 'quotes')
-                            <div class="rounded-2xl border border-blue-100 bg-blue-50/50 p-4 sm:p-5" x-data="{
+                            <div id="quote-builder-{{ $shop->public_id }}" wire:key="quote-builder-{{ $shop->public_id }}" class="rounded-2xl border border-blue-100 bg-blue-50/50 p-4 sm:p-5" x-data="{
                                 products: @js($module['quoteProducts'] ?? []),
                                 search: '',
                                 selectedCategory: 'all',
@@ -89,7 +89,7 @@
                                                         <div class="relative flex h-32 items-center justify-center overflow-hidden bg-slate-50">
                                                             <template x-if="product.image_url"><img :src="product.image_url" :alt="product.name" class="h-full w-full object-contain p-3 transition duration-300 group-hover:scale-105"></template>
                                                             <template x-if="!product.image_url"><div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-2xl font-black text-blue-700" x-text="product.name.charAt(0).toUpperCase()"></div></template>
-                                                            <button type="button" @click="add(product)" class="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-xl font-black leading-none text-white shadow-sm transition hover:bg-blue-700" :aria-label="`Agregar ${product.name}`">+</button>
+                                                            <button type="button" @click.stop.prevent="add(product)" class="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-xl font-black leading-none text-white shadow-sm transition hover:bg-blue-700" :aria-label="`Agregar ${product.name}`">+</button>
                                                             <span x-show="product.stock !== null && product.stock > 0 && product.stock <= 5" class="absolute bottom-2 left-2 rounded-full bg-amber-100 px-2 py-1 text-[10px] font-black text-amber-800">Pocas unidades</span>
                                                         </div>
                                                         <div class="flex flex-1 flex-col p-3">
