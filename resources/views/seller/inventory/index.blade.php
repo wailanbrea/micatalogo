@@ -646,84 +646,139 @@
         <div
             x-show="isSaleModalOpen"
             x-cloak
-            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-md sm:p-6"
             @keydown.escape.window="closeModals()"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="sale-modal-title"
         >
             <div
                 @click.away="closeModals()"
-                class="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl transition-all"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="translate-y-4 scale-95 opacity-0"
+                x-transition:enter-end="translate-y-0 scale-100 opacity-100"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="translate-y-0 scale-100 opacity-100"
+                x-transition:leave-end="translate-y-3 scale-95 opacity-0"
+                class="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto overflow-hidden rounded-[28px] border border-white/70 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.28)]"
             >
-                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                    <div class="flex items-center gap-2">
-                        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                <div class="relative overflow-hidden bg-gradient-to-br from-blue-700 via-indigo-600 to-slate-900 px-5 py-5 text-white sm:px-7">
+                    <div class="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10 blur-2xl"></div>
+                    <div class="relative flex items-start justify-between gap-4">
+                        <div>
+                            <div class="mb-2 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-blue-50">
+                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-300"></span>
+                                Nueva operación
+                            </div>
+                            <h3 id="sale-modal-title" class="text-xl font-black tracking-tight sm:text-2xl">Registrar venta</h3>
+                            <p class="mt-1 text-xs font-medium text-blue-100 sm:text-sm">Confirma los datos antes de descontar el inventario.</p>
                         </div>
-                        <h3 class="text-base font-bold text-slate-900">Registrar Venta</h3>
+                        <button
+                            type="button"
+                            @click="closeModals()"
+                            aria-label="Cerrar registrar venta"
+                            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-xl text-white/90 transition hover:bg-white/20 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/60"
+                        >
+                            <span aria-hidden="true">&times;</span>
+                        </button>
                     </div>
-                    <button @click="closeModals()" class="text-slate-400 hover:text-slate-600">✕</button>
                 </div>
 
-                <form :action="saleUrl" method="POST" class="mt-4 space-y-4">
+                <form :action="saleUrl" method="POST" class="space-y-5 px-5 py-5 sm:px-7 sm:py-6">
                     @csrf
-                    <div>
-                        <p class="text-xs font-semibold text-slate-500">Producto:</p>
-                        <p class="text-sm font-bold text-slate-900" x-text="activeProductName"></p>
-                        <p class="text-xs text-slate-500 mt-0.5">
-                            Stock disponible: <span class="font-bold text-slate-800" x-text="activeProductStock"></span> <span x-text="activeProductUnitLabel"></span>
-                        </p>
-                        <p x-show="saleUnit === 'decant'" class="mt-1 text-xs text-blue-700">
-                            Botella fuente: <span class="font-bold" x-text="saleSourceAvailableMl"></span> ml disponibles.
-                            Esta venta descuenta <span class="font-bold" x-text="saleTotalMl"></span> ml.
-                        </p>
+                    <div class="flex items-center gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-lg shadow-blue-200">
+                            <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6 7h12l-1 13H7L6 7Zm3 0V5a3 3 0 0 1 6 0v2M9 11h.01M15 11h.01"/>
+                            </svg>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">Producto seleccionado</p>
+                            <p class="mt-1 truncate text-base font-black text-slate-900" x-text="activeProductName"></p>
+                            <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                                <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 font-bold text-emerald-700">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                                    <span x-text="activeProductStock"></span> <span x-text="activeProductUnitLabel"></span> disponibles
+                                </span>
+                                <span x-show="saleUnit !== 'decant'" class="text-slate-400">Venta directa</span>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Selector interactivo: ¿Cantidad vendida? [-] 1 [+] -->
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">¿Cantidad vendida?</label>
-                        <div class="mt-2 flex items-center justify-center gap-3">
+                    <div x-show="saleUnit === 'decant'" x-cloak class="rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
+                        <div class="flex items-start gap-3">
+                            <div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3h6m-5 0v4.5L5.8 13a5.5 5.5 0 0 0 4.2 8h4a5.5 5.5 0 0 0 4.2-8L14 7.5V3M8 15h8"/></svg>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-xs font-black text-blue-950">Botella fuente</p>
+                                <p class="mt-1 text-xs leading-5 text-blue-800">Quedan <span class="font-black" x-text="saleSourceAvailableMl"></span> ml. Esta venta descontará <span class="font-black" x-text="saleTotalMl"></span> ml.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-2xl border border-slate-200 bg-white">
+                        <div class="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                            <div>
+                                <label for="sale_quantity" class="text-sm font-black text-slate-900">Cantidad a vender</label>
+                                <p class="mt-0.5 text-xs text-slate-500">Máximo disponible: <span class="font-bold" x-text="activeProductStock"></span></p>
+                            </div>
+                            <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500" x-text="activeProductUnitLabel"></span>
+                        </div>
+                        <div class="flex items-center justify-center gap-4 p-4">
                             <button
                                 type="button"
                                 @click="saleQuantity = Math.max(1, saleQuantity - 1)"
-                                class="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-xl font-black text-slate-700 hover:bg-slate-200 active:scale-95 transition"
+                                aria-label="Reducir cantidad"
+                                class="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-xl font-black text-slate-700 shadow-sm transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 active:scale-95"
                             >
-                                -
+                                &minus;
                             </button>
                             <input
                                 type="number"
                                 name="quantity"
+                                id="sale_quantity"
                                 x-model.number="saleQuantity"
                                 min="1"
                                 :max="activeProductStock"
                                 required
-                                class="h-12 w-28 text-center text-2xl font-black text-slate-900 rounded-xl border border-slate-300 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
+                                class="h-14 w-28 rounded-xl border-2 border-blue-100 bg-blue-50/60 text-center text-3xl font-black text-slate-950 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                             >
                             <button
                                 type="button"
                                 @click="saleQuantity = Math.min(activeProductStock, saleQuantity + 1)"
-                                class="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-xl font-black text-slate-700 hover:bg-slate-200 active:scale-95 transition"
+                                aria-label="Aumentar cantidad"
+                                class="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-xl font-black text-slate-700 shadow-sm transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 active:scale-95"
                             >
-                                +
+                                &plus;
                             </button>
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600" for="sale_notes">Nota u observación (opcional)</label>
+                        <label class="block text-sm font-bold text-slate-900" for="sale_notes">Nota u observación <span class="font-normal text-slate-400">(opcional)</span></label>
                         <input
                             type="text"
                             name="notes"
                             id="sale_notes"
                             placeholder="Ej: Pedido directo por WhatsApp"
-                            class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:border-emerald-600 focus:outline-none"
+                            class="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition placeholder-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100"
                         >
                     </div>
 
-                    <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                        <button type="button" @click="closeModals()" class="rounded-lg border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                    <div class="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-end">
+                        <button type="button" @click="closeModals()" class="rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600 transition hover:bg-slate-50 sm:min-w-28">
                             Cancelar
                         </button>
-                        <button type="submit" class="rounded-lg bg-emerald-600 px-5 py-2 text-xs font-bold text-white hover:bg-emerald-700 shadow-sm transition">
-                            Registrar venta
+                        <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-sm font-black text-white shadow-lg shadow-blue-200 transition hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl active:scale-[0.98] sm:min-w-48">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6 6 6-6 6"/></svg>
+                            Confirmar venta
                         </button>
                     </div>
                 </form>
