@@ -102,16 +102,32 @@ La navegación del panel publicado ya expone las secciones y rutas equivalentes,
 además de herramientas propias de MiCatalogo como caja, métricas, lotes FIFO y
 menú administrativo.
 
-En el POS web se publicó el commit `c3a46ec`:
+En el POS web se publicó primero el commit `c3a46ec` y después se consolidó el
+modal moderno en `0995845`:
 
 - el carrito mantiene el flujo existente;
 - `Cobrar venta` abre ahora una hoja/modal responsive con fondo atenuado,
   total destacado, cierre accesible y confirmación separada;
+- la revisión muestra el detalle con imágenes, tipo de cobro, método de pago,
+  cliente, recibido, cambio, descuento, nota y total antes de confirmar;
 - contado, pago mixto, crédito, cliente y vencimiento siguen conectados a los
   mismos campos contables y al mismo endpoint;
 - se verificó en la sesión web publicada el cambio a crédito y la aparición del
   cliente/saldo/vencimiento;
 - el carrito de prueba fue vaciado sin registrar una venta.
+
+La pantalla web de Ventas también recibió filtros de período, estado y búsqueda
+por factura, cliente o vendedor en `3577363`. La pantalla de Fotos recibió un
+gestor de pendientes/con foto/todos, búsqueda por producto y selección segura de
+sugerencias en `0619b33`. Ambos cambios fueron probados con la suite del módulo
+y publicados sin migraciones ni datos demo.
+
+En Android, la hoja `CheckoutReviewSheet` conserva el mismo flujo visual y
+contable en la release firmada `1.0.40` (`2ccc138`). La release siguiente
+`1.0.41` (`0465f79`, `versionCode 42`) agrega a Ventas búsqueda por factura o
+cliente, período Todo y estado Anuladas. El APK fue instalado en
+`emulator-5554`; el manifiesto público y el hash/tamaño del archivo publicado
+fueron verificados.
 
 ## Diferencias que siguen siendo trabajo pendiente
 
@@ -122,8 +138,8 @@ de MiCatalogo aún debe incorporar, con pruebas contables equivalentes:
 - poner una venta en espera y recuperarla;
 - iniciar una cotización directamente desde la terminal;
 - confirmación posterior con recibo/factura y acciones de compartir;
-- recorrer y probar cada pantalla del menú en Android, no solo comprobar que la
-  ruta exista en el panel web.
+- recorrer y probar cada pantalla del menú en Android con sus acciones de
+  escritura, no solo comprobar que la ruta exista.
 
 Ya se incorporaron al modal publicado el recibido, cambio, montos rápidos,
 descuento, nota de recibo y el caso de crédito sin un pago de RD$0. Estos puntos
@@ -170,5 +186,9 @@ de la sesión: `puntto-cierre-bottom.*`, `puntto-inventario-2.png` y
 `puntto-product-form.*`. El formulario de producto se abrió solo para inspección;
 no se guardó un producto nuevo ni se ejecutó una operación financiera.
 
-Estos puntos son la siguiente cola de implementación; no se deben resolver con
-datos demo en producción ni con migraciones destructivas.
+La auditoría de rutas web también cubrió Clientes, Crédito, Ganancias, Gastos,
+Reportes, Equipo, Comisiones, Ayuda, Salud de precios, Precios automáticos,
+Decants, Importar y Mi tienda. Estos módulos ya exponen contenido guiado y
+acciones propias; falta completar las pruebas de mutación equivalentes en
+Android. No se deben resolver con datos demo en producción ni con migraciones
+destructivas.
