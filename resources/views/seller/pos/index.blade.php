@@ -215,7 +215,35 @@
                         </div>
                     </div>
 
-                    <div class="space-y-4 border-t border-slate-100 px-5 py-5 sm:px-6">
+                    <div x-show="!checkoutOpen" x-cloak class="space-y-4 border-t border-slate-100 px-5 py-5 sm:px-6">
+                        <div class="space-y-2 rounded-2xl bg-slate-50 p-4">
+                            <div class="flex items-center justify-between text-sm text-slate-500"><span>Subtotal</span><span class="font-bold text-slate-800" x-text="money(total)"></span></div>
+                            <div class="flex items-end justify-between border-t border-slate-200 pt-3"><span class="text-base font-black text-slate-950">Total</span><span class="text-2xl font-black text-blue-950" x-text="money(total)"></span></div>
+                        </div>
+                        <button type="button" @click="openCheckout()" :disabled="!cart.length" class="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-black text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none">
+                            Cobrar venta
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 18 6-6-6-6"/></svg>
+                        </button>
+                    </div>
+
+                    <div x-show="checkoutOpen" x-cloak @click.away="closeCheckout()" @keydown.escape.window="closeCheckout()" role="dialog" aria-modal="true" aria-labelledby="web-pos-checkout-title" class="fixed inset-0 z-[60] flex items-end justify-center bg-slate-950/60 p-0 backdrop-blur-md sm:items-center sm:p-5">
+                        <div @click.stop class="flex max-h-[calc(100dvh-1rem)] w-full max-w-2xl flex-col overflow-y-auto rounded-t-[30px] border border-white/80 bg-white shadow-[0_24px_90px_rgba(15,23,42,0.3)] sm:max-h-[calc(100dvh-2.5rem)] sm:rounded-[30px]">
+                            <div class="shrink-0 border-b border-slate-100 bg-white px-5 pb-4 pt-5 sm:px-7 sm:pt-6">
+                                <div class="mx-auto mb-4 h-1.5 w-14 rounded-full bg-slate-200 sm:hidden"></div>
+                                <div class="flex items-start justify-between gap-4">
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <h2 id="web-pos-checkout-title" class="text-2xl font-black tracking-tight text-slate-950">Cobrar</h2>
+                                            <span class="rounded-full bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">Venta</span>
+                                        </div>
+                                        <p class="mt-2 text-3xl font-black tabular-nums text-slate-950" x-text="money(total)"></p>
+                                        <p class="mt-1 text-xs font-medium text-slate-500"><span x-text="cartItemCount"></span> artículo(s) · revisa el cobro antes de confirmar</p>
+                                    </div>
+                                    <button type="button" @click="closeCheckout()" class="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-2xl leading-none text-slate-500 transition hover:bg-slate-50 hover:text-slate-900" aria-label="Cerrar cobro">&times;</button>
+                                </div>
+                            </div>
+
+                            <div class="space-y-4 px-5 py-5 sm:px-7 sm:py-6">
                         @if ($showCredit)
                             <div>
                                 <label class="text-xs font-black text-slate-700" for="payment_kind">Forma de cobro</label>
@@ -274,6 +302,8 @@
                             <svg x-show="!submitting" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 18 6-6-6-6"/></svg>
                         </button>
                     </div>
+                        </div>
+                    </div>
                 </aside>
             </form>
         </div>
@@ -295,6 +325,7 @@
                 paymentMethod: 'cash',
                 customerId: '',
                 mixedCreditAmount: 0,
+                checkoutOpen: false,
                 submitting: false,
                 formError: '',
 
@@ -389,6 +420,19 @@
                 clearCart() {
                     this.cart = [];
                     this.formError = '';
+                },
+
+                openCheckout() {
+                    if (!this.cart.length) {
+                        this.formError = 'Agrega al menos un producto.';
+                        return;
+                    }
+                    this.formError = '';
+                    this.checkoutOpen = true;
+                },
+
+                closeCheckout() {
+                    if (!this.submitting) this.checkoutOpen = false;
                 },
 
                 repriceCart() {
