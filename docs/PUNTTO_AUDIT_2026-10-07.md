@@ -48,7 +48,7 @@ Las cotizaciones se crean desde Terminal. La pantalla muestra tarjetas con estad
 - Los módulos de decants muestran origen, volumen disponible, costo compartido y validación de botella fuente.
 - El backend tiene rutas protegidas para POS, cotizaciones, pedidos, compras, caja, clientes, inventario, importación, imágenes, precios, comisiones y módulos de menú.
 
-## Diferencia corregida en esta auditoría
+## Diferencias corregidas en esta auditoría
 
 Puntto mostraba el efectivo recibido y el vuelto antes de confirmar. MiCatalogo confirmaba el total, pero no mostraba esa diferencia en el modal Android.
 
@@ -60,6 +60,11 @@ En la versión 1.0.48 se agregó al cobro en efectivo:
 - Bloqueo de confirmación si el efectivo es menor que el total.
 - El asiento de la venta permanece por el total real; el vuelto es una diferencia informativa para el cajero.
 
+Puntto también permite acotar rápidamente el catálogo desde Terminal. En Android 1.0.49
+MiCatalogo incorpora una fila horizontal de categorías sincronizadas, con `Todos` y
+selección individual; el filtro se combina con la búsqueda, el modo mayorista y el
+carrito existente. Solo se muestran categorías que tienen productos en la tienda activa.
+
 ## Evidencia automatizada
 
 La suite crítica del backend ejecutada durante la auditoría pasó **45 pruebas y 359 aserciones**, cubriendo:
@@ -70,7 +75,8 @@ La suite crítica del backend ejecutada durante la auditoría pasó **45 pruebas
 - Comisiones y permisos de vendedores.
 - Operaciones móviles, imágenes, importación e idempotencia.
 
-La compilación release Android 1.0.48 también pasó las pruebas unitarias y produjo un APK firmado/no-debuggable.
+La compilación release Android 1.0.49 (código 50) también pasó las pruebas unitarias y
+produjo un APK firmado/no-debuggable.
 
 ## Pendientes de la auditoría amplia
 
