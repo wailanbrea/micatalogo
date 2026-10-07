@@ -183,4 +183,7 @@ sin permisos.
    importación y configuración; la paridad visual completa todavía no está demostrada.
 5. Completar la matriz de estados y validaciones de cada pantalla y repetirla para
    owner y vendedor con pruebas equivalentes en web y Android.
+6. Implementar el flujo de servicios vendibles: Puntto ya muestra la pestaña
+   `Servicios` en Terminal; MiCatalogo todavía conserva ese menú como módulo preparado
+   y no tiene una unidad de venta de servicio conectada al POS y a la contabilidad.
 
