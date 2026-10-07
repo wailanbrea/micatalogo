@@ -18,6 +18,7 @@ use App\Models\Supplier;
 use App\Models\SupportRequest;
 use App\Services\BusinessDashboardService;
 use App\Services\CashRegisterService;
+use App\Services\InventoryService;
 use App\Services\SellerMenuService;
 use App\Services\ShopAnalyticsService;
 use Illuminate\Http\JsonResponse;
@@ -1000,13 +1001,44 @@ class SellerFeatureController extends Controller
     private function decantsData(Shop $shop): array
     {
         $products = $shop->products()->with(['inventory', 'sourceProduct.inventory'])->where('sale_unit', 'decant')->get();
+        $bottles = $shop->products()
+            ->with(['inventory', 'decantProducts'])
+            ->whereIn('sale_unit', ['bottle', 'ml'])
+            ->orderBy('name')
+            ->get();
+        $recovery = app(InventoryService::class)->getCostRecoveryForBottles($bottles);
+        $bottleSources = $bottles->map(function (Product $bottle) use ($recovery, $shop): array {
+            $inventory = $bottle->inventory;
+            $availableMl = $inventory?->available_ml;
+            if ($availableMl === null && $inventory?->track_inventory) {
+                $availableMl = $bottle->sale_unit === 'bottle'
+                    ? (int) $inventory->stock_quantity * (int) $bottle->volume_ml
+                    : (int) $inventory->stock_quantity;
+            }
+            $sourceRecovery = $recovery[$bottle->id] ?? null;
+
+            return [
+                'name' => $bottle->name,
+                'volume_ml' => (int) ($bottle->volume_ml ?? 0),
+                'available_ml' => $availableMl === null ? null : (int) $availableMl,
+                'decants_count' => $bottle->decantProducts->count(),
+                'cost' => $sourceRecovery['cost'] ?? null,
+                'revenue' => $sourceRecovery['revenue'] ?? 0,
+                'difference' => $sourceRecovery['difference'] ?? null,
+                'percent' => $sourceRecovery['percent'] ?? null,
+                'covered' => $sourceRecovery['covered'] ?? false,
+                'message' => $sourceRecovery['message'] ?? 'Registra el costo para medir cuándo se recupera la botella.',
+                'url' => route('seller.shops.products.edit', [$shop, 'product' => $bottle]),
+            ];
+        })->values()->all();
 
         return [
             'kind' => 'table',
             'kpis' => [
                 ['label' => 'Decants', 'value' => number_format($products->count()), 'tone' => 'blue'],
-                ['label' => 'Con origen', 'value' => number_format($products->whereNotNull('inventory_source_product_id')->count()), 'tone' => 'emerald'],
-                ['label' => 'Sin origen', 'value' => number_format($products->whereNull('inventory_source_product_id')->count()), 'tone' => 'amber'],
+                ['label' => 'Botellas fuente', 'value' => number_format($bottles->count()), 'tone' => 'emerald'],
+                ['label' => 'Ml disponibles', 'value' => number_format($bottleSources ? collect($bottleSources)->sum(fn (array $bottle) => $bottle['available_ml'] ?? 0) : 0), 'tone' => 'blue'],
+                ['label' => 'Costo recuperado', 'value' => number_format(collect($bottleSources)->where('covered', true)->count()).' botella(s)', 'tone' => 'amber'],
             ],
             'rows' => $products->map(function (Product $product): array {
                 $source = $product->sourceProduct;
@@ -1033,6 +1065,7 @@ class SellerFeatureController extends Controller
                 ];
             })->all(),
             'note' => 'Los decants comparten el inventario de su producto de origen; no se duplica la valoración de la botella.',
+            'bottleSources' => $bottleSources,
             'actions' => [
                 ['label' => 'Crear presentación decant', 'url' => route('seller.shops.products.create', $shop).'?sale_unit=decant', 'tone' => 'primary'],
                 ['label' => 'Ver inventario compartido', 'url' => route('seller.shops.inventory.index', $shop), 'tone' => 'secondary'],

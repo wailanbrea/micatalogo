@@ -434,6 +434,48 @@
                             </section>
                         @endif
 
+                        @if ($featureKey === 'decants')
+                            <section class="rounded-2xl border border-blue-100 bg-blue-50/40 p-4 sm:p-5" aria-labelledby="decants-sources-title">
+                                <div class="flex flex-wrap items-start justify-between gap-3">
+                                    <div>
+                                        <p class="text-[11px] font-black uppercase tracking-[0.16em] text-blue-600">Inventario compartido</p>
+                                        <h2 id="decants-sources-title" class="mt-1 text-base font-black text-slate-900">Botellas y recuperación del costo</h2>
+                                        <p class="mt-1 max-w-2xl text-xs leading-5 text-slate-500">Cada frasco conserva su costo de compra. Las ventas de sus decants se acumulan hasta cubrirlo, sin duplicar el valor del inventario.</p>
+                                    </div>
+                                    <a wire:navigate.hover href="{{ route('seller.shops.inventory.index', $shop) }}" class="rounded-xl border border-blue-200 bg-white px-3.5 py-2 text-xs font-black text-blue-700 hover:bg-blue-50">Abrir inventario</a>
+                                </div>
+                                @if (count($module['bottleSources'] ?? []))
+                                    <div class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                                        @foreach ($module['bottleSources'] as $bottle)
+                                            <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                                                <div class="flex items-start justify-between gap-3">
+                                                    <div class="min-w-0">
+                                                        <p class="truncate text-sm font-black text-slate-900">{{ $bottle['name'] }}</p>
+                                                        <p class="mt-1 text-[11px] text-slate-500">{{ $bottle['volume_ml'] ?: '—' }} ml · {{ $bottle['decants_count'] }} presentación(es)</p>
+                                                    </div>
+                                                    <span class="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black {{ $bottle['covered'] ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800' }}">{{ $bottle['covered'] ? 'Costo cubierto' : 'En recuperación' }}</span>
+                                                </div>
+                                                <div class="mt-4 grid grid-cols-2 gap-2 text-xs">
+                                                    <div class="rounded-xl bg-slate-50 p-3"><p class="font-bold text-slate-400">Disponible</p><p class="mt-1 font-black text-slate-900">{{ $bottle['available_ml'] === null ? 'Sin control' : number_format($bottle['available_ml']).' ml' }}</p></div>
+                                                    <div class="rounded-xl bg-slate-50 p-3"><p class="font-bold text-slate-400">Ingresos decants</p><p class="mt-1 font-black text-slate-900">RD$ {{ number_format((float) $bottle['revenue'], 2) }}</p></div>
+                                                </div>
+                                                @if ($bottle['cost'] !== null)
+                                                    <div class="mt-3">
+                                                        <div class="flex items-center justify-between text-[11px] font-bold"><span class="text-slate-500">Recuperación</span><span class="text-blue-700">{{ number_format((float) $bottle['percent'], 1) }}%</span></div>
+                                                        <div class="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full {{ $bottle['covered'] ? 'bg-emerald-500' : 'bg-blue-600' }}" style="width: {{ min(100, max(0, (float) $bottle['percent'])) }}%"></div></div>
+                                                    </div>
+                                                @endif
+                                                <p class="mt-3 text-[11px] leading-5 text-slate-500">{{ $bottle['message'] }}</p>
+                                                <a wire:navigate.hover href="{{ $bottle['url'] }}" class="mt-3 inline-flex text-xs font-black text-blue-700 hover:underline">Editar botella fuente →</a>
+                                            </article>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <div class="mt-4 rounded-2xl border border-dashed border-blue-200 bg-white px-4 py-8 text-center text-sm text-slate-500">Crea primero una botella con volumen y costo de compra para controlar sus decants.</div>
+                                @endif
+                            </section>
+                        @endif
+
                         <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
                             <div class="flex flex-col gap-3 border-b border-slate-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                                 <div>

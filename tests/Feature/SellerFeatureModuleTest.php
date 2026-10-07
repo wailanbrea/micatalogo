@@ -236,6 +236,8 @@ test('decants expose the guided presentation and shared inventory actions', func
         ->assertOk()
         ->assertSee('Crear presentación decant')
         ->assertSee('Ver inventario compartido')
+        ->assertSee('Botellas y recuperación del costo')
+        ->assertSee('En recuperación')
         ->assertSee('100 ml de origen')
         ->assertSee('5 ml · 0 listos');
 });
