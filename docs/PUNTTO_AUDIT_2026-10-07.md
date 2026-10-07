@@ -84,7 +84,11 @@ reapertura con owner.
 
 ## MiCatalogo verificado
 
-- La APK 1.0.49/código 50 abrió el panel, permitió iniciar sesión, mostró dashboard,
+- La APK 1.0.56/código 57 quedó firmada con el certificado de producción, publicada en
+  el VPS y verificada en el emulador mediante instalación sobre la versión anterior.
+- La APK 1.0.56 agrega una fila `Recientes` en el POS Android cuando existen ventas
+  completadas; reutiliza únicamente el historial local y no crea datos de prueba.
+- La APK 1.0.56 abrió el panel, permitió iniciar sesión, mostró dashboard,
   drawer de menús, Terminal, carrito y el filtro horizontal de categorías.
 - La Terminal Android usa tarjetas con imagen, búsqueda, escáner, modos Detalle/Mayoreo, carrito inferior y hoja de cobro.
 - El carrito de MiCatalogo ya permite cliente, contado/crédito, tarjeta, transferencia y pago mixto.
@@ -114,6 +118,16 @@ mostraba como `Finanzas` aunque Puntto lo identifica como `Ganancias`. Se corrig
 nombre de la opción y del breadcrumb para que el drawer muestre `Ganancias` y la
 pantalla quede como `Finanzas / Ganancias`; esto también permite encontrarla buscando
 `Ganancias`.
+
+La revisión del módulo `Decants` de Puntto mostró cuatro indicadores operativos
+(presentaciones listas, pedidos a demanda, botellas abiertas y merma), filtros por
+estado, reporte, frascos, apertura de botella y preparación de decant. MiCatalogo ya
+tenía el vínculo entre botella fuente y presentación, pero la pantalla solo resumía
+las presentaciones. En el commit `7f75ab6` la web agrega el panel responsive de botellas
+fuente, ml disponibles, ingresos de decants, porcentaje de recuperación y aviso de
+`Costo cubierto`, manteniendo la valoración en la botella original. El módulo sigue
+oculto y protegido para perfiles como barbería; la prueba enfocada pasó 11 pruebas y
+118 aserciones.
 
 La comparación de `Reportes` detectó otra diferencia: Puntto muestra el valor actual
 del inventario al costo y accesos directos a sus análisis. MiCatalogo ahora agrega al
@@ -146,7 +160,7 @@ La suite crítica del backend ejecutada durante la auditoría pasó **45 pruebas
 - Comisiones y permisos de vendedores.
 - Operaciones móviles, imágenes, importación e idempotencia.
 
-La compilación release Android 1.0.49 (código 50) también pasó las pruebas unitarias y
+La compilación release Android 1.0.56 (código 57) también pasó las pruebas unitarias y
 produjo un APK firmado/no-debuggable.
 
 La batería enfocada en autenticación, permisos, menú de vendedor, actualización,
@@ -156,13 +170,11 @@ sin permisos.
 
 ## Pendientes de la auditoría amplia
 
-1. Recompilar y publicar la corrección del rótulo `Ganancias` en Android; verificar en
-   el emulador que buscar `Ganancias` abre `Finanzas / Ganancias`.
-2. Recorrer cada pantalla de Puntto y MiCatalogo con una matriz de botones, validaciones, estados vacíos, permisos y respuestas de error.
-3. Repetir la matriz para owner y vendedor, comprobando que cada menú administrativo se oculte y que la ruta devuelva 403 cuando corresponde.
-4. Ejecutar una venta controlada con caja abierta en un entorno de prueba y verificar factura, inventario, caja, ganancia y comisión de extremo a extremo.
-5. Comparar visualmente cotizaciones, compras, clientes, caja, ganancias, decants,
+1. Recorrer cada pantalla de Puntto y MiCatalogo con una matriz de botones, validaciones, estados vacíos, permisos y respuestas de error.
+2. Repetir la matriz para owner y vendedor, comprobando que cada menú administrativo se oculte y que la ruta devuelva 403 cuando corresponde.
+3. Ejecutar una venta controlada con caja abierta en un entorno de prueba y verificar factura, inventario, caja, ganancia y comisión de extremo a extremo.
+4. Comparar visualmente cotizaciones, compras, clientes, caja, ganancias, decants,
    importación y configuración; la paridad visual completa todavía no está demostrada.
-6. Completar la matriz de estados y validaciones de cada pantalla y repetirla para
+5. Completar la matriz de estados y validaciones de cada pantalla y repetirla para
    owner y vendedor con pruebas equivalentes en web y Android.
 
