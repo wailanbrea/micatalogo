@@ -110,6 +110,20 @@ test('sales module supports Puntto-style period, search and status filters', fun
         ->assertDontSee('FAC-FILTER-TODAY');
 });
 
+test('photos module exposes a guided manager for pending product images', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->for($user)->create();
+    Product::factory()->for($shop)->create(['name' => 'Producto sin fotografía', 'product_code' => 'PHOTO-001']);
+
+    $this->actingAs($user)
+        ->get(route('seller.shops.feature', [$shop, 'feature' => 'photos']))
+        ->assertOk()
+        ->assertSee('Gestor de fotografías')
+        ->assertSee('Buscar sugerencias')
+        ->assertSee('Producto sin fotografía')
+        ->assertSee('Buscar producto o código');
+});
+
 test('every panel feature route renders for a shop owner', function () {
     $user = User::factory()->create(['plan' => 'pro']);
     $shop = Shop::factory()->for($user)->create(['business_type' => 'perfume_store']);

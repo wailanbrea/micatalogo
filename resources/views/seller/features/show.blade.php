@@ -157,6 +157,87 @@
                             </section>
                         @endif
 
+                        @if ($featureKey === 'photos')
+                            <section class="rounded-2xl border border-blue-100 bg-blue-50/50 p-4 sm:p-5" x-data="{
+                                products: @js($module['photoProducts'] ?? []),
+                                filter: 'pending',
+                                query: '',
+                                active: null,
+                                results: [],
+                                loading: false,
+                                error: '',
+                                get filtered() {
+                                    const query = this.query.trim().toLowerCase();
+                                    return this.products.filter(product => {
+                                        if (this.filter === 'pending' && product.image_count > 0) return false;
+                                        if (this.filter === 'complete' && product.image_count === 0) return false;
+                                        return !query || `${product.name} ${product.code}`.toLowerCase().includes(query);
+                                    });
+                                },
+                                async search(product) {
+                                    this.active = product.id;
+                                    this.results = [];
+                                    this.error = '';
+                                    this.loading = true;
+                                    try {
+                                        const response = await fetch(`{{ route('seller.shops.products.images.search', $shop) }}?q=${encodeURIComponent(product.name)}`, { headers: { Accept: 'application/json' } });
+                                        const payload = await response.json();
+                                        if (!response.ok) throw new Error(payload.message || 'No se pudieron buscar sugerencias.');
+                                        this.results = payload.results || [];
+                                        if (!this.results.length) this.error = 'No encontramos sugerencias para este producto.';
+                                    } catch (searchError) {
+                                        this.error = searchError.message;
+                                    } finally {
+                                        this.loading = false;
+                                    }
+                                }
+                            }">
+                                <div class="flex flex-wrap items-start justify-between gap-3">
+                                    <div>
+                                        <h2 class="text-base font-black text-slate-900">Gestor de fotografías</h2>
+                                        <p class="mt-1 text-xs text-slate-500">Revisa pendientes, busca sugerencias y confirma cada imagen antes de aplicarla.</p>
+                                    </div>
+                                    <a href="{{ route('seller.shops.products.index', $shop) }}" class="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-black text-slate-700 hover:border-blue-200 hover:text-blue-700">Abrir productos</a>
+                                </div>
+                                <div class="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+                                    <label class="sr-only" for="photo-search">Buscar producto sin foto</label>
+                                    <input id="photo-search" x-model="query" type="search" placeholder="Buscar producto o código..." class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <div class="flex gap-2 overflow-x-auto" role="tablist" aria-label="Filtrar fotografías">
+                                        <button type="button" @click="filter = 'pending'" :class="filter === 'pending' ? 'bg-blue-600 text-white' : 'border border-slate-200 bg-white text-slate-600'" class="shrink-0 rounded-xl px-3.5 py-2.5 text-xs font-black">Pendientes</button>
+                                        <button type="button" @click="filter = 'complete'" :class="filter === 'complete' ? 'bg-blue-600 text-white' : 'border border-slate-200 bg-white text-slate-600'" class="shrink-0 rounded-xl px-3.5 py-2.5 text-xs font-black">Con foto</button>
+                                        <button type="button" @click="filter = 'all'" :class="filter === 'all' ? 'bg-blue-600 text-white' : 'border border-slate-200 bg-white text-slate-600'" class="shrink-0 rounded-xl px-3.5 py-2.5 text-xs font-black">Todos</button>
+                                    </div>
+                                </div>
+                                <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                                    <template x-for="product in filtered" :key="product.id">
+                                        <article class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                                            <div class="flex items-center gap-3">
+                                                <template x-if="product.image_url"><img :src="product.image_url" :alt="product.name" class="h-16 w-16 rounded-xl bg-slate-50 object-contain"></template>
+                                                <template x-if="!product.image_url"><div class="flex h-16 w-16 items-center justify-center rounded-xl bg-slate-100 text-xl font-black text-slate-400" x-text="product.name.charAt(0).toUpperCase()"></div></template>
+                                                <div class="min-w-0 flex-1"><h3 class="truncate text-sm font-black text-slate-900" x-text="product.name"></h3><p class="mt-1 text-[11px] text-slate-500" x-text="product.code"></p><span :class="product.image_count ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'" class="mt-2 inline-flex rounded-full px-2 py-1 text-[10px] font-black" x-text="product.image_count ? `${product.image_count} foto(s)` : 'Sin foto'"></span></div>
+                                            </div>
+                                            <div class="mt-3 flex gap-2"><button type="button" @click="search(product)" class="flex-1 rounded-xl bg-blue-600 px-3 py-2 text-[11px] font-black text-white hover:bg-blue-700">Buscar sugerencias</button><a :href="product.edit_url" class="rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-black text-slate-700 hover:border-blue-200 hover:text-blue-700">Editar</a></div>
+                                            <div x-show="active === product.id" x-cloak class="mt-3 border-t border-slate-100 pt-3">
+                                                <p x-show="loading" class="text-xs font-bold text-blue-700">Buscando imágenes…</p>
+                                                <p x-show="error" x-text="error" class="text-xs font-bold text-rose-600"></p>
+                                                <div class="grid grid-cols-3 gap-2" x-show="!loading && results.length">
+                                                    <template x-for="result in results" :key="result.url">
+                                                        <form method="POST" :action="product.image_store_url" class="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                                                            @csrf
+                                                            <input type="hidden" name="url" :value="result.url">
+                                                            <img :src="result.thumbnail || result.url" :alt="result.title || product.name" class="h-20 w-full object-cover">
+                                                            <button class="w-full px-2 py-2 text-[10px] font-black text-blue-700 hover:bg-blue-50">Usar esta foto</button>
+                                                        </form>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </article>
+                                    </template>
+                                    <p x-show="filtered.length === 0" class="sm:col-span-2 xl:col-span-3 rounded-xl border border-dashed border-slate-300 bg-white px-3 py-10 text-center text-xs text-slate-500">No hay productos en este filtro.</p>
+                                </div>
+                            </section>
+                        @endif
+
                         @if (in_array($featureKey, ['containers', 'loads', 'purchase_invoices'], true))
                             <div class="rounded-2xl border border-amber-100 bg-amber-50/50 p-4 sm:p-5">
                                 <div class="mb-4"><h2 class="text-base font-black text-slate-900">Registrar recepción de compra</h2><p class="mt-1 text-xs text-slate-500">La recepción crea un lote separado y conserva el costo exacto de esta compra.</p></div>

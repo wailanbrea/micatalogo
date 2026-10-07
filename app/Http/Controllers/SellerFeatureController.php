@@ -872,7 +872,7 @@ class SellerFeatureController extends Controller
 
     private function photosData(Shop $shop): array
     {
-        $products = $shop->products()->withCount('images')->latest()->limit(30)->get();
+        $products = $shop->products()->with(['primaryImage'])->withCount('images')->latest()->limit(100)->get();
 
         return [
             'kind' => 'table',
@@ -887,7 +887,16 @@ class SellerFeatureController extends Controller
                 'value' => number_format($product->images_count).' foto(s)',
                 'status' => $product->images_count ? 'Completo' : 'Pendiente',
             ])->all(),
-            'note' => 'La edición y carga de imágenes se mantiene en Productos, donde se aplican límites, WebP e idempotencia.',
+            'photoProducts' => $products->map(fn (Product $product) => [
+                'id' => $product->public_id,
+                'name' => $product->name,
+                'code' => $product->product_code ?: 'Sin código',
+                'image_count' => (int) $product->images_count,
+                'image_url' => $product->primaryImage?->url,
+                'edit_url' => route('seller.shops.products.edit', [$shop, 'product' => $product]),
+                'image_store_url' => route('seller.shops.products.images.web.store', [$shop, 'product' => $product]),
+            ])->values()->all(),
+            'note' => 'Busca sugerencias por producto y decide cuál usar. El servidor valida el dominio, respeta el límite del plan y procesa la imagen sin borrar las anteriores.',
         ];
     }
 
