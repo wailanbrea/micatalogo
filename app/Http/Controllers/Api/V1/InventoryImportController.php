@@ -88,17 +88,13 @@ class InventoryImportController extends Controller
             'rows.*' => ['required', 'array'],
         ]);
 
-        $imported = $importer->persist($shop, $validated['rows'], $limits, $catalogMedia, $request->user());
+        $summary = $importer->persistSummary($shop, $validated['rows'], $limits, $catalogMedia, $request->user());
+        $imported = (int) (($summary['created'] ?? 0) + ($summary['updated'] ?? 0));
 
         return response()->json([
             'message' => "Se importaron {$imported} productos después de validar el archivo.",
             'imported' => $imported,
-            'summary' => [
-                'created' => $imported,
-                'updated' => 0,
-                'skipped' => 0,
-                'categories_created' => 0,
-            ],
+            'summary' => $summary,
             'quota' => $limits->shopQuota($shop->fresh()),
         ], 201);
     }

@@ -120,13 +120,7 @@ class SellerInventoryImportController extends Controller
             if (! is_array($rawRows) || $rawRows === []) {
                 throw ValidationException::withMessages(['rows' => 'No hay filas válidas para importar.']);
             }
-            $importedCount = $importer->persist($shop, $rawRows, $limits, $catalogMedia, $request->user());
-            $summary = [
-                'created' => $importedCount,
-                'updated' => 0,
-                'skipped' => 0,
-                'categories_created' => 0,
-            ];
+            $summary = $importer->persistSummary($shop, $rawRows, $limits, $catalogMedia, $request->user());
         } else {
             throw ValidationException::withMessages(['session' => 'Debes proporcionar una sesión de importación válida.']);
         }

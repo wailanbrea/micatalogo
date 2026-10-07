@@ -323,8 +323,16 @@ class InventoryImportService
                 throw ValidationException::withMessages(['session' => 'La sesión ya no está disponible.']);
             }
 
-            // Determine effective action for each row
-            $currentBarcodes = $lockedShop->products()->whereNotNull('barcode')->pluck('barcode')->mapWithKeys(fn ($barcode) => [$catalogMedia->normalizeBarcode($barcode) => true])->all();
+            // Determine effective action for each row. Keep all stable product
+            // identities in memory while the shop is locked. This protects the
+            // legacy raw-row endpoint as well as stale previews: a retry must
+            // never create a second product when barcode, SKU, or name already
+            // exists in this shop.
+            $currentProducts = $lockedShop->products()->get(['id', 'name', 'product_code', 'barcode']);
+            $normaliseName = static fn (?string $name): string => Str::of((string) $name)->squish()->ascii()->lower()->value();
+            $currentBarcodes = $currentProducts->whereNotNull('barcode')->mapWithKeys(fn ($product) => [$catalogMedia->normalizeBarcode($product->barcode) => true])->all();
+            $currentSkus = $currentProducts->whereNotNull('product_code')->mapWithKeys(fn ($product) => [Str::lower(trim((string) $product->product_code)) => true])->all();
+            $currentNames = $currentProducts->mapWithKeys(fn ($product) => [$normaliseName($product->name) => true])->all();
             $rowsToProcess = [];
             foreach ($rows as $row) {
                 $line = (int) ($row['line'] ?? 0);
@@ -342,11 +350,30 @@ class InventoryImportService
 
                 // Recheck identities under the shop lock before quota accounting, including stale previews.
                 $barcode = $catalogMedia->normalizeBarcode($row['barcode'] ?? null);
-                if ($action === 'create' && $barcode && isset($currentBarcodes[$barcode])) {
+                $sku = trim((string) ($row['product_code'] ?? ''));
+                $skuKey = $sku !== '' ? Str::lower($sku) : null;
+                $nameKey = $normaliseName($row['name'] ?? null);
+                $isNewPreviewRow = ($row['status'] ?? 'new') === 'new';
+                $identityAlreadyExists = ($barcode && isset($currentBarcodes[$barcode]))
+                    || ($skuKey && isset($currentSkus[$skuKey]))
+                    || ($nameKey !== '' && isset($currentNames[$nameKey]));
+
+                // A row that was considered new at preview time can become an
+                // existing row before confirmation (or be retried through the
+                // legacy endpoint). Skip it rather than creating a duplicate.
+                // Explicit "create" remains available for rows that were
+                // already classified as existing/possible_duplicate by the
+                // preview and intentionally selected by the user.
+                if ($action === 'create' && $isNewPreviewRow && $identityAlreadyExists) {
                     $action = 'skip';
-                    $row['valid'] = false;
                 } elseif ($action === 'create' && $barcode) {
                     $currentBarcodes[$barcode] = true;
+                }
+                if ($action === 'create' && $skuKey) {
+                    $currentSkus[$skuKey] = true;
+                }
+                if ($action === 'create' && $nameKey !== '') {
+                    $currentNames[$nameKey] = true;
                 }
 
                 $row['effective_action'] = $action;
@@ -624,6 +651,20 @@ class InventoryImportService
      */
     public function persist(Shop $shop, array $inputRows, PlanLimitsService $limits, CatalogMediaService $catalogMedia, ?User $user = null): int
     {
+        $summary = $this->persistSummary($shop, $inputRows, $limits, $catalogMedia, $user);
+
+        return (int) ($summary['created'] + $summary['updated']);
+    }
+
+    /**
+     * Legacy persistence with the complete result, including rows skipped as
+     * duplicates. Kept separate from persist() for callers that still expect
+     * the historical integer return value.
+     *
+     * @return array<string, mixed>
+     */
+    public function persistSummary(Shop $shop, array $inputRows, PlanLimitsService $limits, CatalogMediaService $catalogMedia, ?User $user = null): array
+    {
         $rows = collect($inputRows)
             ->filter(fn ($row) => is_array($row) && ($row['valid'] ?? false))
             ->values();
@@ -658,13 +699,16 @@ class InventoryImportService
         $summary = $this->confirmSession(
             $shop,
             $session,
-            ['duplicate_strategy' => 'create', 'create_missing_categories' => true],
+            // Raw-row clients do not have a trusted server preview. The safe
+            // compatibility behavior is skip-on-identity-match, never create
+            // another copy of an existing product.
+            ['duplicate_strategy' => 'skip', 'create_missing_categories' => true],
             $limits,
             $catalogMedia,
             $user
         );
 
-        return (int) ($summary['created'] + $summary['updated']);
+        return $summary;
     }
 
     /**

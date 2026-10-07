@@ -64,6 +64,33 @@ test('API uploads workbook and confirms only server session ignoring tampered cl
     expect($shop->products()->count())->toBe(2);
 });
 
+test('legacy raw-row retries skip the same inventory instead of duplicating products', function () {
+    $owner = User::factory()->create(['plan' => UserPlan::Pro]);
+    $shop = Shop::factory()->for($owner)->create();
+    $this->actingAs($owner, 'sanctum');
+    $rows = [[
+        'line' => 2,
+        'name' => 'Producto sin código',
+        'price' => '2500.00',
+        'stock' => 4,
+        'valid' => true,
+    ]];
+
+    $first = $this->postJson('/api/v1/shops/'.$shop->public_id.'/inventory-import', ['rows' => $rows])
+        ->assertCreated()
+        ->assertJsonPath('summary.created', 1)
+        ->assertJsonPath('summary.skipped', 0);
+    $second = $this->postJson('/api/v1/shops/'.$shop->public_id.'/inventory-import', ['rows' => $rows])
+        ->assertCreated()
+        ->assertJsonPath('imported', 0)
+        ->assertJsonPath('summary.created', 0)
+        ->assertJsonPath('summary.skipped', 1);
+
+    expect($first->json('imported'))->toBe(1)
+        ->and($second->json('imported'))->toBe(0)
+        ->and($shop->products()->where('name', 'Producto sin código')->count())->toBe(1);
+});
+
 test('manual layout remapping uses temporary upload without rereading a file and attributes are opt in', function () {
     $owner = User::factory()->create(['plan' => UserPlan::Pro]);
     $shop = Shop::factory()->for($owner)->create();
