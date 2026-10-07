@@ -11,9 +11,10 @@ use App\Http\Controllers\Api\V1\ExpenseController;
 use App\Http\Controllers\Api\V1\FinanceReportController;
 use App\Http\Controllers\Api\V1\InventoryImportController;
 use App\Http\Controllers\Api\V1\MobileOperationController;
-use App\Http\Controllers\Api\V1\PosSaleController;
-use App\Http\Controllers\Api\V1\QuoteController;
 use App\Http\Controllers\Api\V1\OrderController;
+use App\Http\Controllers\Api\V1\PosSaleController;
+use App\Http\Controllers\Api\V1\PurchaseController;
+use App\Http\Controllers\Api\V1\QuoteController;
 use App\Http\Controllers\Api\V1\ShopController;
 use App\Http\Controllers\SellerFeatureController;
 use App\Http\Middleware\EnsureApiAccountIsActive;
@@ -34,6 +35,9 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/shops/{shop}/catalog', [CatalogController::class, 'show']);
         Route::get('/shops/{shop}/features/{feature}', [SellerFeatureController::class, 'api'])
             ->where('feature', '[a-z_]+');
+        Route::get('/shops/{shop}/purchases', [PurchaseController::class, 'index'])->middleware('menu:containers');
+        Route::post('/shops/{shop}/purchases', [PurchaseController::class, 'store'])->middleware('menu:containers');
+        Route::post('/shops/{shop}/purchases/{document}/receive', [PurchaseController::class, 'receive'])->middleware('menu:containers');
         Route::post('/shops/{shop}/inventory-import/preview', [InventoryImportController::class, 'preview']);
         Route::post('/shops/{shop}/inventory-import', [InventoryImportController::class, 'store']);
         Route::post('/shops/{shop}/inventory-import/{session}/confirm', [InventoryImportController::class, 'confirm']);
