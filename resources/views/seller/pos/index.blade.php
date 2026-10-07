@@ -154,6 +154,7 @@
                                     <p class="truncate text-[11px] font-semibold uppercase tracking-wide text-slate-400" x-text="product.category"></p>
                                     <h3 class="mt-1 truncate text-sm font-black text-slate-900" x-text="product.name"></h3>
                                     <span x-show="product.is_decant" x-cloak class="mt-1 inline-flex w-fit rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-black text-blue-700" x-text="'DECANT · ' + product.volume_ml + ' ml'"></span>
+                                    <span x-show="product.is_service" x-cloak class="mt-1 inline-flex w-fit rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-black text-violet-700">SERVICIO · SIN INVENTARIO</span>
                                     <p class="mt-1 text-lg font-black text-blue-950" x-text="money(priceFor(product))"></p>
                                     <p x-show="product.sale_unit === 'decant' && product.volume_ml" x-cloak class="mt-0.5 text-xs font-bold text-blue-600" x-text="product.volume_ml + ' ml por decant'"></p>
                                     <p x-show="product.is_decant && product.source_product_name" x-cloak class="mt-0.5 truncate text-[11px] text-slate-500" x-text="'Fuente: ' + product.source_product_name"></p>
@@ -460,7 +461,7 @@
                 },
 
                 get availableProductCount() {
-                    return this.products.filter((product) => product.stock > 0).length;
+                    return this.products.filter((product) => product.is_service || product.stock > 0).length;
                 },
 
                 get cartItemCount() {
@@ -505,25 +506,27 @@
                 },
 
                 stockClass(product) {
+                    if (product.is_service) return 'bg-violet-50 text-violet-700';
                     if (product.stock <= 0) return 'bg-rose-50 text-rose-700';
                     if (product.stock <= 5) return 'bg-amber-50 text-amber-700';
                     return 'bg-emerald-50 text-emerald-700';
                 },
 
                 stockLabel(product) {
+                    if (product.is_service) return 'Servicio · sin inventario';
                     if (product.stock <= 0) return 'Agotado';
                     return `En stock (${product.stock})`;
                 },
 
                 canAdd(product) {
-                    return product.stock > 0 && !(this.saleMode === 'wholesale' && product.wholesale_price === null);
+                    return (product.is_service || product.stock > 0) && !(this.saleMode === 'wholesale' && product.wholesale_price === null);
                 },
 
                 addProduct(product) {
                     if (!this.canAdd(product)) return;
                     const existing = this.cart.find((item) => item.id === product.id);
                     if (existing) {
-                        existing.quantity = Math.min(product.stock, existing.quantity + 1);
+                        existing.quantity = product.is_service ? existing.quantity + 1 : Math.min(product.stock, existing.quantity + 1);
                         return;
                     }
                     this.cart.push({
@@ -532,6 +535,7 @@
                         imageUrl: product.image_url,
                         quantity: 1,
                         stock: product.stock,
+                        isService: product.is_service,
                         unitPrice: this.priceFor(product),
                         saleUnit: product.sale_unit,
                         saleUnitLabel: product.sale_unit_label,
@@ -543,7 +547,7 @@
                 },
 
                 changeQuantity(item, delta) {
-                    item.quantity = Math.max(1, Math.min(item.stock, item.quantity + delta));
+                    item.quantity = item.isService ? Math.max(1, item.quantity + delta) : Math.max(1, Math.min(item.stock, item.quantity + delta));
                 },
 
                 removeItem(id) {
@@ -579,8 +583,9 @@
                         if (!product || !this.canAdd(product)) return false;
                         item.unitPrice = this.priceFor(product);
                         item.stock = product.stock;
-                        item.quantity = Math.min(item.quantity, product.stock);
-                        return product.stock > 0;
+                        item.isService = product.is_service;
+                        item.quantity = product.is_service ? item.quantity : Math.min(item.quantity, product.stock);
+                        return product.is_service || product.stock > 0;
                     });
                 },
 

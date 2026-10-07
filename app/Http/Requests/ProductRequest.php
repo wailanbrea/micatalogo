@@ -38,7 +38,7 @@ class ProductRequest extends FormRequest
             'sale_price' => ['nullable', 'numeric', 'min:0', 'lt:price', 'max:99999999.99'],
             'sale_starts_at' => ['nullable', 'date'],
             'sale_ends_at' => ['nullable', 'date', 'after_or_equal:sale_starts_at'],
-            'sale_unit' => ['nullable', Rule::in(['unit', 'bottle', 'ml', 'decant'])],
+            'sale_unit' => ['nullable', Rule::in(['unit', 'bottle', 'ml', 'decant', 'service'])],
             'volume_ml' => ['required_if:sale_unit,bottle,ml,decant', 'nullable', 'integer', 'min:1', 'max:100000'],
             'inventory_source_product_id' => [
                 'required_if:sale_unit,decant',
@@ -85,6 +85,15 @@ class ProductRequest extends FormRequest
             if ($this->input('sale_unit') === 'decant'
                 && ! app(\App\Services\BusinessProfileService::class)->allows($this->route('shop'), 'decants')) {
                 $validator->errors()->add('sale_unit', 'Los decants no están disponibles para el tipo de negocio o plan de esta tienda.');
+            }
+
+            if ($saleUnit === 'service') {
+                if (! app(\App\Services\BusinessProfileService::class)->allows($this->route('shop'), 'services')) {
+                    $validator->errors()->add('sale_unit', 'Los servicios no están disponibles para esta tienda.');
+                }
+                if (! is_numeric($this->input('price')) || (float) $this->input('price') <= 0) {
+                    $validator->errors()->add('price', 'Indica un precio mayor que RD$ 0 para el servicio.');
+                }
             }
 
             if ($saleUnit === 'decant' && $this->filled('inventory_source_product_id')) {

@@ -25,7 +25,7 @@ class MobileOperationController extends Controller
                 $rules += ['name' => ['sometimes', 'required', 'string', 'max:255'],
                     'internal_code' => ['nullable', 'string', 'max:120'], 'barcode' => ['nullable', 'regex:/^[0-9]{8,14}$/'],
                     'description' => ['nullable', 'string', 'max:10000'], 'category_name' => ['nullable', 'string', 'max:100'],
-                    'sale_unit' => ['sometimes', 'nullable', 'in:unit,bottle,ml,decant'],
+                    'sale_unit' => ['sometimes', 'nullable', 'in:unit,bottle,ml,decant,service'],
                     'volume_ml' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:100000'],
                     'inventory_source_product_id' => ['sometimes', 'nullable', 'ulid'],
                     'image_base64' => ['sometimes', 'string', 'max:699052'],

@@ -170,6 +170,32 @@ test('photos module exposes a guided manager for pending product images', functi
         ->assertSee('Buscar producto o código');
 });
 
+test('services module exposes Puntto-style offers without inventory', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->for($user)->create(['business_type' => 'barbershop']);
+    Product::factory()->for($shop)->create([
+        'name' => 'Corte clásico',
+        'sale_unit' => 'service',
+        'price' => 800,
+        'description' => 'Corte con acabado y lavado.',
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('seller.shops.feature', [$shop, 'feature' => 'services']))
+        ->assertOk()
+        ->assertSee('Servicios')
+        ->assertSee('Nuevo servicio')
+        ->assertSee('Corte clásico')
+        ->assertSee('Sin costo de insumos')
+        ->assertSee('Servicio sin inventario');
+
+    $this->actingAs($user)
+        ->get(route('seller.shops.products.create', $shop).'?sale_unit=service')
+        ->assertOk()
+        ->assertSee('Servicio (sin inventario)')
+        ->assertSee('Servicio sin inventario');
+});
+
 test('every panel feature route renders for a shop owner', function () {
     $user = User::factory()->create(['plan' => 'pro']);
     $shop = Shop::factory()->for($user)->create(['business_type' => 'perfume_store']);

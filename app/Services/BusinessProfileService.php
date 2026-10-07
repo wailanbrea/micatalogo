@@ -44,6 +44,10 @@ class BusinessProfileService
 
         $type = $this->normalizeType($shop->business_type);
         $configured = $this->types()[$type]['capabilities'] ?? $this->types()['general_retail']['capabilities'];
+        // Services are catalog offers without stock. They are available across
+        // business profiles because a product shop can also sell installation,
+        // delivery, repair, setup, or other billable work.
+        $configured['services'] ??= true;
         $overrides = is_array($shop->business_capability_overrides) ? $shop->business_capability_overrides : [];
         $legacyDecants = $shop->exists && $shop->products()->where('sale_unit', 'decant')->exists();
         $result = [];

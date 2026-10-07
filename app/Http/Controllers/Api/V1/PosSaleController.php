@@ -49,7 +49,7 @@ class PosSaleController extends Controller
             'items.*.unit_price' => ['required', 'decimal:0,2', 'min:0'],
             'items.*.discount' => ['sometimes', 'decimal:0,2', 'min:0'],
             'items.*.tax' => ['sometimes', 'decimal:0,2', 'min:0'],
-            'items.*.expected_sale_unit' => ['nullable', 'in:unit,bottle,ml,decant'],
+            'items.*.expected_sale_unit' => ['nullable', 'in:unit,bottle,ml,decant,service'],
             'items.*.expected_volume_ml' => ['nullable', 'integer', 'min:1'],
             'items.*.expected_source_product_id' => ['nullable', 'ulid'],
         ]);

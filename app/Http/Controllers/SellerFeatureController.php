@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Models\Expense;
 use App\Models\InventoryMovement;
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Models\InvoicePayment;
 use App\Models\Order;
 use App\Models\Product;
@@ -576,24 +577,33 @@ class SellerFeatureController extends Controller
 
     private function servicesData(Shop $shop): array
     {
-        $products = $shop->products()->with('inventory')->latest()->limit(30)->get();
+        $products = $shop->products()->where('sale_unit', 'service')->with('inventory')->latest()->limit(100)->get();
+        $serviceIds = $products->pluck('id');
+        $periodItems = $serviceIds->isEmpty()
+            ? collect()
+            : InvoiceItem::query()
+                ->whereIn('product_id', $serviceIds)
+                ->whereHas('invoice', fn ($query) => $query->where('shop_id', $shop->id)->where('issued_at', '>=', now()->subDays(30))->where('status', '!=', 'void'))
+                ->get(['line_total', 'total_cost_cents']);
+        $revenue = $periodItems->sum(fn (InvoiceItem $item): float => (float) $item->line_total);
+        $cost = $periodItems->sum(fn (InvoiceItem $item): float => ((int) ($item->total_cost_cents ?? 0)) / 100);
 
         return [
             'kind' => 'table',
             'kpis' => [
-                ['label' => 'Catálogo disponible', 'value' => number_format($shop->products()->count()), 'tone' => 'blue'],
-                ['label' => 'Con precio', 'value' => number_format($products->filter(fn (Product $product) => (float) $product->currentPrice() > 0)->count()), 'tone' => 'emerald'],
-                ['label' => 'Sin inventario', 'value' => number_format($products->filter(fn (Product $product) => ! $product->inventory?->track_inventory)->count()), 'tone' => 'amber'],
+                ['label' => 'Servicios', 'value' => number_format($products->count()), 'tone' => 'blue'],
+                ['label' => 'Cobrado · 30 días', 'value' => $this->money($revenue), 'tone' => 'emerald'],
+                ['label' => 'Ganancia · 30 días', 'value' => $this->money($revenue - $cost), 'tone' => 'amber'],
             ],
             'rows' => $products->map(fn (Product $product) => [
                 'primary' => $product->name,
-                'secondary' => 'Precio RD$ '.number_format($product->currentPrice(), 2).' · '.ucfirst((string) $product->sale_unit),
-                'value' => $product->inventory?->track_inventory ? number_format((int) $product->inventory->stock_quantity).' en stock' : 'Sin control de stock',
-                'status' => 'Disponible para vender',
+                'secondary' => 'Precio RD$ '.number_format($product->currentPrice(), 2).' · '.($product->description ?: 'Sin descripción'),
+                'value' => $product->inventory?->cost_price !== null ? 'Insumos RD$ '.number_format((float) $product->inventory->cost_price, 2) : 'Sin costo de insumos',
+                'status' => $product->moderation_status->value === 'active' ? 'Publicado · cobrable' : 'Borrador · oculto en Terminal',
             ])->all(),
-            'note' => 'Los servicios y productos sin inventario se pueden vender desde Terminal. La creación conserva el mismo catálogo para no duplicar artículos.',
+            'note' => 'Los servicios se cobran desde Terminal, factura y caja sin descontar inventario. El costo de insumos es opcional y se usa para calcular la ganancia real.',
             'actions' => [
-                ['label' => 'Crear producto o servicio', 'url' => route('seller.shops.products.create', $shop), 'tone' => 'primary'],
+                ['label' => 'Nuevo servicio', 'url' => route('seller.shops.products.create', $shop).'?sale_unit=service', 'tone' => 'primary'],
                 ['label' => 'Ir a Terminal', 'url' => route('seller.shops.pos', $shop), 'tone' => 'secondary'],
             ],
         ];

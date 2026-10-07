@@ -35,6 +35,55 @@ class InventoryService
                 ->lockForUpdate()
                 ->first();
 
+            if ($product->isService()) {
+                // Services share the catalog and accounting flow, but never
+                // consume physical stock. Their optional cost is the cost of
+                // materials/inputs per service and is still captured for
+                // exact gross-profit reporting.
+                $inventory ??= $product->inventory()->create([
+                    'track_inventory' => false,
+                    'cost_price' => null,
+                    'stock_quantity' => 0,
+                    'available_ml' => null,
+                    'sold_quantity' => 0,
+                    'low_stock_threshold' => 0,
+                ]);
+                $unitCost = $inventory->cost_price === null ? null : (float) $inventory->cost_price;
+                $totalCostCents = $unitCost === null ? null : Money::toCents($unitCost) * $quantity;
+                $inventory->sold_quantity += $quantity;
+                $inventory->save();
+
+                $movement = InventoryMovement::create([
+                    'product_id' => $product->id,
+                    'type' => 'sale',
+                    'quantity' => -$quantity,
+                    'stock_before' => 0,
+                    'stock_after' => 0,
+                    'unit_price' => $unitPrice ?? $product->currentPrice(),
+                    'unit_cost' => $unitCost,
+                    'total_cost_cents' => $totalCostCents,
+                    'notes' => $notes ?: 'Venta de servicio sin inventario',
+                    'user_id' => $userId,
+                    'created_at' => now(),
+                ]);
+
+                if ($createInvoice) {
+                    $this->createInvoiceForSales(
+                        $product->shop_id,
+                        [['product' => $product, 'quantity' => $quantity, 'unit_price' => $unitPrice]],
+                        [$movement],
+                        $userId,
+                        'web',
+                        'paid',
+                        0,
+                        0,
+                        $paymentMethod ?? 'cash'
+                    );
+                }
+
+                return $movement;
+            }
+
             if (! $inventory?->track_inventory) {
                 throw new InvalidArgumentException('Activa el control de inventario para registrar movimientos de este producto.');
             }

@@ -137,6 +137,11 @@ class Product extends Model
         return $this->sale_unit === 'decant';
     }
 
+    public function isService(): bool
+    {
+        return $this->sale_unit === 'service';
+    }
+
     public function isOnSale(?Carbon $at = null): bool
     {
         if ($this->sale_price === null || $this->price === null || (float) $this->sale_price >= (float) $this->price) {
@@ -169,6 +174,7 @@ class Product extends Model
             'bottle' => 'Botella completa',
             'ml' => 'Mililitro',
             'decant' => 'Decant',
+            'service' => 'Servicio',
             default => 'Unidad',
         };
     }

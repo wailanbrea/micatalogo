@@ -72,12 +72,13 @@ class MobileOperationService
                 app(PlanLimitsService::class)->assertCanAddProducts($shop, 1);
                 $name = $data['name'] ?? throw ValidationException::withMessages(['name' => 'Indica el nombre.']);
                 $price = $data['price'] ?? throw ValidationException::withMessages(['price' => 'Indica el precio.']);
+                $isService = $presentation['sale_unit'] === 'service';
                 $product = $shop->products()->make(['name' => $name, 'price' => $price,
                     'slug' => (Str::slug($name) ?: 'producto').'-'.strtolower($data['product_id']),
                     'currency' => 'DOP', 'sale_unit' => $presentation['sale_unit'], 'volume_ml' => $presentation['volume_ml'],
                     'inventory_source_product_id' => $presentation['inventory_source_product_id'],
                     'moderation_status' => ProductModerationStatus::Active,
-                    'availability_status' => ProductAvailabilityStatus::OutOfStock, 'published_at' => now()]);
+                    'availability_status' => $isService ? ProductAvailabilityStatus::Available : ProductAvailabilityStatus::OutOfStock, 'published_at' => now()]);
                 $product->forceFill(['public_id' => $data['product_id']])->save();
                 $initialStock = 0;
                 $initialAvailableMl = null;
@@ -94,9 +95,11 @@ class MobileOperationService
                             : ProductAvailabilityStatus::OutOfStock,
                     ])->save();
                 }
-                $product->inventory()->create(['track_inventory' => true, 'stock_quantity' => $initialStock, 'available_ml' => null,
+                $product->inventory()->create(['track_inventory' => ! $isService, 'stock_quantity' => $isService ? 0 : $initialStock, 'available_ml' => null,
                     'cost_price' => $data['cost_price'] ?? null, 'sold_quantity' => 0, 'low_stock_threshold' => $data['minimum_stock'] ?? 3]);
-                app(InventoryService::class)->synchronizeDecantStock($product);
+                if (! $isService) {
+                    app(InventoryService::class)->synchronizeDecantStock($product);
+                }
             } else {
                 abort_if($product->trashed(), 409, 'El producto está en la papelera.');
                 if (isset($data['expected_price']) && (int) round($product->currentPrice() * 100) !== (int) round((float) $data['expected_price'] * 100)) {
@@ -175,6 +178,12 @@ class MobileOperationService
 
         if ($saleUnit === 'unit') {
             return ['sale_unit' => 'unit', 'volume_ml' => null, 'inventory_source_product_id' => null];
+        }
+
+        if ($saleUnit === 'service') {
+            app(BusinessCapabilityService::class)->assert($shop, 'services');
+
+            return ['sale_unit' => 'service', 'volume_ml' => null, 'inventory_source_product_id' => null];
         }
 
         if (! in_array($saleUnit, ['bottle', 'ml', 'decant'], true)) {

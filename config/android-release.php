@@ -2,13 +2,13 @@
 
 // Verified against the signed artifact; no credentials belong in this manifest.
 return [
-    'version_code' => 58,
-    'version_name' => '1.0.57',
+    'version_code' => 59,
+    'version_name' => '1.0.58',
     'minimum_supported_version_code' => 23,
-    'apk_url' => 'https://micatalogo.bsolutions.dev/downloads/bspos-1.0.57-release.apk',
-    'apk_sha256' => '9d50931b3db273c0ae7d68303007b39bd6982c5ff0732a623ce31aa00ec5727f',
-    'release_notes' => 'Agrega filtros de Productos y Decants al punto de venta y mejora la navegación.',
+    'apk_url' => 'https://micatalogo.bsolutions.dev/downloads/bspos-1.0.58-release.apk',
+    'apk_sha256' => 'afe2c1241b4dfc24c13084fd6272d259e436168634333a8ad019cbde80021c20',
+    'release_notes' => 'Agrega servicios vendibles sin inventario al catálogo y al POS, con cálculo opcional de insumos y ganancia.',
     'release_date' => '2026-10-07',
     'min_sdk' => 26,
-    'size_bytes' => 39748801,
+    'size_bytes' => 39748805,
 ];

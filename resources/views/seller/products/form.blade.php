@@ -6,6 +6,7 @@
     $capabilities = app(\App\Services\BusinessProfileService::class)->capabilities($shop);
     $productFields = app(\App\Services\BusinessProfileService::class)->profile($shop)['product_fields'] ?? [];
     $showInventory = ($capabilities['inventory'] ?? 'disabled') === 'enabled';
+    $showServices = ($capabilities['services'] ?? 'disabled') === 'enabled';
     $showWholesale = ($capabilities['wholesale'] ?? 'disabled') === 'enabled';
     $showSku = in_array('sku', $productFields, true);
     $showBarcode = in_array('barcode', $productFields, true);
@@ -67,7 +68,7 @@
                     </div>
                 @endif
 
-                <form class="mt-6 space-y-6" method="POST" enctype="multipart/form-data" action="{{ $product->exists ? route('seller.shops.products.update', [$shop, $product]) : route('seller.shops.products.store', $shop) }}" x-data="{ trackInventory: {{ $showInventory && old('track_inventory', $product->exists ? ($product->inventory?->track_inventory ?? false) : true) ? 'true' : 'false' }}, saleUnit: '{{ old('sale_unit', $product->sale_unit ?? 'unit') }}', sourceProductId: '{{ old('inventory_source_product_id', $product->inventory_source_product_id) }}', sourceProducts: @js($sourceOptions), get selectedSource() { return this.sourceProducts.find(source => String(source.id) === String(this.sourceProductId)) || null }, imagePreview: null, imageSearch: { query: '', results: [], selected: null, loading: false, error: '', endpoint: '{{ route('seller.shops.products.images.search', $shop) }}' }, async searchImages() { const query = (this.imageSearch.query || document.getElementById('name')?.value || '').trim(); if (query.length < 2) { this.imageSearch.error = 'Escribe primero el nombre del producto.'; return; } this.imageSearch.query = query; this.imageSearch.loading = true; this.imageSearch.error = ''; try { const response = await fetch(`${this.imageSearch.endpoint}?q=${encodeURIComponent(query)}`, { headers: { Accept: 'application/json' } }); const payload = await response.json(); if (!response.ok) throw new Error(payload.message || 'No se pudieron consultar imágenes.'); this.imageSearch.results = payload.results || []; if (!this.imageSearch.results.length) this.imageSearch.error = 'No encontramos imágenes para ese nombre. Prueba con otra búsqueda.'; } catch (error) { this.imageSearch.error = error.message; } finally { this.imageSearch.loading = false; } } }">
+                <form class="mt-6 space-y-6" method="POST" enctype="multipart/form-data" action="{{ $product->exists ? route('seller.shops.products.update', [$shop, $product]) : route('seller.shops.products.store', $shop) }}" x-data="{ trackInventory: {{ $showInventory && old('track_inventory', $product->exists ? ($product->inventory?->track_inventory ?? false) : true) && $product->sale_unit !== 'service' ? 'true' : 'false' }}, saleUnit: '{{ old('sale_unit', $product->sale_unit ?? 'unit') }}', sourceProductId: '{{ old('inventory_source_product_id', $product->inventory_source_product_id) }}', sourceProducts: @js($sourceOptions), get selectedSource() { return this.sourceProducts.find(source => String(source.id) === String(this.sourceProductId)) || null }, imagePreview: null, imageSearch: { query: '', results: [], selected: null, loading: false, error: '', endpoint: '{{ route('seller.shops.products.images.search', $shop) }}' }, async searchImages() { const query = (this.imageSearch.query || document.getElementById('name')?.value || '').trim(); if (query.length < 2) { this.imageSearch.error = 'Escribe primero el nombre del producto.'; return; } this.imageSearch.query = query; this.imageSearch.loading = true; this.imageSearch.error = ''; try { const response = await fetch(`${this.imageSearch.endpoint}?q=${encodeURIComponent(query)}`, { headers: { Accept: 'application/json' } }); const payload = await response.json(); if (!response.ok) throw new Error(payload.message || 'No se pudieron consultar imágenes.'); this.imageSearch.results = payload.results || []; if (!this.imageSearch.results.length) this.imageSearch.error = 'No encontramos imágenes para ese nombre. Prueba con otra búsqueda.'; } catch (error) { this.imageSearch.error = error.message; } finally { this.imageSearch.loading = false; } } }">
                     @csrf
                     @if ($product->exists)
                         @method('PUT')
@@ -201,20 +202,21 @@
                         @error('sale_ends_at') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                     </div>
 
-                    @if ($showPerfumePresentation)
+                    @if ($showPerfumePresentation || $showServices)
                     <!-- Presentación y unidad de venta -->
                     <div class="rounded-xl border border-blue-200 bg-blue-50/50 p-4 sm:p-5">
                         <div>
                             <label class="block text-sm font-bold text-slate-900" for="sale_unit">¿Cómo se vende este producto?</label>
-                            <p class="mt-0.5 text-xs text-slate-600">Define si el inventario se cuenta por botella, ml o decant.</p>
+                            <p class="mt-0.5 text-xs text-slate-600">Elige una unidad de venta o registra una oferta de servicio sin inventario.</p>
                         </div>
                         <div class="mt-4 grid gap-4 sm:grid-cols-2">
                             <div>
-                                <select class="w-full rounded-md border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="sale_unit" name="sale_unit" x-model="saleUnit">
+                                <select @change="if (saleUnit === 'service') { trackInventory = false; }" class="w-full rounded-md border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="sale_unit" name="sale_unit" x-model="saleUnit">
                                     <option value="unit">Unidad</option>
                                     <option value="bottle">Botella completa</option>
                                     <option value="ml">Por mililitro (ml)</option>
                                     <option value="decant">Decant</option>
+                                    @if ($showServices)<option value="service">Servicio (sin inventario)</option>@endif
                                 </select>
                             </div>
 
@@ -348,7 +350,7 @@
                     </div>
 
                     <!-- Control de Inventario (Inventory Lite) -->
-                    @if ($showInventory)<div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4 sm:p-5">
+                    @if ($showInventory)<div x-show="saleUnit !== 'service'" x-cloak class="rounded-xl border border-slate-200 bg-slate-50/50 p-4 sm:p-5">
                         <div class="flex items-center justify-between">
                             <div>
                                 <label class="text-sm font-bold text-slate-900 flex items-center gap-2 cursor-pointer" for="track_inventory">
@@ -401,6 +403,10 @@
                                 >
                             </div>
                         </div>
+                    </div>
+                    <div x-show="saleUnit === 'service'" x-cloak class="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 sm:p-5">
+                        <p class="text-sm font-black text-emerald-900">Servicio sin inventario</p>
+                        <p class="mt-1 text-xs leading-5 text-emerald-800">Se cobrará desde Terminal, factura y caja, pero no descontará unidades. El costo opcional de insumos se usa para calcular la ganancia.</p>
                     </div>@endif
 
                     <!-- Descripción -->

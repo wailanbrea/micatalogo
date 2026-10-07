@@ -18,7 +18,10 @@ class SellerPosController extends Controller
     public function index(Shop $shop, BusinessPresentationService $presentation): View
     {
         $products = $shop->products()
-            ->whereHas('inventory', fn ($query) => $query->where('track_inventory', true))
+            ->where(function ($query): void {
+                $query->whereHas('inventory', fn ($inventory) => $inventory->where('track_inventory', true))
+                    ->orWhere('sale_unit', 'service');
+            })
             ->with(['inventory', 'images', 'primaryImage', 'sourceProduct.inventory', 'shopCategory', 'globalCategory', 'attributeValues.attributeDefinition'])
             ->orderBy('name')
             ->get()
@@ -27,9 +30,11 @@ class SellerPosController extends Controller
                 $sourceAvailableMl = $product->isDecant() && $sourceInventory
                     ? ($sourceInventory->available_ml ?? (($sourceInventory->stock_quantity ?? 0) * (int) ($product->sourceProduct?->volume_ml ?? 0)))
                     : null;
-                $stock = $product->isDecant() && $product->volume_ml
+                $stock = $product->isService()
+                    ? null
+                    : ($product->isDecant() && $product->volume_ml
                     ? intdiv(max(0, (int) $sourceAvailableMl), (int) $product->volume_ml)
-                    : (int) $product->inventory->stock_quantity;
+                    : (int) ($product->inventory?->stock_quantity ?? 0));
 
                 return [
                 'id' => $product->public_id,
@@ -53,6 +58,7 @@ class SellerPosController extends Controller
                 'source_product_name' => $product->sourceProduct?->name,
                 'source_available_ml' => $sourceAvailableMl,
                 'is_decant' => $product->isDecant(),
+                'is_service' => $product->isService(),
                 'image_url' => $product->image_url,
                 'category' => $product->shopCategory?->name ?? $product->globalCategory?->name ?? 'Sin categoría',
                 ];

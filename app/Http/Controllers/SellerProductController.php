@@ -77,9 +77,14 @@ class SellerProductController extends Controller
 
     public function create(Shop $shop): View
     {
+        $requestedUnit = request()->query('sale_unit') === 'service' ? 'service' : 'unit';
+        if ($requestedUnit === 'service') {
+            app(\App\Services\BusinessCapabilityService::class)->assert($shop, 'services');
+        }
+
         return view('seller.products.form', [
             'shop' => $shop,
-            'product' => new Product(['currency' => config('catalog.currency', 'DOP')]),
+            'product' => new Product(['currency' => config('catalog.currency', 'DOP'), 'sale_unit' => $requestedUnit]),
             'globalCategories' => GlobalCategory::query()->where('status', 'active')->orderBy('sort_order')->orderBy('name')->get(),
             'shopCategories' => $shop->categories()->where('status', 'active')->orderBy('name')->get(),
             'sourceProducts' => $shop->products()->with('inventory')->whereIn('sale_unit', ['bottle', 'ml'])->orderBy('name')->get(),
@@ -103,15 +108,16 @@ class SellerProductController extends Controller
             $validated['barcode'] = $catalogMedia->normalizeBarcode($validated['barcode'] ?? null);
             $validated['sale_unit'] ??= 'unit';
             $this->validatePresentation($validated, $lockedShop);
+            $isService = $validated['sale_unit'] === 'service';
             $inventoryData = [
-                'track_inventory' => (bool) ($validated['track_inventory'] ?? false),
+                'track_inventory' => $isService ? false : (bool) ($validated['track_inventory'] ?? false),
                 'cost_price' => isset($validated['cost_price']) && $validated['cost_price'] !== '' ? $validated['cost_price'] : null,
                 'stock_quantity' => (int) ($validated['stock_quantity'] ?? 0),
                 'low_stock_threshold' => (int) ($validated['low_stock_threshold'] ?? 3),
                 'available_ml' => null,
             ];
 
-            if ($inventoryData['track_inventory'] && $inventoryData['stock_quantity'] === 0) {
+            if (! $isService && $inventoryData['track_inventory'] && $inventoryData['stock_quantity'] === 0) {
                 $validated['availability_status'] = ProductAvailabilityStatus::OutOfStock->value;
             }
 
@@ -132,7 +138,7 @@ class SellerProductController extends Controller
 
             $product->inventory()->create($inventoryData);
 
-            if ($inventoryData['track_inventory'] && $inventoryData['stock_quantity'] > 0) {
+            if (! $isService && $inventoryData['track_inventory'] && $inventoryData['stock_quantity'] > 0) {
                 $product->inventoryMovements()->create([
                     'user_id' => $request->user()->id,
                     'type' => 'restock',

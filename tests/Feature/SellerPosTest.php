@@ -59,6 +59,48 @@ test('seller can open the web POS and register a paid sale', function () {
         ->and($product->fresh()->inventory->stock_quantity)->toBe(6);
 });
 
+test('web POS sells a service without decrementing physical inventory and captures input cost', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->create(['user_id' => $user->id, 'business_type' => 'barbershop']);
+    $service = Product::factory()->create([
+        'shop_id' => $shop->id,
+        'name' => 'Corte clásico',
+        'price' => 800,
+        'sale_unit' => 'service',
+        'availability_status' => 'available',
+    ]);
+    $inventory = ProductInventory::create([
+        'product_id' => $service->id,
+        'track_inventory' => false,
+        'stock_quantity' => 0,
+        'cost_price' => 120,
+        'sold_quantity' => 0,
+        'low_stock_threshold' => 0,
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('seller.shops.pos', $shop))
+        ->assertOk()
+        ->assertSee('Corte', false)
+        ->assertSee('Servicio · sin inventario');
+
+    $this->actingAs($user)
+        ->post(route('seller.shops.pos.store', $shop), [
+            'client_sale_uuid' => (string) Str::uuid(),
+            'payment_status' => 'paid',
+            'sale_mode' => 'retail',
+            'credit_amount' => '0.00',
+            'payments' => [['method' => 'cash', 'amount' => '1600.00']],
+            'items' => [webPosProductPayload($service, 2)],
+        ])
+        ->assertRedirect(route('seller.shops.pos', $shop));
+
+    expect($inventory->fresh()->stock_quantity)->toBe(0)
+        ->and($inventory->fresh()->sold_quantity)->toBe(2)
+        ->and((float) Invoice::query()->sole()->total)->toBe(1600.0)
+        ->and(Invoice::query()->sole()->items()->sole()->total_cost_cents)->toBe(24000);
+});
+
 test('web POS credit checkout can omit a zero-value payment row', function () {
     $user = User::factory()->create(['plan' => 'pro']);
     $shop = Shop::factory()->create(['user_id' => $user->id]);

@@ -569,7 +569,9 @@
                         </div>
 
                         @if ($module['note'])
-                            <div class="rounded-2xl border border-blue-100 bg-blue-50/60 px-5 py-4 text-sm leading-6 text-blue-900">{{ $module['note'] }}</div>
+                            <div class="rounded-2xl border border-blue-100 bg-blue-50/60 px-5 py-4 text-sm leading-6 text-blue-900">
+                                @if ($featureKey === 'services')<span class="font-black">Servicio sin inventario.</span> @endif{{ $module['note'] }}
+                            </div>
                         @endif
 
                         @if (! empty($related))

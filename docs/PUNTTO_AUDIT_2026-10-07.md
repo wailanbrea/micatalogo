@@ -183,7 +183,22 @@ sin permisos.
    importación y configuración; la paridad visual completa todavía no está demostrada.
 5. Completar la matriz de estados y validaciones de cada pantalla y repetirla para
    owner y vendedor con pruebas equivalentes en web y Android.
-6. Implementar el flujo de servicios vendibles: Puntto ya muestra la pestaña
-   `Servicios` en Terminal; MiCatalogo todavía conserva ese menú como módulo preparado
-   y no tiene una unidad de venta de servicio conectada al POS y a la contabilidad.
+6. Verificar en dispositivo la venta de servicios sincronizados desde el backend y la
+   actualización forzada desde la 1.0.57 a la 1.0.58.
+
+## Flujo de servicios implementado
+
+La brecha funcional de servicios quedó resuelta en web y Android:
+
+- `Servicios` permite crear ofertas publicadas o en borrador con precio y costo
+  opcional de insumos.
+- La unidad `service` no crea ni descuenta stock físico; sí registra factura, caja,
+  crédito, comisión y costo capturado para la ganancia.
+- Terminal web y Android muestran los servicios con el estado `Servicio · sin
+  inventario`, permiten cantidades sin límite de stock y separan el filtro
+  `Servicios`.
+- La sincronización Android conserva la unidad `service` y el registrador local evita
+  movimientos de inventario al cobrar o devolver un servicio.
+- Verificación: `SellerPosTest` y `SellerFeatureModuleTest` pasan 18 pruebas y 182
+  aserciones en conjunto; Android `testDebugUnitTest` pasó en la release 1.0.58.
 
