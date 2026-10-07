@@ -69,6 +69,9 @@
                                         <input name="customer_name" value="{{ old('customer_name') }}" placeholder="Nombre del cliente" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm">
                                         <input name="customer_phone" value="{{ old('customer_phone') }}" placeholder="Teléfono" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm">
                                     </div>
+                                    <label class="block text-xs font-bold text-slate-500">Válida hasta (opcional)
+                                        <input type="date" name="valid_until" value="{{ old('valid_until') }}" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-normal text-slate-800 focus:border-blue-500 focus:ring-blue-500">
+                                    </label>
                                     <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_400px]">
                                         <div class="rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
                                             <div class="relative">

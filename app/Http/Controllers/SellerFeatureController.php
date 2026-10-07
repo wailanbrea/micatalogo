@@ -479,23 +479,38 @@ class SellerFeatureController extends Controller
 
     private function quotesData(Shop $shop): array
     {
+        $today = now()->toDateString();
+        $openQuotes = fn () => $shop->quotes()->whereIn('status', ['draft', 'sent']);
+        $activeQuotes = fn () => $openQuotes()
+            ->where(function ($query) use ($today): void {
+                $query->whereNull('valid_until')->orWhereDate('valid_until', '>=', $today);
+            });
+        $expiredQuotes = fn () => $openQuotes()
+            ->whereNotNull('valid_until')
+            ->whereDate('valid_until', '<', $today);
         $quotes = $shop->quotes()->with('items')->latest()->limit(30)->get();
 
         return [
             'kind' => 'table',
             'kpis' => [
                 ['label' => 'Cotizaciones', 'value' => number_format($shop->quotes()->count()), 'tone' => 'blue'],
-                ['label' => 'En seguimiento', 'value' => number_format($shop->quotes()->whereIn('status', ['draft', 'sent'])->count()), 'tone' => 'amber'],
+                ['label' => 'Vigentes', 'value' => number_format($activeQuotes()->count()), 'tone' => 'emerald'],
+                ['label' => 'Monto por convertir', 'value' => $this->money($activeQuotes()->sum('total')), 'tone' => 'blue'],
+                ['label' => 'Vencidas', 'value' => number_format($expiredQuotes()->count()), 'tone' => 'rose'],
                 ['label' => 'Convertidas a venta', 'value' => number_format($shop->quotes()->where('status', 'converted')->count()), 'tone' => 'emerald'],
             ],
             'rows' => $quotes->map(fn (CommercialQuote $quote) => [
                 'primary' => $quote->quote_number,
                 'secondary' => ($quote->customer_name ?: 'Cliente sin nombre').' · '.number_format($quote->items->sum('quantity')).' artículo(s)',
                 'value' => $this->money($quote->total),
-                'status' => match ($quote->status) {
-                    'converted' => 'Convertida', 'sent' => 'Enviada', default => 'Borrador'
-                },
-                'can_convert' => $quote->converted_invoice_id === null && $quote->status !== 'cancelled',
+                'status' => $quote->status !== 'converted' && $quote->status !== 'cancelled' && $quote->valid_until?->isBefore(today())
+                    ? 'Vencida'
+                    : match ($quote->status) {
+                        'converted' => 'Convertida', 'sent' => 'Enviada', default => 'Borrador'
+                    },
+                'can_convert' => $quote->converted_invoice_id === null
+                    && $quote->status !== 'cancelled'
+                    && ! ($quote->valid_until && $quote->valid_until->isBefore(today())),
                 'id' => $quote->public_id,
             ])->all(),
             'quoteProducts' => $shop->products()->with(['shopCategory', 'globalCategory', 'inventory', 'images', 'primaryImage'])->whereIn('availability_status', ['available', 'out_of_stock'])->orderBy('name')->limit(1000)->get()->map(fn (Product $product) => [

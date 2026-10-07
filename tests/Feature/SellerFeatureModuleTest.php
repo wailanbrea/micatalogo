@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Invoice;
+use App\Models\CommercialQuote;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductInventory;
@@ -66,6 +67,39 @@ test('all feature modules have a useful protected entry point', function () {
         ->assertSee('Cotizaciones')
         ->assertSee('Nueva cotización')
         ->assertSee('Ir a Terminal');
+});
+
+test('cotizaciones muestra vigentes, monto por convertir y vencidas en el resumen', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->for($user)->create();
+
+    CommercialQuote::create([
+        'shop_id' => $shop->id,
+        'quote_number' => 'COT-TEST-001',
+        'currency' => 'DOP',
+        'status' => 'draft',
+        'subtotal' => 1250,
+        'total' => 1250,
+        'valid_until' => today()->addDays(7),
+    ]);
+    CommercialQuote::create([
+        'shop_id' => $shop->id,
+        'quote_number' => 'COT-TEST-002',
+        'currency' => 'DOP',
+        'status' => 'sent',
+        'subtotal' => 750,
+        'total' => 750,
+        'valid_until' => today()->subDay(),
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('seller.shops.feature', [$shop, 'feature' => 'quotes']))
+        ->assertOk()
+        ->assertSee('Vigentes')
+        ->assertSee('Monto por convertir')
+        ->assertSee('Vencidas')
+        ->assertSee('RD$ 1,250.00')
+        ->assertSee('Vencida');
 });
 
 test('sales module supports Puntto-style period, search and status filters', function () {
