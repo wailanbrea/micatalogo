@@ -127,6 +127,10 @@ protegido de la web y de la API Android; las pestañas son de solo lectura y reu
 ventas/FIFO, catálogo sin inventario, métricas de vitrina y enlaces públicos existentes.
 No crean productos, ventas, visitas artificiales ni movimientos contables.
 
+La versión 1.0.54 elimina el segundo título interno del módulo Android: el encabezado
+del shell queda como la única identificación de la pantalla, mientras la descripción y
+el contenido contextual permanecen disponibles.
+
 La exportación también quedó alineada: el panel ofrece CSV y Excel; la API autenticada
 expone ambos formatos y Android 1.0.52 los guarda en Descargas usando el token de la
 sesión. Las pruebas verifican que la exportación sea de solo lectura y no cree ni
