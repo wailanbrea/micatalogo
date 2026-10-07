@@ -138,6 +138,7 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
         Route::post('/tiendas/{shop}/cotizaciones', [SellerCommerceController::class, 'storeQuote'])->name('shops.quotes.store');
         Route::post('/tiendas/{shop}/cotizaciones/{quote}/convertir', [SellerCommerceController::class, 'convertQuote'])->name('shops.quotes.convert');
         Route::post('/tiendas/{shop}/suplidores', [SellerCommerceController::class, 'storeSupplier'])->name('shops.suppliers.store');
+        Route::post('/tiendas/{shop}/compras/previsualizar', [SellerCommerceController::class, 'previewPurchaseInvoice'])->name('shops.purchases.preview');
         Route::post('/tiendas/{shop}/compras', [SellerCommerceController::class, 'storePurchaseDocument'])->name('shops.purchases.store');
         Route::post('/tiendas/{shop}/compras/{document}/recibir', [SellerCommerceController::class, 'receivePurchaseDocument'])->name('shops.purchases.receive');
         Route::post('/tiendas/{shop}/socios', [SellerCommerceController::class, 'storePartner'])->name('shops.partners.store');

@@ -241,21 +241,83 @@
                         @if (in_array($featureKey, ['containers', 'loads', 'purchase_invoices'], true))
                             <div class="rounded-2xl border border-amber-100 bg-amber-50/50 p-4 sm:p-5" x-data="{
                                 products: @js($module['purchaseProducts'] ?? []),
-                                items: [{ product_id: '', quantity: 1, unit_cost: '' }],
+                                items: [{ product_id: '', quantity: 1, unit_cost: '', source_name: '', match_label: '', errors: [] }],
                                 mode: 'received',
+                                invoiceBusy: false,
+                                invoiceFileName: '',
+                                invoiceMessage: '',
+                                invoiceError: '',
+                                invoiceWarnings: [],
                                 addItem() { this.items.push({ product_id: '', quantity: 1, unit_cost: '' }); },
                                 removeItem(index) { if (this.items.length > 1) this.items.splice(index, 1); },
                                 fillCost(index) {
                                     const product = this.products.find(item => item.id === this.items[index].product_id);
                                     if (product && !this.items[index].unit_cost) this.items[index].unit_cost = product.cost;
                                 },
-                                total() { return this.items.reduce((sum, item) => sum + ((Number(item.quantity) || 0) * (Number(item.unit_cost) || 0)), 0); }
+                                total() { return this.items.reduce((sum, item) => sum + ((Number(item.quantity) || 0) * (Number(item.unit_cost) || 0)), 0); },
+                                async readInvoice() {
+                                    const file = this.$refs.invoiceFile.files[0];
+                                    if (!file) {
+                                        this.invoiceError = 'Selecciona una factura antes de leerla.';
+                                        return;
+                                    }
+                                    this.invoiceBusy = true;
+                                    this.invoiceError = '';
+                                    this.invoiceMessage = '';
+                                    this.invoiceWarnings = [];
+                                    const token = this.$refs.purchaseForm.querySelector('input[name=_token]').value;
+                                    const body = new FormData();
+                                    body.append('_token', token);
+                                    body.append('file', file);
+                                    try {
+                                        const response = await fetch('{{ route('seller.shops.purchases.preview', $shop) }}', { method: 'POST', credentials: 'same-origin', headers: { Accept: 'application/json', 'X-CSRF-TOKEN': token }, body });
+                                        const payload = await response.json().catch(() => ({}));
+                                        if (!response.ok) {
+                                            const messages = Object.values(payload.errors || {}).flat();
+                                            throw new Error(messages[0] || payload.message || 'No se pudo leer la factura.');
+                                        }
+                                        this.invoiceFileName = payload.file?.name || file.name;
+                                        this.invoiceWarnings = payload.warnings || [];
+                                        this.items = (payload.rows || []).map(row => ({
+                                            product_id: row.product_id || '',
+                                            quantity: row.quantity || 1,
+                                            unit_cost: row.unit_cost || '',
+                                            source_name: row.source_name || row.product_name || '',
+                                            match_label: row.match_label || '',
+                                            errors: row.errors || [],
+                                        }));
+                                        const counts = payload.counts || {};
+                                        this.invoiceMessage = `${counts.matched || 0} producto(s) encontrados. ${counts.needs_review || 0} línea(s) requieren revisión antes de guardar.`;
+                                    } catch (error) {
+                                        this.invoiceError = error.message || 'No se pudo leer la factura.';
+                                    } finally {
+                                        this.invoiceBusy = false;
+                                    }
+                                }
                             }">
                                 <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                     <div><h2 class="text-base font-black text-slate-900">Nueva compra</h2><p class="mt-1 text-xs leading-5 text-slate-500">Crea un borrador con varias líneas o recibe todo de una vez. Cada recepción crea sus propios lotes FIFO.</p></div>
                                     <span class="rounded-full bg-white px-3 py-1.5 text-[11px] font-black text-amber-800 shadow-sm" x-text="`${items.length} producto(s)`"></span>
                                 </div>
-                                <form method="POST" action="{{ route('seller.shops.purchases.store', $shop) }}" class="space-y-4">
+                                <div class="mb-4 rounded-xl border border-blue-100 bg-blue-50/70 p-3 sm:p-4">
+                                    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                                        <div>
+                                            <p class="text-xs font-black text-blue-900">Leer factura y revisar antes de recibir</p>
+                                            <p class="mt-1 text-[11px] leading-5 text-blue-800">Importa Excel, CSV o PDF con texto seleccionable. El lector empareja tus productos por código, SKU o nombre y no toca el inventario.</p>
+                                        </div>
+                                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                            <input x-ref="invoiceFile" type="file" accept=".csv,.txt,.xlsx,.xls,.pdf,.jpg,.jpeg,.png,.webp" class="max-w-full rounded-lg border border-blue-200 bg-white px-2 py-2 text-xs text-slate-600">
+                                            <button type="button" @click="readInvoice()" :disabled="invoiceBusy" class="rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-black text-white hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60" x-text="invoiceBusy ? 'Leyendo…' : 'Leer factura'"></button>
+                                        </div>
+                                    </div>
+                                    <p x-show="invoiceFileName" x-cloak class="mt-2 text-[11px] font-bold text-blue-800" x-text="`Archivo: ${invoiceFileName}`"></p>
+                                    <p x-show="invoiceMessage" x-cloak class="mt-2 rounded-lg bg-white px-3 py-2 text-[11px] font-bold text-emerald-700" x-text="invoiceMessage"></p>
+                                    <p x-show="invoiceError" x-cloak class="mt-2 rounded-lg bg-rose-50 px-3 py-2 text-[11px] font-bold text-rose-700" x-text="invoiceError"></p>
+                                    <template x-if="invoiceWarnings.length">
+                                        <div class="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-[11px] text-amber-800"><p class="font-black">Revisa estas advertencias:</p><ul class="mt-1 list-disc space-y-1 pl-4"><template x-for="warning in invoiceWarnings" :key="warning"><li x-text="warning"></li></template></ul></div>
+                                    </template>
+                                </div>
+                                <form x-ref="purchaseForm" method="POST" action="{{ route('seller.shops.purchases.store', $shop) }}" class="space-y-4">
                                     @csrf
                                     <input type="hidden" name="type" value="{{ $featureKey === 'containers' ? 'container' : ($featureKey === 'loads' ? 'load' : 'purchase_invoice') }}">
                                     <input type="hidden" name="mode" x-model="mode">
@@ -270,7 +332,7 @@
                                         <div class="divide-y divide-slate-100">
                                             <template x-for="(item, index) in items" :key="index">
                                                 <div class="grid gap-2 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_110px_140px_34px] sm:items-center">
-                                                    <select required x-model="item.product_id" @change="fillCost(index)" :name="`items[${index}][product_id]`" class="rounded-lg border border-slate-300 px-2.5 py-2 text-sm"><option value="">Selecciona un producto</option><template x-for="product in products" :key="product.id"><option :value="product.id" x-text="product.name"></option></template></select>
+                                                    <div><select required x-model="item.product_id" @change="fillCost(index)" :name="`items[${index}][product_id]`" class="w-full rounded-lg border border-slate-300 px-2.5 py-2 text-sm"><option value="">Selecciona un producto</option><template x-for="product in products" :key="product.id"><option :value="product.id" x-text="product.code ? `${product.name} · ${product.code}` : product.name"></option></template></select><p x-show="item.source_name" x-cloak class="mt-1 text-[10px] text-slate-500"><span class="font-bold">Factura:</span> <span x-text="item.source_name"></span> · <span x-text="item.match_label"></span></p><p x-show="item.errors && item.errors.length" x-cloak class="mt-1 text-[10px] font-bold text-rose-600" x-text="item.errors[0]"></p></div>
                                                     <input required x-model.number="item.quantity" :name="`items[${index}][quantity]`" type="number" min="1" class="rounded-lg border border-slate-300 px-2.5 py-2 text-sm" aria-label="Cantidad">
                                                     <input required x-model="item.unit_cost" :name="`items[${index}][unit_cost]`" type="number" min="0" step="0.01" placeholder="0.00" class="rounded-lg border border-slate-300 px-2.5 py-2 text-sm" aria-label="Costo unitario">
                                                     <button type="button" @click="removeItem(index)" :disabled="items.length === 1" class="rounded-lg px-2 py-2 text-lg font-bold text-rose-500 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-30" aria-label="Quitar producto">×</button>

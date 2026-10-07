@@ -10,7 +10,9 @@ use App\Models\PurchaseDocument;
 use App\Models\Shop;
 use App\Services\CashRegisterService;
 use App\Services\InventoryService;
+use App\Services\PurchaseInvoiceReader;
 use App\Support\Money;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -146,6 +148,15 @@ class SellerCommerceController extends Controller
         $shop->suppliers()->create($data);
 
         return back()->with('status', 'Suplidor guardado.');
+    }
+
+    public function previewPurchaseInvoice(Request $request, Shop $shop, PurchaseInvoiceReader $reader): JsonResponse
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:csv,txt,xlsx,xls,pdf,jpg,jpeg,png,webp', 'extensions:csv,txt,xlsx,xls,pdf,jpg,jpeg,png,webp', 'max:10240'],
+        ]);
+
+        return response()->json($reader->preview($request->file('file'), $shop, $request->user()));
     }
 
     public function storePurchaseDocument(Request $request, Shop $shop, InventoryService $inventory): RedirectResponse

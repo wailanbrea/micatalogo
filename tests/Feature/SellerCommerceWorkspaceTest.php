@@ -11,6 +11,7 @@ use App\Models\Shop;
 use App\Models\User;
 use App\Services\CashRegisterService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 
 uses(RefreshDatabase::class);
 
@@ -112,6 +113,50 @@ test('las compras admiten varias líneas en borrador y solo reciben inventario u
         ->assertRedirect(route('seller.shops.feature', [$shop, 'feature' => 'containers']))
         ->assertSessionHasErrors('purchase');
     expect(InventoryMovement::where('product_id', $first->id)->count())->toBe(1);
+});
+
+test('leer factura prepara líneas emparejadas sin crear documentos ni tocar inventario', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->for($user)->create();
+    $product = Product::factory()->for($shop)->create([
+        'name' => 'Perfume Azul',
+        'product_code' => 'SKU-AZUL',
+        'price' => 2500,
+    ]);
+    ProductInventory::create(['product_id' => $product->id, 'track_inventory' => true, 'stock_quantity' => 4, 'cost_price' => 900, 'sold_quantity' => 0]);
+
+    $file = UploadedFile::fake()->createWithContent(
+        'factura-suplidor.csv',
+        "Producto;SKU;Cantidad;Costo unitario\nPerfume Azul;SKU-AZUL;3;950,50\nProducto nuevo;SKU-NUEVO;2;1200\n",
+    );
+
+    $response = $this->actingAs($user)->postJson(route('seller.shops.purchases.preview', $shop), ['file' => $file]);
+
+    $response->assertOk()
+        ->assertJsonPath('counts.total', 2)
+        ->assertJsonPath('counts.matched', 1)
+        ->assertJsonPath('rows.0.product_id', $product->public_id)
+        ->assertJsonPath('rows.0.quantity', 3)
+        ->assertJsonPath('rows.0.unit_cost', '950.50')
+        ->assertJsonPath('rows.0.match_type', 'product_code')
+        ->assertJsonPath('rows.1.product_id', null)
+        ->assertJsonPath('rows.1.valid', false);
+
+    expect(PurchaseDocument::where('shop_id', $shop->id)->count())->toBe(0)
+        ->and(InventoryMovement::where('product_id', $product->id)->count())->toBe(0)
+        ->and((int) $product->inventory()->first()->fresh()->stock_quantity)->toBe(4);
+});
+
+test('leer una foto de factura no inventa datos y devuelve una revisión clara', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->for($user)->create();
+
+    $this->actingAs($user)
+        ->postJson(route('seller.shops.purchases.preview', $shop), ['file' => UploadedFile::fake()->image('factura.jpg')])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['file']);
+
+    expect(PurchaseDocument::where('shop_id', $shop->id)->count())->toBe(0);
 });
 
 test('movimiento de socio exige caja y queda enlazado al movimiento contable', function () {

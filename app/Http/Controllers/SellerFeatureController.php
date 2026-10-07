@@ -493,7 +493,12 @@ class SellerFeatureController extends Controller
             ],
             'rows' => $rows,
             'suppliers' => $suppliers->map(fn (Supplier $supplier) => ['id' => $supplier->public_id, 'name' => $supplier->name])->all(),
-            'purchaseProducts' => $products->map(fn (Product $product) => ['id' => $product->public_id, 'name' => $product->name, 'cost' => number_format((float) ($product->inventory?->cost_price ?? 0), 2, '.', '')])->all(),
+            'purchaseProducts' => $products->map(fn (Product $product) => [
+                'id' => $product->public_id,
+                'name' => $product->name,
+                'code' => $product->product_code ?: ($product->barcode ?: ''),
+                'cost' => number_format((float) ($product->inventory?->cost_price ?? 0), 2, '.', ''),
+            ])->all(),
             'note' => "{$title} registra recepciones reales, crea un lote con el costo indicado y mantiene el historial FIFO. No se modifica ningún lote anterior.",
             'actions' => [
                 ['label' => 'Ver inventario', 'url' => route('seller.shops.inventory.index', $shop), 'tone' => 'primary'],
