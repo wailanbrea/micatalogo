@@ -229,128 +229,176 @@
                         </button>
                     </div>
 
-                    <div x-show="checkoutOpen" x-cloak @click.away="closeCheckout()" @keydown.escape.window="closeCheckout()" role="dialog" aria-modal="true" aria-labelledby="web-pos-checkout-title" class="fixed inset-0 z-[60] flex items-end justify-center bg-slate-950/60 p-0 backdrop-blur-md sm:items-center sm:p-5">
-                        <div @click.stop class="flex max-h-[calc(100dvh-1rem)] w-full max-w-2xl flex-col overflow-y-auto rounded-t-[30px] border border-white/80 bg-white shadow-[0_24px_90px_rgba(15,23,42,0.3)] sm:max-h-[calc(100dvh-2.5rem)] sm:rounded-[30px]">
-                            <div class="shrink-0 border-b border-slate-100 bg-white px-5 pb-4 pt-5 sm:px-7 sm:pt-6">
+                    <div x-show="checkoutOpen" x-cloak @click.away="closeCheckout()" @keydown.escape.window="closeCheckout()" role="dialog" aria-modal="true" aria-labelledby="web-pos-checkout-title" class="fixed inset-0 z-[60] flex items-end justify-center bg-slate-950/65 p-0 backdrop-blur-md sm:items-center sm:p-5">
+                        <div @click.stop class="flex max-h-[calc(100dvh-1rem)] w-full max-w-3xl flex-col overflow-hidden rounded-t-[30px] border border-white/80 bg-white shadow-[0_24px_90px_rgba(15,23,42,0.35)] sm:max-h-[calc(100dvh-2.5rem)] sm:rounded-[30px]">
+                            <div class="shrink-0 border-b border-slate-100 bg-white px-5 pb-4 pt-5 sm:px-8 sm:pt-6">
                                 <div class="mx-auto mb-4 h-1.5 w-14 rounded-full bg-slate-200 sm:hidden"></div>
                                 <div class="flex items-start justify-between gap-4">
                                     <div>
                                         <div class="flex items-center gap-2">
-                                            <h2 id="web-pos-checkout-title" class="text-2xl font-black tracking-tight text-slate-950">Cobrar</h2>
-                                            <span class="rounded-full bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">Venta</span>
+                                            <span class="flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-600 text-lg text-white shadow-lg shadow-blue-200">$</span>
+                                            <div>
+                                                <div class="flex items-center gap-2">
+                                                    <h2 id="web-pos-checkout-title" class="text-2xl font-black tracking-tight text-slate-950">Cobrar</h2>
+                                                    <span class="rounded-full bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">Venta</span>
+                                                </div>
+                                                <p class="mt-1 text-xs font-medium text-slate-500"><span x-text="cartItemCount"></span> artículo(s) · revisa el cobro antes de confirmar</p>
+                                            </div>
                                         </div>
-                                        <p class="mt-2 text-3xl font-black tabular-nums text-slate-950" x-text="money(total)"></p>
-                                        <p class="mt-1 text-xs font-medium text-slate-500"><span x-text="cartItemCount"></span> artículo(s) · revisa el cobro antes de confirmar</p>
+                                        <p class="mt-4 text-3xl font-black tabular-nums text-slate-950" x-text="money(total)"></p>
                                     </div>
                                     <button type="button" @click="closeCheckout()" class="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-2xl leading-none text-slate-500 transition hover:bg-slate-50 hover:text-slate-900" aria-label="Cerrar cobro">&times;</button>
                                 </div>
                             </div>
 
-                            <div class="space-y-4 px-5 py-5 sm:px-7 sm:py-6">
-                        <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-                            <div class="mb-3 flex items-center justify-between gap-3">
-                                <p class="text-xs font-black uppercase tracking-[0.16em] text-slate-500">Detalle de la venta</p>
-                                <span class="rounded-full bg-white px-2.5 py-1 text-[11px] font-black text-slate-500" x-text="cartItemCount + ' unidad(es)'"></span>
-                            </div>
-                            <div class="max-h-44 space-y-2 overflow-y-auto pr-1">
-                                <template x-for="item in cart" :key="'checkout-' + item.id">
-                                    <div class="flex items-center gap-3 rounded-xl bg-white px-3 py-2.5 shadow-sm">
-                                        <div class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100">
-                                            <template x-if="item.imageUrl"><img :src="item.imageUrl" :alt="item.name" class="h-full w-full object-contain p-1"></template>
-                                            <template x-if="!item.imageUrl"><span class="text-sm font-black text-blue-300" x-text="item.name.charAt(0).toUpperCase()"></span></template>
+                            <div class="min-h-0 space-y-4 overflow-y-auto px-5 py-5 sm:px-8 sm:py-6">
+                                <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                                    <div class="mb-3 flex items-center justify-between gap-3">
+                                        <div>
+                                            <p class="text-xs font-black uppercase tracking-[0.16em] text-slate-500">Detalle de la venta</p>
+                                            <p class="mt-1 text-xs text-slate-500">El inventario se actualiza al confirmar.</p>
                                         </div>
-                                        <div class="min-w-0 flex-1">
-                                            <p class="truncate text-xs font-black text-slate-900" x-text="item.name"></p>
-                                            <p class="mt-0.5 text-[11px] text-slate-500" x-text="item.quantity + ' × ' + money(item.unitPrice)"></p>
-                                        </div>
-                                        <span class="shrink-0 text-sm font-black tabular-nums text-slate-950" x-text="money(lineTotal(item))"></span>
+                                        <span class="rounded-full bg-white px-2.5 py-1 text-[11px] font-black text-slate-500" x-text="cartItemCount + ' unidad(es)'"></span>
                                     </div>
-                                </template>
-                            </div>
-                        </div>
-
-                        @if ($showCredit)
-                            <div>
-                                <label class="text-xs font-black text-slate-700" for="payment_kind">Forma de cobro</label>
-                                <select id="payment_kind" x-model="paymentKind" class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100">
-                                    <option value="cash">Contado</option>
-                                    <option value="mixed">Pago parcial + crédito</option>
-                                    <option value="credit">A crédito</option>
-                                </select>
-                            </div>
-                        @else
-                            <input type="hidden" x-model="paymentKind" value="cash">
-                        @endif
-
-                        <div x-show="paymentKind !== 'credit'" x-cloak>
-                            <label class="text-xs font-black text-slate-700" for="payment_method">Método de pago</label>
-                            <select id="payment_method" x-model="paymentMethod" class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100">
-                                @foreach ($paymentMethods as $method => $config)
-                                    @continue($method === 'credit')
-                                    <option value="{{ $method }}">{{ $config['label'] ?? $method }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div x-show="paymentKind === 'mixed'" x-cloak>
-                            <label class="text-xs font-black text-slate-700" for="mixed_credit_amount">Monto pendiente a crédito</label>
-                            <input id="mixed_credit_amount" x-model.number="mixedCreditAmount" type="number" min="0.01" step="0.01" :max="total" class="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
-                        </div>
-
-                        <div class="grid gap-3 sm:grid-cols-2">
-                            <div>
-                                <label class="text-xs font-black text-slate-700" for="pos_discount">Descuento</label>
-                                <div class="relative mt-1.5">
-                                    <span class="pointer-events-none absolute left-3 top-2.5 text-sm font-bold text-slate-400">RD$</span>
-                                    <input id="pos_discount" x-model.number="discount" type="number" min="0" step="0.01" :max="subtotal" class="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-12 pr-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100" placeholder="0.00">
+                                    <div class="max-h-44 space-y-2 overflow-y-auto pr-1">
+                                        <template x-for="item in cart" :key="'checkout-' + item.id">
+                                            <div class="flex items-center gap-3 rounded-xl bg-white px-3 py-2.5 shadow-sm">
+                                                <div class="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-100">
+                                                    <template x-if="item.imageUrl"><img :src="item.imageUrl" :alt="item.name" class="h-full w-full object-contain p-1"></template>
+                                                    <template x-if="!item.imageUrl"><span class="text-sm font-black text-blue-300" x-text="item.name.charAt(0).toUpperCase()"></span></template>
+                                                </div>
+                                                <div class="min-w-0 flex-1">
+                                                    <p class="truncate text-xs font-black text-slate-900" x-text="item.name"></p>
+                                                    <p class="mt-0.5 text-[11px] text-slate-500" x-text="item.quantity + ' × ' + money(item.unitPrice)"></p>
+                                                </div>
+                                                <span class="shrink-0 text-sm font-black tabular-nums text-slate-950" x-text="money(lineTotal(item))"></span>
+                                            </div>
+                                        </template>
+                                    </div>
                                 </div>
+
+                                @if ($showCredit)
+                                    <div>
+                                        <div class="mb-2 flex items-center justify-between">
+                                            <label class="text-xs font-black uppercase tracking-[0.14em] text-slate-500" for="payment_kind">Forma de cobro</label>
+                                            <span class="text-[11px] font-semibold text-slate-400">Selecciona una opción</span>
+                                        </div>
+                                        <div id="payment_kind" class="grid gap-2 sm:grid-cols-3" role="group" aria-label="Forma de cobro">
+                                            <button type="button" @click="paymentKind = 'cash'" :aria-pressed="paymentKind === 'cash'" :class="paymentKind === 'cash' ? 'border-blue-600 bg-blue-50 text-blue-800 ring-2 ring-blue-100' : 'border-slate-200 bg-white text-slate-600 hover:border-blue-200'" class="rounded-2xl border px-3 py-3 text-left transition">
+                                                <span class="flex items-center gap-2 text-sm font-black"><span class="flex h-7 w-7 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">$</span>Contado</span>
+                                                <span class="mt-1 block text-[11px] font-medium text-slate-500">Pago completo ahora</span>
+                                            </button>
+                                            <button type="button" @click="paymentKind = 'mixed'" :aria-pressed="paymentKind === 'mixed'" :class="paymentKind === 'mixed' ? 'border-blue-600 bg-blue-50 text-blue-800 ring-2 ring-blue-100' : 'border-slate-200 bg-white text-slate-600 hover:border-blue-200'" class="rounded-2xl border px-3 py-3 text-left transition">
+                                                <span class="flex items-center gap-2 text-sm font-black"><span class="flex h-7 w-7 items-center justify-center rounded-xl bg-amber-100 text-amber-700">↔</span>Pago mixto</span>
+                                                <span class="mt-1 block text-[11px] font-medium text-slate-500">Una parte queda a crédito</span>
+                                            </button>
+                                            <button type="button" @click="paymentKind = 'credit'" :aria-pressed="paymentKind === 'credit'" :class="paymentKind === 'credit' ? 'border-blue-600 bg-blue-50 text-blue-800 ring-2 ring-blue-100' : 'border-slate-200 bg-white text-slate-600 hover:border-blue-200'" class="rounded-2xl border px-3 py-3 text-left transition">
+                                                <span class="flex items-center gap-2 text-sm font-black"><span class="flex h-7 w-7 items-center justify-center rounded-xl bg-violet-100 text-violet-700">◷</span>A crédito</span>
+                                                <span class="mt-1 block text-[11px] font-medium text-slate-500">Se cobra después</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                @else
+                                    <input type="hidden" x-model="paymentKind" value="cash">
+                                @endif
+
+                                <div x-show="paymentKind !== 'credit'" x-cloak>
+                                    <div class="mb-2 flex items-center justify-between">
+                                        <label class="text-xs font-black uppercase tracking-[0.14em] text-slate-500" for="payment_method">Método de pago</label>
+                                        <span class="text-[11px] font-semibold text-slate-400">¿Cómo recibes el dinero?</span>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2 sm:grid-cols-4" role="group" aria-label="Método de pago">
+                                        @foreach ($paymentMethods as $method => $config)
+                                            @continue($method === 'credit')
+                                            <button type="button" @click="paymentMethod = '{{ $method }}'" :aria-pressed="paymentMethod === '{{ $method }}'" :class="paymentMethod === '{{ $method }}' ? 'border-blue-600 bg-blue-50 text-blue-800 ring-2 ring-blue-100' : 'border-slate-200 bg-white text-slate-600 hover:border-blue-200'" class="rounded-2xl border px-3 py-3 text-left transition">
+                                                <span class="flex items-center gap-2 text-sm font-black"><span class="flex h-7 w-7 items-center justify-center rounded-xl bg-slate-100 text-slate-700">{{ $method === 'cash' ? '$' : ($method === 'card' ? '▣' : ($method === 'bank_transfer' ? '↗' : '…')) }}</span>{{ $config['label'] ?? $method }}</span>
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                    <input id="payment_method" type="hidden" x-model="paymentMethod">
+                                </div>
+
+                                <div x-show="paymentKind === 'mixed'" x-cloak class="rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <div>
+                                            <label class="text-sm font-black text-amber-950" for="mixed_credit_amount">Monto pendiente a crédito</label>
+                                            <p class="mt-0.5 text-xs text-amber-800">El resto se registra como pago inmediato.</p>
+                                        </div>
+                                        <span class="text-lg font-black text-amber-900" x-text="money(computedCreditAmount)"></span>
+                                    </div>
+                                    <input id="mixed_credit_amount" x-model.number="mixedCreditAmount" type="number" min="0.01" step="0.01" :max="total" class="mt-3 w-full rounded-xl border border-amber-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100">
+                                </div>
+
+                                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <div>
+                                            <p class="text-sm font-black text-slate-900" x-text="selectedCustomer ? selectedCustomer.name : 'Cliente general'"></p>
+                                            <p class="mt-0.5 text-xs text-slate-500" x-text="selectedCustomer ? (selectedCustomer.balance > 0 ? 'Debe ' + money(selectedCustomer.balance) : 'Sin saldo pendiente') : 'Venta de mostrador' "></p>
+                                        </div>
+                                        <span class="rounded-full px-2.5 py-1 text-[10px] font-black" :class="paymentKind !== 'cash' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500'" x-text="paymentKind !== 'cash' ? 'Requerido' : 'Opcional'"></span>
+                                    </div>
+                                    <select id="customer_id" name="customer_id" x-model="customerId" :required="paymentKind !== 'cash'" class="mt-3 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100">
+                                        <option value="">Cliente general · venta de mostrador</option>
+                                        <template x-for="customer in customers" :key="customer.id">
+                                            <option :value="customer.id" x-text="customer.name + (customer.balance > 0 ? ' · debe ' + money(customer.balance) : '')"></option>
+                                        </template>
+                                    </select>
+                                    <p x-show="!customers.length" x-cloak class="mt-2 text-xs font-semibold text-amber-700">Crea primero un cliente desde Clientes y cobros.</p>
+                                </div>
+
+                                <div x-show="paymentKind !== 'cash'" x-cloak class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                                    <label class="text-xs font-black uppercase tracking-[0.14em] text-slate-500" for="due_date">Vencimiento del crédito <span class="normal-case tracking-normal font-semibold text-slate-400">(opcional)</span></label>
+                                    <input id="due_date" name="due_date" type="date" value="{{ old('due_date') }}" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                                </div>
+
+                                <div x-show="paymentMethod === 'cash' && paymentKind !== 'credit'" x-cloak class="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
+                                    <div class="grid gap-3 sm:grid-cols-2">
+                                        <label class="block">
+                                            <span class="text-xs font-black uppercase tracking-[0.14em] text-emerald-900">Recibido</span>
+                                            <div class="relative mt-2">
+                                                <span class="pointer-events-none absolute left-3 top-2.5 text-sm font-bold text-emerald-700">RD$</span>
+                                                <input id="received_amount" x-model.number="receivedAmount" type="number" min="0" step="0.01" class="w-full rounded-xl border border-emerald-200 bg-white py-2.5 pl-12 pr-3 text-lg font-black tabular-nums text-slate-950 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100">
+                                            </div>
+                                        </label>
+                                        <div class="rounded-xl bg-white px-3 py-2.5">
+                                            <p class="text-xs font-black uppercase tracking-[0.14em] text-emerald-900">Devolver</p>
+                                            <p class="mt-1 text-2xl font-black tabular-nums" :class="cashChange > 0 ? 'text-emerald-700' : 'text-slate-950'" x-text="money(cashChange)"></p>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3 flex flex-wrap gap-2">
+                                        <button type="button" @click="receivedAmount = total" class="rounded-full border border-emerald-700 bg-white px-4 py-2 text-sm font-black text-emerald-800 transition hover:bg-emerald-100">Exacto</button>
+                                        <template x-for="amount in [1000, 2000, 5000]" :key="amount"><button type="button" @click="receivedAmount = amount" class="rounded-full border border-emerald-200 bg-white px-4 py-2 text-sm font-black text-emerald-800 transition hover:border-emerald-400 hover:bg-emerald-100" x-text="amount.toLocaleString('es-DO')"></button></template>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <button type="button" @click="showExtras = !showExtras" class="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-black text-slate-700 transition hover:border-blue-200 hover:bg-blue-50">
+                                        <span>Descuento y nota del recibo</span><span class="text-lg text-slate-400" x-text="showExtras ? '−' : '+'"></span>
+                                    </button>
+                                    <div x-show="showExtras" x-cloak class="grid gap-3 border-x border-b border-slate-200 px-4 pb-4 pt-3 sm:grid-cols-2">
+                                        <label class="block">
+                                            <span class="text-xs font-black text-slate-700">Descuento</span>
+                                            <div class="relative mt-1.5"><span class="pointer-events-none absolute left-3 top-2.5 text-sm font-bold text-slate-400">RD$</span><input id="pos_discount" x-model.number="discount" type="number" min="0" step="0.01" :max="subtotal" class="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-12 pr-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100" placeholder="0.00"></div>
+                                        </label>
+                                        <label class="block"><span class="text-xs font-black text-slate-700">Nota en el recibo</span><input id="payment_note" x-model="paymentNote" type="text" maxlength="255" class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100" placeholder="Opcional"></label>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-2 rounded-2xl bg-slate-950 p-4 text-white">
+                                    <div class="flex items-center justify-between text-sm text-slate-300"><span>Subtotal</span><span class="font-bold" x-text="money(subtotal)"></span></div>
+                                    <div x-show="discount > 0" x-cloak class="flex items-center justify-between text-sm text-rose-300"><span>Descuento</span><span class="font-bold" x-text="'- ' + money(discount)"></span></div>
+                                    <div x-show="computedCreditAmount > 0" x-cloak class="flex items-center justify-between text-sm text-amber-300"><span>Pendiente a crédito</span><span class="font-bold" x-text="money(computedCreditAmount)"></span></div>
+                                    <div class="flex items-end justify-between border-t border-white/15 pt-3"><span class="text-base font-black">Total</span><span class="text-2xl font-black tabular-nums" x-text="money(total)"></span></div>
+                                    <p x-show="paidAmount > 0 && computedCreditAmount > 0" x-cloak class="text-right text-xs font-semibold text-emerald-300">Pago ahora: <span x-text="money(paidAmount)"></span></p>
+                                </div>
+
+                                <p x-show="formError" x-text="formError" class="text-xs font-bold text-rose-600"></p>
+                                <button type="submit" :disabled="!cart.length || submitting" class="flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-4 text-sm font-black text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none">
+                                    <span x-show="!submitting" x-text="paymentKind === 'credit' ? 'Registrar venta a crédito' : 'Confirmar venta · ' + money(total)"></span>
+                                    <span x-show="submitting" x-cloak>Registrando...</span>
+                                    <svg x-show="!submitting" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 18 6-6-6-6"/></svg>
+                                </button>
                             </div>
-                            <div>
-                                <label class="text-xs font-black text-slate-700" for="payment_note">Nota en el recibo</label>
-                                <input id="payment_note" x-model="paymentNote" type="text" maxlength="255" class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100" placeholder="Opcional">
-                            </div>
-                        </div>
-
-                        <div x-show="paymentKind !== 'cash'" x-cloak>
-                            <label class="text-xs font-black text-slate-700" for="customer_id">Cliente</label>
-                            <select id="customer_id" name="customer_id" x-model="customerId" :required="paymentKind !== 'cash'" class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100">
-                                <option value="">Selecciona un cliente</option>
-                                <template x-for="customer in customers" :key="customer.id">
-                                    <option :value="customer.id" x-text="customer.name + (customer.balance > 0 ? ' · debe ' + money(customer.balance) : '')"></option>
-                                </template>
-                            </select>
-                            <p x-show="!customers.length" x-cloak class="mt-1 text-xs font-semibold text-amber-700">Crea primero un cliente desde Clientes y cobros.</p>
-                        </div>
-
-                        <div x-show="paymentKind !== 'cash'" x-cloak>
-                            <label class="text-xs font-black text-slate-700" for="due_date">Vencimiento (opcional)</label>
-                            <input id="due_date" name="due_date" type="date" value="{{ old('due_date') }}" class="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
-                        </div>
-
-                        <div x-show="paymentMethod === 'cash' && paymentKind === 'cash'" x-cloak class="grid gap-3 sm:grid-cols-2">
-                            <div class="rounded-2xl bg-slate-100 p-4"><p class="text-sm font-bold text-slate-600">Recibido</p><p class="mt-2 text-2xl font-black tabular-nums text-slate-900" x-text="money(receivedAmount || total)"></p></div>
-                            <div class="rounded-2xl bg-slate-100 p-4"><p class="text-sm font-bold text-slate-600">Devolver</p><p class="mt-2 text-2xl font-black tabular-nums" :class="cashChange > 0 ? 'text-emerald-700' : 'text-slate-900'" x-text="money(cashChange)"></p></div>
-                            <div class="sm:col-span-2 flex flex-wrap gap-2">
-                                <button type="button" @click="receivedAmount = total" class="rounded-full border border-slate-900 bg-white px-4 py-2 text-sm font-black transition">Exacto</button>
-                                <template x-for="amount in [1000, 2000, 5000]" :key="amount"><button type="button" @click="receivedAmount = amount" class="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-black transition hover:border-blue-300 hover:bg-blue-50" x-text="amount.toLocaleString('es-DO')"></button></template>
-                            </div>
-                        </div>
-
-                        <div class="space-y-2 rounded-2xl bg-slate-50 p-4">
-                            <div class="flex items-center justify-between text-sm text-slate-500"><span>Subtotal</span><span class="font-bold text-slate-800" x-text="money(subtotal)"></span></div>
-                            <div x-show="discount > 0" x-cloak class="flex items-center justify-between text-sm text-rose-600"><span>Descuento</span><span class="font-bold" x-text="'- ' + money(discount)"></span></div>
-                            <div x-show="computedCreditAmount > 0" x-cloak class="flex items-center justify-between text-sm text-amber-700"><span>A crédito</span><span class="font-bold" x-text="money(computedCreditAmount)"></span></div>
-                            <div class="flex items-end justify-between border-t border-slate-200 pt-3"><span class="text-base font-black text-slate-950">Total</span><span class="text-2xl font-black text-blue-950" x-text="money(total)"></span></div>
-                            <p x-show="paidAmount > 0 && computedCreditAmount > 0" x-cloak class="text-right text-xs font-semibold text-emerald-600">Pago ahora: <span x-text="money(paidAmount)"></span></p>
-                        </div>
-
-                        <p x-show="formError" x-text="formError" class="text-xs font-bold text-rose-600"></p>
-                        <button type="submit" :disabled="!cart.length || submitting" class="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-black text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none">
-                            <span x-show="!submitting">Cobrar venta</span>
-                            <span x-show="submitting" x-cloak>Registrando...</span>
-                            <svg x-show="!submitting" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 18 6-6-6-6"/></svg>
-                        </button>
-                    </div>
                         </div>
                     </div>
                 </aside>
@@ -380,6 +428,7 @@
                 checkoutOpen: false,
                 submitting: false,
                 formError: '',
+                showExtras: false,
 
                 get categories() {
                     return [...new Set(this.products.map((product) => product.category).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
@@ -403,6 +452,10 @@
 
                 get cartItemCount() {
                     return this.cart.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+                },
+
+                get selectedCustomer() {
+                    return this.customers.find((customer) => String(customer.id) === String(this.customerId)) || null;
                 },
 
                 get subtotal() {
@@ -490,6 +543,7 @@
                     this.paymentNote = '';
                     this.receivedAmount = 0;
                     this.formError = '';
+                    this.showExtras = false;
                 },
 
                 openCheckout() {

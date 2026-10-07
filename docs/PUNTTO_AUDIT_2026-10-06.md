@@ -129,5 +129,46 @@ Ya se incorporaron al modal publicado el recibido, cambio, montos rápidos,
 descuento, nota de recibo y el caso de crédito sin un pago de RD$0. Estos puntos
 quedaron cubiertos por la prueba de POS y por la prueba contable de crédito.
 
+## Auditoría adicional: cierre e inventario
+
+### Cierre de día
+
+Puntto muestra, en tarjetas separadas, ventas cobradas por método, cantidad de
+cobros, abonos recibidos, gastos, devoluciones y el efectivo esperado. Cuando hay
+una sesión abierta también presenta Entró, Salió, Deberías tener, una nota sobre
+qué medios se cuentan en la gaveta, el arqueo y la advertencia de que el cierre
+restringe correcciones posteriores.
+
+MiCatalogo tenía el cierre conectado a la sesión real de caja, pero la pantalla
+solo exponía tres KPI y el formulario de cerrar caja. El commit `671beb2` agregó
+el resumen detallado usando `InvoicePayment`, gastos, devoluciones y
+`CashRegisterService`, sin insertar datos ni crear otra contabilidad. La ruta
+publicada fue verificada con la sesión web: muestra Ventas cobradas, Abonos
+recibidos, Gastos, Devoluciones y la conciliación de efectivo; si no hay sesión,
+invita a abrir Control de caja.
+
+### Inventario
+
+La pantalla de Inventario de Puntto observada contiene acciones rápidas para
+añadir del catálogo, precios y costos, movimientos, importar, combo y producto;
+tabs de activos/archivados/combos; aviso de productos sin foto; capital al costo;
+unidades y existencia; nivel bajo; margen promedio; búsqueda/filtros y una tabla
+con selección y acciones por producto. Su formulario de Nuevo producto separa
+información, atributos, foto, precio/costo, oferta e inventario inicial por lote.
+
+MiCatalogo ya tenía importación, subida masiva, creación, edición, imágenes,
+FIFO y filtros. El commit `3f0de61` agregó al índice los indicadores de activos,
+archivados, capital al costo, unidades controladas, nivel bajo, agotados, margen
+promedio y productos sin fotografía. La ruta publicada fue verificada con los
+datos actuales de BSolutions.dev y conserva la tabla y sus acciones sin cambiar
+registros.
+
+### Evidencia de navegación
+
+Las capturas y XML de Puntto se conservaron en el directorio de visualizaciones
+de la sesión: `puntto-cierre-bottom.*`, `puntto-inventario-2.png` y
+`puntto-product-form.*`. El formulario de producto se abrió solo para inspección;
+no se guardó un producto nuevo ni se ejecutó una operación financiera.
+
 Estos puntos son la siguiente cola de implementación; no se deben resolver con
 datos demo en producción ni con migraciones destructivas.
