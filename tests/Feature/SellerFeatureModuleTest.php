@@ -98,6 +98,10 @@ test('day close exposes the existing cash session reconciliation flow', function
         ->assertOk()
         ->assertSee('Sesión de caja activa')
         ->assertSee('Efectivo contado')
+        ->assertSee('Ventas cobradas')
+        ->assertSee('Abonos recibidos')
+        ->assertSee('Devoluciones')
+        ->assertSee('Deberías tener')
         ->assertSee(route('seller.shops.cash.close', [$shop, $session->public_id]));
 });
 

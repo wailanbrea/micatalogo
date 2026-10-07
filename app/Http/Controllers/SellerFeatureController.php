@@ -10,6 +10,7 @@ use App\Models\Customer;
 use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\InventoryMovement;
+use App\Models\InvoicePayment;
 use App\Models\Order;
 use App\Models\PurchaseDocument;
 use App\Models\Product;
@@ -17,6 +18,7 @@ use App\Models\Shop;
 use App\Models\SupportRequest;
 use App\Models\Supplier;
 use App\Services\BusinessDashboardService;
+use App\Services\CashRegisterService;
 use App\Services\SellerMenuService;
 use App\Services\ShopAnalyticsService;
 use Illuminate\Http\JsonResponse;
@@ -772,18 +774,59 @@ class SellerFeatureController extends Controller
         $invoices = $shop->invoices()->whereDate('issued_at', today())->where('status', '!=', 'void');
         $expenses = $shop->expenses()->whereDate('occurred_at', today());
         $session = $shop->cashRegisterSessions()->where('status', 'open')->first();
+        $payments = InvoicePayment::query()
+            ->where('shop_id', $shop->id)
+            ->whereDate('received_at', today());
+        $salePayments = (clone $payments)->whereNull('customer_account_entry_id');
+        $debtPayments = (clone $payments)->whereNotNull('customer_account_entry_id');
+        $paymentBreakdown = (clone $salePayments)
+            ->selectRaw('payment_method, SUM(amount_cents) as amount_cents, COUNT(*) as payment_count')
+            ->groupBy('payment_method')
+            ->orderByDesc('amount_cents')
+            ->get()
+            ->map(fn (InvoicePayment $payment): array => [
+                'label' => config("catalog.payment_methods.{$payment->payment_method}.label", ucfirst((string) $payment->payment_method)),
+                'value' => $this->money(((int) $payment->amount_cents) / 100),
+                'count' => (int) $payment->payment_count,
+            ])
+            ->values()
+            ->all();
+        $refunds = DB::table('invoice_returns')
+            ->join('invoices', 'invoices.id', '=', 'invoice_returns.invoice_id')
+            ->where('invoices.shop_id', $shop->id)
+            ->whereDate('invoice_returns.created_at', today());
+        $cashSummary = $session ? app(CashRegisterService::class)->getSessionSummary($session) : null;
+        $paidSalesCents = (int) (clone $salePayments)->sum('amount_cents');
+        $debtPaymentsCents = (int) (clone $debtPayments)->sum('amount_cents');
+        $expenseCents = (int) (clone $expenses)->sum('amount_cents');
+        $refundCents = (int) $refunds->sum(DB::raw('ROUND(invoice_returns.total * 100)'));
 
         return [
             'kind' => 'table',
             'kpis' => [
-                ['label' => 'Ventas del día', 'value' => $this->money((clone $invoices)->sum('total')), 'tone' => 'blue'],
-                ['label' => 'Gastos del día', 'value' => $this->money((clone $expenses)->sum('amount')), 'tone' => 'rose'],
+                ['label' => 'Ventas cobradas', 'value' => $this->money($paidSalesCents / 100), 'tone' => 'blue'],
+                ['label' => 'Abonos recibidos', 'value' => $this->money($debtPaymentsCents / 100), 'tone' => 'emerald'],
+                ['label' => 'Gastos del día', 'value' => $this->money($expenseCents / 100), 'tone' => 'rose'],
                 ['label' => 'Caja', 'value' => $session ? 'Abierta' : 'Cerrada', 'tone' => $session ? 'emerald' : 'slate'],
             ],
             'rows' => [
                 ['primary' => 'Ventas registradas', 'secondary' => 'Facturas no anuladas de hoy', 'value' => number_format((clone $invoices)->count()), 'status' => 'Listo'],
                 ['primary' => 'Gastos registrados', 'secondary' => 'Egresos con fecha de hoy', 'value' => number_format((clone $expenses)->count()), 'status' => 'Listo'],
                 ['primary' => 'Sesión de caja', 'secondary' => $session?->opened_at?->format('d/m/Y H:i') ?: 'No hay una sesión abierta', 'value' => $session ? 'Abierta' : 'Revisar', 'status' => $session ? 'Activa' : 'Pendiente'],
+            ],
+            'day_close' => [
+                'sales_total' => $this->money($paidSalesCents / 100),
+                'sales_count' => (int) (clone $salePayments)->count(),
+                'payments' => $paymentBreakdown,
+                'collections_total' => $this->money($debtPaymentsCents / 100),
+                'collections_count' => (int) (clone $debtPayments)->count(),
+                'expenses_total' => $this->money($expenseCents / 100),
+                'refunds_total' => $this->money($refundCents / 100),
+                'cash' => $cashSummary ? [
+                    'in' => $this->money($cashSummary['total_in']),
+                    'out' => $this->money($cashSummary['total_out']),
+                    'expected' => $this->money($cashSummary['expected_amount']),
+                ] : null,
             ],
             'session' => $session ? [
                 'id' => $session->public_id,

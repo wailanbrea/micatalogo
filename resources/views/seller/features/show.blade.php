@@ -168,6 +168,65 @@
                             </div>
                         @endif
 
+                        @if ($featureKey === 'day_close' && ! empty($module['day_close']))
+                            <div class="grid gap-4 lg:grid-cols-2">
+                                <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div>
+                                            <p class="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Ventas cobradas</p>
+                                            <p class="mt-2 text-3xl font-black tabular-nums text-slate-950">{{ $module['day_close']['sales_total'] }}</p>
+                                        </div>
+                                        <span class="rounded-full bg-blue-50 px-3 py-1.5 text-[11px] font-black text-blue-700">{{ $module['day_close']['sales_count'] }} cobro(s)</span>
+                                    </div>
+                                    <div class="mt-5 space-y-2 border-t border-slate-100 pt-4">
+                                        @forelse ($module['day_close']['payments'] as $payment)
+                                            <div class="flex items-center justify-between gap-3 text-sm"><span class="text-slate-600">{{ $payment['label'] }}</span><span class="font-black tabular-nums text-slate-900">{{ $payment['value'] }}</span></div>
+                                        @empty
+                                            <p class="text-sm text-slate-500">No se recibieron cobros de ventas.</p>
+                                        @endforelse
+                                    </div>
+                                </section>
+
+                                <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                                    <p class="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Abonos recibidos</p>
+                                    <p class="mt-2 text-3xl font-black tabular-nums text-slate-950">{{ $module['day_close']['collections_total'] }}</p>
+                                    <p class="mt-4 text-sm text-slate-500">{{ $module['day_close']['collections_count'] ? $module['day_close']['collections_count'].' abono(s) aplicado(s) a cuentas por cobrar.' : 'No se recibieron abonos.' }}</p>
+                                </section>
+
+                                <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                                    <p class="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Gastos</p>
+                                    <p class="mt-2 text-3xl font-black tabular-nums text-rose-700">{{ $module['day_close']['expenses_total'] }}</p>
+                                    <p class="mt-4 text-sm text-slate-500">Egresos registrados con fecha de hoy.</p>
+                                </section>
+
+                                <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                                    <p class="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Devoluciones</p>
+                                    <p class="mt-2 text-3xl font-black tabular-nums text-amber-700">{{ $module['day_close']['refunds_total'] }}</p>
+                                    <p class="mt-4 text-sm text-slate-500">Reembolsos registrados durante el día.</p>
+                                </section>
+                            </div>
+
+                            <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                    <div>
+                                        <p class="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Efectivo en caja</p>
+                                        <h2 class="mt-1 text-xl font-black text-slate-950">Concilia el efectivo antes de cerrar</h2>
+                                    </div>
+                                    <span class="rounded-full {{ $module['day_close']['cash'] ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500' }} px-3 py-1.5 text-xs font-black">{{ $module['day_close']['cash'] ? 'Sesión activa' : 'Sin sesión abierta' }}</span>
+                                </div>
+                                @if ($module['day_close']['cash'])
+                                    <div class="mt-5 grid gap-3 sm:grid-cols-3">
+                                        <div class="rounded-xl bg-emerald-50 p-4"><p class="text-[11px] font-bold uppercase tracking-wide text-emerald-700">Entró</p><p class="mt-1 text-xl font-black tabular-nums text-emerald-900">{{ $module['day_close']['cash']['in'] }}</p></div>
+                                        <div class="rounded-xl bg-rose-50 p-4"><p class="text-[11px] font-bold uppercase tracking-wide text-rose-700">Salió</p><p class="mt-1 text-xl font-black tabular-nums text-rose-900">{{ $module['day_close']['cash']['out'] }}</p></div>
+                                        <div class="rounded-xl bg-blue-50 p-4"><p class="text-[11px] font-bold uppercase tracking-wide text-blue-700">Deberías tener</p><p class="mt-1 text-xl font-black tabular-nums text-blue-900">{{ $module['day_close']['cash']['expected'] }}</p></div>
+                                    </div>
+                                    <p class="mt-4 text-xs leading-5 text-slate-500">Solo el efectivo se cuenta aquí. Transferencias y tarjetas se revisan contra el banco, no contra la gaveta.</p>
+                                @else
+                                    <p class="mt-4 text-sm text-slate-500">Abre una sesión desde Control de caja para registrar el arqueo y conciliar los cobros en efectivo.</p>
+                                @endif
+                            </section>
+                        @endif
+
                         <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
                             <div class="flex flex-col gap-3 border-b border-slate-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                                 <div>
