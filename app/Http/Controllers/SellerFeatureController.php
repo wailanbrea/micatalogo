@@ -4,19 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Models\AttributeDefinition;
 use App\Models\BusinessPartner;
-use App\Models\CashRegisterSession;
 use App\Models\CommercialQuote;
 use App\Models\Customer;
 use App\Models\Expense;
-use App\Models\Invoice;
 use App\Models\InventoryMovement;
+use App\Models\Invoice;
 use App\Models\InvoicePayment;
 use App\Models\Order;
-use App\Models\PurchaseDocument;
 use App\Models\Product;
+use App\Models\PurchaseDocument;
 use App\Models\Shop;
-use App\Models\SupportRequest;
 use App\Models\Supplier;
+use App\Models\SupportRequest;
 use App\Services\BusinessDashboardService;
 use App\Services\CashRegisterService;
 use App\Services\SellerMenuService;
@@ -73,8 +72,7 @@ class SellerFeatureController extends Controller
         string $feature,
         SellerMenuService $menus,
         ?BusinessDashboardService $dashboard = null
-    ): View
-    {
+    ): View {
         abort_unless(isset(self::FEATURES[$feature]), 404);
         abort_unless(in_array($feature, $menus->visibleForUser($shop, $request->user()), true), 403);
 
@@ -426,7 +424,9 @@ class SellerFeatureController extends Controller
                 'primary' => $quote->quote_number,
                 'secondary' => ($quote->customer_name ?: 'Cliente sin nombre').' · '.number_format($quote->items->sum('quantity')).' artículo(s)',
                 'value' => $this->money($quote->total),
-                'status' => match ($quote->status) { 'converted' => 'Convertida', 'sent' => 'Enviada', default => 'Borrador' },
+                'status' => match ($quote->status) {
+                    'converted' => 'Convertida', 'sent' => 'Enviada', default => 'Borrador'
+                },
                 'can_convert' => $quote->converted_invoice_id === null && $quote->status !== 'cancelled',
                 'id' => $quote->public_id,
             ])->all(),
@@ -468,10 +468,12 @@ class SellerFeatureController extends Controller
             'purchase_invoices' => $document->type === 'purchase_invoice',
             default => true,
         })->map(fn (PurchaseDocument $document) => [
+            'id' => $document->public_id,
             'primary' => $document->document_number,
             'secondary' => ($document->supplier?->name ?: 'Sin suplidor').' · '.($document->received_at?->format('d/m/Y H:i') ?: 'Sin fecha'),
             'value' => $this->money($document->total),
-            'status' => 'Recibida',
+            'status' => $document->status === 'draft' ? 'Borrador' : 'Recibida',
+            'can_receive' => $document->status === 'draft',
         ])->values()->all();
         if ($feature === 'suppliers') {
             $rows = $suppliers->map(fn (Supplier $supplier) => [

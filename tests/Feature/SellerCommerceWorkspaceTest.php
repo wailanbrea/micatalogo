@@ -73,6 +73,47 @@ test('recepción de compra crea suplidor, documento y lote separado con su costo
         ->and($product->inventoryLots()->where('received_cost_cents', 50200)->exists())->toBeTrue();
 });
 
+test('las compras admiten varias líneas en borrador y solo reciben inventario una vez', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->for($user)->create();
+    $first = Product::factory()->for($shop)->create(['price' => 250]);
+    $second = Product::factory()->for($shop)->create(['price' => 400]);
+    ProductInventory::create(['product_id' => $first->id, 'track_inventory' => true, 'stock_quantity' => 3, 'cost_price' => 100, 'sold_quantity' => 0]);
+    ProductInventory::create(['product_id' => $second->id, 'track_inventory' => true, 'stock_quantity' => 5, 'cost_price' => 200, 'sold_quantity' => 0]);
+
+    $this->actingAs($user)->post(route('seller.shops.purchases.store', $shop), [
+        'type' => 'container',
+        'document_number' => 'CONT-DRAFT-001',
+        'mode' => 'draft',
+        'items' => [
+            ['product_id' => $first->public_id, 'quantity' => 4, 'unit_cost' => '125.50'],
+            ['product_id' => $second->public_id, 'quantity' => 2, 'unit_cost' => '210.00'],
+        ],
+    ])->assertSessionHasNoErrors();
+
+    $document = PurchaseDocument::query()->where('shop_id', $shop->id)->sole();
+    expect($document->status)->toBe('draft')
+        ->and($document->items()->count())->toBe(2)
+        ->and((int) $first->inventory()->first()->stock_quantity)->toBe(3)
+        ->and((int) $second->inventory()->first()->stock_quantity)->toBe(5)
+        ->and(InventoryMovement::where('product_id', $first->id)->count())->toBe(0);
+
+    $this->actingAs($user)->post(route('seller.shops.purchases.receive', [$shop, 'document' => $document->public_id]))
+        ->assertRedirect(route('seller.shops.feature', [$shop, 'feature' => 'containers']))
+        ->assertSessionHasNoErrors();
+
+    $document->refresh();
+    expect($document->status)->toBe('received')
+        ->and($document->items()->whereNotNull('inventory_movement_id')->count())->toBe(2)
+        ->and((int) $first->inventory()->first()->fresh()->stock_quantity)->toBe(7)
+        ->and((int) $second->inventory()->first()->fresh()->stock_quantity)->toBe(7);
+
+    $this->actingAs($user)->post(route('seller.shops.purchases.receive', [$shop, 'document' => $document->public_id]))
+        ->assertRedirect(route('seller.shops.feature', [$shop, 'feature' => 'containers']))
+        ->assertSessionHasErrors('purchase');
+    expect(InventoryMovement::where('product_id', $first->id)->count())->toBe(1);
+});
+
 test('movimiento de socio exige caja y queda enlazado al movimiento contable', function () {
     $user = User::factory()->create(['plan' => 'pro']);
     $shop = Shop::factory()->for($user)->create();

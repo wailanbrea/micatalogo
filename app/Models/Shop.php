@@ -150,6 +150,11 @@ class Shop extends Model
         return $this->hasMany(PurchaseDocument::class)->latest('received_at');
     }
 
+    public function documents(): HasMany
+    {
+        return $this->hasMany(PurchaseDocument::class);
+    }
+
     public function partners(): HasMany
     {
         return $this->hasMany(BusinessPartner::class)->where('is_active', true)->orderBy('name');

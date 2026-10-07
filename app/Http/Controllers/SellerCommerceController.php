@@ -154,44 +154,137 @@ class SellerCommerceController extends Controller
             'type' => ['required', 'in:container,load,purchase_invoice'],
             'document_number' => ['required', 'string', 'max:80'],
             'supplier_id' => ['nullable', 'string'],
-            'product_id' => ['required', 'string'],
-            'quantity' => ['required', 'integer', 'min:1', 'max:100000'],
-            'unit_cost' => ['required', 'numeric', 'min:0'],
+            'currency' => ['nullable', 'string', 'size:3'],
+            'mode' => ['nullable', 'in:draft,received'],
+            'items' => ['nullable', 'array', 'min:1'],
+            'items.*.product_id' => ['required_with:items', 'string'],
+            'items.*.quantity' => ['required_with:items', 'integer', 'min:1', 'max:100000'],
+            'items.*.unit_cost' => ['required_with:items', 'numeric', 'min:0'],
+            // Legacy single-line fields remain accepted for existing clients and forms.
+            'product_id' => ['nullable', 'string'],
+            'quantity' => ['nullable', 'integer', 'min:1', 'max:100000'],
+            'unit_cost' => ['nullable', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
-        $product = Product::query()->where('shop_id', $shop->id)->where('public_id', $data['product_id'])->firstOrFail();
+
+        $items = collect($data['items'] ?? []);
+        if ($items->isEmpty() && filled($data['product_id'] ?? null)) {
+            $items = collect([[
+                'product_id' => $data['product_id'],
+                'quantity' => $data['quantity'],
+                'unit_cost' => $data['unit_cost'],
+            ]]);
+        }
+        if ($items->isEmpty()) {
+            return back()->withErrors(['items' => 'Agrega al menos un producto a la compra.'])->withInput();
+        }
+
+        $products = Product::query()
+            ->where('shop_id', $shop->id)
+            ->whereIn('public_id', $items->pluck('product_id')->unique())
+            ->get()
+            ->keyBy('public_id');
+        if ($products->count() !== $items->pluck('product_id')->unique()->count()) {
+            return back()->withErrors(['items' => 'Uno o más productos no pertenecen a esta tienda.'])->withInput();
+        }
         $supplier = ! empty($data['supplier_id']) ? $shop->suppliers()->where('public_id', $data['supplier_id'])->firstOrFail() : null;
+        $lines = $items->map(function (array $item) use ($products): array {
+            $product = $products->get($item['product_id']);
+            $quantity = (int) $item['quantity'];
+            $unitCostCents = Money::toCents($item['unit_cost']);
+
+            return [
+                'product' => $product,
+                'quantity' => $quantity,
+                'unit_cost' => $item['unit_cost'],
+                'unit_cost_cents' => $unitCostCents,
+                'line_total' => Money::toDecimal($unitCostCents * $quantity),
+            ];
+        })->values();
+        $subtotalCents = $lines->sum(fn (array $line): int => $line['unit_cost_cents'] * $line['quantity']);
+        $mode = $data['mode'] ?? 'received';
 
         try {
-            DB::transaction(function () use ($request, $shop, $data, $product, $supplier, $inventory): void {
+            $document = DB::transaction(function () use ($request, $shop, $data, $supplier, $inventory, $lines, $subtotalCents, $mode): PurchaseDocument {
                 $document = PurchaseDocument::create([
                     'shop_id' => $shop->id,
                     'supplier_id' => $supplier?->id,
                     'user_id' => $request->user()->id,
                     'document_number' => $data['document_number'],
                     'type' => $data['type'],
-                    'status' => 'received',
-                    'currency' => 'DOP',
-                    'subtotal' => Money::toDecimal(Money::toCents($data['unit_cost']) * (int) $data['quantity']),
-                    'total' => Money::toDecimal(Money::toCents($data['unit_cost']) * (int) $data['quantity']),
-                    'received_at' => now(),
+                    'status' => $mode,
+                    'currency' => strtoupper($data['currency'] ?? 'DOP'),
+                    'subtotal' => Money::toDecimal($subtotalCents),
+                    'total' => Money::toDecimal($subtotalCents),
+                    'received_at' => $mode === 'received' ? now() : null,
                     'notes' => $data['notes'] ?? null,
                 ]);
-                $movement = $inventory->recordRestock($product, (int) $data['quantity'], $data['notes'] ?? null, $request->user()->id, (float) $data['unit_cost']);
-                $document->items()->create([
-                    'product_id' => $product->id,
-                    'inventory_movement_id' => $movement->id,
-                    'product_name' => $product->name,
-                    'quantity' => (int) $data['quantity'],
-                    'unit_cost' => $data['unit_cost'],
-                    'line_total' => Money::toDecimal(Money::toCents($data['unit_cost']) * (int) $data['quantity']),
-                ]);
+
+                foreach ($lines as $line) {
+                    $movement = $mode === 'received'
+                        ? $inventory->recordRestock($line['product'], $line['quantity'], $data['notes'] ?? null, $request->user()->id, (float) $line['unit_cost'])
+                        : null;
+                    $document->items()->create([
+                        'product_id' => $line['product']->id,
+                        'inventory_movement_id' => $movement?->id,
+                        'product_name' => $line['product']->name,
+                        'quantity' => $line['quantity'],
+                        'unit_cost' => $line['unit_cost'],
+                        'line_total' => $line['line_total'],
+                    ]);
+                }
+
+                return $document;
             });
         } catch (InvalidArgumentException $exception) {
             return back()->withErrors(['purchase' => $exception->getMessage()])->withInput();
         }
 
-        return back()->with('status', 'Compra recibida y lote agregado al inventario.');
+        return back()->with('status', $mode === 'draft'
+            ? "Borrador {$document->document_number} guardado sin tocar el inventario."
+            : 'Compra recibida y lotes agregados al inventario.');
+    }
+
+    public function receivePurchaseDocument(Request $request, Shop $shop, PurchaseDocument $document, InventoryService $inventory): RedirectResponse
+    {
+        abort_unless($document->shop_id === $shop->id, 404);
+        $feature = match ($document->type) {
+            'container' => 'containers',
+            'load' => 'loads',
+            default => 'purchase_invoices',
+        };
+        $destination = route('seller.shops.feature', [$shop, 'feature' => $feature]);
+
+        if ($document->status !== 'draft') {
+            return redirect()->to($destination)->withErrors(['purchase' => 'Esta compra ya fue recibida y no puede duplicar sus lotes.']);
+        }
+
+        try {
+            DB::transaction(function () use ($request, $shop, $document, $inventory): void {
+                $locked = PurchaseDocument::query()
+                    ->whereKey($document->id)
+                    ->where('shop_id', $shop->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+                if ($locked->status !== 'draft') {
+                    throw new InvalidArgumentException('Esta compra ya fue recibida y no puede duplicar sus lotes.');
+                }
+
+                $locked->load('items.product');
+                foreach ($locked->items as $item) {
+                    if ($item->inventory_movement_id) {
+                        continue;
+                    }
+                    $movement = $inventory->recordRestock($item->product, $item->quantity, $locked->notes, $request->user()->id, (float) $item->unit_cost);
+                    $item->update(['inventory_movement_id' => $movement->id]);
+                }
+                $locked->update(['status' => 'received', 'received_at' => now()]);
+            });
+        } catch (InvalidArgumentException $exception) {
+            return redirect()->to($destination)->withErrors(['purchase' => $exception->getMessage()]);
+        }
+
+        return redirect()->to($destination)->with('status', "Compra {$document->document_number} recibida y agregada al inventario.");
     }
 
     public function storePartner(Request $request, Shop $shop): RedirectResponse

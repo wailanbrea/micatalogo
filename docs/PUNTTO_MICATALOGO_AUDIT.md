@@ -53,15 +53,19 @@ Puntto también incluye una checklist de seis pendientes y permite editar el hor
 - cerrado;
 - copiar el horario del lunes al resto de días.
 
-MiCatalogo aún no tiene un campo `business_hours` ni persistencia equivalente; su sección “Contacto y horario” solo contiene WhatsApp, dirección, Maps e Instagram. Este es el siguiente faltante funcional prioritario.
+MiCatalogo ahora guarda `business_hours` como JSON, permite editar los siete días y muestra el horario/estado actual en la vitrina pública. La migración es aditiva y no altera registros anteriores; las tiendas existentes empiezan sin horario configurado hasta que su dueño lo complete.
+
+### Compras
+
+Puntto permite crear un contenedor como borrador, adjuntar o leer una factura, agregar varias líneas y recibirlo después. MiCatalogo tenía inicialmente una sola línea que recibía el inventario de inmediato. Ahora el módulo admite varias líneas, moneda, notas y dos caminos explícitos: “Guardar borrador” (sin movimiento de inventario) y “Recibir inventario”. La recepción posterior crea los lotes FIFO una sola vez y bloquea reintentos duplicados. La lectura automática de factura (foto/PDF/Excel) sigue siendo una fase posterior.
 
 ## Faltantes detectados para la siguiente fase
 
-1. Añadir horario semanal persistente, editable y visible en la vitrina pública.
+1. Auditar la lectura automática de facturas de compra desde foto/PDF/Excel y convertir su previsualización en líneas confirmables.
 2. Verificar que el acceso a Decants coincida con la combinación de tipo de negocio, plan y productos existentes; no debe desaparecer por una resolución de capacidad incorrecta.
 3. Recorrer con datos controlados los estados de Ventas, Cotizaciones, Pedidos, Crédito, Cierre de día y Decants, verificando persistencia, inventario, caja y navegación posterior.
 4. Auditar los módulos de ayuda de Puntto que no aparecen como menú propio en MiCatalogo: Tandas, Insumos y Recetas. Primero se debe determinar si son funciones aplicables al perfil del negocio o módulos que deben incorporarse al modelo de capacidades.
 
 ## Evidencia de la corrección más reciente
 
-La guía de tres pasos de Mi tienda se publicó en el commit `8ca20d4`. Las 393 pruebas del repositorio pasaron y el mismo commit fue sincronizado al VPS. Esta auditoría conserva la diferencia funcional del horario para que no se dé por completa la paridad solo porque los enlaces visuales existen.
+La guía de tres pasos de Mi tienda se publicó en `8ca20d4`; el horario semanal en `6acf420`; y la recepción de compras con borradores y múltiples líneas queda cubierta por las pruebas de `SellerCommerceWorkspaceTest`. Después de estos cambios, la suite completa pasa 395 pruebas y la publicación debe verificarse en el VPS antes de declarar cerrada la paridad.

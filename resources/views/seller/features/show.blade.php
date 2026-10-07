@@ -239,17 +239,47 @@
                         @endif
 
                         @if (in_array($featureKey, ['containers', 'loads', 'purchase_invoices'], true))
-                            <div class="rounded-2xl border border-amber-100 bg-amber-50/50 p-4 sm:p-5">
-                                <div class="mb-4"><h2 class="text-base font-black text-slate-900">Registrar recepción de compra</h2><p class="mt-1 text-xs text-slate-500">La recepción crea un lote separado y conserva el costo exacto de esta compra.</p></div>
-                                <form method="POST" action="{{ route('seller.shops.purchases.store', $shop) }}" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+                            <div class="rounded-2xl border border-amber-100 bg-amber-50/50 p-4 sm:p-5" x-data="{
+                                products: @js($module['purchaseProducts'] ?? []),
+                                items: [{ product_id: '', quantity: 1, unit_cost: '' }],
+                                mode: 'received',
+                                addItem() { this.items.push({ product_id: '', quantity: 1, unit_cost: '' }); },
+                                removeItem(index) { if (this.items.length > 1) this.items.splice(index, 1); },
+                                fillCost(index) {
+                                    const product = this.products.find(item => item.id === this.items[index].product_id);
+                                    if (product && !this.items[index].unit_cost) this.items[index].unit_cost = product.cost;
+                                },
+                                total() { return this.items.reduce((sum, item) => sum + ((Number(item.quantity) || 0) * (Number(item.unit_cost) || 0)), 0); }
+                            }">
+                                <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                    <div><h2 class="text-base font-black text-slate-900">Nueva compra</h2><p class="mt-1 text-xs leading-5 text-slate-500">Crea un borrador con varias líneas o recibe todo de una vez. Cada recepción crea sus propios lotes FIFO.</p></div>
+                                    <span class="rounded-full bg-white px-3 py-1.5 text-[11px] font-black text-amber-800 shadow-sm" x-text="`${items.length} producto(s)`"></span>
+                                </div>
+                                <form method="POST" action="{{ route('seller.shops.purchases.store', $shop) }}" class="space-y-4">
                                     @csrf
                                     <input type="hidden" name="type" value="{{ $featureKey === 'containers' ? 'container' : ($featureKey === 'loads' ? 'load' : 'purchase_invoice') }}">
-                                    <input required name="document_number" placeholder="No. documento" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm">
-                                    <select name="supplier_id" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><option value="">Suplidor (opcional)</option>@foreach (($module['suppliers'] ?? []) as $supplier)<option value="{{ $supplier['id'] }}">{{ $supplier['name'] }}</option>@endforeach</select>
-                                    <select required name="product_id" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><option value="">Producto</option>@foreach (($module['purchaseProducts'] ?? []) as $product)<option value="{{ $product['id'] }}">{{ $product['name'] }}</option>@endforeach</select>
-                                    <input required name="quantity" type="number" min="1" placeholder="Cantidad" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm">
-                                    <input required name="unit_cost" type="number" min="0" step="0.01" placeholder="Costo unitario" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm">
-                                    <button class="rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-black text-white hover:bg-amber-700">Recibir inventario</button>
+                                    <input type="hidden" name="mode" x-model="mode">
+                                    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                        <label class="text-xs font-bold text-slate-600">No. documento<input required name="document_number" placeholder="FAC-001 / CONT-001" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-normal"></label>
+                                        <label class="text-xs font-bold text-slate-600">Suplidor<select name="supplier_id" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-normal"><option value="">Sin suplidor</option>@foreach (($module['suppliers'] ?? []) as $supplier)<option value="{{ $supplier['id'] }}">{{ $supplier['name'] }}</option>@endforeach</select></label>
+                                        <label class="text-xs font-bold text-slate-600">Moneda<input name="currency" value="DOP" maxlength="3" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-normal uppercase"></label>
+                                        <label class="text-xs font-bold text-slate-600">Notas<textarea name="notes" rows="1" placeholder="Opcional" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-normal"></textarea></label>
+                                    </div>
+                                    <div class="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                                        <div class="grid gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2 text-[10px] font-black uppercase tracking-wide text-slate-500 sm:grid-cols-[minmax(0,1fr)_110px_140px_34px]"><span>Producto</span><span>Cantidad</span><span>Costo unitario</span><span></span></div>
+                                        <div class="divide-y divide-slate-100">
+                                            <template x-for="(item, index) in items" :key="index">
+                                                <div class="grid gap-2 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_110px_140px_34px] sm:items-center">
+                                                    <select required x-model="item.product_id" @change="fillCost(index)" :name="`items[${index}][product_id]`" class="rounded-lg border border-slate-300 px-2.5 py-2 text-sm"><option value="">Selecciona un producto</option><template x-for="product in products" :key="product.id"><option :value="product.id" x-text="product.name"></option></template></select>
+                                                    <input required x-model.number="item.quantity" :name="`items[${index}][quantity]`" type="number" min="1" class="rounded-lg border border-slate-300 px-2.5 py-2 text-sm" aria-label="Cantidad">
+                                                    <input required x-model="item.unit_cost" :name="`items[${index}][unit_cost]`" type="number" min="0" step="0.01" placeholder="0.00" class="rounded-lg border border-slate-300 px-2.5 py-2 text-sm" aria-label="Costo unitario">
+                                                    <button type="button" @click="removeItem(index)" :disabled="items.length === 1" class="rounded-lg px-2 py-2 text-lg font-bold text-rose-500 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-30" aria-label="Quitar producto">×</button>
+                                                </div>
+                                            </template>
+                                        </div>
+                                        <div class="flex flex-col gap-3 border-t border-slate-100 px-3 py-3 sm:flex-row sm:items-center sm:justify-between"><button type="button" @click="addItem()" class="text-left text-xs font-black text-blue-700 hover:text-blue-900">+ Agregar otro producto</button><span class="text-sm font-black text-slate-900">Total: RD$ <span x-text="total().toLocaleString('es-DO', { minimumFractionDigits: 2 })"></span></span></div>
+                                    </div>
+                                    <div class="flex flex-col gap-2 sm:flex-row sm:justify-end"><button type="submit" @click="mode = 'draft'" class="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-black text-slate-700 hover:border-blue-300 hover:text-blue-700">Guardar borrador</button><button type="submit" @click="mode = 'received'" class="rounded-xl bg-amber-600 px-4 py-2.5 text-xs font-black text-white hover:bg-amber-700">Recibir inventario</button></div>
                                 </form>
                             </div>
                         @elseif ($featureKey === 'suppliers')
@@ -384,6 +414,12 @@
                                                     <form method="POST" action="{{ route('seller.shops.quotes.convert', [$shop, 'quote' => $row['id']]) }}">
                                                         @csrf
                                                         <button class="rounded-xl bg-emerald-600 px-3 py-2 text-[11px] font-black text-white hover:bg-emerald-700">Convertir en venta</button>
+                                                    </form>
+                                                @endif
+                                                @if (($row['can_receive'] ?? false) && in_array($featureKey, ['containers', 'loads', 'purchase_invoices'], true))
+                                                    <form method="POST" action="{{ route('seller.shops.purchases.receive', [$shop, 'document' => $row['id']]) }}">
+                                                        @csrf
+                                                        <button class="rounded-xl bg-emerald-600 px-3 py-2 text-[11px] font-black text-white hover:bg-emerald-700">Recibir inventario</button>
                                                     </form>
                                                 @endif
                                             </div>
