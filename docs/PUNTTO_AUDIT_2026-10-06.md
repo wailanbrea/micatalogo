@@ -129,6 +129,14 @@ cliente, período Todo y estado Anuladas. El APK fue instalado en
 `emulator-5554`; el manifiesto público y el hash/tamaño del archivo publicado
 fueron verificados.
 
+La auditoría de navegación detectó que la pestaña inferior `Más` repetía Caja,
+Inventario, Finanzas, Cobros, Devoluciones, Cargas, Proveedores, Impresoras y
+Ajustes, todos ya presentes en el menú hamburguesa. El commit `93ea985` retiró
+esa ruta duplicada, mantuvo la clave de permisos heredada para no invalidar
+perfiles existentes y dejó el menú hamburguesa como único origen de navegación.
+La release firmada `1.0.43` (`versionCode 44`) fue instalada en el emulador y
+verificada contra el endpoint público.
+
 ## Diferencias que siguen siendo trabajo pendiente
 
 La paridad visual y funcional todavía no debe declararse completa. El POS web
