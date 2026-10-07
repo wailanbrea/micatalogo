@@ -39,9 +39,48 @@ La Terminal observada incluye:
 
 Las cotizaciones se crean desde Terminal. La pantalla muestra tarjetas con estados `Vigente`, `Vencida` y `Convertida`, total por convertir, búsqueda por número o cliente y el número de artículos. La conversión sucede desde la cotización y no se mezcla con una venta hasta confirmarla.
 
+### Menú ampliado y Ganancias
+
+En una segunda pasada del menú móvil de Puntto se verificaron los grupos inferiores:
+
+- Catálogo: Mi tienda, Servicios, Salud de precios, Precios automáticos, Decants,
+  Marcas y atributos e Importar.
+- Cobros: Crédito y Clientes.
+- Finanzas: Ganancias, Ajustes de inventario, Gastos y Socios.
+- Análisis: Reportes.
+- Equipo: Comisiones y Autorizaciones.
+- Ajustes: Configuración, Equipo, Contador, Mi cuenta, Novedades, Ayuda, Practicar
+  sin miedo y Soporte.
+
+El buscador del drawer encuentra módulos por nombre y reduce el menú a los resultados.
+La pantalla `Ganancias` verificada en Puntto presenta selector Hoy / Este mes / Mes
+pasado / Más, navegación del mes, ganancia neta, ventas, costo de lo vendido por FIFO,
+ganancia bruta, gastos y pérdidas de inventario, incluyendo comparación contra el mismo
+período anterior.
+
+MiCatalogo ya expone la fuente financiera equivalente en `Ganancias y resumen`,
+`Gastos`, inventario FIFO y reportes; queda pendiente verificar visualmente cada uno
+en Android y validar que el detalle mensual tenga la misma profundidad que Puntto.
+
+### Cierre de día
+
+Puntto muestra el estado de la jornada, el selector de fecha y cuatro bloques
+independientes: ventas cobradas, abonos recibidos, gastos y devoluciones. Después
+presenta el efectivo esperado —entradas, salidas y saldo que debería haber—, permite
+introducir el efectivo contado y ofrece `Cerrar el día`. El arqueo es opcional, pero
+al cerrar se advierte que ya no se podrán registrar o corregir ventas, gastos ni
+abonos; solo el owner puede reabrirlo.
+
+MiCatalogo ya tiene el equivalente funcional en web mediante sesión de caja, monto
+contado, diferencia, cierre idempotente y bloqueo posterior. La pantalla Android
+`Cierre de día` muestra ventas, abonos, gastos, devoluciones y resumen de caja; queda
+pendiente completar la comparación visual de estados abierto/cerrado y la prueba de
+reapertura con owner.
+
 ## MiCatalogo verificado
 
-- La APK 1.0.47/código 48 abrió el panel, permitió iniciar sesión, mostró dashboard, drawer de menús, Terminal y carrito.
+- La APK 1.0.49/código 50 abrió el panel, permitió iniciar sesión, mostró dashboard,
+  drawer de menús, Terminal, carrito y el filtro horizontal de categorías.
 - La Terminal Android usa tarjetas con imagen, búsqueda, escáner, modos Detalle/Mayoreo, carrito inferior y hoja de cobro.
 - El carrito de MiCatalogo ya permite cliente, contado/crédito, tarjeta, transferencia y pago mixto.
 - El flujo de crédito exige cliente y el backend conserva validación de pagos, FIFO, inventario, caja y cuentas por cobrar.
@@ -65,6 +104,12 @@ MiCatalogo incorpora una fila horizontal de categorías sincronizadas, con `Todo
 selección individual; el filtro se combina con la búsqueda, el modo mayorista y el
 carrito existente. Solo se muestran categorías que tienen productos en la tienda activa.
 
+Durante la verificación de navegación Android se detectó que el destino financiero se
+mostraba como `Finanzas` aunque Puntto lo identifica como `Ganancias`. Se corrigió el
+nombre de la opción y del breadcrumb para que el drawer muestre `Ganancias` y la
+pantalla quede como `Finanzas / Ganancias`; esto también permite encontrarla buscando
+`Ganancias`.
+
 ## Evidencia automatizada
 
 La suite crítica del backend ejecutada durante la auditoría pasó **45 pruebas y 359 aserciones**, cubriendo:
@@ -78,10 +123,17 @@ La suite crítica del backend ejecutada durante la auditoría pasó **45 pruebas
 La compilación release Android 1.0.49 (código 50) también pasó las pruebas unitarias y
 produjo un APK firmado/no-debuggable.
 
+La batería enfocada en autenticación, permisos, menú de vendedor, actualización,
+alcance por tienda e idempotencia pasó **32 pruebas y 136 aserciones**. Incluye la
+comprobación de que las rutas administrativas no queden disponibles para un vendedor
+sin permisos.
+
 ## Pendientes de la auditoría amplia
 
-1. Recorrer cada pantalla de Puntto y MiCatalogo con una matriz de botones, validaciones, estados vacíos, permisos y respuestas de error.
-2. Repetir la matriz para owner y vendedor, comprobando que cada menú administrativo se oculte y que la ruta devuelva 403 cuando corresponde.
-3. Ejecutar una venta controlada con caja abierta en un entorno de prueba y verificar factura, inventario, caja, ganancia y comisión de extremo a extremo.
-4. Comparar visualmente cotizaciones, compras, clientes, caja, ganancias, decants, importación y configuración; la paridad visual completa todavía no está demostrada.
+1. Recompilar y publicar la corrección del rótulo `Ganancias` en Android; verificar en
+   el emulador que buscar `Ganancias` abre `Finanzas / Ganancias`.
+2. Recorrer cada pantalla de Puntto y MiCatalogo con una matriz de botones, validaciones, estados vacíos, permisos y respuestas de error.
+3. Repetir la matriz para owner y vendedor, comprobando que cada menú administrativo se oculte y que la ruta devuelva 403 cuando corresponde.
+4. Ejecutar una venta controlada con caja abierta en un entorno de prueba y verificar factura, inventario, caja, ganancia y comisión de extremo a extremo.
+5. Comparar visualmente cotizaciones, compras, clientes, caja, ganancias, decants, importación y configuración; la paridad visual completa todavía no está demostrada.
 
