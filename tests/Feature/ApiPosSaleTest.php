@@ -50,6 +50,39 @@ test('new POS clients reject a changed decant presentation before consuming shar
     expect(Invoice::count())->toBe(1)->and($source->fresh()->inventory->available_ml)->toBe(90);
 });
 
+test('a decant POS sale reports the source bottle cost recovery milestone', function () {
+    [$user, $shop, $source] = posSaleFixture(stock: 1, price: 1200);
+    $source->update(['sale_unit' => 'bottle', 'volume_ml' => 100]);
+    $source->inventory->update(['available_ml' => 100, 'cost_price' => 300]);
+    $decant = Product::factory()->create([
+        'shop_id' => $shop->id,
+        'price' => 50,
+        'sale_unit' => 'decant',
+        'volume_ml' => 5,
+        'inventory_source_product_id' => $source->id,
+    ]);
+    ProductInventory::create(['product_id' => $decant->id, 'track_inventory' => true, 'stock_quantity' => 20]);
+
+    $payload = posSalePayload((string) Str::uuid(), $decant, 6, '50.00');
+    $payload['items'][0] += [
+        'expected_sale_unit' => 'decant',
+        'expected_volume_ml' => 5,
+        'expected_source_product_id' => $source->public_id,
+    ];
+
+    $this->withToken($user->createToken('BSPOS', ['pos:write'])->plainTextToken)
+        ->postJson("/api/v1/shops/{$shop->public_id}/pos-sales", $payload)
+        ->assertCreated()
+        ->assertJsonPath('bottle_recovery.0.source_product_name', $source->name)
+        ->assertJsonPath('bottle_recovery.0.covered', true)
+        ->assertJsonPath('bottle_recovery.0.just_covered', true)
+        ->assertJsonPath('bottle_recovery.0.revenue', 300)
+        ->assertJsonPath('bottle_recovery.0.cost', 300);
+
+    expect($source->fresh()->inventory->available_ml)->toBe(70)
+        ->and($decant->fresh()->inventory->stock_quantity)->toBe(14);
+});
+
 test('a POS sale uses the pos channel, derives partial status with customer debt, and decrements stock', function () {
     [$user, $shop, $product] = posSaleFixture(stock: 5, price: 300);
     $product->update([

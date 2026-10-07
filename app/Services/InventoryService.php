@@ -370,33 +370,7 @@ class InventoryService
             return $p->inventory->sold_quantity > 0;
         })->sortByDesc('inventory.sold_quantity')->take(5)->values();
 
-        $decantProducts = $products->filter(fn (Product $p) => $p->isDecant() && $p->inventory_source_product_id);
-        $decantRevenue = InventoryMovement::query()
-            ->whereIn('product_id', $decantProducts->pluck('id'))
-            ->where('type', 'sale')
-            ->whereNotNull('unit_price')
-            ->selectRaw('product_id, COALESCE(SUM(ABS(quantity) * unit_price), 0) as revenue')
-            ->groupBy('product_id')
-            ->pluck('revenue', 'product_id');
-
-        $costRecovery = [];
-        foreach ($products as $product) {
-            if ($product->sale_unit !== 'bottle' || ! $product->inventory?->cost_price) {
-                continue;
-            }
-
-            $revenue = $decantProducts
-                ->where('inventory_source_product_id', $product->id)
-                ->sum(fn (Product $decant) => (float) ($decantRevenue[$decant->id] ?? 0));
-            $cost = (float) $product->inventory->cost_price;
-
-            $costRecovery[$product->id] = [
-                'cost' => $cost,
-                'revenue' => round($revenue, 2),
-                'difference' => round($revenue - $cost, 2),
-                'covered' => $revenue >= $cost,
-            ];
-        }
+        $costRecovery = $this->getCostRecoveryForBottles($products);
 
         // Movimientos recientes globales de la tienda
         $recentMovements = InventoryMovement::whereIn('product_id', $products->pluck('id'))
@@ -420,6 +394,61 @@ class InventoryService
             'recent_movements' => $recentMovements,
             'all_products' => $products,
         ];
+    }
+
+    /**
+     * Calculate how much of each source bottle has been recovered by decant sales.
+     *
+     * The source bottle remains the inventory/cost owner. Decant presentations only
+     * contribute their recorded sale revenue, so this value can be shown both in
+     * inventory reports and immediately after a POS sale without duplicating cost.
+     *
+     * @param iterable<Product> $bottles
+     * @return array<int, array<string, mixed>> keyed by the internal bottle id
+     */
+    public function getCostRecoveryForBottles(iterable $bottles): array
+    {
+        $bottles = collect($bottles)
+            ->filter(fn (Product $product): bool => $product->sale_unit === 'bottle' && (float) ($product->inventory?->cost_price ?? 0) > 0)
+            ->values();
+
+        if ($bottles->isEmpty()) {
+            return [];
+        }
+
+        $decants = Product::query()
+            ->whereIn('inventory_source_product_id', $bottles->pluck('id'))
+            ->get(['id', 'inventory_source_product_id']);
+
+        $revenueByDecant = InventoryMovement::query()
+            ->whereIn('product_id', $decants->pluck('id'))
+            ->where('type', 'sale')
+            ->whereNotNull('unit_price')
+            ->selectRaw('product_id, COALESCE(SUM(ABS(quantity) * unit_price), 0) as revenue')
+            ->groupBy('product_id')
+            ->pluck('revenue', 'product_id');
+
+        return $bottles->mapWithKeys(function (Product $bottle) use ($decants, $revenueByDecant): array {
+            $cost = (float) $bottle->inventory->cost_price;
+            $revenue = $decants
+                ->where('inventory_source_product_id', $bottle->id)
+                ->sum(fn (Product $decant): float => (float) ($revenueByDecant[$decant->id] ?? 0));
+            $covered = $revenue >= $cost;
+
+            return [$bottle->id => [
+                'source_product_id' => $bottle->public_id,
+                'source_product_name' => $bottle->name,
+                'cost' => round($cost, 2),
+                'revenue' => round($revenue, 2),
+                'difference' => round($revenue - $cost, 2),
+                'percent' => $cost > 0 ? min(100, round(($revenue / $cost) * 100, 1)) : 100,
+                'covered' => $covered,
+                'decants_count' => $decants->where('inventory_source_product_id', $bottle->id)->count(),
+                'message' => $covered
+                    ? "Las ventas de decants ya cubrieron el costo de {$bottle->name}."
+                    : "Faltan RD$ ".number_format(max(0, $cost - $revenue), 2, '.', ',')." para cubrir {$bottle->name}.",
+            ]];
+        })->all();
     }
 
     /**

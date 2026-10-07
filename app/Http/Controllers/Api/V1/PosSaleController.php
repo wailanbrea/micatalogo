@@ -182,6 +182,12 @@ class PosSaleController extends Controller
                     'discount' => (float) ($item['discount'] ?? 0),
                     'tax' => (float) ($item['tax'] ?? 0),
                 ], $validated['items']);
+                $sourceBottles = collect($sales)
+                    ->map(fn (array $sale): ?Product => $sale['product']->isDecant() ? $sale['product']->sourceProduct : null)
+                    ->filter()
+                    ->unique('id')
+                    ->values();
+                $recoveryBefore = $inventoryService->getCostRecoveryForBottles($sourceBottles);
                 $movements = $inventoryService->recordCartSales(
                     $sales,
                     $request->user()->id,
@@ -218,7 +224,9 @@ class PosSaleController extends Controller
                 $upload->invoice()->associate($invoice);
                 $upload->save();
 
-                return response()->json($this->successPayload($upload, $invoice), 201);
+                $recoveryAfter = $inventoryService->getCostRecoveryForBottles($sourceBottles);
+
+                return response()->json($this->successPayload($upload, $invoice, $recoveryAfter, $recoveryBefore), 201);
             });
         } catch (InvalidArgumentException $exception) {
             if ($exception->getCode() === 409 && str_starts_with($exception->getMessage(), 'Stock insuficiente')) {
@@ -260,19 +268,49 @@ class PosSaleController extends Controller
             ], 409);
         }
 
-        return response()->json($this->successPayload($upload, $upload->invoice), 201);
+        $invoice = $upload->invoice->loadMissing('items.product.sourceProduct');
+        $bottles = $invoice->items
+            ->map(fn ($item) => $item->product?->isDecant() ? $item->product->sourceProduct : null)
+            ->filter()
+            ->unique('id')
+            ->values();
+
+        return response()->json($this->successPayload(
+            $upload,
+            $invoice,
+            app(InventoryService::class)->getCostRecoveryForBottles($bottles),
+        ), 201);
     }
 
     /**
-     * @return array{client_sale_uuid: string, invoice_number: string, status: string, total: string}
+     * @param array<int, array<string, mixed>> $recoveryAfter
+     * @param array<int, array<string, mixed>> $recoveryBefore
+     * @return array<string, mixed>
      */
-    private function successPayload(PosSaleUpload $upload, Invoice $invoice): array
+    private function successPayload(PosSaleUpload $upload, Invoice $invoice, array $recoveryAfter = [], array $recoveryBefore = []): array
     {
+        $bottleRecovery = array_values(array_map(
+            static function (array $recovery) use ($recoveryBefore): array {
+                $sourceProductId = $recovery['source_product_id'] ?? null;
+                $previous = collect($recoveryBefore)->firstWhere('source_product_id', $sourceProductId);
+                $justCovered = $recovery['covered'] === true && ($previous['covered'] ?? false) !== true;
+
+                return $recovery + [
+                    'just_covered' => $justCovered,
+                    'alert' => $justCovered
+                        ? "¡Botella recuperada! Las ventas de decants ya cubrieron el costo de {$recovery['source_product_name']}."
+                        : $recovery['message'],
+                ];
+            },
+            $recoveryAfter,
+        ));
+
         return [
             'client_sale_uuid' => $upload->client_sale_uuid,
             'invoice_number' => $invoice->invoice_number,
             'status' => $invoice->status,
             'total' => $invoice->total,
+            'bottle_recovery' => $bottleRecovery,
         ];
     }
 }

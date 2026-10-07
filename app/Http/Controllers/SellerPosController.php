@@ -22,7 +22,16 @@ class SellerPosController extends Controller
             ->with(['inventory', 'images', 'primaryImage', 'sourceProduct.inventory', 'shopCategory', 'globalCategory', 'attributeValues.attributeDefinition'])
             ->orderBy('name')
             ->get()
-            ->map(fn ($product): array => [
+            ->map(function ($product): array {
+                $sourceInventory = $product->sourceProduct?->inventory;
+                $sourceAvailableMl = $product->isDecant() && $sourceInventory
+                    ? ($sourceInventory->available_ml ?? (($sourceInventory->stock_quantity ?? 0) * (int) ($product->sourceProduct?->volume_ml ?? 0)))
+                    : null;
+                $stock = $product->isDecant() && $product->volume_ml
+                    ? intdiv(max(0, (int) $sourceAvailableMl), (int) $product->volume_ml)
+                    : (int) $product->inventory->stock_quantity;
+
+                return [
                 'id' => $product->public_id,
                 'name' => $product->name,
                 'code' => $product->product_code,
@@ -34,16 +43,20 @@ class SellerPosController extends Controller
                     ->all(),
                 'price' => (float) $product->currentPrice(),
                 'wholesale_price' => $product->wholesale_price === null ? null : (float) $product->wholesale_price,
-                'stock' => (int) $product->inventory->stock_quantity,
+                'stock' => $stock,
                 'sale_unit' => $product->sale_unit ?: 'unit',
                 'sale_unit_label' => $product->isDecant() && $product->volume_ml
                     ? 'Decant · '.$product->volume_ml.' ml'
                     : $product->saleUnitLabel(),
                 'volume_ml' => $product->volume_ml,
                 'source_product_id' => $product->sourceProduct?->public_id,
+                'source_product_name' => $product->sourceProduct?->name,
+                'source_available_ml' => $sourceAvailableMl,
+                'is_decant' => $product->isDecant(),
                 'image_url' => $product->image_url,
                 'category' => $product->shopCategory?->name ?? $product->globalCategory?->name ?? 'Sin categoría',
-            ])
+                ];
+            })
             ->values();
 
         $lowStockCount = $shop->products()
@@ -109,6 +122,7 @@ class SellerPosController extends Controller
 
         return redirect()
             ->route('seller.shops.pos', $shop)
-            ->with('status', 'Venta '.($payload['invoice_number'] ?? '').' registrada correctamente.');
+            ->with('status', 'Venta '.($payload['invoice_number'] ?? '').' registrada correctamente.')
+            ->with('bottle_recovery', $payload['bottle_recovery'] ?? []);
     }
 }

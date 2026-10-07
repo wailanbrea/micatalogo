@@ -117,3 +117,63 @@ test('web POS supports wholesale mixed payment and customer credit', function ()
         ->and((float) $customer->fresh()->balance)->toBe(240.0)
         ->and($product->fresh()->inventory->stock_quantity)->toBe(6);
 });
+
+test('web POS sells a decant and reports when its source bottle is recovered', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->create(['user_id' => $user->id]);
+    $source = Product::factory()->create([
+        'shop_id' => $shop->id,
+        'name' => 'Perfume base 100 ml',
+        'price' => 1200,
+        'sale_unit' => 'bottle',
+        'volume_ml' => 100,
+    ]);
+    ProductInventory::create([
+        'product_id' => $source->id,
+        'track_inventory' => true,
+        'stock_quantity' => 1,
+        'available_ml' => 100,
+        'cost_price' => 300,
+    ]);
+    $decant = Product::factory()->create([
+        'shop_id' => $shop->id,
+        'name' => 'Perfume base · Decant 5 ml',
+        'price' => 50,
+        'sale_unit' => 'decant',
+        'volume_ml' => 5,
+        'inventory_source_product_id' => $source->id,
+    ]);
+    ProductInventory::create([
+        'product_id' => $decant->id,
+        'track_inventory' => true,
+        'stock_quantity' => 20,
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('seller.shops.pos', $shop))
+        ->assertOk()
+        ->assertSee('Nueva venta')
+        ->assertSee('is_decant');
+
+    $source->load('sourceProduct');
+    $decant->load('sourceProduct');
+    $this->actingAs($user)
+        ->post(route('seller.shops.pos.store', $shop), [
+            'client_sale_uuid' => (string) Str::uuid(),
+            'payment_status' => 'paid',
+            'sale_mode' => 'retail',
+            'credit_amount' => '0.00',
+            'payments' => [['method' => 'cash', 'amount' => '300.00']],
+            'items' => [webPosProductPayload($decant, 6)],
+        ])
+        ->assertRedirect(route('seller.shops.pos', $shop))
+        ->assertSessionHas('bottle_recovery', function (array $recovery): bool {
+            return count($recovery) === 1
+                && $recovery[0]['covered'] === true
+                && $recovery[0]['just_covered'] === true;
+        });
+
+    expect($source->fresh()->inventory->available_ml)->toBe(70)
+        ->and($decant->fresh()->inventory->stock_quantity)->toBe(14)
+        ->and((float) Invoice::query()->sole()->total)->toBe(300.0);
+});

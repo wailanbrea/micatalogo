@@ -20,6 +20,19 @@
                 </div>
             @endif
 
+            @foreach (session('bottle_recovery', []) as $recovery)
+                <div class="rounded-2xl border px-4 py-3 text-sm {{ ($recovery['covered'] ?? false) ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-blue-200 bg-blue-50 text-blue-900' }}">
+                    <div class="flex items-start gap-3">
+                        <span class="mt-0.5 text-lg">{{ ($recovery['covered'] ?? false) ? '✓' : '◔' }}</span>
+                        <div>
+                            <p class="font-black">{{ $recovery['just_covered'] ?? false ? '¡Botella recuperada!' : 'Recuperación de botella' }}</p>
+                            <p class="mt-0.5">{{ $recovery['alert'] ?? $recovery['message'] ?? '' }}</p>
+                            <p class="mt-1 text-xs font-semibold opacity-80">RD$ {{ number_format((float) ($recovery['revenue'] ?? 0), 2) }} de RD$ {{ number_format((float) ($recovery['cost'] ?? 0), 2) }} · {{ number_format((float) ($recovery['percent'] ?? 0), 1) }}%</p>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+
             @if ($errors->any())
                 <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
                     <p class="font-bold">No se pudo registrar la venta.</p>
@@ -132,8 +145,10 @@
                                 <div class="flex flex-1 flex-col p-4">
                                     <p class="truncate text-[11px] font-semibold uppercase tracking-wide text-slate-400" x-text="product.category"></p>
                                     <h3 class="mt-1 truncate text-sm font-black text-slate-900" x-text="product.name"></h3>
+                                    <span x-show="product.is_decant" x-cloak class="mt-1 inline-flex w-fit rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-black text-blue-700" x-text="'DECANT · ' + product.volume_ml + ' ml'"></span>
                                     <p class="mt-1 text-lg font-black text-blue-950" x-text="money(priceFor(product))"></p>
                                     <p x-show="product.sale_unit === 'decant' && product.volume_ml" x-cloak class="mt-0.5 text-xs font-bold text-blue-600" x-text="product.volume_ml + ' ml por decant'"></p>
+                                    <p x-show="product.is_decant && product.source_product_name" x-cloak class="mt-0.5 truncate text-[11px] text-slate-500" x-text="'Fuente: ' + product.source_product_name"></p>
                                     <div class="mt-auto flex items-center justify-between gap-2 pt-3">
                                         <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold" :class="stockClass(product)" x-text="stockLabel(product)"></span>
                                         <span class="truncate text-[10px] text-slate-400" x-text="product.code || product.sale_unit_label"></span>
@@ -358,6 +373,7 @@
                         saleUnitLabel: product.sale_unit_label,
                         volumeMl: product.volume_ml,
                         sourceProductId: product.source_product_id,
+                        sourceProductName: product.source_product_name,
                     });
                     this.formError = '';
                 },
