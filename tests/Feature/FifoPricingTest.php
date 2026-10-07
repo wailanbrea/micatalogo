@@ -34,6 +34,21 @@ test('FIFO preserves old receipt costs and sale cost across different lots', fun
     expect((int) $sale->fresh()->total_cost_cents)->toBe(480000);
 });
 
+test('different receipts remain visible as separate lots with their own entry cost', function () {
+    [$user, $shop, $product, $service] = fifoFixture();
+    $service->recordRestock($product, 2, 'Primer lote', $user->id, 1800);
+    $service->recordRestock($product, 1, 'Segundo lote', $user->id, 2300);
+
+    $lots = InventoryLot::where('product_id', $product->id)->orderBy('received_at')->orderBy('id')->get();
+
+    expect($lots)->toHaveCount(3)
+        ->and($lots[0]->received_product_unit_cost_cents)->toBe(150000)
+        ->and($lots[1]->received_product_unit_cost_cents)->toBe(180000)
+        ->and($lots[2]->received_product_unit_cost_cents)->toBe(230000)
+        ->and($lots[1]->remaining_quantity)->toBe(2)
+        ->and($lots[2]->remaining_quantity)->toBe(1);
+});
+
 test('FIFO unknown costs remain unknown and failed sales do not consume lots', function () {
     [$user, $shop, $product, $service] = fifoFixture();
     $product->inventory->update(['cost_price' => null]);

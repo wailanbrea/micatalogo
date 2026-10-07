@@ -84,8 +84,9 @@ class SellerBusinessController extends Controller
 
     public function lots(Request $request, Shop $shop)
     {
-        $products = $shop->products()->select(['id', 'name'])->get()->keyBy('id');
+        $products = $shop->products()->select(['id', 'name', 'sale_unit', 'volume_ml'])->get()->keyBy('id');
         $lots = InventoryLot::whereIn('product_id', $products->keys())
+            ->with('product:id,name,sale_unit,volume_ml')
             ->orderByDesc('received_at')
             ->paginate(25);
 

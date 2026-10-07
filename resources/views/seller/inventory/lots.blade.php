@@ -58,7 +58,7 @@
                                 <th class="px-4 py-3">Producto</th>
                                 <th class="px-4 py-3 text-right">Recibido</th>
                                 <th class="px-4 py-3 text-right">Restante</th>
-                                <th class="px-4 py-3 text-right">Costo unitario</th>
+                                <th class="px-4 py-3 text-right">Costo de entrada</th>
                                 <th class="px-4 py-3 text-right">Costo restante</th>
                                 <th class="px-4 py-3">Origen</th>
                             </tr>
@@ -79,7 +79,14 @@
                                         {{ number_format($lot->remaining_quantity) }} {{ $lot->quantity_unit }}
                                     </td>
                                     <td class="px-4 py-3 text-right font-semibold text-slate-800 tabular-nums whitespace-nowrap">
-                                        {{ $lot->unit_cost_cents !== null ? 'RD$ ' . number_format($lot->unit_cost_cents / 100.0, 2) : '—' }}
+                                        @if ($lot->received_product_unit_cost_cents !== null)
+                                            RD$ {{ number_format($lot->received_product_unit_cost_cents / 100.0, 2) }}
+                                            <span class="block text-[10px] font-normal text-slate-500">
+                                                por {{ $lot->product?->sale_unit === 'bottle' ? 'botella' : ($lot->product?->sale_unit === 'ml' ? 'ml' : 'unidad') }}
+                                            </span>
+                                        @else
+                                            —
+                                        @endif
                                     </td>
                                     <td class="px-4 py-3 text-right font-bold text-slate-900 tabular-nums whitespace-nowrap">
                                         {{ $lot->remaining_cost_cents !== null ? 'RD$ ' . number_format($lot->remaining_cost_cents / 100.0, 2) : '—' }}
