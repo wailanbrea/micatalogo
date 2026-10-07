@@ -33,6 +33,10 @@ test('seller can open the web POS and register a paid sale', function () {
         ->get(route('seller.shops.pos', $shop))
         ->assertOk()
         ->assertSee('Punto de venta')
+        ->assertSee('web-pos-checkout-title')
+        ->assertSee('Recibido')
+        ->assertSee('payment_note')
+        ->assertSee('cashChange')
         ->assertSee($product->name);
 
     $this->actingAs($user)
@@ -52,6 +56,29 @@ test('seller can open the web POS and register a paid sale', function () {
         ->and($invoice->status)->toBe('paid')
         ->and((float) $invoice->total)->toBe(550.0)
         ->and($product->fresh()->inventory->stock_quantity)->toBe(6);
+});
+
+test('web POS credit checkout can omit a zero-value payment row', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->create(['user_id' => $user->id]);
+    $product = Product::factory()->create(['shop_id' => $shop->id, 'price' => 450]);
+    ProductInventory::create(['product_id' => $product->id, 'track_inventory' => true, 'stock_quantity' => 4]);
+    $customer = Customer::create(['shop_id' => $shop->id, 'name' => 'Cliente Crédito Web', 'credit_limit' => 1000]);
+
+    $this->actingAs($user)
+        ->post(route('seller.shops.pos.store', $shop), [
+            'client_sale_uuid' => (string) Str::uuid(),
+            'payment_status' => 'pending',
+            'sale_mode' => 'retail',
+            'credit_amount' => '450.00',
+            'customer_id' => $customer->public_id,
+            'items' => [webPosProductPayload($product)],
+        ])
+        ->assertRedirect(route('seller.shops.pos', $shop));
+
+    expect(Invoice::query()->sole()->status)->toBe('pending')
+        ->and((float) $customer->fresh()->balance)->toBe(450.0)
+        ->and($product->fresh()->inventory->stock_quantity)->toBe(3);
 });
 
 test('an appliance shop presents appliance terminology and completes a POS sale', function () {

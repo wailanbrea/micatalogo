@@ -106,11 +106,13 @@
             <form method="POST" action="{{ route('seller.shops.pos.store', $shop) }}" @submit="submitForm($event)" class="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_410px]">
                 @csrf
                 <input type="hidden" name="client_sale_uuid" value="{{ $clientSaleUuid }}">
-                <input type="hidden" name="payment_status" value="paid">
+                <input type="hidden" name="payment_status" :value="paymentStatus">
                 <input type="hidden" name="sale_mode" :value="saleMode">
                 <input type="hidden" name="credit_amount" :value="computedCreditAmount">
-                <input type="hidden" name="payments[0][method]" :value="paymentMethod">
-                <input type="hidden" name="payments[0][amount]" :value="paidAmount.toFixed(2)">
+                <input type="hidden" name="discount" :value="discount.toFixed(2)">
+                <input type="hidden" :name="paidAmount > 0 ? 'payments[0][method]' : null" :value="paymentMethod">
+                <input type="hidden" :name="paidAmount > 0 ? 'payments[0][amount]' : null" :value="paidAmount.toFixed(2)">
+                <input type="hidden" :name="paidAmount > 0 && paymentNote.trim() ? 'payments[0][notes]' : null" :value="paymentNote.trim()">
 
                 <section class="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
                     <div class="flex flex-col gap-4 border-b border-slate-100 pb-5 lg:flex-row lg:items-center lg:justify-between">
@@ -217,7 +219,8 @@
 
                     <div x-show="!checkoutOpen" x-cloak class="space-y-4 border-t border-slate-100 px-5 py-5 sm:px-6">
                         <div class="space-y-2 rounded-2xl bg-slate-50 p-4">
-                            <div class="flex items-center justify-between text-sm text-slate-500"><span>Subtotal</span><span class="font-bold text-slate-800" x-text="money(total)"></span></div>
+                            <div class="flex items-center justify-between text-sm text-slate-500"><span>Subtotal</span><span class="font-bold text-slate-800" x-text="money(subtotal)"></span></div>
+                            <div x-show="discount > 0" x-cloak class="flex items-center justify-between text-sm text-rose-600"><span>Descuento</span><span class="font-bold" x-text="'- ' + money(discount)"></span></div>
                             <div class="flex items-end justify-between border-t border-slate-200 pt-3"><span class="text-base font-black text-slate-950">Total</span><span class="text-2xl font-black text-blue-950" x-text="money(total)"></span></div>
                         </div>
                         <button type="button" @click="openCheckout()" :disabled="!cart.length" class="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-black text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none">
@@ -272,6 +275,20 @@
                             <input id="mixed_credit_amount" x-model.number="mixedCreditAmount" type="number" min="0.01" step="0.01" :max="total" class="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
                         </div>
 
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <div>
+                                <label class="text-xs font-black text-slate-700" for="pos_discount">Descuento</label>
+                                <div class="relative mt-1.5">
+                                    <span class="pointer-events-none absolute left-3 top-2.5 text-sm font-bold text-slate-400">RD$</span>
+                                    <input id="pos_discount" x-model.number="discount" type="number" min="0" step="0.01" :max="subtotal" class="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-12 pr-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100" placeholder="0.00">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-xs font-black text-slate-700" for="payment_note">Nota en el recibo</label>
+                                <input id="payment_note" x-model="paymentNote" type="text" maxlength="255" class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100" placeholder="Opcional">
+                            </div>
+                        </div>
+
                         <div x-show="paymentKind !== 'cash'" x-cloak>
                             <label class="text-xs font-black text-slate-700" for="customer_id">Cliente</label>
                             <select id="customer_id" name="customer_id" x-model="customerId" :required="paymentKind !== 'cash'" class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100">
@@ -288,8 +305,18 @@
                             <input id="due_date" name="due_date" type="date" value="{{ old('due_date') }}" class="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
                         </div>
 
+                        <div x-show="paymentMethod === 'cash' && paymentKind === 'cash'" x-cloak class="grid gap-3 sm:grid-cols-2">
+                            <div class="rounded-2xl bg-slate-100 p-4"><p class="text-sm font-bold text-slate-600">Recibido</p><p class="mt-2 text-2xl font-black tabular-nums text-slate-900" x-text="money(receivedAmount || total)"></p></div>
+                            <div class="rounded-2xl bg-slate-100 p-4"><p class="text-sm font-bold text-slate-600">Devolver</p><p class="mt-2 text-2xl font-black tabular-nums" :class="cashChange > 0 ? 'text-emerald-700' : 'text-slate-900'" x-text="money(cashChange)"></p></div>
+                            <div class="sm:col-span-2 flex flex-wrap gap-2">
+                                <button type="button" @click="receivedAmount = total" class="rounded-full border border-slate-900 bg-white px-4 py-2 text-sm font-black transition">Exacto</button>
+                                <template x-for="amount in [1000, 2000, 5000]" :key="amount"><button type="button" @click="receivedAmount = amount" class="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-black transition hover:border-blue-300 hover:bg-blue-50" x-text="amount.toLocaleString('es-DO')"></button></template>
+                            </div>
+                        </div>
+
                         <div class="space-y-2 rounded-2xl bg-slate-50 p-4">
-                            <div class="flex items-center justify-between text-sm text-slate-500"><span>Subtotal</span><span class="font-bold text-slate-800" x-text="money(total)"></span></div>
+                            <div class="flex items-center justify-between text-sm text-slate-500"><span>Subtotal</span><span class="font-bold text-slate-800" x-text="money(subtotal)"></span></div>
+                            <div x-show="discount > 0" x-cloak class="flex items-center justify-between text-sm text-rose-600"><span>Descuento</span><span class="font-bold" x-text="'- ' + money(discount)"></span></div>
                             <div x-show="computedCreditAmount > 0" x-cloak class="flex items-center justify-between text-sm text-amber-700"><span>A crédito</span><span class="font-bold" x-text="money(computedCreditAmount)"></span></div>
                             <div class="flex items-end justify-between border-t border-slate-200 pt-3"><span class="text-base font-black text-slate-950">Total</span><span class="text-2xl font-black text-blue-950" x-text="money(total)"></span></div>
                             <p x-show="paidAmount > 0 && computedCreditAmount > 0" x-cloak class="text-right text-xs font-semibold text-emerald-600">Pago ahora: <span x-text="money(paidAmount)"></span></p>
@@ -325,6 +352,9 @@
                 paymentMethod: 'cash',
                 customerId: '',
                 mixedCreditAmount: 0,
+                discount: 0,
+                paymentNote: '',
+                receivedAmount: 0,
                 checkoutOpen: false,
                 submitting: false,
                 formError: '',
@@ -353,8 +383,23 @@
                     return this.cart.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
                 },
 
-                get total() {
+                get subtotal() {
                     return this.cart.reduce((sum, item) => sum + this.lineTotal(item), 0);
+                },
+
+                get total() {
+                    return Math.max(0, this.subtotal - Math.max(0, Number(this.discount) || 0));
+                },
+
+                get paymentStatus() {
+                    if (this.paymentKind === 'credit') return 'pending';
+                    if (this.paymentKind === 'mixed') return 'partial';
+                    return 'paid';
+                },
+
+                get cashChange() {
+                    if (this.paymentKind !== 'cash' || this.paymentMethod !== 'cash') return 0;
+                    return Math.max(0, (Number(this.receivedAmount) || this.total) - this.total);
                 },
 
                 get computedCreditAmount() {
@@ -419,6 +464,9 @@
 
                 clearCart() {
                     this.cart = [];
+                    this.discount = 0;
+                    this.paymentNote = '';
+                    this.receivedAmount = 0;
                     this.formError = '';
                 },
 
@@ -428,6 +476,7 @@
                         return;
                     }
                     this.formError = '';
+                    this.receivedAmount = this.total;
                     this.checkoutOpen = true;
                 },
 
@@ -476,6 +525,16 @@
                         this.formError = 'Selecciona un cliente para registrar el crédito.';
                         return;
                     }
+                    if (this.total <= 0) {
+                        event.preventDefault();
+                        this.formError = 'El total debe ser mayor que cero.';
+                        return;
+                    }
+                    if (this.paymentKind === 'cash' && this.paymentMethod === 'cash' && (Number(this.receivedAmount) || 0) < this.total) {
+                        event.preventDefault();
+                        this.formError = 'El efectivo recibido no cubre el total de la venta.';
+                        return;
+                    }
                     this.submitting = true;
                 },
 
@@ -484,6 +543,10 @@
                     this.$watch('paymentKind', (kind) => {
                         if (kind === 'credit') this.mixedCreditAmount = this.total;
                         if (kind === 'cash') this.mixedCreditAmount = 0;
+                    });
+                    this.$watch('total', (value) => {
+                        if (!this.receivedAmount || Number(this.receivedAmount) < value) this.receivedAmount = value;
+                        if (Number(this.mixedCreditAmount) > value) this.mixedCreditAmount = value;
                     });
                     this.$watch('cart', () => { this.formError = ''; }, { deep: true });
                 },
