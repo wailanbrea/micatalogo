@@ -47,7 +47,7 @@ class SellerFeatureController extends Controller
         'credit' => ['group' => 'Cobros', 'title' => 'Crédito', 'description' => 'Da seguimiento a cuentas por cobrar, vencimientos y abonos de clientes.', 'status' => 'En preparación'],
         'inventory_adjustments' => ['group' => 'Finanzas', 'title' => 'Ajustes de inventario', 'description' => 'Audita ajustes, pérdidas y diferencias de inventario sin alterar el historial contable.', 'status' => 'En preparación'],
         'partners' => ['group' => 'Finanzas', 'title' => 'Socios', 'description' => 'Prepara el control de aportes, participaciones y retiros del negocio.', 'status' => 'En preparación'],
-        'reports' => ['group' => 'Análisis', 'title' => 'Reportes', 'description' => 'Construye reportes operativos y financieros exportables para tomar mejores decisiones.', 'status' => 'En preparación'],
+        'reports' => ['group' => 'Análisis', 'title' => 'Reportes', 'description' => 'Construye reportes operativos y financieros exportables para tomar mejores decisiones.', 'status' => 'Operativo'],
         'commissions' => ['group' => 'Equipo', 'title' => 'Comisiones', 'description' => 'Define reglas y consulta comisiones por vendedor y por venta.', 'status' => 'En preparación'],
         'authorizations' => ['group' => 'Equipo', 'title' => 'Autorizaciones', 'description' => 'Controla qué acciones requieren aprobación del propietario.', 'status' => 'En preparación'],
         'accountant' => ['group' => 'Ajustes', 'title' => 'Contador', 'description' => 'Prepara el acceso de tu contador a la información financiera necesaria.', 'status' => 'En preparación'],
@@ -1020,6 +1020,19 @@ class SellerFeatureController extends Controller
     private function reportsData(Shop $shop, BusinessDashboardService $dashboard): array
     {
         $summary = $dashboard->getSummary($shop, now()->startOfMonth()->toDateString(), now()->toDateString(), 'profit', 'desc');
+        $currentState = $summary['current_state'] ?? [];
+        $rows = collect($summary['profitability'])->take(20)->map(fn (array $product) => [
+            'primary' => $product['product_name'],
+            'secondary' => number_format($product['units']).' unidad(es) · Ventas '.$this->money($product['revenue']),
+            'value' => $this->money($product['gross_profit']),
+            'status' => $product['has_unknown_cost'] ? 'Costo pendiente' : 'Calculada',
+        ]);
+        $rows->prepend([
+            'primary' => 'Inventario al costo',
+            'secondary' => number_format((int) ($currentState['active_products_count'] ?? 0)).' productos activos · Valor FIFO actual',
+            'value' => $this->money($currentState['inventory_cost_value'] ?? 0),
+            'status' => 'Actual',
+        ]);
 
         return [
             'kind' => 'table',
@@ -1028,13 +1041,12 @@ class SellerFeatureController extends Controller
                 ['label' => 'Ganancia bruta', 'value' => $this->money($summary['period']['gross_profit']), 'tone' => 'emerald'],
                 ['label' => 'Margen', 'value' => number_format((float) ($summary['period']['gross_margin_percent'] ?? 0), 1).'% ', 'tone' => 'slate'],
             ],
-            'rows' => collect($summary['profitability'])->take(20)->map(fn (array $product) => [
-                'primary' => $product['product_name'],
-                'secondary' => number_format($product['units']).' unidad(es) · Ventas '.$this->money($product['revenue']),
-                'value' => $this->money($product['gross_profit']),
-                'status' => $product['has_unknown_cost'] ? 'Costo pendiente' : 'Calculada',
-            ])->all(),
-            'note' => 'Este reporte usa el costo capturado por lote y distingue ventas, costos, devoluciones y descuentos.',
+            'rows' => $rows->all(),
+            'actions' => [
+                ['label' => 'Ver ganancias y resumen', 'url' => route('seller.shops.business', $shop), 'tone' => 'primary'],
+                ['label' => 'Abrir métricas', 'url' => route('seller.shops.metrics.index', $shop), 'tone' => 'secondary'],
+            ],
+            'note' => 'Este reporte usa el costo capturado por lote y distingue ventas, costos, devoluciones y descuentos. El inventario al costo refleja los lotes FIFO que aún quedan disponibles.',
         ];
     }
 

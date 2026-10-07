@@ -110,6 +110,30 @@ test('sales module supports Puntto-style period, search and status filters', fun
         ->assertDontSee('FAC-FILTER-TODAY');
 });
 
+test('reports expose current inventory value and navigation actions', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->for($user)->create();
+    $product = Product::factory()->for($shop)->create(['name' => 'Producto rentable', 'price' => 500]);
+    ProductInventory::create([
+        'product_id' => $product->id,
+        'track_inventory' => true,
+        'stock_quantity' => 3,
+        'available_ml' => null,
+        'cost_price' => 200,
+        'sold_quantity' => 0,
+        'low_stock_threshold' => 1,
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('seller.shops.feature', [$shop, 'feature' => 'reports']))
+        ->assertOk()
+        ->assertSee('Reportes')
+        ->assertSee('Inventario al costo')
+        ->assertSee('Ver ganancias y resumen')
+        ->assertSee('Abrir métricas')
+        ->assertSee('Operativo');
+});
+
 test('photos module exposes a guided manager for pending product images', function () {
     $user = User::factory()->create(['plan' => 'pro']);
     $shop = Shop::factory()->for($user)->create();
