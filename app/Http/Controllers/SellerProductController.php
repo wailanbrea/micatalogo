@@ -46,6 +46,14 @@ class SellerProductController extends Controller
         $maxProducts = $shop->productLimit();
         $totalProducts = $shop->products()->count();
         $trashedCount = $shop->products()->onlyTrashed()->count();
+        $trackedProducts = $shop->products()->whereHas('inventory', fn ($query) => $query->where('track_inventory', true));
+        $inventoryRows = $shop->products()->with('inventory')->get(['id', 'price']);
+        $capitalCost = $inventoryRows->sum(fn (Product $product): float => (float) ($product->inventory?->stock_quantity ?? 0) * (float) ($product->inventory?->cost_price ?? 0));
+        $totalUnits = $inventoryRows->sum(fn (Product $product): int => (int) ($product->inventory?->stock_quantity ?? 0));
+        $marginRows = $inventoryRows->filter(fn (Product $product): bool => $product->inventory?->cost_price !== null && (float) $product->price > 0);
+        $averageMargin = $marginRows->isEmpty()
+            ? null
+            : $marginRows->avg(fn (Product $product): float => (((float) $product->price - (float) $product->inventory->cost_price) / (float) $product->price) * 100);
 
         return view('seller.products.index', [
             'shop' => $shop,
@@ -55,6 +63,15 @@ class SellerProductController extends Controller
             'totalProducts' => $totalProducts,
             'maxProducts' => $maxProducts,
             'trashedCount' => $trashedCount,
+            'catalogStats' => [
+                'without_photo' => $shop->products()->whereDoesntHave('images')->count(),
+                'capital_cost' => $capitalCost,
+                'tracked_products' => (clone $trackedProducts)->count(),
+                'total_units' => $totalUnits,
+                'low_stock' => $shop->products()->whereHas('inventory', fn ($query) => $query->where('track_inventory', true)->whereColumn('stock_quantity', '<=', 'low_stock_threshold')->where('stock_quantity', '>', 0))->count(),
+                'out_of_stock' => $shop->products()->whereHas('inventory', fn ($query) => $query->where('track_inventory', true)->where('stock_quantity', '<=', 0))->count(),
+                'average_margin' => $averageMargin,
+            ],
         ]);
     }
 

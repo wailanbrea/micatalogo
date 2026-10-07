@@ -205,6 +205,9 @@ test('the product screens show available stock and allow adding units', function
         ->get(route('seller.shops.products.index', $shop))
         ->assertOk()
         ->assertSee('Stock disponible')
+        ->assertSee('Capital al costo')
+        ->assertSee('Nivel bajo')
+        ->assertSee('Margen promedio')
         ->assertSee('12')
         ->assertSee('unidades');
 

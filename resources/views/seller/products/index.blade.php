@@ -50,6 +50,29 @@
                     @endif
                 </div>
 
+                <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <p class="text-[11px] font-black uppercase tracking-[0.14em] text-slate-500">Activos</p>
+                        <p class="mt-2 text-2xl font-black tabular-nums text-slate-950">{{ number_format($totalProducts) }}</p>
+                        <p class="mt-1 text-xs font-semibold text-slate-500">{{ number_format($trashedCount) }} archivado(s)</p>
+                    </div>
+                    <div class="rounded-2xl border border-blue-100 bg-blue-50/60 p-4">
+                        <p class="text-[11px] font-black uppercase tracking-[0.14em] text-blue-700">Capital al costo</p>
+                        <p class="mt-2 text-2xl font-black tabular-nums text-blue-950">RD$ {{ number_format((float) $catalogStats['capital_cost'], 2) }}</p>
+                        <p class="mt-1 text-xs font-semibold text-blue-700">{{ number_format($catalogStats['total_units']) }} unidades controladas</p>
+                    </div>
+                    <div class="rounded-2xl border border-amber-100 bg-amber-50/70 p-4">
+                        <p class="text-[11px] font-black uppercase tracking-[0.14em] text-amber-700">Nivel bajo</p>
+                        <p class="mt-2 text-2xl font-black tabular-nums text-amber-950">{{ number_format($catalogStats['low_stock']) }}</p>
+                        <p class="mt-1 text-xs font-semibold text-amber-700">{{ number_format($catalogStats['out_of_stock']) }} agotado(s)</p>
+                    </div>
+                    <div class="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4">
+                        <p class="text-[11px] font-black uppercase tracking-[0.14em] text-emerald-700">Margen promedio</p>
+                        <p class="mt-2 text-2xl font-black tabular-nums text-emerald-950">{{ $catalogStats['average_margin'] === null ? '—' : number_format((float) $catalogStats['average_margin'], 1).'%' }}</p>
+                        <p class="mt-1 text-xs font-semibold text-emerald-700">{{ number_format($catalogStats['without_photo']) }} sin fotografía</p>
+                    </div>
+                </div>
+
                 <!-- Filtros -->
                 <form class="mt-5 flex flex-wrap items-center gap-3" method="GET" action="{{ route('seller.shops.products.index', $shop) }}">
                     <div class="min-w-0 w-full flex-1 sm:min-w-64">
