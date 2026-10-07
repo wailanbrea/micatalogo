@@ -23,7 +23,11 @@
     };
 
     $guides = [
-        'storefront' => ['eyebrow' => 'Catálogo', 'title' => 'Tu tienda se prepara aquí', 'description' => 'Completa lo esencial, compártela y revisa cómo la verá tu cliente.', 'steps' => [['title' => 'Completa tu información', 'text' => 'Logo, WhatsApp, descripción y dirección hacen confiable tu vitrina.'], ['title' => 'Revisa tu catálogo', 'text' => 'Publica productos con precio, existencia y una buena foto.'], ['title' => 'Compártela', 'text' => 'Copia el enlace, envíalo por WhatsApp o imprime tu código QR.']]],
+        'storefront' => ['eyebrow' => 'Catálogo', 'title' => 'Tu tienda se prepara aquí', 'description' => 'Completa lo esencial, compártela y revisa cómo la verá tu cliente.', 'steps' => [
+            ['title' => 'Completa tu información', 'text' => 'Logo, WhatsApp, descripción y dirección hacen confiable tu vitrina.', 'action' => 'Configurar tienda', 'url' => $shop ? route('seller.shops.edit', $shop).'#basic-information' : null],
+            ['title' => 'Revisa tu catálogo', 'text' => 'Publica productos con precio, existencia y una buena foto.', 'action' => 'Gestionar productos', 'url' => $shop ? route('seller.shops.products.index', $shop) : null],
+            ['title' => 'Compártela', 'text' => 'Copia el enlace, envíalo por WhatsApp o imprime tu código QR.', 'action' => 'Ver enlace y QR', 'url' => $shop ? route('seller.shops.storefront', $shop).'#vitrinas' : null],
+        ]],
         'terminal' => ['eyebrow' => 'Operación', 'title' => 'Vende en pocos pasos', 'description' => 'Busca productos, agrégalos al carrito y cobra sin perder el control del inventario.', 'steps' => [['title' => 'Busca o escanea', 'text' => 'Filtra por nombre, categoría o código y toca un producto para agregarlo.'], ['title' => 'Revisa el carrito', 'text' => 'Ajusta cantidades, cliente, precio detalle o mayorista y tipo de venta.'], ['title' => 'Cobra o cotiza', 'text' => 'El cobro descuenta inventario; la cotización reserva la intención sin tocarlo.']]],
         'sales' => ['eyebrow' => 'Operación', 'title' => 'Entiende cada venta', 'description' => 'Aquí puedes buscar ventas, filtrar el período y revisar cómo se originó cada cobro.', 'steps' => [['title' => 'Elige el período', 'text' => 'Compara hoy, los últimos días o un rango más amplio.'], ['title' => 'Busca y filtra', 'text' => 'Encuentra la venta por número, cliente, pago u origen.'], ['title' => 'Abre el detalle', 'text' => 'Confirma artículos, cobros, costo FIFO y ganancia real.']]],
         'quotes' => ['eyebrow' => 'Operación', 'title' => 'Una cotización es un precio por escrito', 'description' => 'Se prepara desde Terminal en modo Cotizar y no afecta el inventario hasta convertirla.', 'steps' => [['title' => 'Abre Terminal', 'text' => 'Cambia el modo de operación a Cotizar.'], ['title' => 'Arma el presupuesto', 'text' => 'Busca y agrega productos, cantidades, cliente y notas.'], ['title' => 'Envía o convierte', 'text' => 'Comparte el documento y conviértelo en venta cuando el cliente acepte.']]],
@@ -73,10 +77,20 @@
                 </div>
                 <div class="grid flex-1 gap-2 sm:grid-cols-3">
                     @foreach ($guide['steps'] as $step)
-                        <div class="rounded-xl border border-white/90 bg-white/80 p-3">
-                            <div class="flex items-center gap-2"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[10px] font-black text-white">{{ $loop->iteration }}</span><p class="text-xs font-black text-slate-800">{{ $step['title'] }}</p></div>
-                            <p class="mt-2 text-[11px] leading-4 text-slate-500">{{ $step['text'] }}</p>
-                        </div>
+                        @if (! empty($step['url']))
+                            <a href="{{ $step['url'] }}" class="group rounded-xl border border-white/90 bg-white/80 p-3 transition hover:-translate-y-0.5 hover:border-blue-200 hover:bg-white hover:shadow-sm" aria-label="{{ $step['action'] ?? $step['title'] }}">
+                                <div class="flex items-center justify-between gap-2"><div class="flex items-center gap-2"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[10px] font-black text-white">{{ $loop->iteration }}</span><p class="text-xs font-black text-slate-800">{{ $step['title'] }}</p></div><span class="text-sm font-black text-blue-600 transition group-hover:translate-x-0.5" aria-hidden="true">→</span></div>
+                                <p class="mt-2 text-[11px] leading-4 text-slate-500">{{ $step['text'] }}</p>
+                                @if (! empty($step['action']))
+                                    <p class="mt-2 text-[10px] font-black text-blue-700">{{ $step['action'] }} →</p>
+                                @endif
+                            </a>
+                        @else
+                            <div class="rounded-xl border border-white/90 bg-white/80 p-3">
+                                <div class="flex items-center gap-2"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[10px] font-black text-white">{{ $loop->iteration }}</span><p class="text-xs font-black text-slate-800">{{ $step['title'] }}</p></div>
+                                <p class="mt-2 text-[11px] leading-4 text-slate-500">{{ $step['text'] }}</p>
+                            </div>
+                        @endif
                     @endforeach
                 </div>
                 <button type="button" class="self-start rounded-lg px-2 py-1 text-[11px] font-bold text-slate-500 hover:bg-white hover:text-slate-800 lg:self-center" @click="open = false; window.localStorage.setItem(storageKey, '1')">Ocultar</button>

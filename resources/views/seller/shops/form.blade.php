@@ -29,7 +29,7 @@
                 <form class="mt-6 space-y-5" method="POST" action="{{ $shop->exists ? route('seller.shops.update', $shop) : route('seller.shops.store') }}" enctype="multipart/form-data">
                     @csrf
                     @if ($shop->exists) @method('PUT') @endif
-                    <div>
+                    <div id="basic-information" class="scroll-mt-24 space-y-5">
                         <label class="text-sm font-medium text-slate-700" for="name">Nombre de la tienda</label>
                         <input class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-600 focus:ring-blue-600" id="name" name="name" type="text" value="{{ old('name', $shop->name) }}" required autofocus>
                         @error('name') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
