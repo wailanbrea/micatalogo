@@ -20,7 +20,7 @@ class Shop extends Model
         'name', 'slug', 'description', 'logo_object_key', 'cover_object_key',
         'primary_color', 'secondary_color', 'whatsapp_country_code', 'whatsapp_number',
         'offers_shipping', 'instagram', 'address', 'maps_url', 'status', 'discovery_enabled',
-        'product_limit', 'inventory_import_mapping',
+        'business_hours', 'product_limit', 'inventory_import_mapping',
         'business_type', 'business_capability_overrides', 'business_profile_version', 'onboarding_completed_at',
     ];
 
@@ -33,6 +33,7 @@ class Shop extends Model
         return [
             'offers_shipping' => 'boolean',
             'discovery_enabled' => 'boolean',
+            'business_hours' => 'array',
             'product_limit' => 'integer',
             'inventory_import_mapping' => 'array',
             'business_capability_overrides' => 'array',

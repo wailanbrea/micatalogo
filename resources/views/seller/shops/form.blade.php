@@ -1,4 +1,8 @@
 <x-layouts.app :title="$shop->exists ? 'Configuración | ' . $shop->name : 'Crear tienda | MiCatalogo'">
+    @php
+        $hoursForForm = app(\App\Services\ShopHoursService::class)->forForm(old('business_hours', $shop->business_hours));
+        $hourLabels = \App\Services\ShopHoursService::DAYS;
+    @endphp
     <!-- Persistent Unified Navigation -->
     <x-admin.header 
         :breadcrumbs="$shop->exists ? [
@@ -141,6 +145,35 @@
                             @error('whatsapp_number') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
                     </div>
+                    <section id="hours" x-data="{ copyMonday() { const mondayOpen = document.querySelector('[data-hours-open=\"monday\"]')?.value; const mondayClose = document.querySelector('[data-hours-close=\"monday\"]')?.value; ['tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].forEach(day => { const open = document.querySelector('[data-hours-open=\"' + day + '\"]'); const close = document.querySelector('[data-hours-close=\"' + day + '\"]'); if (open) open.value = mondayOpen; if (close) close.value = mondayClose; }); } }" class="scroll-mt-24 rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                                <p class="text-sm font-bold text-slate-900">Horario</p>
+                                <p class="mt-0.5 text-xs text-slate-500">Tu tienda puede mostrar cuándo estás abierto y cuándo pueden escribirte.</p>
+                            </div>
+                            <button type="button" @click="copyMonday()" class="inline-flex shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">Copiar el lunes de lunes a sábado</button>
+                        </div>
+                        <div class="mt-4 divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200 bg-white">
+                            @foreach ($hoursForForm as $day => $dayHours)
+                                <div class="grid gap-3 px-3 py-3 sm:grid-cols-[110px_minmax(0,1fr)_auto] sm:items-center">
+                                    <span class="text-sm font-bold text-slate-800">{{ $hourLabels[$day] }}</span>
+                                    <div class="grid grid-cols-2 gap-2 sm:max-w-sm">
+                                        <label class="text-[11px] font-semibold text-slate-500">Abre
+                                            <input data-hours-open="{{ $day }}" name="business_hours[{{ $day }}][open]" type="time" value="{{ old('business_hours.'.$day.'.open', $dayHours['open']) }}" class="mt-1 block w-full rounded-lg border border-slate-300 px-2.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-blue-600">
+                                        </label>
+                                        <label class="text-[11px] font-semibold text-slate-500">Cierra
+                                            <input data-hours-close="{{ $day }}" name="business_hours[{{ $day }}][close]" type="time" value="{{ old('business_hours.'.$day.'.close', $dayHours['close']) }}" class="mt-1 block w-full rounded-lg border border-slate-300 px-2.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-blue-600">
+                                        </label>
+                                    </div>
+                                    <div class="flex flex-wrap gap-3 text-xs text-slate-600">
+                                        <label class="inline-flex items-center gap-1.5"><input name="business_hours[{{ $day }}][all_day]" type="checkbox" value="1" @checked(old('business_hours.'.$day.'.all_day', $dayHours['all_day'])) class="rounded border-slate-300 text-blue-600 focus:ring-blue-600"> 24 horas</label>
+                                        <label class="inline-flex items-center gap-1.5"><input name="business_hours[{{ $day }}][closed]" type="checkbox" value="1" @checked(old('business_hours.'.$day.'.closed', $dayHours['closed'])) class="rounded border-slate-300 text-blue-600 focus:ring-blue-600"> Cerrado</label>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                        @error('business_hours') <p class="mt-2 text-xs text-red-600">{{ $message }}</p> @enderror
+                    </section>
                     <div id="google" class="scroll-mt-24">
                         <label class="text-sm font-medium text-slate-700" for="instagram">Instagram (opcional)</label>
                         <input class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-600 focus:ring-blue-600" id="instagram" name="instagram" type="text" value="{{ old('instagram', $shop->instagram) }}" placeholder="mi.tienda">

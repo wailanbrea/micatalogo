@@ -168,11 +168,41 @@ test('mi tienda tabs link to executable appearance contact and metrics screens',
     $response->assertOk()
         ->assertSee(route('seller.shops.edit', $shop).'#appearance', false)
         ->assertSee(route('seller.shops.edit', $shop).'#contact', false)
+        ->assertSee(route('seller.shops.edit', $shop).'#hours', false)
         ->assertSee(route('seller.shops.edit', $shop).'#google', false)
         ->assertSee(route('seller.shops.metrics.index', $shop), false)
         ->assertSee('id="apariencia"', false)
         ->assertSee('id="contacto"', false)
         ->assertSee('id="google"', false);
+});
+
+test('a shop owner can save weekly hours and the public storefront displays them', function () {
+    $seller = User::factory()->create();
+    $shop = Shop::factory()->for($seller)->create();
+    $hours = [
+        'monday' => ['open' => '08:30', 'close' => '19:00'],
+        'tuesday' => ['open' => '08:30', 'close' => '19:00'],
+        'wednesday' => ['open' => '08:30', 'close' => '19:00'],
+        'thursday' => ['open' => '08:30', 'close' => '19:00'],
+        'friday' => ['open' => '08:30', 'close' => '19:00'],
+        'saturday' => ['open' => '09:00', 'close' => '15:00'],
+        'sunday' => ['closed' => '1'],
+    ];
+
+    $this->actingAs($seller)
+        ->put(route('seller.shops.update', $shop), shopPayload(['business_hours' => $hours]))
+        ->assertRedirect(route('seller.shops.edit', $shop));
+
+    $savedHours = $shop->fresh()->business_hours;
+    expect($savedHours['monday']['open'])->toBe('08:30')
+        ->and($savedHours['saturday']['close'])->toBe('15:00')
+        ->and($savedHours['sunday']['closed'])->toBeTrue();
+
+    $this->get(route('shops.show', $shop->fresh()))
+        ->assertOk()
+        ->assertSee('Ver horario semanal')
+        ->assertSee('Lunes')
+        ->assertSee('08:30 – 19:00');
 });
 
 test('a seller can update and delete their shop', function () {

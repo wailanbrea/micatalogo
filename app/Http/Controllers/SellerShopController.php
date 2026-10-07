@@ -13,6 +13,7 @@ use App\Services\ImageProcessingService;
 use App\Services\MediaStorageService;
 use App\Services\PlanLimitsService;
 use App\Services\QrCodeSvgService;
+use App\Services\ShopHoursService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -159,6 +160,7 @@ class SellerShopController extends Controller
 
     public function storefront(Shop $shop, QrCodeSvgService $qrCodeService): View
     {
+        $hours = app(ShopHoursService::class);
         $shopUrl = route('shops.show', $shop);
         $products = $shop->products()
             ->with('primaryImage')
@@ -190,6 +192,12 @@ class SellerShopController extends Controller
                 'url' => route('seller.shops.products.index', $shop),
             ],
             [
+                'label' => 'Define tu horario',
+                'description' => 'Para que sepan cuándo pueden pasar o escribirte.',
+                'done' => $hours->isConfigured($shop->business_hours),
+                'url' => route('seller.shops.edit', $shop).'#hours',
+            ],
+            [
                 'label' => 'Completa la presentación',
                 'description' => 'Una descripción clara explica qué vendes y por qué elegirte.',
                 'done' => filled($shop->description) && filled($shop->cover_url),
@@ -219,6 +227,8 @@ class SellerShopController extends Controller
             'orderCount' => $shop->orders()->count(),
             'checklist' => $checklist,
             'completedChecklist' => collect($checklist)->where('done', true)->count(),
+            'businessHours' => $hours->isConfigured($shop->business_hours) ? $hours->forForm($shop->business_hours) : null,
+            'businessHoursStatus' => $hours->currentStatus($shop->business_hours),
             'qrSvg' => $qrCodeService->generateSvg($shopUrl, 220),
         ]);
     }
@@ -262,6 +272,9 @@ class SellerShopController extends Controller
             'slug' => $this->availableSlug($input['slug'] ?: $input['name'], $shop),
             'instagram' => $input['instagram'] ?: null,
             'offers_shipping' => $input['offers_shipping'] ?? false,
+            'business_hours' => array_key_exists('business_hours', $input)
+                ? app(ShopHoursService::class)->normalize($input['business_hours'])
+                : ($shop?->business_hours),
         ];
     }
 

@@ -1,4 +1,9 @@
 @php
+    $shopHoursService = app(\App\Services\ShopHoursService::class);
+    $businessHours = $shopHoursService->isConfigured($shop->business_hours)
+        ? $shopHoursService->forForm($shop->business_hours)
+        : null;
+    $businessHoursStatus = $shopHoursService->currentStatus($shop->business_hours);
     $sharedCartData = $cartItems->map(fn ($cartProduct) => [
         'name' => $cartProduct->name,
         'productId' => $cartProduct->id,
@@ -346,8 +351,27 @@
                                         {{ $shop->instagram }}
                                     </a>
                                 @endif
+                                @if ($businessHoursStatus)
+                                    <span class="inline-flex items-center gap-1 font-medium {{ $businessHoursStatus['open'] ? 'text-emerald-700' : 'text-slate-600' }}">
+                                        <span class="h-1.5 w-1.5 rounded-full {{ $businessHoursStatus['open'] ? 'bg-emerald-500' : 'bg-slate-400' }}"></span>
+                                        {{ $businessHoursStatus['label'] }}
+                                    </span>
+                                @endif
                                 <x-report-modal type="shop" :id="$shop->public_id" :name="$shop->name" />
                             </div>
+                            @if ($businessHours)
+                                <details class="mt-4 max-w-md rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+                                    <summary class="cursor-pointer font-bold">Ver horario semanal</summary>
+                                    <div class="mt-3 space-y-1.5">
+                                        @foreach ($businessHours as $day => $dayHours)
+                                            <div class="flex items-center justify-between gap-3">
+                                                <span class="font-semibold">{{ \App\Services\ShopHoursService::DAYS[$day] }}</span>
+                                                <span class="text-slate-500">{{ $dayHours['closed'] ? 'Cerrado' : ($dayHours['all_day'] ? '24 horas' : $dayHours['open'].' – '.$dayHours['close']) }}</span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </details>
+                            @endif
                         </div>
                     </div>
 
