@@ -84,11 +84,14 @@ reapertura con owner.
 
 ## MiCatalogo verificado
 
-- La APK 1.0.56/código 57 quedó firmada con el certificado de producción, publicada en
+- La APK 1.0.57/código 58 quedó firmada con el certificado de producción, publicada en
   el VPS y verificada en el emulador mediante instalación sobre la versión anterior.
-- La APK 1.0.56 agrega una fila `Recientes` en el POS Android cuando existen ventas
+- La APK 1.0.57 agrega una fila `Recientes` en el POS Android cuando existen ventas
   completadas; reutiliza únicamente el historial local y no crea datos de prueba.
-- La APK 1.0.56 abrió el panel, permitió iniciar sesión, mostró dashboard,
+- La APK 1.0.57 separa el catálogo del POS en filtros `Todos`, `Productos` y `Decants`
+  cuando existen presentaciones de decant; la selección se combina con categorías,
+  búsqueda, stock y modo mayorista.
+- La APK 1.0.57 abrió el panel, permitió iniciar sesión, mostró dashboard,
   drawer de menús, Terminal, carrito y el filtro horizontal de categorías.
 - La Terminal Android usa tarjetas con imagen, búsqueda, escáner, modos Detalle/Mayoreo, carrito inferior y hoja de cobro.
 - El carrito de MiCatalogo ya permite cliente, contado/crédito, tarjeta, transferencia y pago mixto.
@@ -150,6 +153,9 @@ expone ambos formatos y Android 1.0.52 los guarda en Descargas usando el token d
 sesión. Las pruebas verifican que la exportación sea de solo lectura y no cree ni
 modifique productos, ventas o inventario.
 
+El Terminal web recibió el mismo filtro `Todos / Productos / Decants`. El filtro solo
+usa la marca de presentación que ya entrega el catálogo y no crea ni duplica artículos.
+
 ## Evidencia automatizada
 
 La suite crítica del backend ejecutada durante la auditoría pasó **45 pruebas y 359 aserciones**, cubriendo:
@@ -160,7 +166,7 @@ La suite crítica del backend ejecutada durante la auditoría pasó **45 pruebas
 - Comisiones y permisos de vendedores.
 - Operaciones móviles, imágenes, importación e idempotencia.
 
-La compilación release Android 1.0.56 (código 57) también pasó las pruebas unitarias y
+La compilación release Android 1.0.57 (código 58) también pasó las pruebas unitarias y
 produjo un APK firmado/no-debuggable.
 
 La batería enfocada en autenticación, permisos, menú de vendedor, actualización,
