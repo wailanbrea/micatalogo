@@ -24,6 +24,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SellerFeatureController extends Controller
 {
@@ -140,6 +143,69 @@ class SellerFeatureController extends Controller
             'feature' => self::FEATURES[$feature],
             'module' => $this->moduleData($feature, $shop, $dashboard ?: app(BusinessDashboardService::class)),
         ]);
+    }
+
+    public function exportReports(
+        Request $request,
+        Shop $shop,
+        BusinessDashboardService $dashboard
+    ): StreamedResponse {
+        $range = $request->validate([
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'format' => ['nullable', 'string', 'in:csv,xlsx'],
+        ]);
+        $from = $range['from'] ?? now()->startOfMonth()->toDateString();
+        $to = $range['to'] ?? now()->toDateString();
+        $format = $range['format'] ?? 'csv';
+        $summary = $dashboard->getSummary($shop, $from, $to, 'profit', 'desc');
+        $rows = collect($summary['profitability'])->map(fn (array $product): array => [
+            $product['product_name'],
+            (int) $product['units'],
+            round((float) $product['revenue'], 2),
+            round((float) $product['cost'], 2),
+            round((float) $product['gross_profit'], 2),
+            round((float) $product['margin_percent'], 1),
+            $product['has_unknown_cost'] ? 'Costo pendiente' : 'Calculada',
+        ])->values()->all();
+        $filename = 'micatalogo-reportes-'.$shop->slug.'-'.$from.'-'.$to.'.'.$format;
+
+        if ($format === 'xlsx') {
+            return response()->streamDownload(function () use ($summary, $rows): void {
+                $spreadsheet = new Spreadsheet();
+                $sheet = $spreadsheet->getActiveSheet();
+                $sheet->setTitle('Rentabilidad');
+                $sheet->fromArray([
+                    ['Producto', 'Unidades', 'Ventas netas', 'Costo FIFO', 'Ganancia bruta', 'Margen %', 'Estado'],
+                    ...$rows,
+                ]);
+                $sheet->fromArray([
+                    ['Resumen del período', null, null, null, null, null, null],
+                    ['Desde', $summary['from'], 'Hasta', $summary['to'], null, null, null],
+                    ['Ventas netas', $summary['period']['net_sales'], 'Costo FIFO', $summary['period']['fifo_cogs'], 'Ganancia bruta', $summary['period']['gross_profit'], null],
+                ], null, 'A'.(count($rows) + 3));
+                foreach (range('A', 'G') as $column) {
+                    $sheet->getColumnDimension($column)->setAutoSize(true);
+                }
+                (new Xlsx($spreadsheet))->save('php://output');
+            }, $filename, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ]);
+        }
+
+        return response()->streamDownload(function () use ($summary, $rows): void {
+            $handle = fopen('php://output', 'wb');
+            fwrite($handle, "\xEF\xBB\xBF");
+            fputcsv($handle, ['Producto', 'Unidades', 'Ventas netas', 'Costo FIFO', 'Ganancia bruta', 'Margen %', 'Estado']);
+            foreach ($rows as $row) {
+                fputcsv($handle, $row);
+            }
+            fputcsv($handle, []);
+            fputcsv($handle, ['Resumen del período']);
+            fputcsv($handle, ['Desde', $summary['from'], 'Hasta', $summary['to']]);
+            fputcsv($handle, ['Ventas netas', $summary['period']['net_sales'], 'Costo FIFO', $summary['period']['fifo_cogs'], 'Ganancia bruta', $summary['period']['gross_profit']]);
+            fclose($handle);
+        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
     /**
@@ -1043,6 +1109,8 @@ class SellerFeatureController extends Controller
             ],
             'rows' => $rows->all(),
             'actions' => [
+                ['label' => 'Exportar CSV', 'url' => route('seller.shops.reports.export', [$shop, 'format' => 'csv']), 'tone' => 'secondary'],
+                ['label' => 'Excel', 'url' => route('seller.shops.reports.export', [$shop, 'format' => 'xlsx']), 'tone' => 'secondary'],
                 ['label' => 'Ver ganancias y resumen', 'url' => route('seller.shops.business', $shop), 'tone' => 'primary'],
                 ['label' => 'Abrir métricas', 'url' => route('seller.shops.metrics.index', $shop), 'tone' => 'secondary'],
             ],

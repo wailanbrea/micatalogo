@@ -133,6 +133,9 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
     });
     Route::scopeBindings()->middleware('can:sell,shop')->group(function () {
         Route::get('/tiendas/{shop}/modulo/{feature}', [SellerFeatureController::class, 'show'])->name('shops.feature');
+        Route::get('/tiendas/{shop}/reportes/exportar', [SellerFeatureController::class, 'exportReports'])
+            ->middleware('menu:reports')
+            ->name('shops.reports.export');
     });
     Route::scopeBindings()->middleware('can:update,shop')->group(function () {
         Route::post('/tiendas/{shop}/cotizaciones', [SellerCommerceController::class, 'storeQuote'])->name('shops.quotes.store');

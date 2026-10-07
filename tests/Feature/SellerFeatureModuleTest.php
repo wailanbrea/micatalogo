@@ -134,6 +134,24 @@ test('reports expose current inventory value and navigation actions', function (
         ->assertSee('Operativo');
 });
 
+test('reports export csv and xlsx without mutating the shop', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->for($user)->create();
+    Product::factory()->for($shop)->create(['name' => 'Exportable']);
+
+    $csv = $this->actingAs($user)->get(route('seller.shops.reports.export', [$shop, 'format' => 'csv']));
+    $csv->assertOk()
+        ->assertHeader('content-type', 'text/csv; charset=UTF-8')
+        ->assertDownload('micatalogo-reportes-'.$shop->slug.'-'.now()->startOfMonth()->toDateString().'-'.now()->toDateString().'.csv');
+
+    $xlsx = $this->actingAs($user)->get(route('seller.shops.reports.export', [$shop, 'format' => 'xlsx']));
+    $xlsx->assertOk()
+        ->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        ->assertDownload('micatalogo-reportes-'.$shop->slug.'-'.now()->startOfMonth()->toDateString().'-'.now()->toDateString().'.xlsx');
+
+    expect(Product::where('shop_id', $shop->id)->count())->toBe(1);
+});
+
 test('photos module exposes a guided manager for pending product images', function () {
     $user = User::factory()->create(['plan' => 'pro']);
     $shop = Shop::factory()->for($user)->create();

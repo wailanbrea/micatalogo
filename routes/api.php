@@ -35,6 +35,8 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/shops/{shop}/catalog', [CatalogController::class, 'show']);
         Route::get('/shops/{shop}/features/{feature}', [SellerFeatureController::class, 'api'])
             ->where('feature', '[a-z_]+');
+        Route::get('/shops/{shop}/reports/export', [SellerFeatureController::class, 'exportReports'])
+            ->middleware('menu:reports');
         Route::get('/shops/{shop}/purchases', [PurchaseController::class, 'index'])->middleware('menu:containers');
         Route::post('/shops/{shop}/purchases', [PurchaseController::class, 'store'])->middleware('menu:containers');
         Route::post('/shops/{shop}/purchases/{document}/receive', [PurchaseController::class, 'receive'])->middleware('menu:containers');

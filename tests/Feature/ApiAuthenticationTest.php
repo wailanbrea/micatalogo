@@ -2,6 +2,7 @@
 
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
+use App\Models\Product;
 use App\Models\Shop;
 use App\Models\ShopSeller;
 use App\Models\User;
@@ -200,6 +201,18 @@ test('feature modules are available to an owner but obey seller menu permissions
     $response = $this->actingAs($seller, 'sanctum')
         ->getJson("/api/v1/shops/{$shop->public_id}/features/quotes");
     $response->assertForbidden();
+});
+
+test('a shop owner can export reports through the authenticated Android API', function () {
+    $owner = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->for($owner)->create();
+    Product::factory()->for($shop)->create(['name' => 'Reporte móvil']);
+
+    $this->withToken($owner->createToken('report-export')->plainTextToken)
+        ->get("/api/v1/shops/{$shop->public_id}/reports/export?format=csv")
+        ->assertOk()
+        ->assertHeader('content-type', 'text/csv; charset=UTF-8')
+        ->assertHeader('content-disposition');
 });
 
 test('a shop owner can create a seller from the Android API', function () {

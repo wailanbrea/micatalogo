@@ -121,6 +121,11 @@ read model el valor FIFO disponible, marca el módulo como operativo y ofrece `V
 ganancias y resumen` y `Abrir métricas`. En Android 1.0.51 ambos botones están
 conectados; el primero fue probado y abrió `Finanzas / Ganancias` sin salir de la app.
 
+La exportación también quedó alineada: el panel ofrece CSV y Excel; la API autenticada
+expone ambos formatos y Android 1.0.52 los guarda en Descargas usando el token de la
+sesión. Las pruebas verifican que la exportación sea de solo lectura y no cree ni
+modifique productos, ventas o inventario.
+
 ## Evidencia automatizada
 
 La suite crítica del backend ejecutada durante la auditoría pasó **45 pruebas y 359 aserciones**, cubriendo:
@@ -146,8 +151,8 @@ sin permisos.
 2. Recorrer cada pantalla de Puntto y MiCatalogo con una matriz de botones, validaciones, estados vacíos, permisos y respuestas de error.
 3. Repetir la matriz para owner y vendedor, comprobando que cada menú administrativo se oculte y que la ruta devuelva 403 cuando corresponde.
 4. Ejecutar una venta controlada con caja abierta en un entorno de prueba y verificar factura, inventario, caja, ganancia y comisión de extremo a extremo.
-5. Completar la paridad de Reportes con exportación CSV/Excel y pestañas de Servicios,
-   Visitas y Enlaces; la versión actual ya cubre ventas, ganancia, FIFO, inventario al
+5. Completar la paridad de Reportes con pestañas de Servicios, Visitas y Enlaces; la
+   versión actual ya cubre exportación CSV/Excel, ventas, ganancia, FIFO, inventario al
    costo y navegación hacia Finanzas/Métricas.
 6. Comparar visualmente cotizaciones, compras, clientes, caja, ganancias, decants, importación y configuración; la paridad visual completa todavía no está demostrada.
 
