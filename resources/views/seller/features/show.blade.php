@@ -123,6 +123,40 @@
                             </div>
                         @endif
 
+                        @if ($featureKey === 'sales')
+                            @php($salesFilters = $module['filters'] ?? ['period' => 'today', 'status' => 'all', 'search' => '', 'count' => 0])
+                            <section class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5" aria-labelledby="sales-filters-title">
+                                <div class="flex flex-wrap items-start justify-between gap-3">
+                                    <div>
+                                        <h2 id="sales-filters-title" class="text-base font-black text-slate-900">Historial de ventas</h2>
+                                        <p class="mt-1 text-xs text-slate-500">Busca por factura, cliente o vendedor y revisa el período que necesitas.</p>
+                                    </div>
+                                    <span class="rounded-full bg-white px-3 py-1.5 text-[11px] font-black text-slate-600 shadow-sm">{{ number_format((int) $salesFilters['count']) }} resultado(s)</span>
+                                </div>
+                                <form method="GET" action="{{ route('seller.shops.feature', [$shop, 'feature' => 'sales']) }}" class="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px_auto]">
+                                    <label class="sr-only" for="sales-search">Buscar ventas</label>
+                                    <input id="sales-search" name="q" value="{{ $salesFilters['search'] }}" placeholder="Buscar factura, cliente o vendedor..." class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <label class="sr-only" for="sales-status">Estado de la venta</label>
+                                    <select id="sales-status" name="status" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                        <option value="all" @selected($salesFilters['status'] === 'all')>Todos los estados</option>
+                                        <option value="paid" @selected($salesFilters['status'] === 'paid')>Pagadas</option>
+                                        <option value="credit" @selected($salesFilters['status'] === 'credit')>A crédito</option>
+                                        <option value="partial" @selected($salesFilters['status'] === 'partial')>Abono parcial</option>
+                                        <option value="void" @selected($salesFilters['status'] === 'void')>Anuladas</option>
+                                    </select>
+                                    <button class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-black text-white hover:bg-blue-700">Aplicar filtros</button>
+                                </form>
+                                <div class="mt-3 flex flex-wrap gap-2" role="tablist" aria-label="Período de ventas">
+                                    @foreach (['today' => 'Hoy', 'month' => 'Este mes', 'last_7' => 'Últimos 7 días', 'all' => 'Todo'] as $periodKey => $periodLabel)
+                                        <a href="{{ request()->fullUrlWithQuery(['period' => $periodKey]) }}" class="rounded-full px-3.5 py-2 text-xs font-black transition {{ $salesFilters['period'] === $periodKey ? 'bg-blue-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700' }}">{{ $periodLabel }}</a>
+                                    @endforeach
+                                    @if ($salesFilters['search'] !== '' || $salesFilters['status'] !== 'all' || $salesFilters['period'] !== 'today')
+                                        <a href="{{ route('seller.shops.feature', [$shop, 'feature' => 'sales']) }}" class="rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-black text-slate-500 hover:text-blue-700">Limpiar</a>
+                                    @endif
+                                </div>
+                            </section>
+                        @endif
+
                         @if (in_array($featureKey, ['containers', 'loads', 'purchase_invoices'], true))
                             <div class="rounded-2xl border border-amber-100 bg-amber-50/50 p-4 sm:p-5">
                                 <div class="mb-4"><h2 class="text-base font-black text-slate-900">Registrar recepción de compra</h2><p class="mt-1 text-xs text-slate-500">La recepción crea un lote separado y conserva el costo exacto de esta compra.</p></div>

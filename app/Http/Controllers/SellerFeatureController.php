@@ -720,22 +720,56 @@ class SellerFeatureController extends Controller
 
     private function salesData(Shop $shop): array
     {
+        $period = (string) request()->query('period', 'today');
+        $period = in_array($period, ['today', 'month', 'last_7', 'all'], true) ? $period : 'today';
+        $status = (string) request()->query('status', 'all');
+        $status = in_array($status, ['all', 'paid', 'credit', 'partial', 'void'], true) ? $status : 'all';
+        $search = trim((string) request()->query('q', ''));
+
+        $filtered = $shop->invoices()->with(['customer', 'user', 'items']);
+        if ($status === 'all') {
+            $filtered->where('status', '!=', 'void');
+        } else {
+            $filtered->where('status', $status);
+        }
+        if ($period === 'today') {
+            $filtered->whereDate('issued_at', today());
+        } elseif ($period === 'month') {
+            $filtered->whereBetween('issued_at', [now()->startOfMonth(), now()->endOfDay()]);
+        } elseif ($period === 'last_7') {
+            $filtered->whereBetween('issued_at', [now()->subDays(6)->startOfDay(), now()->endOfDay()]);
+        }
+        if ($search !== '') {
+            $filtered->where(function ($query) use ($search): void {
+                $query->where('invoice_number', 'like', "%{$search}%")
+                    ->orWhereHas('customer', fn ($customer) => $customer->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('user', fn ($user) => $user->where('name', 'like', "%{$search}%"));
+            });
+        }
+
         $today = $shop->invoices()->whereDate('issued_at', today())->where('status', '!=', 'void');
+        $rows = (clone $filtered)->latest('issued_at')->limit(100)->get();
 
         return [
             'kind' => 'table',
             'kpis' => [
-                ['label' => 'Ventas de hoy', 'value' => $this->money((clone $today)->sum('total')), 'tone' => 'blue'],
-                ['label' => 'Operaciones', 'value' => number_format((clone $today)->count()), 'tone' => 'slate'],
-                ['label' => 'Cuentas pendientes', 'value' => $this->money($shop->invoices()->whereIn('status', ['credit', 'partial'])->sum('total')), 'tone' => 'amber'],
+                ['label' => $period === 'today' ? 'Ventas de hoy' : 'Ventas del período', 'value' => $this->money((clone $filtered)->sum('total')), 'tone' => 'blue'],
+                ['label' => 'Operaciones', 'value' => number_format((clone $filtered)->count()), 'tone' => 'slate'],
+                ['label' => 'Cuentas pendientes', 'value' => $this->money((clone $filtered)->whereIn('status', ['credit', 'partial'])->sum('total')), 'tone' => 'amber'],
             ],
-            'rows' => $shop->invoices()->with(['customer', 'user'])->latest('issued_at')->limit(20)->get()->map(fn (Invoice $invoice) => [
+            'filters' => [
+                'period' => $period,
+                'status' => $status,
+                'search' => $search,
+                'count' => $rows->count(),
+            ],
+            'rows' => $rows->map(fn (Invoice $invoice) => [
                 'primary' => $invoice->invoice_number,
-                'secondary' => ($invoice->customer?->name ?: 'Venta general').' · '.($invoice->issued_at?->format('d/m/Y H:i') ?: 'Sin fecha'),
+                'secondary' => ($invoice->customer?->name ?: 'Venta general').' · '.($invoice->issued_at?->format('d/m/Y H:i') ?: 'Sin fecha').' · '.number_format((int) $invoice->items->sum('quantity')).' artículo(s)',
                 'value' => $this->money($invoice->total),
                 'status' => $this->invoiceStatus($invoice),
             ])->all(),
-            'note' => 'Las ventas se registran desde Terminal y alimentan inventario, caja, crédito y ganancias.',
+            'note' => 'Las ventas se registran desde Terminal y alimentan inventario, caja, crédito y ganancias. Las anuladas se mantienen fuera del resumen general, pero pueden consultarse desde el filtro de estado.',
         ];
     }
 

@@ -68,6 +68,48 @@ test('all feature modules have a useful protected entry point', function () {
         ->assertSee('Ir a Terminal');
 });
 
+test('sales module supports Puntto-style period, search and status filters', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->for($user)->create();
+
+    Invoice::create([
+        'shop_id' => $shop->id,
+        'user_id' => $user->id,
+        'invoice_number' => 'FAC-FILTER-TODAY',
+        'status' => 'paid',
+        'channel' => 'pos',
+        'currency' => 'DOP',
+        'subtotal' => 250,
+        'total' => 250,
+        'issued_at' => now(),
+    ]);
+    Invoice::create([
+        'shop_id' => $shop->id,
+        'user_id' => $user->id,
+        'invoice_number' => 'FAC-FILTER-OLD',
+        'status' => 'credit',
+        'channel' => 'pos',
+        'currency' => 'DOP',
+        'subtotal' => 400,
+        'total' => 400,
+        'issued_at' => now()->subDays(35),
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('seller.shops.feature', [$shop, 'feature' => 'sales']).'?period=month')
+        ->assertOk()
+        ->assertSee('Historial de ventas')
+        ->assertSee('Este mes')
+        ->assertSee('FAC-FILTER-TODAY')
+        ->assertDontSee('FAC-FILTER-OLD');
+
+    $this->actingAs($user)
+        ->get(route('seller.shops.feature', [$shop, 'feature' => 'sales']).'?period=all&status=credit&q=FAC-FILTER-OLD')
+        ->assertOk()
+        ->assertSee('FAC-FILTER-OLD')
+        ->assertDontSee('FAC-FILTER-TODAY');
+});
+
 test('every panel feature route renders for a shop owner', function () {
     $user = User::factory()->create(['plan' => 'pro']);
     $shop = Shop::factory()->for($user)->create(['business_type' => 'perfume_store']);
