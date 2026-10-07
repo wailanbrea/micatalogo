@@ -7,7 +7,6 @@ use App\Models\CommercialQuote;
 use App\Models\PartnerTransaction;
 use App\Models\Product;
 use App\Models\PurchaseDocument;
-use App\Models\Supplier;
 use App\Models\Shop;
 use App\Services\CashRegisterService;
 use App\Services\InventoryService;
@@ -103,8 +102,9 @@ class SellerCommerceController extends Controller
     public function convertQuote(Request $request, Shop $shop, CommercialQuote $quote, InventoryService $inventory): RedirectResponse
     {
         abort_unless($quote->shop_id === $shop->id, 404);
+        $quotesRoute = route('seller.shops.feature', [$shop, 'feature' => 'quotes']);
         if ($quote->converted_invoice_id || $quote->status === 'converted') {
-            return back()->withErrors(['quote' => 'Esta cotización ya fue convertida en venta.']);
+            return redirect()->to($quotesRoute)->withErrors(['quote' => 'Esta cotización ya fue convertida en venta.']);
         }
 
         try {
@@ -128,10 +128,10 @@ class SellerCommerceController extends Controller
                 $quote->update(['status' => 'converted', 'converted_invoice_id' => $invoice?->id]);
             });
         } catch (InvalidArgumentException $exception) {
-            return back()->withErrors(['quote' => $exception->getMessage()]);
+            return redirect()->to($quotesRoute)->withErrors(['quote' => $exception->getMessage()]);
         }
 
-        return back()->with('status', "Cotización {$quote->quote_number} convertida en venta.");
+        return redirect()->to($quotesRoute)->with('status', "Cotización {$quote->quote_number} convertida en venta.");
     }
 
     public function storeSupplier(Request $request, Shop $shop): RedirectResponse

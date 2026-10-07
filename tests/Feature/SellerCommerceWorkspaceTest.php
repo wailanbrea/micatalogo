@@ -1,8 +1,8 @@
 <?php
 
 use App\Models\CommercialQuote;
-use App\Models\Invoice;
 use App\Models\InventoryMovement;
+use App\Models\Invoice;
 use App\Models\PartnerTransaction;
 use App\Models\Product;
 use App\Models\ProductInventory;
@@ -30,7 +30,9 @@ test('cotizaciones convierten una sola vez y respetan inventario y FIFO', functi
     expect($quote->status)->toBe('draft')->and($quote->total)->toBe('500.00');
 
     $this->actingAs($user)->post(route('seller.shops.quotes.convert', [$shop, 'quote' => $quote->public_id]))
-        ->assertSessionHasNoErrors();
+        ->assertRedirect(route('seller.shops.feature', [$shop, 'feature' => 'quotes']))
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('status', "Cotización {$quote->quote_number} convertida en venta.");
 
     $quote->refresh();
     expect($quote->status)->toBe('converted')
@@ -40,6 +42,7 @@ test('cotizaciones convierten una sola vez y respetan inventario y FIFO', functi
         ->and((int) $product->inventory()->first()->stock_quantity)->toBe(3);
 
     $this->actingAs($user)->post(route('seller.shops.quotes.convert', [$shop, 'quote' => $quote->public_id]))
+        ->assertRedirect(route('seller.shops.feature', [$shop, 'feature' => 'quotes']))
         ->assertSessionHasErrors('quote');
     expect(Invoice::where('shop_id', $shop->id)->count())->toBe(1);
 });
