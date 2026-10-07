@@ -1087,6 +1087,8 @@ class SellerFeatureController extends Controller
     {
         $summary = $dashboard->getSummary($shop, now()->startOfMonth()->toDateString(), now()->toDateString(), 'profit', 'desc');
         $currentState = $summary['current_state'] ?? [];
+        $period = $summary['period'] ?? [];
+        $metrics = app(ShopAnalyticsService::class)->getMetricsSummary($shop);
         $rows = collect($summary['profitability'])->take(20)->map(fn (array $product) => [
             'primary' => $product['product_name'],
             'secondary' => number_format($product['units']).' unidad(es) · Ventas '.$this->money($product['revenue']),
@@ -1099,6 +1101,57 @@ class SellerFeatureController extends Controller
             'value' => $this->money($currentState['inventory_cost_value'] ?? 0),
             'status' => 'Actual',
         ]);
+        $serviceData = $this->servicesData($shop);
+        $sections = [
+            [
+                'key' => 'sales',
+                'label' => 'Ventas',
+                'kpis' => [
+                    ['label' => 'Ventas netas', 'value' => $this->money($period['net_sales'] ?? 0), 'tone' => 'blue'],
+                    ['label' => 'Ganancia bruta', 'value' => $this->money($period['gross_profit'] ?? 0), 'tone' => 'emerald'],
+                    ['label' => 'Transacciones', 'value' => number_format((int) ($period['sales_count'] ?? 0)), 'tone' => 'slate'],
+                ],
+                'rows' => $rows->take(10)->values()->all(),
+                'note' => 'Ventas netas, costo FIFO y ganancia se calculan con las mismas reglas contables del módulo Finanzas.',
+            ],
+            [
+                'key' => 'services',
+                'label' => 'Servicios',
+                'kpis' => $serviceData['kpis'],
+                'rows' => $serviceData['rows'],
+                'note' => 'Los servicios y productos sin control de inventario se mantienen en el mismo catálogo y se pueden vender desde Terminal.',
+            ],
+            [
+                'key' => 'visits',
+                'label' => 'Visitas',
+                'kpis' => [
+                    ['label' => 'Visitas · 30 días', 'value' => number_format($metrics['views_30d']), 'tone' => 'blue'],
+                    ['label' => 'Contactos WhatsApp', 'value' => number_format($metrics['clicks_30d']), 'tone' => 'emerald'],
+                    ['label' => 'Conversión', 'value' => number_format($metrics['conversion_rate_30d'], 1).'%', 'tone' => 'amber'],
+                ],
+                'rows' => collect($metrics['top_by_views'])->map(fn ($product) => [
+                    'primary' => $product->name,
+                    'secondary' => number_format($product->views_count).' visita(s) en catálogo',
+                    'value' => number_format($product->clicks_count).' contacto(s)',
+                    'status' => 'Más visto',
+                ])->all(),
+                'note' => 'Las visitas y contactos se agregan por día y por producto, sin modificar inventario ni ventas.',
+            ],
+            [
+                'key' => 'links',
+                'label' => 'Enlaces',
+                'kpis' => [
+                    ['label' => 'Visitas acumuladas', 'value' => number_format($metrics['total_views']), 'tone' => 'blue'],
+                    ['label' => 'Contactos acumulados', 'value' => number_format($metrics['total_clicks']), 'tone' => 'emerald'],
+                    ['label' => 'Productos activos', 'value' => number_format($metrics['active_products_count']), 'tone' => 'slate'],
+                ],
+                'rows' => [
+                    ['primary' => 'Catálogo público', 'secondary' => route('shops.show', $shop), 'value' => 'Disponible', 'status' => 'Enlace público'],
+                    ['primary' => 'Pedidos por WhatsApp', 'secondary' => filled($shop->whatsapp_number) ? $shop->whatsapp_number : 'Número no configurado', 'value' => filled($shop->whatsapp_number) ? 'Activo' : 'Revisar', 'status' => 'Canal de venta'],
+                ],
+                'note' => 'Ambos enlaces usan la misma vitrina pública y sus métricas se reflejan aquí en tiempo real.',
+            ],
+        ];
 
         return [
             'kind' => 'table',
@@ -1108,6 +1161,7 @@ class SellerFeatureController extends Controller
                 ['label' => 'Margen', 'value' => number_format((float) ($summary['period']['gross_margin_percent'] ?? 0), 1).'% ', 'tone' => 'slate'],
             ],
             'rows' => $rows->all(),
+            'sections' => $sections,
             'actions' => [
                 ['label' => 'Exportar CSV', 'url' => route('seller.shops.reports.export', [$shop, 'format' => 'csv']), 'tone' => 'secondary'],
                 ['label' => 'Excel', 'url' => route('seller.shops.reports.export', [$shop, 'format' => 'xlsx']), 'tone' => 'secondary'],

@@ -455,7 +455,40 @@
                                 @endif
                             </div>
 
-                            @if (count($module['rows']))
+                            @if ($featureKey === 'reports' && ! empty($module['sections']))
+                                <div x-data="{ active: @js($module['sections'][0]['key']) }" class="p-4 sm:p-5">
+                                    <div class="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Secciones del reporte">
+                                        @foreach ($module['sections'] as $section)
+                                            <button type="button" @click="active = '{{ $section['key'] }}'" :class="active === '{{ $section['key'] }}' ? 'bg-blue-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700'" class="shrink-0 rounded-full px-4 py-2 text-xs font-black" role="tab" aria-controls="report-section-{{ $section['key'] }}">{{ $section['label'] }}</button>
+                                        @endforeach
+                                    </div>
+                                    @foreach ($module['sections'] as $section)
+                                        <section id="report-section-{{ $section['key'] }}" x-show="active === '{{ $section['key'] }}'" x-cloak class="mt-5 space-y-4" role="tabpanel">
+                                            <div class="grid gap-3 sm:grid-cols-3">
+                                                @foreach ($section['kpis'] as $kpi)
+                                                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                                                        <p class="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">{{ $kpi['label'] }}</p>
+                                                        <p class="mt-2 text-xl font-black tabular-nums {{ match ($kpi['tone']) { 'emerald' => 'text-emerald-700', 'amber' => 'text-amber-700', 'rose' => 'text-rose-700', 'blue' => 'text-blue-700', default => 'text-slate-900' } }}">{{ $kpi['value'] }}</p>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                            @if (count($section['rows']))
+                                                <div class="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200">
+                                                    @foreach ($section['rows'] as $row)
+                                                        <div class="flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                                                            <div class="min-w-0"><p class="truncate text-sm font-black text-slate-900">{{ $row['primary'] }}</p><p class="mt-1 break-all text-xs text-slate-500">{{ $row['secondary'] }}</p></div>
+                                                            <div class="flex items-center gap-3 sm:justify-end"><span class="text-sm font-black tabular-nums text-slate-900">{{ $row['value'] }}</span><span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">{{ $row['status'] }}</span></div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                <div class="rounded-2xl border border-dashed border-slate-300 px-5 py-10 text-center text-sm text-slate-500">No hay registros para esta sección todavía.</div>
+                                            @endif
+                                            <p class="rounded-2xl border border-blue-100 bg-blue-50/60 px-4 py-3 text-sm leading-6 text-blue-900">{{ $section['note'] }}</p>
+                                        </section>
+                                    @endforeach
+                                </div>
+                            @elseif (count($module['rows']))
                                 <div class="divide-y divide-slate-100">
                                     @foreach ($module['rows'] as $row)
                                         <div class="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">

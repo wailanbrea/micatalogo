@@ -129,6 +129,10 @@ test('reports expose current inventory value and navigation actions', function (
         ->assertOk()
         ->assertSee('Reportes')
         ->assertSee('Inventario al costo')
+        ->assertSee('Ventas')
+        ->assertSee('Servicios')
+        ->assertSee('Visitas')
+        ->assertSee('Enlaces')
         ->assertSee('Ver ganancias y resumen')
         ->assertSee('Abrir métricas')
         ->assertSee('Operativo');

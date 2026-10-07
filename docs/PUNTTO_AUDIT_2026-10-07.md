@@ -121,6 +121,12 @@ read model el valor FIFO disponible, marca el módulo como operativo y ofrece `V
 ganancias y resumen` y `Abrir métricas`. En Android 1.0.51 ambos botones están
 conectados; el primero fue probado y abrió `Finanzas / Ganancias` sin salir de la app.
 
+La versión 1.0.53 completa también las cuatro secciones observadas en Puntto:
+`Ventas`, `Servicios`, `Visitas` y `Enlaces`. Se sirven desde el mismo módulo
+protegido de la web y de la API Android; las pestañas son de solo lectura y reutilizan
+ventas/FIFO, catálogo sin inventario, métricas de vitrina y enlaces públicos existentes.
+No crean productos, ventas, visitas artificiales ni movimientos contables.
+
 La exportación también quedó alineada: el panel ofrece CSV y Excel; la API autenticada
 expone ambos formatos y Android 1.0.52 los guarda en Descargas usando el token de la
 sesión. Las pruebas verifican que la exportación sea de solo lectura y no cree ni
@@ -151,8 +157,8 @@ sin permisos.
 2. Recorrer cada pantalla de Puntto y MiCatalogo con una matriz de botones, validaciones, estados vacíos, permisos y respuestas de error.
 3. Repetir la matriz para owner y vendedor, comprobando que cada menú administrativo se oculte y que la ruta devuelva 403 cuando corresponde.
 4. Ejecutar una venta controlada con caja abierta en un entorno de prueba y verificar factura, inventario, caja, ganancia y comisión de extremo a extremo.
-5. Completar la paridad de Reportes con pestañas de Servicios, Visitas y Enlaces; la
-   versión actual ya cubre exportación CSV/Excel, ventas, ganancia, FIFO, inventario al
-   costo y navegación hacia Finanzas/Métricas.
-6. Comparar visualmente cotizaciones, compras, clientes, caja, ganancias, decants, importación y configuración; la paridad visual completa todavía no está demostrada.
+5. Comparar visualmente cotizaciones, compras, clientes, caja, ganancias, decants,
+   importación y configuración; la paridad visual completa todavía no está demostrada.
+6. Completar la matriz de estados y validaciones de cada pantalla y repetirla para
+   owner y vendedor con pruebas equivalentes en web y Android.
 
