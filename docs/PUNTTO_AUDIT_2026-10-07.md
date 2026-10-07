@@ -58,6 +58,11 @@ pasado / Más, navegación del mes, ganancia neta, ventas, costo de lo vendido p
 ganancia bruta, gastos y pérdidas de inventario, incluyendo comparación contra el mismo
 período anterior.
 
+La pantalla `Reportes` de Puntto agrega acciones de exportación CSV/Excel, pestañas de
+Ventas, Servicios, Visitas y Enlaces, período Hoy / Este mes / Últimos 7, ventas y
+ganancia del período, transacciones, inventario al costo y productos más vendidos con
+ganancia por producto.
+
 MiCatalogo ya expone la fuente financiera equivalente en `Ganancias y resumen`,
 `Gastos`, inventario FIFO y reportes; queda pendiente verificar visualmente cada uno
 en Android y validar que el detalle mensual tenga la misma profundidad que Puntto.
@@ -110,6 +115,12 @@ nombre de la opción y del breadcrumb para que el drawer muestre `Ganancias` y l
 pantalla quede como `Finanzas / Ganancias`; esto también permite encontrarla buscando
 `Ganancias`.
 
+La comparación de `Reportes` detectó otra diferencia: Puntto muestra el valor actual
+del inventario al costo y accesos directos a sus análisis. MiCatalogo ahora agrega al
+read model el valor FIFO disponible, marca el módulo como operativo y ofrece `Ver
+ganancias y resumen` y `Abrir métricas`. En Android 1.0.51 ambos botones están
+conectados; el primero fue probado y abrió `Finanzas / Ganancias` sin salir de la app.
+
 ## Evidencia automatizada
 
 La suite crítica del backend ejecutada durante la auditoría pasó **45 pruebas y 359 aserciones**, cubriendo:
@@ -135,5 +146,8 @@ sin permisos.
 2. Recorrer cada pantalla de Puntto y MiCatalogo con una matriz de botones, validaciones, estados vacíos, permisos y respuestas de error.
 3. Repetir la matriz para owner y vendedor, comprobando que cada menú administrativo se oculte y que la ruta devuelva 403 cuando corresponde.
 4. Ejecutar una venta controlada con caja abierta en un entorno de prueba y verificar factura, inventario, caja, ganancia y comisión de extremo a extremo.
-5. Comparar visualmente cotizaciones, compras, clientes, caja, ganancias, decants, importación y configuración; la paridad visual completa todavía no está demostrada.
+5. Completar la paridad de Reportes con exportación CSV/Excel y pestañas de Servicios,
+   Visitas y Enlaces; la versión actual ya cubre ventas, ganancia, FIFO, inventario al
+   costo y navegación hacia Finanzas/Métricas.
+6. Comparar visualmente cotizaciones, compras, clientes, caja, ganancias, decants, importación y configuración; la paridad visual completa todavía no está demostrada.
 
