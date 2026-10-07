@@ -184,7 +184,7 @@ sin permisos.
 5. Completar la matriz de estados y validaciones de cada pantalla y repetirla para
    owner y vendedor con pruebas equivalentes en web y Android.
 6. Verificar en dispositivo la venta de servicios sincronizados desde el backend y la
-   actualización forzada desde la 1.0.57 a la 1.0.58.
+   actualización forzada desde la 1.0.58 a la 1.0.59.
 
 ## Flujo de servicios implementado
 
@@ -200,5 +200,5 @@ La brecha funcional de servicios quedó resuelta en web y Android:
 - La sincronización Android conserva la unidad `service` y el registrador local evita
   movimientos de inventario al cobrar o devolver un servicio.
 - Verificación: `SellerPosTest` y `SellerFeatureModuleTest` pasan 18 pruebas y 182
-  aserciones en conjunto; Android `testDebugUnitTest` pasó en la release 1.0.58.
+  aserciones en conjunto; Android `testDebugUnitTest` pasó en la release 1.0.59.
 
