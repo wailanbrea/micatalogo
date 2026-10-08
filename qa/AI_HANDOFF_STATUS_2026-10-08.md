@@ -259,9 +259,12 @@ Los detalles y límites están en:
 8. **Hardware/externos:** compartir PDF/WhatsApp, permisos modernos, cámara/ML Kit,
    Bluetooth/impresión 58/80 mm, R2/colas y servicios externos.
 9. **Calidad CI:** `vendor/bin/pint --test` aún reporta deuda de formato en 37
-   archivos; no reformatear masivamente cambios ajenos sin revisar el diff.
+   archivos del checkout completo; no reformatear masivamente cambios ajenos sin
+   revisar el diff. El conjunto modificado por este checkout (6 archivos PHP entre
+   `origin/master...HEAD`) pasó `vendor/bin/pint --test`.
 10. **Documentación/branches:** decidir qué commits locales se integran y hacer push
-    solamente después de revisar los siete commits backend y uno Android adelantados.
+    solamente después de revisar los 38 commits backend y los cuatro commits Android
+    adelantados.
 
 ## Verificación adicional de cierre de sesión y Samsung (2026-10-08)
 
