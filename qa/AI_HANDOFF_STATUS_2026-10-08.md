@@ -6,11 +6,12 @@ actual y no reemplaza `AGENTS.md` ni las skills obligatorias.
 ## Estado ejecutivo
 
 El release gate continúa **NOT_READY**. El baseline local Web/API y Android está
-verde en los escenarios ejecutados, pero todavía hay bloqueos reales: la release no
-puede instalarse sobre el Samsung porque conserva una APK debug con otro certificado,
-la corrección del updater aún no está publicada en una nueva APK, y permanecen casos
-de negocio, visuales, hardware, offline físico y cobertura positiva completa sin
-cerrar.
+verde en los escenarios ejecutados, y la revocación remota de sesión ya quedó
+corregida y probada localmente. Todavía hay bloqueos reales: la release no puede
+instalarse sobre el Samsung porque conserva una APK debug con otro certificado, los
+cambios locales aún no están publicados en VPS ni en una nueva APK, y permanecen
+casos de negocio, visuales, hardware, offline físico y cobertura positiva completa
+sin cerrar.
 
 No se hizo publicación, push, instalación ni desinstalación en el Samsung durante
 este corte. No se escribieron datos de producción.
@@ -20,10 +21,12 @@ este corte. No se escribieron datos de producción.
 ### Backend/Web/API
 
 - Ruta: `C:\xampp\php\www\MiCatalogo`
-- Rama: `master`, **7 commits adelantados de `origin/master`**.
-- Último commit local: `8e64f63 docs: record isolated live Android QA rerun`.
-- Commits QA recientes: `6866079`, `7185933`, `5a6df74`, `d22aa60`, `09e7f0f`, `e3d6085`.
-- Cambios rastreados: limpios después del commit.
+- Rama: `master`, **12 commits adelantados de `origin/master`**.
+- Último commit local: `dc7dac9 docs: refresh QA baseline after session revocation`.
+- Corrección funcional local: `734b169 fix: revoke API token on mobile logout`.
+- Commits documentales/QA recientes: `e19e668`, `9e17ee0`, `eb9c75a` y los
+  commits previos conservados en el historial.
+- Cambios rastreados: limpios; quedan únicamente los no rastreados intencionales.
 - No tocar ni borrar los no rastreados existentes: `.github/`, `.playwright-cli/`, `output/`.
 
 ### Android
@@ -31,10 +34,11 @@ este corte. No se escribieron datos de producción.
 - Ruta real activa: `C:\Users\waila\AndroidStudioProjects\micatalogowebApp`.
 - La skill histórica menciona `BSPOS-MiCatalogo`; en esta máquina el checkout vigente
   es `micatalogowebApp`. No crear ni cambiar de proyecto sin comprobar Git.
-- Rama: `main`, **1 commit adelantado de `origin/main`**.
-- Último commit local: `7c32766 test: verify invoice PDF generation and pagination`.
-- Cambios funcionales clave: `7ea2916` updater pendiente persistente y `c4aea97`
-  bloqueo del updater de producción para builds debug.
+- Rama: `main`, **2 commits adelantados de `origin/main`**.
+- Último commit local: `5d57421 fix: revoke MiCatalogo session on logout`.
+- Cambios funcionales clave: `7ea2916` updater pendiente persistente, `c4aea97`
+  bloqueo del updater de producción para builds debug, `7c32766` prueba de PDF y
+  `5d57421` cierre de sesión con revocación remota.
 - Cambios rastreados: limpios. Conservar el no rastreado `.github/`.
 
 No usar `git reset --hard`, `git checkout --`, limpieza masiva ni borrar los
@@ -117,6 +121,8 @@ Resultados actuales:
 - `testDebugUnitTest`: **95/95 PASS**.
 - Suite instrumentada normal: **116 casos**, **113 PASS**, **3 assumptions** por
   fixtures live no suministrados en la batería completa.
+- Reejecución posterior a la corrección de logout: **116 casos OK**, con el mismo
+  resultado controlado de **113 PASS + 3 assumptions**; no hubo fallos.
 - Suite instrumentada `com.bsolutions.micatalogo.offlinecheck`: mismo resultado.
 - `InvoicePdfGeneratorTest`: **2/2 PASS**; PDF legible por `FileProvider` y carrito
   largo paginado en más de una página.
@@ -257,6 +263,62 @@ Se implementó la revocación explícita del token actual:
 Esta corrección está únicamente en los checkouts locales; todavía no se ha desplegado ni
 publicado en VPS o en la APK pública.
 
+## Trabajo completado en este corte
+
+- Se inventariaron y documentaron las funciones, rutas, roles, tiendas, módulos
+  financieros, importador, POS/Terminal, cotizaciones, decants, pedidos, cierres,
+  actualizador y navegación Android/Web en los reportes de `qa/`.
+- Se ejecutó el baseline completo del backend con SQLite y MariaDB QA aislada:
+  **495 tests, 5.073 assertions PASS** en cada motor; migraciones QA: **61 ejecutadas,
+  0 pendientes**; las tablas operativas de QA quedaron en cero.
+- Se verificaron las invariantes de tenant/RBAC con la matriz dirigida y se cubrieron
+  jornadas positivas mínimas de owner, manager, vendedor, contador y equipos.
+- Se validaron importación adaptativa, ventas contado/crédito, abonos, decants,
+  replay/idempotencia, rollback de POS, cierre, cotizaciones, PDF y actualización
+  pendiente sin usar producción.
+- Se recompiló Android para QA, se ejecutó la batería instrumentada segura únicamente
+  en `emulator-5554` y terminó sin fallos: **116/116 finalizados**, **113 PASS + 3
+  assumptions**.
+- Se ejecutaron `testDebugUnitTest` (**95/95 PASS**), compilación de pruebas Android,
+  `lintDebug` y `git diff --check`; los warnings de lint restantes son no bloqueantes.
+- Se verificó la firma de la release local: paquete correcto, `versionCode 77`,
+  `debuggable=false`, certificado oficial y SHA consistente.
+- Se reprodujo el bloqueo del Samsung de forma no destructiva: la instalación local
+  es debug con otro certificado, por lo que Android rechaza la actualización release.
+- Se implementó y probó la revocación remota de sesión: `POST /api/v1/auth/logout`
+  elimina el token actual y Android limpia siempre su sesión local aun con error de red
+  o token ya revocado.
+
+## Trabajo que aún falta
+
+Lo siguiente es el backlog real, en orden operativo. No debe marcarse como terminado
+por inferencia a partir de tests parciales:
+
+1. Publicar, con autorización explícita, los commits locales backend y Android; antes
+   revisar los diffs y mantener el backup/controles de producción establecidos.
+2. Crear una nueva release Android con `versionCode` mayor que 77 que incluya el
+   updater persistente, el bloqueo de debug contra producción, PDF y logout; verificar
+   firma, SHA, manifiesto y URL antes de publicarla.
+3. Resolver el Samsung: comprobar que no haya outbox local pendiente, obtener
+   autorización específica, desinstalar solo `com.bsolutions.micatalogo` e instalar la
+   release oficial. Después validar login, datos del servidor y updater; no instalar
+   debug en el teléfono.
+4. Completar la matriz positiva verbo × ruta, incluyendo recursos anidados, archivos,
+   capacidades y cada rol, además de las fronteras ya probadas.
+5. Decidir F-036 (método/movimiento contable del reembolso pagado) y F-038
+   (conversión/prorrateo del costo aterrizado internacional), implementar regresiones
+   y volver a validar FIFO, margen, caja, replay y cierre.
+6. Ejecutar pruebas offline físicas: caída real de red, kill/restart, reconnect,
+   interrupción de actualización y replay/devoluciones en un dispositivo release.
+7. Completar auditoría visual/UI Web y Android por pantalla, rol y tamaño: carga,
+   vacío, error, rotación, scroll, modales, responsive y paridad con Puntto.
+8. Validar integraciones externas y hardware: compartir PDF/WhatsApp, cámara/ML Kit,
+   Bluetooth/impresión 58/80 mm, R2/colas y permisos modernos.
+9. Reducir la deuda de formato global (`vendor/bin/pint --test` aún reporta 37
+   archivos), sin reformatear masivamente cambios ajenos sin revisar el diff.
+10. Solo después de lo anterior emitir `READY`; mientras exista cualquiera de estos
+    bloqueos el estado correcto sigue siendo `NOT_READY`.
+
 ## Secuencia recomendada para la siguiente IA
 
 1. Leer `AGENTS.md`, `bsolutions-infra/SKILL.md` y
@@ -279,8 +341,11 @@ publicado en VPS o en la APK pública.
 
 ## Commits locales de este corte
 
-- Backend: `734b169` (`fix: revoke API token on mobile logout`) más el commit documental
-  posterior que actualiza este baseline.
-- Android: `5d57421` (`fix: revoke MiCatalogo session on logout`).
-- La documentación de la reejecución live anterior permanece en `8e64f63`.
+- Backend: `734b169` (`fix: revoke API token on mobile logout`) y `dc7dac9`
+  (`docs: refresh QA baseline after session revocation`), con los commits locales
+  anteriores aún adelantados a `origin/master`.
+- Android: `5d57421` (`fix: revoke MiCatalogo session on logout`), con `7c32766`
+  como commit Android anterior local.
+- La documentación de la reejecución live anterior permanece en el historial; no se
+  hizo push de estos commits.
 - Ninguna clave, contraseña, token real ni archivo privado forma parte de este traspaso.
