@@ -23,10 +23,12 @@ este corte. No se escribieron datos de producción.
 - Ruta: `C:\xampp\php\www\MiCatalogo`
 - Rama: `master`, con commits locales de QA aún no publicados frente a `origin/master`
   (el conteo debe verificarse antes de cualquier push).
-- El checkout actual está **18 commits adelantado** de `origin/master`; confirmar el
-  conteo justo antes de cualquier push porque puede cambiar.
+- Al cierre de este documento el checkout tiene commits locales adelantados de
+  `origin/master`; confirmar el conteo justo antes de cualquier push con
+  `git rev-list --left-right --count origin/master...HEAD` porque la documentación
+  de este archivo también modifica el conteo.
 - Última corrección funcional local: `734b169 fix: revoke API token on mobile logout`.
-- Último commit local: `68f21b5 docs: record Android contract validation`.
+- Último commit local: `536f7ef docs: finalize QA handoff for next AI`.
 - Los commits posteriores a `734b169` son documentación y evidencia QA; no deben
   confundirse con un despliegue publicado.
 - Cambios rastreados: limpios; quedan únicamente los no rastreados intencionales.
@@ -383,7 +385,7 @@ por inferencia a partir de tests parciales:
 ## Commits locales de este corte
 
 - Backend: `734b169` (`fix: revoke API token on mobile logout`) y la documentación
-  posterior hasta `68f21b5` (`docs: record Android contract validation`). El checkout
+  posterior hasta `536f7ef` (`docs: finalize QA handoff for next AI`). El checkout
   está adelantado frente a `origin/master`; revisar la lista completa con `git log`
   antes de elegir qué publicar.
 - Android: `7ea2916` (updater pendiente persistente), `c4aea97` (debug fuera del
