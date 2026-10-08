@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Money;
 use App\Traits\HasPublicId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -75,7 +76,7 @@ class Expense extends Model
 
     public function unpaidAmount(): float
     {
-        return $this->unpaidAmountCents() / 100.0;
+        return (float) Money::toDecimal($this->unpaidAmountCents());
     }
 
     public function statusLabel(): string

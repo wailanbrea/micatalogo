@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -81,7 +82,7 @@ class Invoice extends Model
 
     public function paidAmount(): float
     {
-        return (float) $this->payments()->sum('amount');
+        return (float) Money::toDecimal((int) $this->payments()->sum('amount_cents'));
     }
 
     public function getPaymentStatusAttribute(): ?string
@@ -98,6 +99,8 @@ class Invoice extends Model
 
     public function pendingAmount(): float
     {
-        return max(0.0, (float) $this->total - $this->paidAmount());
+        $paidCents = (int) $this->payments()->sum('amount_cents');
+
+        return (float) Money::toDecimal(max(0, Money::toCents($this->total) - $paidCents));
     }
 }

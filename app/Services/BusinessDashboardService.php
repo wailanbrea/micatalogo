@@ -70,10 +70,10 @@ class BusinessDashboardService
             ->where('status', '!=', 'void')
             ->selectRaw('
                 COUNT(id) as sales_count,
-                COALESCE(SUM(discount), 0) as general_discounts,
-                COALESCE(SUM(tax), 0) as invoice_tax,
-                COALESCE(SUM(total), 0) as total_invoiced,
-                COALESCE(SUM(commission_amount), 0) as commissions_generated
+                COALESCE(SUM(ROUND(discount * 100)), 0) as general_discounts_cents,
+                COALESCE(SUM(ROUND(tax * 100)), 0) as invoice_tax_cents,
+                COALESCE(SUM(ROUND(total * 100)), 0) as total_invoiced_cents,
+                COALESCE(SUM(ROUND(commission_amount * 100)), 0) as commissions_generated_cents
             ')
             ->first();
 
@@ -85,14 +85,14 @@ class BusinessDashboardService
             ->where('invoices.status', '!=', 'void')
             ->selectRaw('
                 COALESCE(SUM(invoice_items.quantity), 0) as units_sold,
-                COALESCE(SUM(invoice_items.unit_price * invoice_items.quantity), 0) as gross_line_sales,
-                COALESCE(SUM(invoice_items.discount), 0) as line_discounts,
-                COALESCE(SUM(invoice_items.tax), 0) as line_tax,
+                COALESCE(SUM(ROUND(invoice_items.unit_price * invoice_items.quantity * 100)), 0) as gross_line_sales_cents,
+                COALESCE(SUM(ROUND(invoice_items.discount * 100)), 0) as line_discounts_cents,
+                COALESCE(SUM(ROUND(invoice_items.tax * 100)), 0) as line_tax_cents,
                 COALESCE(SUM(invoice_items.total_cost_cents), 0) as cost_cents,
                 COUNT(invoice_items.id) as total_lines,
                 SUM(CASE WHEN invoice_items.total_cost_cents IS NOT NULL THEN 1 ELSE 0 END) as known_cost_lines,
-                SUM(CASE WHEN invoice_items.total_cost_cents IS NOT NULL THEN (invoice_items.unit_price * invoice_items.quantity - invoice_items.discount - COALESCE(invoice_items.general_discount_cents, 0) / 100.0) ELSE 0 END) as known_revenue,
-                SUM(invoice_items.unit_price * invoice_items.quantity - invoice_items.discount - COALESCE(invoice_items.general_discount_cents, 0) / 100.0) as total_net_line_revenue
+                SUM(CASE WHEN invoice_items.total_cost_cents IS NOT NULL THEN ROUND(invoice_items.unit_price * invoice_items.quantity * 100) - ROUND(invoice_items.discount * 100) - COALESCE(invoice_items.general_discount_cents, 0) ELSE 0 END) as known_revenue_cents,
+                SUM(ROUND(invoice_items.unit_price * invoice_items.quantity * 100) - ROUND(invoice_items.discount * 100) - COALESCE(invoice_items.general_discount_cents, 0)) as total_net_line_revenue_cents
             ')
             ->first();
 
@@ -104,33 +104,32 @@ class BusinessDashboardService
             ->whereBetween('invoice_returns.created_at', [$fromDatetime, $toDatetime])
             ->selectRaw('
                 COALESCE(SUM(invoice_return_items.quantity), 0) as units_returned,
-                COALESCE(SUM(invoice_return_items.refund - invoice_return_items.tax_refund), 0) as base_refund,
-                COALESCE(SUM(invoice_return_items.tax_refund), 0) as tax_refund,
+                COALESCE(SUM(ROUND((invoice_return_items.refund - invoice_return_items.tax_refund) * 100)), 0) as base_refund_cents,
+                COALESCE(SUM(ROUND(invoice_return_items.tax_refund * 100)), 0) as tax_refund_cents,
                 COALESCE(SUM(CASE WHEN invoice_return_items.restock = 1 THEN invoice_return_items.total_cost_cents ELSE 0 END), 0) as restocked_cost_cents
             ')
             ->first();
 
-        $grossSales = (float) ($soldItemsStats->gross_line_sales ?? 0);
-        $lineDiscounts = (float) ($soldItemsStats->line_discounts ?? 0);
-        $generalDiscounts = (float) ($invoiceStats->general_discounts ?? 0);
-        $totalDiscounts = $lineDiscounts + $generalDiscounts;
+        $grossSalesCents = (int) ($soldItemsStats->gross_line_sales_cents ?? 0);
+        $lineDiscountsCents = (int) ($soldItemsStats->line_discounts_cents ?? 0);
+        $generalDiscountsCents = (int) ($invoiceStats->general_discounts_cents ?? 0);
+        $totalDiscountsCents = $lineDiscountsCents + $generalDiscountsCents;
 
-        $taxesCollected = (float) ($soldItemsStats->line_tax ?? 0) + (float) ($invoiceStats->invoice_tax ?? 0);
-        $taxRefunded = (float) ($returnsStats->tax_refund ?? 0);
-        $netTaxesCollected = max(0.0, $taxesCollected - $taxRefunded);
+        $taxesCollectedCents = (int) ($soldItemsStats->line_tax_cents ?? 0) + (int) ($invoiceStats->invoice_tax_cents ?? 0);
+        $taxRefundedCents = (int) ($returnsStats->tax_refund_cents ?? 0);
+        $netTaxesCollectedCents = max(0, $taxesCollectedCents - $taxRefundedCents);
 
-        $baseReturns = (float) ($returnsStats->base_refund ?? 0);
-        $netSales = max(0.0, round($grossSales - $totalDiscounts - $baseReturns, 2));
+        $baseReturnsCents = (int) ($returnsStats->base_refund_cents ?? 0);
+        $netSalesCents = max(0, $grossSalesCents - $totalDiscountsCents - $baseReturnsCents);
 
         $unitsSold = max(0, (int) ($soldItemsStats->units_sold ?? 0) - (int) ($returnsStats->units_returned ?? 0));
         $netCostCents = max(0, (int) ($soldItemsStats->cost_cents ?? 0) - (int) ($returnsStats->restocked_cost_cents ?? 0));
-        $fifoCogs = round($netCostCents / 100.0, 2);
 
         // Revenue-weighted cost coverage (primary indicator)
-        $knownRevenue = (float) ($soldItemsStats->known_revenue ?? 0);
-        $totalNetLineRevenue = (float) ($soldItemsStats->total_net_line_revenue ?? 0);
-        $revenueCoveragePercent = $totalNetLineRevenue > 0
-            ? round(($knownRevenue / $totalNetLineRevenue) * 100, 1)
+        $knownRevenueCents = (int) ($soldItemsStats->known_revenue_cents ?? 0);
+        $totalNetLineRevenueCents = (int) ($soldItemsStats->total_net_line_revenue_cents ?? 0);
+        $revenueCoveragePercent = $totalNetLineRevenueCents > 0
+            ? round(($knownRevenueCents / $totalNetLineRevenueCents) * 100, 1)
             : 100.0;
 
         $totalLines = (int) ($soldItemsStats->total_lines ?? 0);
@@ -139,8 +138,8 @@ class BusinessDashboardService
         $isCoveragePartial = $revenueCoveragePercent < 99.9;
 
         // Profit & Margin
-        $grossProfit = round($netSales - $fifoCogs, 2);
-        $grossMarginPercent = $netSales > 0 ? round(($grossProfit / $netSales) * 100, 1) : 0.0;
+        $grossProfitCents = $netSalesCents - $netCostCents;
+        $grossMarginPercent = $netSalesCents > 0 ? round(($grossProfitCents / $netSalesCents) * 100, 1) : 0.0;
 
         // 4. Operating Expenses incurred in period (P&L recognises incurred obligation)
         $expensesStats = DB::table('expenses')
@@ -149,11 +148,11 @@ class BusinessDashboardService
             ->selectRaw('COALESCE(SUM(amount_cents), 0) as expenses_cents')
             ->first();
 
-        $operatingExpenses = round(((int) ($expensesStats->expenses_cents ?? 0)) / 100.0, 2);
-        $commissionsGenerated = (float) ($invoiceStats->commissions_generated ?? 0);
+        $operatingExpensesCents = (int) ($expensesStats->expenses_cents ?? 0);
+        $commissionsGeneratedCents = (int) ($invoiceStats->commissions_generated_cents ?? 0);
 
-        $operatingProfit = round($grossProfit - $operatingExpenses - $commissionsGenerated, 2);
-        $operatingMarginPercent = $netSales > 0 ? round(($operatingProfit / $netSales) * 100, 1) : 0.0;
+        $operatingProfitCents = $grossProfitCents - $operatingExpensesCents - $commissionsGeneratedCents;
+        $operatingMarginPercent = $netSalesCents > 0 ? round(($operatingProfitCents / $netSalesCents) * 100, 1) : 0.0;
 
         // 5. Collections and Credit in period
         $invoicePaymentsQuery = DB::table('invoice_payments')
@@ -165,47 +164,49 @@ class BusinessDashboardService
             ->whereBetween('received_at', [$fromDatetime, $toDatetime])
             ->sum('amount_cents');
 
-        $creditGenerated = (float) DB::table('customer_account_entries')
+        $creditGeneratedCents = Money::toCents(DB::table('customer_account_entries')
             ->where('shop_id', $shop->id)
             ->whereBetween('created_at', [$fromDatetime, $toDatetime])
             ->where('type', 'charge')
             ->whereNotNull('invoice_id')
-            ->sum('amount');
+            ->sum('amount'));
 
-        $collectedFromCredit = (float) abs(DB::table('customer_account_entries')
+        $collectedFromCreditCents = abs(Money::toCents(DB::table('customer_account_entries')
             ->where('shop_id', $shop->id)
             ->whereBetween('created_at', [$fromDatetime, $toDatetime])
             ->where('type', 'payment')
-            ->sum('amount'));
+            ->sum('amount')));
 
-        $totalCollectedInPeriod = round(($collectedFromInvoicesCents / 100.0) + $collectedFromCredit, 2);
+        $totalCollectedInPeriodCents = $collectedFromInvoicesCents + $collectedFromCreditCents;
         $salesCount = (int) ($invoiceStats->sales_count ?? 0);
-        $averageTicket = $salesCount > 0 ? round($netSales / $salesCount, 2) : 0.0;
+        $averageTicketCents = $salesCount > 0
+            ? Money::toCents(Money::perUnitDecimal($netSalesCents, $salesCount))
+            : 0;
 
         return [
-            'gross_sales' => round($grossSales, 2),
-            'discounts' => round($totalDiscounts, 2),
-            'line_discounts' => round($lineDiscounts, 2),
-            'general_discounts' => round($generalDiscounts, 2),
-            'tax_collected' => round($netTaxesCollected, 2),
-            'gross_tax_collected' => round($taxesCollected, 2),
-            'returns' => round($baseReturns, 2),
-            'net_sales' => $netSales,
-            'fifo_cogs' => $fifoCogs,
+            'gross_sales' => $this->moneyNumber($grossSalesCents),
+            'discounts' => $this->moneyNumber($totalDiscountsCents),
+            'line_discounts' => $this->moneyNumber($lineDiscountsCents),
+            'general_discounts' => $this->moneyNumber($generalDiscountsCents),
+            'tax_collected' => $this->moneyNumber($netTaxesCollectedCents),
+            'gross_tax_collected' => $this->moneyNumber($taxesCollectedCents),
+            'returns' => $this->moneyNumber($baseReturnsCents),
+            'net_sales' => $this->moneyNumber($netSalesCents),
+            'fifo_cogs' => $this->moneyNumber($netCostCents),
             'units_sold' => $unitsSold,
             'cost_coverage_percent' => $lineCoveragePercent,
             'revenue_cost_coverage' => $revenueCoveragePercent,
             'is_cost_coverage_partial' => $isCoveragePartial,
-            'gross_profit' => $grossProfit,
+            'gross_profit' => $this->moneyNumber($grossProfitCents),
             'gross_margin_percent' => $grossMarginPercent,
-            'operating_expenses' => $operatingExpenses,
-            'commissions_generated' => $commissionsGenerated,
-            'operating_profit' => $operatingProfit,
+            'operating_expenses' => $this->moneyNumber($operatingExpensesCents),
+            'commissions_generated' => $this->moneyNumber($commissionsGeneratedCents),
+            'operating_profit' => $this->moneyNumber($operatingProfitCents),
             'operating_margin_percent' => $operatingMarginPercent,
             'sales_count' => $salesCount,
-            'average_ticket' => $averageTicket,
-            'collected_in_period' => $totalCollectedInPeriod,
-            'credit_generated' => round($creditGenerated, 2),
+            'average_ticket' => $this->moneyNumber($averageTicketCents),
+            'collected_in_period' => $this->moneyNumber($totalCollectedInPeriodCents),
+            'credit_generated' => $this->moneyNumber($creditGeneratedCents),
         ];
     }
 
@@ -240,13 +241,15 @@ class BusinessDashboardService
     {
         // 1. Receivables & Real Invoice Aging
         $customers = $shop->customers()->where('balance', '>', 0)->get();
-        $totalReceivable = (float) $customers->sum('balance');
+        $totalReceivableCents = $customers->sum(
+            fn (Customer $customer): int => Money::toCents($customer->balance)
+        );
 
-        $aging = [
-            'days_0_30' => 0.0,
-            'days_31_60' => 0.0,
-            'days_61_90' => 0.0,
-            'days_over_90' => 0.0,
+        $agingCents = [
+            'days_0_30' => 0,
+            'days_31_60' => 0,
+            'days_61_90' => 0,
+            'days_over_90' => 0,
             'overdue_count' => 0,
             'invoice_details' => [],
         ];
@@ -279,8 +282,7 @@ class BusinessDashboardService
         foreach ($unpaidInvoices as $invoice) {
             $invoiceTotalCents = Money::toCents($invoice->total);
             $paidCents = (int) $invoice->payments->sum('amount_cents');
-            $returnedAmount = (float) ($invoiceReturns->get($invoice->id) ?? 0);
-            $returnedCents = Money::toCents($returnedAmount);
+            $returnedCents = Money::toCents($invoiceReturns->get($invoice->id) ?? 0);
             $invoiceUnpaidCents = max(0, $invoiceTotalCents - $paidCents - $returnedCents);
             $customerBalanceCents = $remainingByCustomerCents[$invoice->customer_id] ?? 0;
             $unpaidCents = min($invoiceUnpaidCents, $customerBalanceCents);
@@ -291,8 +293,6 @@ class BusinessDashboardService
 
             $remainingByCustomerCents[$invoice->customer_id] -= $unpaidCents;
             $totalInvoicesCents += $unpaidCents;
-
-            $unpaidAmount = $unpaidCents / 100.0;
 
             // Determine reference date for aging: due_date has priority; fallback to issued_at
             if ($invoice->due_date) {
@@ -305,27 +305,27 @@ class BusinessDashboardService
 
             if ($days <= 30) {
                 $bucket = '0-30';
-                $aging['days_0_30'] += $unpaidAmount;
+                $agingCents['days_0_30'] += $unpaidCents;
             } elseif ($days <= 60) {
                 $bucket = '31-60';
-                $aging['days_31_60'] += $unpaidAmount;
-                $aging['overdue_count']++;
+                $agingCents['days_31_60'] += $unpaidCents;
+                $agingCents['overdue_count']++;
             } elseif ($days <= 90) {
                 $bucket = '61-90';
-                $aging['days_61_90'] += $unpaidAmount;
-                $aging['overdue_count']++;
+                $agingCents['days_61_90'] += $unpaidCents;
+                $agingCents['overdue_count']++;
             } else {
                 $bucket = '>90';
-                $aging['days_over_90'] += $unpaidAmount;
-                $aging['overdue_count']++;
+                $agingCents['days_over_90'] += $unpaidCents;
+                $agingCents['overdue_count']++;
             }
 
-            $aging['invoice_details'][] = [
+            $agingCents['invoice_details'][] = [
                 'invoice_number' => (string) $invoice->invoice_number,
                 'customer_name' => (string) ($invoice->customer?->name ?? 'Cliente'),
                 'reference_date' => $refDate->toDateString(),
                 'overdue_days' => $days,
-                'outstanding_amount' => round($unpaidCents / 100.0, 2),
+                'outstanding_amount' => $this->moneyNumber($unpaidCents),
                 'aging_bucket' => $bucket,
             ];
         }
@@ -336,16 +336,21 @@ class BusinessDashboardService
             $unallocatedCents = $remainingByCustomerCents[$customer->id] ?? Money::toCents($customer->balance);
             $totalUnallocatedCents += $unallocatedCents;
         }
-        $aging['days_0_30'] += $totalUnallocatedCents / 100.0;
-
-        $aging['days_0_30'] = round($aging['days_0_30'], 2);
-        $aging['days_31_60'] = round($aging['days_31_60'], 2);
-        $aging['days_61_90'] = round($aging['days_61_90'], 2);
-        $aging['days_over_90'] = round($aging['days_over_90'], 2);
-        $aging['invoices_total'] = round($totalInvoicesCents / 100.0, 2);
-        $aging['unallocated_receivables'] = round($totalUnallocatedCents / 100.0, 2);
-        $aging['total_receivable'] = round($totalReceivable, 2);
-        $aging['reconciliation_difference'] = round($aging['total_receivable'] - ($aging['invoices_total'] + $aging['unallocated_receivables']), 2);
+        $agingCents['days_0_30'] += $totalUnallocatedCents;
+        $aging = [
+            'days_0_30' => $this->moneyNumber($agingCents['days_0_30']),
+            'days_31_60' => $this->moneyNumber($agingCents['days_31_60']),
+            'days_61_90' => $this->moneyNumber($agingCents['days_61_90']),
+            'days_over_90' => $this->moneyNumber($agingCents['days_over_90']),
+            'overdue_count' => $agingCents['overdue_count'],
+            'invoice_details' => $agingCents['invoice_details'],
+            'invoices_total' => $this->moneyNumber($totalInvoicesCents),
+            'unallocated_receivables' => $this->moneyNumber($totalUnallocatedCents),
+            'total_receivable' => $this->moneyNumber($totalReceivableCents),
+            'reconciliation_difference' => $this->moneyNumber(
+                $totalReceivableCents - $totalInvoicesCents - $totalUnallocatedCents
+            ),
+        ];
 
         // 2. Inventory Value at COST (FIFO remaining cost)
         $inventoryCostCents = (int) DB::table('inventory_lots')
@@ -356,7 +361,7 @@ class BusinessDashboardService
             ->sum('inventory_lots.remaining_cost_cents');
 
         // Fallback for products without lots but with stock & cost_price
-        $directInventoryCost = (float) DB::table('product_inventories')
+        $directInventoryCostCents = (int) DB::table('product_inventories')
             ->join('products', 'products.id', '=', 'product_inventories.product_id')
             ->leftJoin('inventory_lots', 'inventory_lots.product_id', '=', 'products.id')
             ->where('products.shop_id', $shop->id)
@@ -364,10 +369,10 @@ class BusinessDashboardService
             ->where('product_inventories.track_inventory', 1)
             ->where('product_inventories.stock_quantity', '>', 0)
             ->whereNotNull('product_inventories.cost_price')
-            ->selectRaw('SUM(product_inventories.stock_quantity * product_inventories.cost_price) as cost_sum')
-            ->value('cost_sum');
+            ->selectRaw('SUM(ROUND(product_inventories.stock_quantity * product_inventories.cost_price * 100)) as cost_cents')
+            ->value('cost_cents');
 
-        $totalInventoryCostValue = round(($inventoryCostCents / 100.0) + ($directInventoryCost ?: 0.0), 2);
+        $totalInventoryCostCents = $inventoryCostCents + $directInventoryCostCents;
 
         // 3. Stock counts
         $stockStats = DB::table('product_inventories')
@@ -394,9 +399,9 @@ class BusinessDashboardService
         $openCashSession = $shop->currentCashSession();
 
         return [
-            'receivable_total' => $totalReceivable,
+            'receivable_total' => $this->moneyNumber($totalReceivableCents),
             'aging' => $aging,
-            'inventory_cost_value' => $totalInventoryCostValue,
+            'inventory_cost_value' => $this->moneyNumber($totalInventoryCostCents),
             'active_products_count' => $activeProductsCount,
             'low_stock_count' => (int) ($stockStats->low_stock ?? 0),
             'out_of_stock_count' => (int) ($stockStats->out_of_stock ?? 0),
@@ -498,8 +503,8 @@ class BusinessDashboardService
                 invoice_items.product_id,
                 invoice_items.product_name,
                 SUM(invoice_items.quantity) as units_sold,
-                SUM(invoice_items.unit_price * invoice_items.quantity - invoice_items.discount - COALESCE(invoice_items.general_discount_cents, 0) / 100.0) as revenue,
-                SUM(invoice_items.total_cost_cents) / 100.0 as known_cost,
+                SUM(ROUND(invoice_items.unit_price * invoice_items.quantity * 100) - ROUND(invoice_items.discount * 100) - COALESCE(invoice_items.general_discount_cents, 0)) as revenue_cents,
+                SUM(invoice_items.total_cost_cents) as known_cost_cents,
                 SUM(CASE WHEN invoice_items.total_cost_cents IS NULL THEN 1 ELSE 0 END) as unknown_lines
             ')
             ->groupBy('invoice_items.product_id', 'invoice_items.product_name')
@@ -516,8 +521,8 @@ class BusinessDashboardService
                 invoice_items.product_id,
                 invoice_items.product_name,
                 SUM(invoice_return_items.quantity) as units_returned,
-                SUM(invoice_return_items.refund - invoice_return_items.tax_refund) as refund_revenue,
-                SUM(CASE WHEN invoice_return_items.restock = 1 THEN COALESCE(invoice_return_items.total_cost_cents, 0) ELSE 0 END) / 100.0 as restocked_cost
+                SUM(ROUND((invoice_return_items.refund - invoice_return_items.tax_refund) * 100)) as refund_revenue_cents,
+                SUM(CASE WHEN invoice_return_items.restock = 1 THEN COALESCE(invoice_return_items.total_cost_cents, 0) ELSE 0 END) as restocked_cost_cents
             ')
             ->groupBy('invoice_items.product_id', 'invoice_items.product_name')
             ->get()
@@ -528,19 +533,20 @@ class BusinessDashboardService
             $ret = $returns->get($key);
 
             $units = (int) $row->units_sold - ($ret ? (int) $ret->units_returned : 0);
-            $revenue = (float) $row->revenue - ($ret ? (float) $ret->refund_revenue : 0.0);
-            $cost = (float) $row->known_cost - ($ret ? (float) $ret->restocked_cost : 0.0);
-            $cost = max(0.0, $cost);
-            $profit = $revenue - $cost;
-            $margin = $revenue > 0 ? round(($profit / $revenue) * 100, 1) : 0.0;
+            $revenueCents = (int) $row->revenue_cents - ($ret ? (int) $ret->refund_revenue_cents : 0);
+            $costCents = max(0, (int) $row->known_cost_cents - ($ret ? (int) $ret->restocked_cost_cents : 0));
+            $profitCents = $revenueCents - $costCents;
+            $margin = $revenueCents > 0 ? round(($profitCents / $revenueCents) * 100, 1) : 0.0;
 
             return [
                 'product_id' => $row->product_id,
                 'product_name' => $row->product_name,
                 'units' => $units,
-                'revenue' => round($revenue, 2),
-                'cost' => round($cost, 2),
-                'gross_profit' => round($profit, 2),
+                'revenue' => $this->moneyNumber($revenueCents),
+                'cost' => $this->moneyNumber($costCents),
+                'gross_profit' => $this->moneyNumber($profitCents),
+                '_revenue_cents' => $revenueCents,
+                '_gross_profit_cents' => $profitCents,
                 'margin_percent' => $margin,
                 'has_unknown_cost' => (int) $row->unknown_lines > 0,
             ];
@@ -549,13 +555,19 @@ class BusinessDashboardService
         // Sort by requested metric (default: gross_profit DESC)
         $isDesc = strtolower($direction) !== 'asc';
 
-        return match ($sort) {
-            'units' => $result->sortBy('units', SORT_REGULAR, $isDesc)->values()->all(),
-            'revenue' => $result->sortBy('revenue', SORT_REGULAR, $isDesc)->values()->all(),
-            'margin' => $result->sortBy('margin_percent', SORT_REGULAR, $isDesc)->values()->all(),
-            'cost_incomplete' => $result->sortByDesc('has_unknown_cost')->values()->all(),
-            default => $result->sortBy('gross_profit', SORT_REGULAR, $isDesc)->values()->all(),
+        $sorted = match ($sort) {
+            'units' => $result->sortBy('units', SORT_REGULAR, $isDesc),
+            'revenue' => $result->sortBy('_revenue_cents', SORT_REGULAR, $isDesc),
+            'margin' => $result->sortBy('margin_percent', SORT_REGULAR, $isDesc),
+            'cost_incomplete' => $result->sortByDesc('has_unknown_cost'),
+            default => $result->sortBy('_gross_profit_cents', SORT_REGULAR, $isDesc),
         };
+
+        return $sorted->values()->map(function (array $row): array {
+            unset($row['_revenue_cents'], $row['_gross_profit_cents']);
+
+            return $row;
+        })->all();
     }
 
     /**
@@ -571,11 +583,11 @@ class BusinessDashboardService
             ->join('expense_categories', 'expense_categories.id', '=', 'expenses.expense_category_id')
             ->where('expenses.shop_id', $shop->id)
             ->whereBetween('expenses.occurred_at', [$fromDatetime, $toDatetime])
-            ->selectRaw('expense_categories.name as category_name, SUM(expenses.amount_cents) / 100.0 as category_total')
+            ->selectRaw('expense_categories.name as category_name, SUM(expenses.amount_cents) as category_total_cents')
             ->groupBy('expense_categories.name')
-            ->orderByDesc('category_total')
+            ->orderByDesc('category_total_cents')
             ->get()
-            ->map(fn ($r) => ['name' => $r->category_name, 'total' => round((float) $r->category_total, 2)])
+            ->map(fn ($r) => ['name' => $r->category_name, 'total' => $this->moneyNumber((int) $r->category_total_cents)])
             ->all();
 
         return [
@@ -733,5 +745,14 @@ class BusinessDashboardService
             'net_cash_flow' => (float) Money::toDecimal($netCashFlowCents),
             'net_cash_flow_cents' => $netCashFlowCents,
         ];
+    }
+
+    /**
+     * Preserve the legacy numeric response shape at the presentation boundary.
+     * All calculations reaching this helper already use integer cents.
+     */
+    protected function moneyNumber(int $cents): float
+    {
+        return (float) Money::toDecimal($cents);
     }
 }

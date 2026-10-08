@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -124,13 +125,13 @@ class ProductInventory extends Model
             return 0.0; // Presentations share the source stock; do not count it twice.
         }
         if (InventoryLot::where('product_id', $this->product_id)->exists()) {
-            return round((float) InventoryLot::where('product_id', $this->product_id)->sum('remaining_cost_cents') / 100, 2);
+            return (float) Money::toDecimal((int) InventoryLot::where('product_id', $this->product_id)->sum('remaining_cost_cents'));
         }
         if (! $this->cost_price || $this->stock_quantity <= 0) {
             return 0.0;
         }
 
-        return round((float) $this->cost_price * $this->stock_quantity, 2);
+        return (float) Money::toDecimal(Money::toCents($this->cost_price) * $this->stock_quantity);
     }
 
     /**
@@ -145,24 +146,24 @@ class ProductInventory extends Model
         $invoiced = InvoiceItem::query()
             ->where('product_id', $this->product_id)
             ->whereNotNull('total_cost_cents')
-            ->selectRaw('COALESCE(SUM(line_total - tax - general_discount_cents / 100.0 - total_cost_cents / 100.0), 0) as total')
-            ->value('total');
+            ->selectRaw('COALESCE(SUM(ROUND((line_total - tax) * 100) - general_discount_cents - total_cost_cents), 0) as total_cents')
+            ->value('total_cents');
         $legacy = $this->product->inventoryMovements()
             ->reorder()
             ->where('type', 'sale')
             ->whereNull('invoice_id')
             ->whereNotNull('unit_price')
             ->whereNotNull('unit_cost')
-            ->selectRaw('COALESCE(SUM(ABS(quantity) * unit_price - COALESCE(total_cost_cents / 100.0, ABS(quantity) * unit_cost)), 0) as total')
-            ->value('total');
+            ->selectRaw('COALESCE(SUM(ROUND(ABS(quantity) * unit_price * 100) - COALESCE(total_cost_cents, ROUND(ABS(quantity) * unit_cost * 100))), 0) as total_cents')
+            ->value('total_cents');
 
         $refunds = DB::table('invoice_return_items')
             ->join('invoice_items', 'invoice_items.id', '=', 'invoice_return_items.invoice_item_id')
             ->where('invoice_items.product_id', $this->product_id)->whereNotNull('invoice_items.total_cost_cents')
-            ->selectRaw('COALESCE(SUM(refund - tax_refund - CASE WHEN restock = 1 THEN COALESCE(invoice_return_items.total_cost_cents, 0) / 100.0 ELSE 0 END), 0) as total')
-            ->value('total');
+            ->selectRaw('COALESCE(SUM(ROUND((refund - tax_refund) * 100) - CASE WHEN restock = 1 THEN COALESCE(invoice_return_items.total_cost_cents, 0) ELSE 0 END), 0) as total_cents')
+            ->value('total_cents');
 
-        return round((float) $invoiced + (float) $legacy - (float) $refunds, 2);
+        return (float) Money::toDecimal((int) $invoiced + (int) $legacy - (int) $refunds);
     }
 
     /**
@@ -174,7 +175,9 @@ class ProductInventory extends Model
             return null;
         }
 
-        return round($this->product->currentPrice() - (float) $this->cost_price, 2);
+        return (float) Money::toDecimal(
+            $this->product->currentPriceCents() - Money::toCents($this->cost_price)
+        );
     }
 
     /**
@@ -182,12 +185,12 @@ class ProductInventory extends Model
      */
     public function getMarginPercentageAttribute(): ?float
     {
-        if ($this->cost_price === null || ! $this->product || $this->product->currentPrice() <= 0) {
+        if ($this->cost_price === null || ! $this->product || $this->product->currentPriceCents() <= 0) {
             return null;
         }
 
-        $margin = $this->product->currentPrice() - (float) $this->cost_price;
+        $marginCents = $this->product->currentPriceCents() - Money::toCents($this->cost_price);
 
-        return round(($margin / $this->product->currentPrice()) * 100, 1);
+        return round(($marginCents / $this->product->currentPriceCents()) * 100, 1);
     }
 }
