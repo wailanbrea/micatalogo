@@ -38,6 +38,30 @@ test('a shop owner can invite a new seller by email', function () {
     Notification::assertSentTo($seller, SellerInvitationNotification::class);
 });
 
+test('a shop owner can assign an existing verified account without resetting it', function () {
+    Notification::fake();
+    $owner = User::factory()->create();
+    $shop = Shop::factory()->for($owner)->create();
+    $seller = User::factory()->create([
+        'email' => 'existing-seller@example.com',
+        'password' => Hash::make('existing-password'),
+        'email_verified_at' => now()->subDay(),
+    ]);
+
+    $this->actingAs($owner)
+        ->post(route('seller.shops.sellers.store', $shop), [
+            'email' => $seller->email,
+            'commission_type' => 'fixed',
+            'commission_value' => '25.00',
+        ])
+        ->assertRedirect()
+        ->assertSessionHas('status', $seller->name.' fue asignado como vendedor.');
+
+    expect(Hash::check('existing-password', $seller->fresh()->password))->toBeTrue()
+        ->and($shop->sellers()->where('user_id', $seller->id)->where('is_active', true)->exists())->toBeTrue();
+    Notification::assertNothingSent();
+});
+
 test('an invited seller creates a password and can then use BSPOS credentials', function () {
     $owner = User::factory()->create();
     $shop = Shop::factory()->for($owner)->create();
