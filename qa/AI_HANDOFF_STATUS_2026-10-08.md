@@ -175,8 +175,8 @@ sintéticos y no deben copiarse a reportes.
 
 Evidencia QA más reciente:
 
-- Suite completa: **495 tests / 5.073 assertions PASS** en SQLite y MariaDB QA
-  aislada.
+- Suite completa del corte actual: **496 tests / 5.076 assertions PASS** en SQLite y
+  MariaDB QA aislada, después de endurecer la validación monetaria de productos.
 - Benchmark de catálogo de 1.500 productos: máximo 17 consultas; p50/p95 más
   reciente SQLite `334.61/345.77 ms`, MariaDB QA `323.90/339.09 ms`, memoria
   `148/148 MB`. Sigue siendo benchmark local, no latencia real de red/dispositivo.
@@ -197,11 +197,11 @@ ni purgas sobre producción. No hay migraciones pendientes conocidas.
 
 ### Revalidación del baseline después de este traspaso
 
-- SQLite: `vendor\\bin\\pest --configuration phpunit.xml` terminó **495 tests / 5.073
-  assertions PASS** en 50.11 s.
+- SQLite: `vendor\\bin\\pest --configuration phpunit.xml` terminó **496 tests / 5.076
+  assertions PASS** en 30.56 s.
 - MariaDB QA: `APP_ENV=testing`, `QA_ALLOW_MYSQL=1`, base
-  `micatalogo_qa_20261008` y `qa\\phpunit.mysql.xml` terminaron **495 tests / 5.073
-  assertions PASS** en 48.57 s.
+  `micatalogo_qa_20261008` y `qa\\phpunit.mysql.xml` terminaron **496 tests / 5.076
+  assertions PASS** en 47.12 s.
 - `release-readiness.php` en esa base devolvió usuarios, tiendas, productos, pedidos e
   invoices en `0`; no creó datos ni ejecutó migraciones.
 - `migrate:status --env=testing` devolvió todas las migraciones visibles como
@@ -308,8 +308,11 @@ publicado en VPS o en la APK pública.
   financieros, importador, POS/Terminal, cotizaciones, decants, pedidos, cierres,
   actualizador y navegación Android/Web en los reportes de `qa/`.
 - Se ejecutó el baseline completo del backend con SQLite y MariaDB QA aislada:
-  **495 tests, 5.073 assertions PASS** en cada motor; migraciones QA: **61 ejecutadas,
+  **496 tests, 5.076 assertions PASS** en cada motor; migraciones QA: **61 ejecutadas,
   0 pendientes**; las tablas operativas de QA quedaron en cero.
+- Se corrigió la validación de costos/precios de productos para decidir positividad en
+  centavos mediante `Money::toCents`, incluyendo la botella fuente de decants; la
+  regresión HTTP de costo sub-centavo y el baseline completo pasaron en ambos motores.
 - Se reforzó autenticación con una corrida dirigida: `AuthenticationTest` +
   `ApiAuthenticationTest`, **29 tests y 127 assertions PASS** en SQLite y MariaDB QA;
   incluye login Web/API, cuentas suspendidas/inactivas/no verificadas, límites,
