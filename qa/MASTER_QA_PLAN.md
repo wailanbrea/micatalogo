@@ -5,7 +5,7 @@ Este documento es la ejecución controlada del plan contra los HEAD reales, no u
 
 ## Estado de arranque
 
-- Backend/Web/API: consultar `git log -1 --oneline` en `C:\xampp\php\www\MiCatalogo`; en este corte el HEAD es `203b455` (`master`). Los commits locales no están publicados.
+- Backend/Web/API: consultar siempre `git log -1 --oneline` y `git status --short --branch` en `C:\xampp\php\www\MiCatalogo`; la documentación de QA también genera commits, por lo que no se fija un SHA histórico aquí. Los commits locales no están publicados.
 - Android: consultar `git log -1 --oneline` en `C:\Users\waila\AndroidStudioProjects\micatalogowebApp`; en este corte el HEAD es `e50e5ff` (`main`). La versión pública sigue siendo `1.0.76`, versionCode `77`; las correcciones del updater para builds debug, persistencia del aviso pendiente, PDF, logout y los tests de Finanzas están en el checkout local y requieren una nueva release autorizada.
 - VPS: no se ejecutó despliegue en este corte; no inferir su estado desde este documento. Cualquier consulta o migración remota exige leer `bsolutions-infra/SKILL.md`, verificar el destino y mantener la prohibición de escribir producción sin autorización.
 - Baseline actual: 495 pruebas backend, 5.073 assertions en SQLite y MariaDB QA; 95 pruebas unitarias Android. La variante normal tiene 117 instrumentadas (`114 PASS`, 3 assumptions) y `offlinecheck` 116 (`113 PASS`, 3 assumptions) en el emulador QA. `CatalogSyncIntegrationTest` terminó 16/16, `FinancialContractTest` 5/5, `FinanceContentTest` 2/2 y `InvoicePdfGeneratorTest` 2/2. El corte incluye las regresiones F-046 a F-058 documentadas en `qa/FINDINGS.md`.
