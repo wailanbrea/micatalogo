@@ -83,6 +83,7 @@ Comandos reproducibles del corte: SQLite con `vendor/bin/pest --configuration ph
 | Probe de cierre diario concurrente en MariaDB QA | PASS | 8 procesos sobre la misma tienda/fecha: 8 respuestas válidas, 1 cierre diario y 0 conflictos de unicidad |
 | Integridad de datos VPS | PASS de lectura | snapshot 14 usuarios, 12 tiendas, 756 productos, 2 pedidos, 22 facturas |
 | Android físico con release instalada | NOT_RUN para 1.0.76 | publicación validada, pero la instalación release en el Samsung sigue pendiente; `qa/run_android_emulator_tests.ps1` rechaza seriales físicos |
+| Guard de release Android en destino físico | PASS diagnóstico | `qa/verify_android_release_target.ps1` comparó el Samsung `SM-S948U1` sin mutarlo y devolvió `blocked_signature_mismatch` para 1.0.27/debug frente a 1.0.76/release; el mismo guard rechaza `emulator-5554` para evitar instalar una release en el destino de pruebas |
 | Hardware BT/CameraX/R2 real | BLOCKED_ENV | falta ejecución controlada con hardware/servicios QA |
 
 ## Casos aún no aprobados

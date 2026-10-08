@@ -92,6 +92,7 @@ bloqueos siguientes.
 - Smoke UI web QA: panel y POS cargaron con el menú completo; el flujo agregar producto → Cobrar venta → confirmar venta pasó después de la regresión F-039. El registro público mostró dependencia externa de Turnstile y no se usó para escribir datos.
 - Revalidación de 1.0.75 en dispositivos que todavía tienen 1.0.74: `NOT_RUN`.
 - F-056: la validación criptográfica de la release es PASS y el updater descargó `bspos-77.apk` con SHA correcto, pero la instalación física queda `BLOCKED_ENV` hasta autorizar la retirada de la APK debug; WorkManager no reporta trabajos pendientes y un cambio de certificado no se resuelve con `-r` ni con un `versionCode` mayor.
+- Guard preventivo PASS: `qa/verify_android_release_target.ps1` compara el certificado de la APK instalada con el de la release y se detiene antes de `adb install` ante una discrepancia; también rechaza el emulador como destino de una release física.
 
 ## Evidencia adicional de esta continuación
 
