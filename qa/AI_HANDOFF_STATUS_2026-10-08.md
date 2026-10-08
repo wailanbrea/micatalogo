@@ -163,9 +163,10 @@ batería debug. El runner seguro exige `ro.kernel.qemu=1`:
 Resultados actuales:
 
 - `testDebugUnitTest`: **95/95 PASS**.
-- Suite instrumentada normal: **117 casos**, **114 PASS**, **3 assumptions** por
+- Suite instrumentada normal: **119 casos**, **116 PASS**, **3 assumptions** por
   fixtures live no suministrados en la batería completa.
-- Variante `offlinecheck`: **116 casos**, **113 PASS + 3 assumptions**, sin fallos.
+- Variante `offlinecheck`: **119 casos**, **116 PASS + 3 assumptions**, sin fallos de
+  producto; los tres assumptions son los fixtures live.
 - Suite instrumentada `com.bsolutions.micatalogo.offlinecheck`: mismo resultado.
 - `InvoicePdfGeneratorTest`: **2/2 PASS**; PDF legible por `FileProvider` y carrito
   largo paginado en más de una página.
@@ -176,6 +177,13 @@ Resultados actuales:
 - El servidor fixture y el reverse `8893` fueron detenidos y retirados al terminar.
 - Permanece un reverse preexistente `host-15 tcp:8000 tcp:8000`; no retirarlo sin
   identificar qué proceso lo usa.
+
+La revalidación más reciente ejecutó `testDebugUnitTest`, `lintDebug`, la batería
+instrumentada normal y `offlinecheck` en `emulator-5554`; ambas variantes terminaron
+con **119 casos, 116 PASS y 3 assumptions**. Los tres E2E aislados omitidos en la
+batería general se ejecutaron aparte con servidores Laravel locales y pasaron:
+importador **1/1** y POS **2/2**. Solo se usó debug en el emulador; no se instaló
+release en un teléfono físico ni se publicó APK.
 
 ### Revalidación Android después de este traspaso
 
