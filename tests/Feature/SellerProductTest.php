@@ -346,3 +346,24 @@ test('bottle sources require their purchase cost and identify the source when cr
         'volume_ml' => 5,
     ]);
 });
+
+test('product monetary validation rejects sub-cent costs before persistence', function () {
+    $seller = User::factory()->create(['email_verified_at' => now()]);
+    $shop = Shop::factory()->for($seller)->create();
+
+    $response = $this->actingAs($seller)
+        ->post(route('seller.shops.products.store', $shop), [
+            'name' => 'Botella con costo subcentavo',
+            'price' => '100.00',
+            'sale_unit' => 'bottle',
+            'volume_ml' => 100,
+            'track_inventory' => 1,
+            'stock_quantity' => 1,
+            'cost_price' => '0.0001',
+            'availability_status' => ProductAvailabilityStatus::Available->value,
+            'moderation_status' => ProductModerationStatus::Active->value,
+        ]);
+
+    $response->assertSessionHasErrors('cost_price');
+    expect($shop->products()->count())->toBe(0);
+});

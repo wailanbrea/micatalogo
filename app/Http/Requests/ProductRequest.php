@@ -5,12 +5,23 @@ namespace App\Http\Requests;
 use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductModerationStatus;
 use App\Models\Product;
+use App\Services\BusinessProfileService;
+use App\Support\Money;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class ProductRequest extends FormRequest
 {
+    private function isPositiveMoney(mixed $value): bool
+    {
+        try {
+            return Money::toCents($value) > 0;
+        } catch (\InvalidArgumentException) {
+            return false;
+        }
+    }
+
     public function authorize(): bool
     {
         $shop = $this->route('shop');
@@ -87,20 +98,20 @@ class ProductRequest extends FormRequest
             $tracksInventory = $this->boolean('track_inventory');
 
             if ($saleUnit === 'bottle' && $tracksInventory
-                && (! is_numeric($this->input('cost_price')) || (float) $this->input('cost_price') <= 0)) {
+                && ! $this->isPositiveMoney($this->input('cost_price'))) {
                 $validator->errors()->add('cost_price', 'Indica el costo de compra de cada botella para calcular la ganancia y el costo recuperado por decants.');
             }
 
             if ($this->input('sale_unit') === 'decant'
-                && ! app(\App\Services\BusinessProfileService::class)->allows($this->route('shop'), 'decants')) {
+                && ! app(BusinessProfileService::class)->allows($this->route('shop'), 'decants')) {
                 $validator->errors()->add('sale_unit', 'Los decants no están disponibles para el tipo de negocio o plan de esta tienda.');
             }
 
             if ($saleUnit === 'service') {
-                if (! app(\App\Services\BusinessProfileService::class)->allows($this->route('shop'), 'services')) {
+                if (! app(BusinessProfileService::class)->allows($this->route('shop'), 'services')) {
                     $validator->errors()->add('sale_unit', 'Los servicios no están disponibles para esta tienda.');
                 }
-                if (! is_numeric($this->input('price')) || (float) $this->input('price') <= 0) {
+                if (! $this->isPositiveMoney($this->input('price'))) {
                     $validator->errors()->add('price', 'Indica un precio mayor que RD$ 0 para el servicio.');
                 }
             }
@@ -138,7 +149,8 @@ class ProductRequest extends FormRequest
 
             if ($saleUnit === 'decant' && $this->filled('inventory_source_product_id')) {
                 $source = $this->route('shop')?->products()->with('inventory')->find($this->input('inventory_source_product_id'));
-                if ($source && ($source->inventory?->cost_price === null || (float) $source->inventory->cost_price <= 0)) {
+                if ($source && ($source->inventory?->cost_price === null
+                    || ! $this->isPositiveMoney($source->inventory->getRawOriginal('cost_price') ?? $source->inventory->cost_price))) {
                     $validator->errors()->add('inventory_source_product_id', 'La botella seleccionada no tiene costo de compra. Regístralo en la botella fuente antes de crear el decant.');
                 }
             }

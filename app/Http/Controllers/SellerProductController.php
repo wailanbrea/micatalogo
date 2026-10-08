@@ -13,11 +13,15 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductInventory;
 use App\Models\Shop;
+use App\Services\BusinessCapabilityService;
 use App\Services\CatalogMediaService;
 use App\Services\FifoCostService;
 use App\Services\ImageProcessingService;
 use App\Services\MediaStorageService;
 use App\Services\PlanLimitsService;
+use App\Services\WebImageSearchService;
+use App\Support\Money;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -26,7 +30,6 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
-use App\Services\WebImageSearchService;
 
 class SellerProductController extends Controller
 {
@@ -90,10 +93,10 @@ class SellerProductController extends Controller
             : 'unit';
         $isCombo = request()->boolean('combo');
         if ($requestedUnit === 'service') {
-            app(\App\Services\BusinessCapabilityService::class)->assert($shop, 'services');
+            app(BusinessCapabilityService::class)->assert($shop, 'services');
         }
         if ($requestedUnit === 'decant') {
-            app(\App\Services\BusinessCapabilityService::class)->assert($shop, 'decants');
+            app(BusinessCapabilityService::class)->assert($shop, 'decants');
         }
         if ($isCombo) {
             $requestedUnit = 'unit';
@@ -387,7 +390,7 @@ class SellerProductController extends Controller
         return back()->with('status', 'Imagen subida correctamente. Se está procesando en segundo plano.');
     }
 
-    public function searchImage(Request $request, Shop $shop, WebImageSearchService $webImages): \Illuminate\Http\JsonResponse
+    public function searchImage(Request $request, Shop $shop, WebImageSearchService $webImages): JsonResponse
     {
         $data = $request->validate(['q' => ['required', 'string', 'min:2', 'max:120']]);
 
@@ -497,6 +500,7 @@ class SellerProductController extends Controller
     {
         if (! (bool) ($input['is_combo'] ?? false)) {
             $product->comboItems()->delete();
+
             return;
         }
 
@@ -547,7 +551,8 @@ class SellerProductController extends Controller
             throw ValidationException::withMessages(['inventory_source_product_id' => 'La botella fuente debe tener volumen en ml y control de inventario activo.']);
         }
 
-        if ($source->inventory->cost_price === null || (float) $source->inventory->cost_price <= 0) {
+        if ($source->inventory->cost_price === null
+            || Money::toCents($source->inventory->getRawOriginal('cost_price') ?? $source->inventory->cost_price) <= 0) {
             throw ValidationException::withMessages(['inventory_source_product_id' => 'La botella fuente debe tener un costo de compra mayor que RD$ 0 para calcular la ganancia y recuperar su inversión.']);
         }
     }
