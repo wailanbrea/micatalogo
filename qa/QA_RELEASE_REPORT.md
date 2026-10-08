@@ -9,6 +9,16 @@ No se hizo un nuevo push, despliegue VPS, publicación de APK ni instalación f�
 durante esta revalidación; la evidencia de despliegues anteriores se conserva solo
 como historial y no autoriza una nueva publicación.
 
+### Addendum de revalidación
+
+- Se añadió la regresión `AUTH-008`: una cuenta eliminada lógicamente no puede
+  reutilizar un token BSPOS existente. Pasó en SQLite y MariaDB QA.
+- El baseline actual quedó en **508 tests / 5.152 assertions PASS** por motor.
+- La APK pública `1.0.76 / versionCode 77` fue verificada en modo lectura con
+  `debuggable=false`, certificado oficial, HTTP 200 y SHA coincidente. En la
+  comprobación actual ADB solo detecta `emulator-5554`; no se instaló release en
+  ningún dispositivo físico.
+
 El documento maestro contiene **196 identificadores de caso** (AUTH, SHOP, ACL,
 DAY, SELLER, CAT, DEC, IMP, PUR, INV, SALE, QUOTE, ORDER, CRM, AR, CASH, EXP,
 CLOSE, FIN, OFF, UI, HW, ADMIN, NFR y E2E). Este
