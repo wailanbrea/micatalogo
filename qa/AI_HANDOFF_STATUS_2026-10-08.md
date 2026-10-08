@@ -271,6 +271,18 @@ publicado en VPS o en la APK pública.
 - Se ejecutó el baseline completo del backend con SQLite y MariaDB QA aislada:
   **495 tests, 5.073 assertions PASS** en cada motor; migraciones QA: **61 ejecutadas,
   0 pendientes**; las tablas operativas de QA quedaron en cero.
+- Se reforzó autenticación con una corrida dirigida: `AuthenticationTest` +
+  `ApiAuthenticationTest`, **29 tests y 127 assertions PASS** en SQLite y MariaDB QA;
+  incluye login Web/API, cuentas suspendidas/inactivas/no verificadas, límites,
+  actualización de perfil, logout y revocación de token. Caducidad real, dos dispositivos
+  y reinstalación siguen fuera de evidencia.
+- Se ejecutó `npm run build` con Vite sin errores; el inventario actual conserva
+  **216/216 rutas**, sin duplicados de método+URI, y el endpoint `api/v1/auth/logout`
+  quedó confirmado con autenticación Sanctum. La revisión de `storage/{path}` verificó
+  que el PUT público de Laravel exige firma relativa válida; no se hicieron uploads.
+- El chequeo local `release-readiness.php` terminó en modo lectura: usuarios, tiendas,
+  productos, pedidos e invoices en el entorno QA quedaron en cero; no se ejecutaron
+  migraciones ni escrituras contra producción.
 - Se verificaron las invariantes de tenant/RBAC con la matriz dirigida y se cubrieron
   jornadas positivas mínimas de owner, manager, vendedor, contador y equipos.
 - Se validaron importación adaptativa, ventas contado/crédito, abonos, decants,

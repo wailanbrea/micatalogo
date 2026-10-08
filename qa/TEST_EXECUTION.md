@@ -6,8 +6,9 @@ El plan maestro contiene 196 casos discretos en sus listas. Las filas de esta ta
 de ejecución, no una inferencia de que una suite cubra automáticamente todos los
 casos de una familia.
 
-La matriz individual registra 110 `PASS`, 4 `FIXED_PASS`, 72 `NOT_RUN`, 7 `BLOCKED_ENV`
-y 3 `REQUIERE_DECISION`; no se elevan casos no ejecutados por pertenecer a una suite verde.
+La matriz individual registra 110 `PASS`, 4 `FIXED_PASS`, 3 `PASS parcial`, 69 `NOT_RUN`,
+7 `BLOCKED_ENV` y 3 `REQUIERE_DECISION`; no se elevan casos no ejecutados por
+pertenecer a una suite verde.
 
 El inventario estático de rutas registra 216 entradas individuales en
 `qa/ROUTE_ACCESS_MATRIX.md`; ese inventario no sustituye la prueba positiva por
@@ -61,6 +62,8 @@ Comandos reproducibles del corte: SQLite con `vendor/bin/pest --configuration ph
 | Android regresión UI de Contador en Finanzas/caja | PASS dirigido | `CashContractScreenTest`: 2/2 en `emulator-5554`; el modo solo lectura muestra el balance y no muestra `Abrir caja`, `Guardar movimiento` ni `Cerrar caja` |
 | Android instrumented en emulador debug | PASS | Reejecución completa en `emulator-5554`: `com.bsolutions.micatalogo` y `com.bsolutions.micatalogo.offlinecheck` terminaron `OK (116 tests; 113 PASS y 3 omitidos por assumption)` después de recompilar e instalar solo debug; `PendingAppUpdateTest` quedó 3/3 e incluye persistencia del aviso pendiente entre recreaciones y limpieza cuando la versión instalada lo supera. El bloque de capturas de checkout, cotizaciones y cierre pasó también por clases aisladas tras un crash intermitente del servicio `UiAutomation` en la primera corrida. Incluye replay de pagos 401/426/429/500, bloqueos recuperables 403/409/422, no-replay tras revocación de permisos, conservación de tienda original en outbox, generación/paginación PDF y solo lectura financiera del Contador |
 | Android generación y paginación PDF | PASS dirigido | `InvoicePdfGeneratorTest`: **2/2 PASS** en `emulator-5554`; una factura abre mediante el `FileProvider` de la app y un carrito de 40 líneas genera más de una página. No sustituye compartir por WhatsApp, permisos, PDF con datos redactados por rol ni impresión física |
+| Reejecución dirigida de autenticación y sesión | PASS parcial | `AuthenticationTest` + `ApiAuthenticationTest`: **29 tests, 127 assertions PASS** en SQLite y MariaDB QA; login Web/API, cuentas suspendidas/inactivas/no verificadas, límites, actualización de perfil, revocación de token al cerrar sesión y rechazo de reutilización del token. No sustituye dos dispositivos, caducidad real, reinstalación ni validación física Android |
+| Build Web local y preparación de release en modo lectura | PASS | `npm run build` terminó con Vite sin errores; `scripts/deployment/release-readiness.php` leyó el entorno local/QA sin mutar datos, confirmó tablas críticas en cero, `bcmath` y lector de importación disponibles, y manifestó la release pública 1.0.76/versionCode 77 |
 | Smoke de arranque Android sin red | PASS acotado | `emulator-5554` en modo avión: proceso `com.bsolutions.micatalogo` activo, sin firma de crash; conectividad restaurada a `airplane_mode=0`; no se borraron datos |
 | E2E Android↔Laravel del importador adaptativo | PASS | `InventoryImportLiveIntegrationTest`: `OK (1 test)` con SQLite temporal, servidor QA `127.0.0.1:8893` y `adb reverse`; preview fila 8, mapeo y confirmación de 2 productos, repetición sin duplicados. Reejecutado el 2026-10-08 en `com.bsolutions.micatalogo.offlinecheck`; no se usó producción |
 | E2E Android↔Laravel de venta POS offline/reconexión | PASS acotado | `PosSaleLiveIntegrationTest`: `OK (2 tests)`; dos ventas cash y una venta a crédito creadas offline en orden, cliente creado por API, deuda y abono por transferencia sincronizados, más una venta de decant que redujo la botella a 90 ml y el decant a 9 unidades; cierre/reapertura de Room, ACK real en Laravel QA y replay posterior sin duplicar (`4` facturas remotas). Reejecutado el 2026-10-08 en `com.bsolutions.micatalogo.offlinecheck`; no se usó producción |
