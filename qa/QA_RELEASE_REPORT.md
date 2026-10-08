@@ -69,7 +69,7 @@ bloqueos siguientes.
 - Higiene post-suite QA: `users`, `shops`, `products`, `invoices`, `daily_closures`, `cash_register_sessions`, `cash_movements`, `customers`, `inventory_movements`, `purchase_documents`, `commercial_quotes`, `orders`, `pos_sale_uploads`, `invoice_returns` e `invoice_return_items` quedaron en `0`; `migrate:status` de `micatalogo_qa_20261008` muestra todas las migraciones como `[1] Ran`; `adb -s emulator-5554 reverse --list` quedó vacío.
 - Fixtures contractuales: `qa/CONTRACT_FIXTURES/` quedó creado con datos sintéticos de roles/tiendas, una venta financiera y un archivo de importación; no contiene secretos ni datos de producción.
 - No se ejecutaron escrituras de QA en producción ni se instaló la release en dispositivos durante este corte. El runner conectado fue detenido al detectar un Samsung junto al emulador; las corridas posteriores usaron el runner seguro que rechaza destinos físicos.
-- La APK debug se instaló únicamente con `adb -s emulator-5554 install -r`; no se desinstaló, limpió ni modificó ninguna app del Samsung. La release 1.0.76 quedó publicada para instalación posterior; la actualización física aún no se ha probado.
+- La APK debug se instaló únicamente con `adb -s emulator-5554 install -r`; el Samsung conserva `com.bsolutions.micatalogo` 1.0.27/code 28 firmado con Android Debug (`e266fd48…1ff775`), mientras la release 1.0.76 usa el certificado oficial (`5a5670de…d490f`). Android bloquea la actualización por `INSTALL_FAILED_UPDATE_INCOMPATIBLE`; no se desinstaló, limpió ni modificó ninguna app del Samsung.
 
 ## Hallazgos abiertos
 
@@ -91,7 +91,7 @@ bloqueos siguientes.
 - Navegación Android auditada desde código: 54 destinos declarados y 54 registrados; `ShopSettings` usa una ruta parametrizada. Las implementaciones compartidas quedan marcadas como reutilización contextual, no como pantallas inexistentes.
 - Smoke UI web QA: panel y POS cargaron con el menú completo; el flujo agregar producto → Cobrar venta → confirmar venta pasó después de la regresión F-039. El registro público mostró dependencia externa de Turnstile y no se usó para escribir datos.
 - Revalidación de 1.0.75 en dispositivos que todavía tienen 1.0.74: `NOT_RUN`.
-- El estado del paquete release del Samsung debe revisarse y resolverse antes de una instalación autorizada; no se debe restaurar automáticamente ni borrar datos locales.
+- F-056: la validación criptográfica de la release es PASS, pero la instalación física queda `BLOCKED_ENV` hasta autorizar la retirada de la APK debug; un cambio de certificado no se resuelve con `-r` ni con un `versionCode` mayor.
 
 ## Evidencia adicional de esta continuación
 
