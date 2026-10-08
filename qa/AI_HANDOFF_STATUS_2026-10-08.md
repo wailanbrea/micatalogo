@@ -21,10 +21,12 @@ este corte. No se escribieron datos de producción.
 ### Backend/Web/API
 
 - Ruta: `C:\xampp\php\www\MiCatalogo`
-- Rama: `master`, **12 commits adelantados de `origin/master`**.
-- Último commit local: `dc7dac9 docs: refresh QA baseline after session revocation`.
+- Rama: `master`, **15 commits adelantados de `origin/master`**.
+- Último commit funcional/QA local: `ddf30df docs: record web build and auth QA evidence`;
+  los commits posteriores solo alinean esta documentación.
 - Corrección funcional local: `734b169 fix: revoke API token on mobile logout`.
-- Commits documentales/QA recientes: `e19e668`, `9e17ee0`, `eb9c75a` y los
+- Commits documentales/QA recientes: `9c7631c`, `dc7dac9`, `e19e668`, `9e17ee0`,
+  `eb9c75a` y los
   commits previos conservados en el historial.
 - Cambios rastreados: limpios; quedan únicamente los no rastreados intencionales.
 - No tocar ni borrar los no rastreados existentes: `.github/`, `.playwright-cli/`, `output/`.
@@ -354,8 +356,9 @@ por inferencia a partir de tests parciales:
 ## Commits locales de este corte
 
 - Backend: `734b169` (`fix: revoke API token on mobile logout`) y `dc7dac9`
-  (`docs: refresh QA baseline after session revocation`), con los commits locales
-  anteriores aún adelantados a `origin/master`.
+  (`docs: refresh QA baseline after session revocation`), `9c7631c` (`docs: complete
+  QA handoff for next AI`) y `ddf30df` (`docs: record web build and auth QA evidence`),
+  con los commits locales anteriores aún adelantados a `origin/master`.
 - Android: `5d57421` (`fix: revoke MiCatalogo session on logout`), con `7c32766`
   como commit Android anterior local.
 - La documentación de la reejecución live anterior permanece en el historial; no se
