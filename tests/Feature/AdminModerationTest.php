@@ -73,6 +73,11 @@ class AdminModerationTest extends TestCase
         $response->assertSee('fraud');
         $response->assertDontSee('spam');
 
+        $this->actingAs($admin)
+            ->get(route('admin.reports.show', $openReport))
+            ->assertOk()
+            ->assertSee('fraud');
+
         // Filter resolved reports
         $response = $this->actingAs($admin)->get('/admin/reportes?status=resolved');
         $response->assertOk();
@@ -98,7 +103,7 @@ class AdminModerationTest extends TestCase
             'status' => 'open',
         ]);
 
-        $response = $this->actingAs($admin)->post("/admin/reportes/{$report->public_id}/resolver", [
+        $response = $this->actingAs($admin)->post(route('admin.reports.resolve', $report), [
             'action' => 'suspend_target',
             'notes' => 'Confirmada infracción de marca.',
         ]);
@@ -135,7 +140,7 @@ class AdminModerationTest extends TestCase
             'status' => 'open',
         ]);
 
-        $response = $this->actingAs($admin)->post("/admin/reportes/{$report->public_id}/resolver", [
+        $response = $this->actingAs($admin)->post(route('admin.reports.resolve', $report), [
             'action' => 'suspend_target',
             'notes' => 'Múltiples denuncias de estafa comprobadas.',
         ]);
@@ -160,7 +165,7 @@ class AdminModerationTest extends TestCase
             'status' => 'open',
         ]);
 
-        $response = $this->actingAs($admin)->post("/admin/reportes/{$report->public_id}/resolver", [
+        $response = $this->actingAs($admin)->post(route('admin.reports.resolve', $report), [
             'action' => 'dismiss',
             'notes' => 'Denuncia infundada.',
         ]);
@@ -178,17 +183,17 @@ class AdminModerationTest extends TestCase
         $product = Product::factory()->create(['shop_id' => $shop->id, 'moderation_status' => ProductModerationStatus::Active]);
 
         // Toggle Shop
-        $this->actingAs($admin)->post("/admin/tiendas/{$shop->public_id}/toggle-status");
+        $this->actingAs($admin)->post(route('admin.shops.toggle-status', $shop));
         $this->assertEquals('suspended', $shop->fresh()->status);
 
-        $this->actingAs($admin)->post("/admin/tiendas/{$shop->public_id}/toggle-status");
+        $this->actingAs($admin)->post(route('admin.shops.toggle-status', $shop));
         $this->assertEquals('active', $shop->fresh()->status);
 
         // Toggle Product
-        $this->actingAs($admin)->post("/admin/productos/{$product->public_id}/toggle-status");
+        $this->actingAs($admin)->post(route('admin.products.toggle-status', $product));
         $this->assertEquals(ProductModerationStatus::Suspended, $product->fresh()->moderation_status);
 
-        $this->actingAs($admin)->post("/admin/productos/{$product->public_id}/toggle-status");
+        $this->actingAs($admin)->post(route('admin.products.toggle-status', $product));
         $this->assertEquals(ProductModerationStatus::Active, $product->fresh()->moderation_status);
     }
 }

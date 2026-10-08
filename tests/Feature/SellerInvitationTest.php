@@ -59,7 +59,13 @@ test('an invited seller creates a password and can then use BSPOS credentials', 
         ->assertSee('Crea tu contraseña')
         ->assertSee($shop->name);
 
-    $this->post($url, [
+    $activationUrl = URL::temporarySignedRoute('seller.invitation.activate', now()->addHour(), [
+        'user' => $seller,
+        'hash' => sha1($seller->getEmailForVerification()),
+        'shop' => $shop,
+    ]);
+
+    $this->post($activationUrl, [
         'password' => 'new-secure-password',
         'password_confirmation' => 'new-secure-password',
     ])->assertRedirect('/panel');

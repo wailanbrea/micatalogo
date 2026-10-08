@@ -33,7 +33,7 @@ class ContentModerationReportTest extends TestCase
         ];
 
         $response = $this->from("/tienda/{$shop->slug}/producto/{$product->slug}")
-            ->post('/reportar', $payload);
+            ->post(route('reports.store'), $payload);
 
         $response->assertRedirect("/tienda/{$shop->slug}/producto/{$product->slug}");
         $response->assertSessionHas('status');
@@ -60,7 +60,7 @@ class ContentModerationReportTest extends TestCase
         ];
 
         $response = $this->from("/tienda/{$shop->slug}")
-            ->post('/reportar', $payload);
+            ->post(route('reports.store'), $payload);
 
         $response->assertRedirect("/tienda/{$shop->slug}");
         $response->assertSessionHas('status');
@@ -78,7 +78,7 @@ class ContentModerationReportTest extends TestCase
         $seller = User::factory()->create();
         $shop = Shop::factory()->create(['user_id' => $seller->id]);
 
-        $response = $this->post('/reportar', [
+        $response = $this->post(route('reports.store'), [
             'type' => 'shop',
             'id' => $shop->public_id,
             'reason' => 'invalid_reason_here',
@@ -93,14 +93,14 @@ class ContentModerationReportTest extends TestCase
         $shop = Shop::factory()->create(['user_id' => $seller->id]);
 
         for ($i = 0; $i < 5; $i++) {
-            $this->post('/reportar', [
+            $this->post(route('reports.store'), [
                 'type' => 'shop',
                 'id' => $shop->public_id,
                 'reason' => 'spam',
             ])->assertSessionHasNoErrors();
         }
 
-        $this->post('/reportar', [
+        $this->post(route('reports.store'), [
             'type' => 'shop',
             'id' => $shop->public_id,
             'reason' => 'spam',
@@ -122,7 +122,7 @@ class ContentModerationReportTest extends TestCase
         $seller = User::factory()->create();
         $shop = Shop::factory()->create(['user_id' => $seller->id]);
 
-        $response = $this->post('/reportar', [
+        $response = $this->post(route('reports.store'), [
             'type' => 'shop',
             'id' => $shop->public_id,
             'reason' => 'spam',

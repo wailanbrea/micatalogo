@@ -1,5 +1,6 @@
 <?php
 
+use App\Jobs\ResolveProductCatalogMediaJob;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\Shop;
@@ -8,6 +9,7 @@ use App\Services\CatalogMediaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
@@ -81,6 +83,38 @@ test('a selected catalog image is added without replacing a manual image', funct
     expect($product->images()->count())->toBe(2)
         ->and($product->images()->where('source', 'manual')->first()->id)->toBe($manualImage->id)
         ->and($product->images()->where('source', 'catalog')->first()->catalog_product_image_id)->toBe($catalogImage->id);
+});
+
+test('web seller can queue catalog resolution and select a ready image through named routes', function () {
+    Storage::fake('public');
+    Queue::fake();
+    openBeautyFactsResponses();
+
+    $seller = User::factory()->create(['email_verified_at' => now()]);
+    $shop = Shop::factory()->for($seller)->create();
+    $product = Product::factory()->for($shop)->create(['barcode' => '7501234567890']);
+
+    $this->actingAs($seller)
+        ->post(route('seller.shops.products.catalog-media.resolve', [$shop, $product]))
+        ->assertRedirect()
+        ->assertSessionHas('status', 'La consulta de Open Beauty Facts quedó en cola.');
+
+    Queue::assertPushed(ResolveProductCatalogMediaJob::class, fn ($job) => $job->productId === $product->id);
+
+    $catalogProduct = app(CatalogMediaService::class)->resolveProduct($product);
+    $catalogImage = $catalogProduct->images->firstOrFail();
+
+    $this->actingAs($seller)
+        ->post(route('seller.shops.products.catalog-media.use', [$shop, $product, $catalogImage->id]))
+        ->assertRedirect()
+        ->assertSessionHas('status', 'La imagen externa se agregó sin reemplazar las fotos existentes.');
+
+    $this->assertDatabaseHas('product_images', [
+        'product_id' => $product->id,
+        'catalog_product_image_id' => $catalogImage->id,
+        'source' => 'catalog',
+        'processing_status' => 'ready',
+    ]);
 });
 
 test('catalog media endpoint requires a scoped API token and returns license metadata', function () {

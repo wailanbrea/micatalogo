@@ -84,7 +84,7 @@ class MetricRecordingTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response = $this->get('/r/wa/tienda/tienda-wa');
+        $response = $this->get(route('track.wa.shop', $shop));
 
         $response->assertRedirect();
         $this->assertStringStartsWith('https://wa.me/18091234567', $response->headers->get('Location'));
@@ -113,7 +113,7 @@ class MetricRecordingTest extends TestCase
             'moderation_status' => ProductModerationStatus::Active,
         ]);
 
-        $response = $this->get('/r/wa/tienda/tienda-wa-prod/producto/teclado-mecanico');
+        $response = $this->get(route('track.wa.product', [$shop, $product]));
 
         $response->assertRedirect();
         $this->assertStringStartsWith('https://wa.me/18499876543', $response->headers->get('Location'));

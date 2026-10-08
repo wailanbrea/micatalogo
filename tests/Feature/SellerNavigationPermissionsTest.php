@@ -33,8 +33,14 @@ test('seller navigation hides unassigned and administrative links and rejects di
         ->assertDontSee('Precios automáticos')->assertDontSee('Subida masiva')
         ->assertDontSee('Menú Administrativo')->assertDontSee('Vendedores');
 
-    foreach (['shops.business', 'shops.cash.index', 'shops.inventory.index', 'shops.sellers.index', 'shops.edit'] as $route) {
-        $this->get(route('seller.'.$route, $shop))->assertForbidden();
+    foreach ([
+        route('seller.shops.business', $shop),
+        route('seller.shops.cash.index', $shop),
+        route('seller.shops.inventory.index', $shop),
+        route('seller.shops.sellers.index', $shop),
+        route('seller.shops.edit', $shop),
+    ] as $url) {
+        $this->get($url)->assertForbidden();
     }
     $this->get(route('admin.dashboard'))->assertForbidden();
 });
@@ -264,6 +270,46 @@ test('owner and admin select menus when creating a seller and can revoke them la
     $this->actingAs($newSeller)->get(route('seller.shops.customers.index', $shop))->assertForbidden();
     expect($assignment->fresh()->menu_permissions)->toBe([]);
 })->with([[false, false], [false, true], [true, false], [true, true]]);
+
+test('owner can deactivate a seller and revoke accountant access without deleting history', function () {
+    [$owner, $shop, $seller, $assignment] = navigationSellerFixture();
+    $manager = User::factory()->create(['email' => 'revoke-manager@example.com']);
+    $managerMembership = ShopMember::create([
+        'shop_id' => $shop->id,
+        'user_id' => $manager->id,
+        'role' => 'manager',
+        'is_active' => true,
+    ]);
+    $accountant = User::factory()->create(['email' => 'revoke-accountant@example.com']);
+    $membership = ShopMember::create([
+        'shop_id' => $shop->id,
+        'user_id' => $accountant->id,
+        'role' => 'accountant',
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($owner)
+        ->delete(route('seller.shops.sellers.destroy', [$shop, $assignment]))
+        ->assertRedirect()
+        ->assertSessionHas('status', 'Vendedor desactivado. Su historial de ventas permanece disponible.');
+
+    expect($assignment->fresh()->is_active)->toBeFalse();
+
+    $this->actingAs($owner)
+        ->delete(route('seller.shops.members.destroy', [$shop, $managerMembership]))
+        ->assertRedirect()
+        ->assertSessionHas('status', 'El acceso administrativo fue desactivado.');
+
+    expect($managerMembership->fresh()->is_active)->toBeFalse();
+
+    $this->actingAs($owner)
+        ->delete(route('seller.shops.accountant.destroy', [$shop, $membership]))
+        ->assertRedirect()
+        ->assertSessionHas('status', 'El acceso del contador fue desactivado.');
+
+    expect($membership->fresh()->is_active)->toBeFalse()
+        ->and(User::find($seller->id))->not->toBeNull();
+});
 
 test('creating a seller accepts an empty menu selection and rejects owner-only menus', function () {
     [$owner, $shop] = navigationSellerFixture();

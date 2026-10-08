@@ -26,7 +26,7 @@ class SellerBulkProductTest extends TestCase
         $seller = User::factory()->create(['plan' => UserPlan::Pro]);
         $shop = Shop::factory()->create(['user_id' => $seller->id]);
 
-        $response = $this->actingAs($seller)->get("/panel/tiendas/{$shop->public_id}/subida-masiva");
+        $response = $this->actingAs($seller)->get(route('seller.shops.products.bulk.create', $shop));
 
         $response->assertOk();
         $response->assertSee('Subida Masiva de Productos');
@@ -57,7 +57,7 @@ class SellerBulkProductTest extends TestCase
         ];
 
         $response = $this->actingAs($seller)
-            ->post("/panel/tiendas/{$shop->public_id}/subida-masiva", $payload);
+            ->post(route('seller.shops.products.bulk.store', $shop), $payload);
 
         $response->assertRedirect("/panel/tiendas/{$shop->public_id}/productos");
         $response->assertSessionHas('status', 'Se publicaron 2 productos exitosamente.');
@@ -108,7 +108,7 @@ class SellerBulkProductTest extends TestCase
         ];
 
         $response = $this->actingAs($seller)
-            ->post("/panel/tiendas/{$shop->public_id}/subida-masiva", $payload);
+            ->post(route('seller.shops.products.bulk.store', $shop), $payload);
 
         $response->assertRedirect("/panel/tiendas/{$shop->public_id}/productos");
 
@@ -160,7 +160,7 @@ class SellerBulkProductTest extends TestCase
         Product::factory()->count(2)->create(['shop_id' => $shop->id]);
 
         $response = $this->actingAs($seller)
-            ->post("/panel/tiendas/{$shop->public_id}/subida-masiva", [
+            ->post(route('seller.shops.products.bulk.store', $shop), [
                 'products' => [
                     ['name' => 'Producto fuera de cuota', 'price' => '500'],
                 ],
@@ -176,10 +176,10 @@ class SellerBulkProductTest extends TestCase
         $otherSeller = User::factory()->create();
         $otherShop = Shop::factory()->create(['user_id' => $otherSeller->id]);
 
-        $response = $this->actingAs($seller)->get("/panel/tiendas/{$otherShop->public_id}/subida-masiva");
+        $response = $this->actingAs($seller)->get(route('seller.shops.products.bulk.create', $otherShop));
         $response->assertForbidden();
 
-        $response = $this->actingAs($seller)->post("/panel/tiendas/{$otherShop->public_id}/subida-masiva", [
+        $response = $this->actingAs($seller)->post(route('seller.shops.products.bulk.store', $otherShop), [
             'products' => [
                 ['name' => 'Hack Product', 'price' => '100'],
             ],

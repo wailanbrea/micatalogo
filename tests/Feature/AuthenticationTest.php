@@ -18,7 +18,7 @@ beforeEach(function () {
 test('authentication screens render', function () {
     $this->get('/login')->assertOk();
     $this->get('/register')->assertOk();
-    $this->get('/forgot-password')->assertOk();
+    $this->get(route('password.request'))->assertOk();
 });
 
 test('turnstile validates the expected form action on the server', function () {
@@ -42,7 +42,7 @@ test('turnstile validates the expected form action on the server', function () {
 });
 
 test('a visitor can register an active account', function () {
-    $response = $this->post('/register', [
+    $response = $this->post(route('register.store'), [
         'name' => 'Vendedor Demo',
         'email' => 'vendedor@example.com',
         'business_name' => 'Negocio Demo',
@@ -64,7 +64,7 @@ test('a visitor can register an active account', function () {
 
 test('registration is limited by IP address', function () {
     foreach (range(1, 3) as $attempt) {
-        $this->post('/register', [
+        $this->post(route('register.store'), [
             'name' => "Vendedor {$attempt}",
             'email' => "vendedor{$attempt}@example.com",
             'business_name' => "Negocio {$attempt}",
@@ -79,7 +79,7 @@ test('registration is limited by IP address', function () {
         $this->post('/logout');
     }
 
-    $this->post('/register', [
+    $this->post(route('register.store'), [
         'name' => 'Vendedor Bloqueado',
         'email' => 'bloqueado@example.com',
         'business_name' => 'Negocio Bloqueado',
@@ -97,11 +97,11 @@ test('password reset requests are limited by IP address', function () {
     $user = User::factory()->create();
 
     foreach (range(1, 5) as $attempt) {
-        $this->post('/forgot-password', ['email' => $user->email])
+        $this->post(route('password.email'), ['email' => $user->email])
             ->assertRedirect();
     }
 
-    $this->post('/forgot-password', ['email' => $user->email])
+    $this->post(route('password.email'), ['email' => $user->email])
         ->assertStatus(429);
 });
 
@@ -112,7 +112,7 @@ test('a suspended account cannot sign in', function () {
         'password' => Hash::make('password'),
     ]);
 
-    $this->post('/login', [
+    $this->post(route('login.store'), [
         'email' => $user->email,
         'password' => 'password',
     ])->assertSessionHasErrors('email');
@@ -126,7 +126,7 @@ test('an active account can sign in', function () {
         'password' => Hash::make('password'),
     ]);
 
-    $this->post('/login', [
+    $this->post(route('login.store'), [
         'email' => $user->email,
         'password' => 'password',
     ])->assertRedirect('/panel');
@@ -142,7 +142,7 @@ test('remember me persists a recaller cookie for web login', function () {
     ]);
     $recallerName = $this->app['auth']->guard()->getRecallerName();
 
-    $this->post('/login', [
+    $this->post(route('login.store'), [
         'email' => $user->email,
         'password' => 'password',
         'remember' => 'on',
@@ -159,7 +159,7 @@ test('an admin can sign in and is redirected to admin dashboard', function () {
         'password' => Hash::make('password'),
     ]);
 
-    $this->post('/login', [
+    $this->post(route('login.store'), [
         'email' => $user->email,
         'password' => 'password',
     ])->assertRedirect('/admin');

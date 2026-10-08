@@ -19,14 +19,14 @@ class EmailVerificationFlowTest extends TestCase
     {
         $user = User::factory()->unverified()->create();
 
-        $response = $this->actingAs($user)->get('/panel');
+        $response = $this->actingAs($user)->get(route('seller.dashboard'));
 
         $response->assertRedirect('/email/verify');
     }
 
     public function test_guest_can_access_verification_notice_page(): void
     {
-        $response = $this->get('/email/verify');
+        $response = $this->get(route('verification.notice'));
 
         $response->assertOk();
         $response->assertSee('Verifica tu correo');
@@ -99,7 +99,7 @@ class EmailVerificationFlowTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        $response = $this->actingAs($user)->post('/email/verify-code', [
+        $response = $this->actingAs($user)->post(route('verification.verify-code'), [
             'code' => '123456',
         ]);
 
@@ -120,7 +120,7 @@ class EmailVerificationFlowTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        $response = $this->post('/email/verify-code', [
+        $response = $this->post(route('verification.verify-code'), [
             'email' => $user->email,
             'code' => '654321',
         ]);
@@ -143,7 +143,7 @@ class EmailVerificationFlowTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        $response = $this->actingAs($user)->post('/email/verify-code', [
+        $response = $this->actingAs($user)->post(route('verification.verify-code'), [
             'code' => '999999',
         ]);
 
@@ -156,7 +156,7 @@ class EmailVerificationFlowTest extends TestCase
         Notification::fake();
         $user = User::factory()->unverified()->create();
 
-        $response = $this->post('/email/verification-code', [
+        $response = $this->post(route('verification.send-code'), [
             'email' => $user->email,
         ]);
 
