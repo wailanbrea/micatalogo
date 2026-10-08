@@ -119,7 +119,7 @@ HEAD Android: `7ea2916`
 
 - **Prioridad:** P2 de rendimiento y experiencia de navegación.
 - **Cobertura:** lectura autenticada de catálogo con 1.500 productos e inventario eager-loaded, repetida cinco veces en el entorno local aislado.
-- **Resultado:** cinco respuestas `200`, 1.500 productos por respuesta, medición puntual actual p50 251.60 ms/p95 276.50 ms en SQLite y p50 252.15 ms/p95 278.66 ms en MariaDB QA, máximo 17 consultas por ejecución y pico de memoria 78.00/78.00 MB.
+- **Resultado:** cinco respuestas `200`, 1.500 productos por respuesta, medición más reciente p50 343.59 ms/p95 350.94 ms en SQLite y p50 332.64 ms/p95 355.36 ms en MariaDB QA, máximo 17 consultas por ejecución y pico de memoria 148/148 MB.
 - **Estado:** `PASS` como benchmark local acotado; no sustituye medición con red, dispositivo móvil, caché ni carga concurrente real.
 
 ## F-016 — Arranque Android sin conectividad
