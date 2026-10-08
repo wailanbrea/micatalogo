@@ -15,7 +15,7 @@ La auditoría de `BSPOSNavigation.kt` y `BSPOSMainScreen.kt` confirma:
 ## Estado inicial
 
 - Compilación y unit tests de presentación: PASS.
-- Smoke instrumentado en emulador debug: la variante principal ejecutó 110 casos PASS y omitió 3 por assumption al no suministrar fixtures live (`OK (113 tests)`); `com.bsolutions.micatalogo.offlinecheck` conserva su última ejecución de 109 PASS y 3 omitidos (`OK (112 tests)`). Cubrió datos/sincronización, operaciones financieras, pantallas críticas, el no-replay de una venta bloqueada tras revocación de permisos, la conservación de tienda original en outbox y el modo financiero de solo lectura del Contador. El runner seguro exige un destino emulador y no permite seleccionar el Samsung.
+- Smoke instrumentado en emulador debug: las variantes principal y `com.bsolutions.micatalogo.offlinecheck` ejecutaron 111 casos PASS y omitieron 3 por assumption al no suministrar fixtures live (`OK (114 tests)`). Cubrió datos/sincronización, operaciones financieras, pantallas críticas, el no-replay de una venta bloqueada tras revocación de permisos, la conservación de tienda original en outbox, el modo financiero de solo lectura del Contador y la persistencia del aviso de actualización. El runner seguro exige un destino emulador y no permite seleccionar el Samsung.
 - No se declara PASS visual solo por compilar.
 - Deben recorrerse por pantalla: carga, vacío, error, reintento, búsqueda, filtro, paginación, scroll, back, drawer, permisos, cambio de tienda y rotación.
 - Terminal y Cobrar tienen regresiones funcionales en tests; falta captura comparativa con la referencia Puntto.
