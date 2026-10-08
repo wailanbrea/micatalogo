@@ -19,6 +19,7 @@ use App\Services\FifoCostService;
 use App\Services\ImageProcessingService;
 use App\Services\MediaStorageService;
 use App\Services\PlanLimitsService;
+use App\Services\ProductIdentityService;
 use App\Services\WebImageSearchService;
 use App\Support\Money;
 use Illuminate\Http\JsonResponse;
@@ -113,9 +114,9 @@ class SellerProductController extends Controller
         ]);
     }
 
-    public function store(ProductRequest $request, Shop $shop, PlanLimitsService $limits, CatalogMediaService $catalogMedia, ImageProcessingService $imageService, WebImageSearchService $webImages): RedirectResponse
+    public function store(ProductRequest $request, Shop $shop, PlanLimitsService $limits, CatalogMediaService $catalogMedia, ProductIdentityService $identity, ImageProcessingService $imageService, WebImageSearchService $webImages): RedirectResponse
     {
-        $product = DB::transaction(function () use ($request, $shop, $limits, $catalogMedia): Product {
+        $product = DB::transaction(function () use ($request, $shop, $limits, $catalogMedia, $identity): Product {
             $lockedShop = Shop::query()->lockForUpdate()->findOrFail($shop->id);
             $max = $limits->productLimit($lockedShop);
 
@@ -127,6 +128,7 @@ class SellerProductController extends Controller
 
             $validated = $request->validated();
             $validated['barcode'] = $catalogMedia->normalizeBarcode($validated['barcode'] ?? null);
+            $identity->assertUnique($lockedShop, $validated);
             $validated['sale_unit'] ??= 'unit';
             $isCombo = (bool) ($validated['is_combo'] ?? false);
             if ($isCombo) {
@@ -218,23 +220,25 @@ class SellerProductController extends Controller
         ]);
     }
 
-    public function update(ProductRequest $request, Shop $shop, Product $product, CatalogMediaService $catalogMedia): RedirectResponse
+    public function update(ProductRequest $request, Shop $shop, Product $product, CatalogMediaService $catalogMedia, ProductIdentityService $identity): RedirectResponse
     {
         $catalogProductId = $product->catalog_product_id;
         $barcode = $catalogMedia->normalizeBarcode($request->validated()['barcode'] ?? null);
 
-        DB::transaction(function () use ($request, $shop, $product) {
-            $product = Product::query()->lockForUpdate()->findOrFail($product->id);
+        DB::transaction(function () use ($request, $shop, $product, $identity) {
+            $lockedShop = Shop::query()->lockForUpdate()->findOrFail($shop->id);
+            $product = $lockedShop->products()->whereKey($product->id)->lockForUpdate()->firstOrFail();
             $validated = $request->validated();
             $validated['barcode'] = app(CatalogMediaService::class)->normalizeBarcode($validated['barcode'] ?? null);
+            $identity->assertUnique($lockedShop, $validated, $product);
             $validated['sale_unit'] ??= $product->sale_unit ?: 'unit';
             $isCombo = (bool) ($validated['is_combo'] ?? false);
             if ($isCombo) {
                 $validated['sale_unit'] = 'unit';
             }
-            $this->validatePresentation($validated, $shop, $product);
+            $this->validatePresentation($validated, $lockedShop, $product);
 
-            $attributes = $this->attributes($validated, $shop, $product);
+            $attributes = $this->attributes($validated, $lockedShop, $product);
             if ($product->barcode !== $validated['barcode']) {
                 $attributes['catalog_product_id'] = null;
             }
@@ -333,8 +337,8 @@ class SellerProductController extends Controller
             }
 
             $product->update($attributes);
-            $this->syncProductAttributes($product, $validated, $shop);
-            $this->syncComboItems($product, $validated, $shop);
+            $this->syncProductAttributes($product, $validated, $lockedShop);
+            $this->syncComboItems($product, $validated, $lockedShop);
             if ($isCombo) {
                 $this->syncComboAvailability($product);
             }

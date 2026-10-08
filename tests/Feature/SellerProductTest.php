@@ -11,6 +11,7 @@ use App\Models\Shop;
 use App\Models\ShopCategory;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 
 uses(RefreshDatabase::class);
 
@@ -92,6 +93,60 @@ test('product slugs resolve collisions deterministically within the shop', funct
 
     $this->assertDatabaseHas('products', ['shop_id' => $shop->id, 'slug' => 'camisa-azul']);
     $this->assertDatabaseHas('products', ['shop_id' => $shop->id, 'slug' => 'camisa-azul-2']);
+});
+
+test('manual product creation rejects duplicate SKU and normalized barcode within the shop', function () {
+    Queue::fake();
+    $seller = User::factory()->create(['email_verified_at' => now()]);
+    $shop = Shop::factory()->for($seller)->create();
+    $basePayload = [
+        'name' => 'Producto original',
+        'product_code' => 'SKU-001',
+        'barcode' => '750 1234-567890',
+        'price' => 1200,
+        'availability_status' => ProductAvailabilityStatus::Available->value,
+        'moderation_status' => ProductModerationStatus::Active->value,
+    ];
+
+    $this->actingAs($seller)
+        ->post(route('seller.shops.products.store', $shop), $basePayload)
+        ->assertRedirect();
+
+    $this->actingAs($seller)
+        ->post(route('seller.shops.products.store', $shop), array_merge($basePayload, ['name' => 'SKU duplicado']))
+        ->assertSessionHasErrors('product_code');
+
+    $this->actingAs($seller)
+        ->post(route('seller.shops.products.store', $shop), array_merge($basePayload, [
+            'name' => 'Barcode duplicado',
+            'product_code' => 'SKU-002',
+            'barcode' => '750-1234 567890',
+        ]))
+        ->assertSessionHasErrors('barcode');
+
+    expect($shop->products()->count())->toBe(1);
+});
+
+test('manual product update rejects another product identity without changing the original', function () {
+    $seller = User::factory()->create(['email_verified_at' => now()]);
+    $shop = Shop::factory()->for($seller)->create();
+    $first = Product::factory()->for($shop)->create(['name' => 'Primero', 'product_code' => 'SKU-001', 'barcode' => '7501234567890']);
+    $second = Product::factory()->for($shop)->create(['name' => 'Segundo', 'product_code' => 'SKU-002', 'barcode' => '7501234567891']);
+
+    $this->actingAs($seller)
+        ->put(route('seller.shops.products.update', [$shop, $second]), [
+            'name' => 'Segundo editado',
+            'product_code' => 'SKU-001',
+            'barcode' => '7501234567891',
+            'price' => 850,
+            'availability_status' => ProductAvailabilityStatus::Available->value,
+            'moderation_status' => ProductModerationStatus::Active->value,
+        ])
+        ->assertSessionHasErrors('product_code');
+
+    expect($second->fresh()->name)->toBe('Segundo')
+        ->and($second->fresh()->product_code)->toBe('SKU-002')
+        ->and($first->fresh()->product_code)->toBe('SKU-001');
 });
 
 test('different shops can have products with the same slug', function () {

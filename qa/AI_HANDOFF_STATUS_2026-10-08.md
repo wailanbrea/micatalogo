@@ -468,6 +468,13 @@ publicado en VPS o en la APK pública.
   `emulator-5554`. No se instaló release, no se conectó Samsung y no se escribieron
   datos de producción; esta evidencia confirma la resiliencia lógica de las colas,
   pero no cierra el pendiente de red/kill físico ni la validación sobre release.
+- Se corrigió el hueco de duplicados manuales: `ProductIdentityService` valida SKU y
+  código de barras normalizado para creación/edición Web y `product_upsert` móvil;
+  las rutas ejecutan la comprobación dentro de una transacción que bloquea la tienda.
+  `SellerProductTest` + `MobileOperationTest` pasan **34 tests / 231 assertions**
+  en SQLite y MariaDB QA. El baseline final queda en **510 tests / 5.167 assertions
+  PASS** por motor. Sigue pendiente un probe multiproceso dedicado para creación
+  manual y la matriz completa de entradas/escáner Web↔API↔Android.
 
 Lo siguiente es el backlog real, en orden operativo. No debe marcarse como terminado
 por inferencia a partir de tests parciales:

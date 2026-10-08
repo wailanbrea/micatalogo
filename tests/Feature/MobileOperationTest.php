@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Services\InventoryService;
 use App\Services\MediaStorageService;
 use App\Services\PlanLimitsService;
+use App\Services\SellerMenuService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -82,7 +83,7 @@ function mobileFixture(): array
 test('mobile operations preserve seller menu boundaries by operation type', function () {
     [$owner, $shop, $product] = mobileFixture();
     expect($owner->ownsShop($shop))->toBeTrue()
-        ->and(app(\App\Services\SellerMenuService::class)->visibleForUser($shop, $owner))->toContain('sales');
+        ->and(app(SellerMenuService::class)->visibleForUser($shop, $owner))->toContain('sales');
 
     $productsSeller = User::factory()->create();
     ShopSeller::create([
@@ -183,9 +184,9 @@ test('mobile operation role matrix allows manager and blocks accountant mutation
     ])->assertNotFound();
     expect($product->fresh()->inventory->stock_quantity)->toBe(6);
 
-    expect(app(\App\Services\SellerMenuService::class)->visibleForUser($shop, $manager))
+    expect(app(SellerMenuService::class)->visibleForUser($shop, $manager))
         ->toContain('inventory')
-        ->and(app(\App\Services\SellerMenuService::class)->visibleForUser($shop, $accountant))
+        ->and(app(SellerMenuService::class)->visibleForUser($shop, $accountant))
         ->toBe(['finance', 'reports']);
 });
 
@@ -240,10 +241,24 @@ test('mobile product creation and edits are scoped and keep offers meaningful', 
     $url = '/api/v1/shops/'.$shop->public_id.'/mobile-operations';
     $id = (string) Str::ulid();
     $create = ['client_operation_uuid' => (string) Str::uuid(), 'type' => 'product_upsert', 'product_id' => $id,
-        'name' => 'Producto móvil', 'price' => '45.00', 'cost_price' => '20.00', 'category_name' => 'Accesorios', 'internal_code' => '000123'];
+        'name' => 'Producto móvil', 'price' => '45.00', 'cost_price' => '20.00', 'category_name' => 'Accesorios', 'internal_code' => '000123', 'barcode' => '7501234567890'];
     $this->withToken($token)->postJson($url, $create)->assertCreated()->assertJsonPath('product_id', $id);
     $this->withToken($token)->postJson($url, $create)->assertCreated();
     expect($shop->products()->count())->toBe(2)->and($shop->categories()->count())->toBe(1);
+
+    $duplicate = $create;
+    $duplicate['client_operation_uuid'] = (string) Str::uuid();
+    $duplicate['product_id'] = (string) Str::ulid();
+    $this->withToken($token)->postJson($url, $duplicate)->assertUnprocessable();
+    expect($shop->products()->where('product_code', '000123')->count())->toBe(1);
+
+    $barcodeDuplicate = $create;
+    $barcodeDuplicate['client_operation_uuid'] = (string) Str::uuid();
+    $barcodeDuplicate['product_id'] = (string) Str::ulid();
+    $barcodeDuplicate['internal_code'] = '000124';
+    $this->withToken($token)->postJson($url, $barcodeDuplicate)->assertUnprocessable();
+    expect($shop->products()->where('barcode', '7501234567890')->count())->toBe(1);
+
     $product->update(['sale_price' => 200]);
     $edit = ['client_operation_uuid' => (string) Str::uuid(), 'type' => 'product_upsert', 'product_id' => $product->public_id,
         'name' => 'Nuevo nombre', 'expected_price' => '200.00', 'price' => '180.00'];

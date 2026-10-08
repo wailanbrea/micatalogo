@@ -6,13 +6,13 @@ use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductImageProcessingStatus;
 use App\Enums\ProductModerationStatus;
 use App\Models\CustomerAccountEntry;
+use App\Models\InventoryLot;
 use App\Models\Invoice;
 use App\Models\MobileOperation;
 use App\Models\PosSaleUpload;
 use App\Models\Product;
 use App\Models\Shop;
 use App\Models\User;
-use App\Models\InventoryLot;
 use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -136,6 +136,10 @@ class MobileOperationService
                     }
                 }
             }
+            app(ProductIdentityService::class)->assertUnique($shop, [
+                'product_code' => $data['internal_code'] ?? $product?->product_code,
+                'barcode' => $data['barcode'] ?? $product?->barcode,
+            ], $product);
             foreach (['name' => 'name', 'internal_code' => 'product_code', 'barcode' => 'barcode', 'description' => 'description'] as $input => $column) {
                 if (array_key_exists($input, $data)) {
                     $product->$column = $data[$input];
@@ -197,6 +201,7 @@ class MobileOperationService
         }
 
         $fresh = $product->fresh(['inventory', 'comboItems.component.inventory']);
+
         return ['product_id' => $fresh->public_id, 'price' => number_format($fresh->currentPrice(), 2, '.', ''),
             'stock' => $fresh->isCombo() ? $fresh->comboAvailableQuantity() : $fresh->inventory?->stock_quantity,
             'opened_bottles' => $fresh->inventory?->opened_bottles,
@@ -277,6 +282,7 @@ class MobileOperationService
     {
         if (! $product->isCombo()) {
             $product->comboItems()->delete();
+
             return;
         }
 

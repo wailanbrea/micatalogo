@@ -11,6 +11,11 @@ como historial y no autoriza una nueva publicación.
 
 ### Addendum de revalidación
 
+- Se corrigió el hueco de duplicación manual: Web, API móvil y Android ahora
+  comprueban SKU y código de barras normalizado dentro de la transacción bloqueada
+  por tienda. `SellerProductTest` + `MobileOperationTest` pasan **34 tests / 231
+  assertions** en SQLite y MariaDB QA; el baseline completo final queda en
+  **510 tests / 5.167 assertions PASS** por motor.
 - Se añadió la regresión `AUTH-008`: una cuenta eliminada lógicamente no puede
   reutilizar un token BSPOS existente. Pasó en SQLite y MariaDB QA.
 - El baseline actual quedó en **508 tests / 5.152 assertions PASS** por motor.
