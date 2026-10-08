@@ -1,8 +1,10 @@
 <?php
 
 use App\Enums\UserPlan;
+use App\Models\BusinessPartner;
 use App\Models\Customer;
 use App\Models\Invoice;
+use App\Models\PartnerTransaction;
 use App\Models\Shop;
 use App\Models\ShopSeller;
 use App\Models\User;
@@ -79,6 +81,39 @@ test('expense categories API seeds defaults once and remains tenant-scoped', fun
     auth()->forgetGuards();
     $otherResponse = $this->withToken($otherToken)->getJson($url);
     expect($otherResponse->status())->toBeIn([403, 404]);
+});
+
+test('partners API requires an open cash session and links transactions to cash', function () {
+    $owner = User::factory()->create(['plan' => UserPlan::Pro]);
+    $shop = Shop::factory()->create(['user_id' => $owner->id]);
+    $token = $owner->createToken('partners-contract', ['*'])->plainTextToken;
+    $base = "/api/v1/shops/{$shop->public_id}";
+
+    $created = $this->withToken($token)->postJson("{$base}/partners", [
+        'name' => 'Socio API',
+        'ownership_percent' => '50.0000',
+    ])->assertCreated()->assertJsonPath('partner.name', 'Socio API');
+
+    $partnerId = $created->json('partner.id');
+    expect(BusinessPartner::where('shop_id', $shop->id)->count())->toBe(1);
+
+    $this->withToken($token)->postJson("{$base}/partners/{$partnerId}/transactions", [
+        'type' => 'contribution',
+        'amount' => '1000.00',
+    ])->assertUnprocessable();
+    expect(PartnerTransaction::where('shop_id', $shop->id)->count())->toBe(0);
+
+    app(CashRegisterService::class)->openSession($shop, $owner, '0.00');
+    $this->withToken($token)->postJson("{$base}/partners/{$partnerId}/transactions", [
+        'type' => 'contribution',
+        'amount' => '1000.00',
+        'notes' => 'Capital inicial',
+    ])->assertOk();
+
+    $transaction = PartnerTransaction::where('shop_id', $shop->id)->sole();
+    expect($transaction->partner_id)->toBe(BusinessPartner::where('shop_id', $shop->id)->sole()->id)
+        ->and($transaction->cash_movement_id)->not->toBeNull()
+        ->and((float) $shop->cashMovements()->where('type', 'owner_contribution')->sum('amount'))->toBe(1000.0);
 });
 
 test('financial menus enforce explicit independent delegation and legacy null never grants finance', function () {

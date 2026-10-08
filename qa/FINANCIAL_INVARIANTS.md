@@ -101,7 +101,7 @@ GROUP BY c.id, c.shop_id, c.balance;
 Las aserciones de Pest además comparan los valores en centavos, el `shop_id`, la
 referencia de idempotencia, el lote FIFO y el estado final. El checkpoint anterior
 terminó en **508 pruebas / 5.152 aserciones PASS** por motor; el baseline final de
-este corte terminó en **511 pruebas / 5.175 aserciones PASS** por motor. Las tablas
+este corte terminó en **512 pruebas / 5.184 aserciones PASS** por motor. Las tablas
 críticas quedaron en cero después de limpiar cada jornada QA.
 
 La regresión F-042 también verifica que una devolución decimal de `RD$0.01` no

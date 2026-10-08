@@ -11,7 +11,7 @@ como historial y no autoriza una nueva publicación.
 
 ### Baseline autoritativo
 
-El resultado vigente de esta revalidación es **511 tests / 5.175 assertions PASS**
+El resultado vigente de esta revalidación es **512 tests / 5.184 assertions PASS**
 por motor: SQLite en 32.31 s y MariaDB QA en 48.05 s. Las menciones a 504/5.137
 o 508/5.152 más abajo son checkpoints históricos del mismo corte y no sustituyen
 este resultado final.
@@ -22,12 +22,12 @@ este resultado final.
   comprueban SKU y código de barras normalizado dentro de la transacción bloqueada
   por tienda. `SellerProductTest` + `MobileOperationTest` pasan **34 tests / 231
   assertions** en SQLite y MariaDB QA; el baseline completo final queda en
-  **511 tests / 5.175 assertions PASS** por motor.
+  **512 tests / 5.184 assertions PASS** por motor.
 - Se añadió la regresión `AUTH-008`: una cuenta eliminada lógicamente no puede
   reutilizar un token BSPOS existente. Pasó en SQLite y MariaDB QA.
 - El checkpoint previo quedó en **508 tests / 5.152 assertions PASS** por motor;
   el baseline final posterior a la corrección de identidad de productos es
-  **511 tests / 5.175 assertions PASS**.
+  **512 tests / 5.184 assertions PASS**.
 - La APK pública `1.0.76 / versionCode 77` fue verificada en modo lectura con
   `debuggable=false`, certificado oficial, HTTP 200 y SHA coincidente. En la
   comprobación actual ADB solo detecta `emulator-5554`; no se instaló release en
@@ -63,7 +63,7 @@ bloqueos siguientes.
 - Regresión F-049 PASS en ambos motores: la aprobación Web de precios compara el snapshot pendiente y el precio esperado con `Money::toCents`, igual que la API; la suite completa añade 1 test y 2 assertions sin alterar el contrato de aprobación.
 - Regresión F-050 PASS en ambos motores: el cierre diario persiste directamente los centavos calculados y no vuelve a convertir el arqueo desde el `float` de presentación; el caso de RD$0.29 conserva 29 centavos y diferencia cero.
 - Regresión F-051 PASS en ambos motores: POS, cotizaciones, pedidos públicos y combos ya cruzan el precio efectivo mediante `currentPriceDecimal()/currentPriceCents()` antes de mutar; el caso RD$0.28 conserva el snapshot exacto en movimiento y factura.
-- Regresión F-055 PASS en ambos motores: dashboard, aging, inventario a costo, COGS, pagos de factura, saldos pendientes, rentabilidad y flujo de caja mantienen centavos enteros hasta la serialización de compatibilidad; el checkpoint histórico fue 504/5.137 y el baseline final es 511/5.175 por motor. `NFR-003` permanece `PASS parcial` por conversiones de presentación y filtros que no mutan dinero.
+- Regresión F-055 PASS en ambos motores: dashboard, aging, inventario a costo, COGS, pagos de factura, saldos pendientes, rentabilidad y flujo de caja mantienen centavos enteros hasta la serialización de compatibilidad; el checkpoint histórico fue 504/5.137 y el baseline final es 512/5.184 por motor. `NFR-003` permanece `PASS parcial` por conversiones de presentación y filtros que no mutan dinero.
 - Módulos funcionales del menú PASS en ambos motores: `SellerFeatureModuleTest` ejecutó 25 tests y 229 assertions; ventas, cotizaciones, pedidos/encargos, reportes/exportación, fotos, servicios, salud de precios, decants, atributos, autorizaciones —incluido rechazo Web—, cierre y aislamiento de tenant respondieron sin caer en placeholder `prepared`.
 - Reejecución de cierre crítico PASS en ambos motores: 15 tests y 305 assertions cubrieron la protección de mutaciones, la matriz actor/tenant ACL-001..020, equipo/comisiones, FIN-001, E2E-01/E2E-02/E2E-05/E2E-10 y rollback SALE-008; después de la corrida, las tablas QA críticas volvieron a `0` y todas las migraciones permanecen `[1] Ran`.
 - Android instrumented: la variante normal terminó en `emulator-5554` con `OK (117 tests; 114 PASS y 3 omitidos por assumption)` y `offlinecheck` con `OK (116 tests; 113 PASS y 3 omitidos por assumption)`. Incluye resiliencia de pagos/outbox para 401/426/429/500 y bloqueos recuperables 403/409/422, la regresión que impide reenviar una venta pendiente tras revocar permisos, la persistencia del aviso de actualización, la generación/paginación PDF y la regresión de solo lectura del Contador en Finanzas/caja. El E2E live del importador pasó `1/1`; el E2E live POS pasó `2/2`, incluyendo contado/crédito con abono y una venta de decant que consumió ml compartidos, usando SQLite temporal, servidor local y `adb reverse`.
