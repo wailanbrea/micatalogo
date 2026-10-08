@@ -24,12 +24,14 @@ expone en `seller-summary` para owner/contador; un vendedor normal recibe una
 colección vacía y continúa viendo únicamente sus propias ventas.
 
 La regresión nueva está cubierta por la prueba dirigida completa, que pasó **2 tests /
-40 assertions** en SQLite y MariaDB QA. La suite completa
-SQLite del checkout actual pasó **513 tests / 5.207 assertions**. Este cambio sigue
+40 assertions** en SQLite y MariaDB QA. Las suites completas SQLite y MariaDB QA del
+checkout actual pasaron **513 tests / 5.207 assertions**; SQLite terminó en 32,55 s y
+MariaDB QA en 49,00 s. Este cambio sigue
 sin estar publicado y no escribió datos de producción.
 
-**Corte autoritativo:** el backend está en `46f548c` y 66 commits adelantado frente
-a `origin/master`; el baseline final es **512 tests / 5.184 assertions PASS** tanto
+**Corte autoritativo:** el commit funcional actual es `1f40ed8`; antes de esta
+actualización documental la rama estaba 68 commits adelantada frente a
+`origin/master`; el baseline actual es **513 tests / 5.207 assertions PASS** tanto
 en SQLite como en MariaDB QA aislada. La auditoría monetaria de este corte no
 encontró `float/double` en las mutaciones financieras cubiertas; los casts restantes
 son adaptadores de salida, filtros de consulta o normalización de identificadores y
