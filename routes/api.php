@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\V1\PurchaseController;
 use App\Http\Controllers\Api\V1\QuoteController;
 use App\Http\Controllers\Api\V1\ShopController;
 use App\Http\Controllers\Api\V1\ShopSettingsController;
+use App\Http\Controllers\Api\V1\SupportChatController;
 use App\Http\Controllers\SellerAuthorizationController;
 use App\Http\Controllers\SellerFeatureController;
 use App\Http\Controllers\SellerSummaryController;
@@ -48,6 +49,11 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/shops/{shop}/media/logo', [ShopSettingsController::class, 'uploadLogo'])->middleware('menu:shop_settings');
         Route::get('/shops/{shop}/features/{feature}', [SellerFeatureController::class, 'api'])
             ->where('feature', '[a-z_]+');
+        Route::get('/support/conversations', [SupportChatController::class, 'index']);
+        Route::get('/support/conversations/{conversation}', [SupportChatController::class, 'show']);
+        Route::post('/support/conversations/{conversation}/messages', [SupportChatController::class, 'storeMessage']);
+        Route::post('/support/conversations/{conversation}/read', [SupportChatController::class, 'markRead']);
+        Route::post('/shops/{shop}/support/conversations', [SupportChatController::class, 'store']);
         Route::post('/shops/{shop}/authorization-requests', [SellerAuthorizationController::class, 'storeApi']);
         Route::post('/shops/{shop}/authorization-requests/{authorizationRequest}/approve', [SellerAuthorizationController::class, 'approveApi']);
         Route::post('/shops/{shop}/authorization-requests/{authorizationRequest}/reject', [SellerAuthorizationController::class, 'rejectApi']);
