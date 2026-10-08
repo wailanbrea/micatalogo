@@ -125,10 +125,9 @@ batería debug. El runner seguro exige `ro.kernel.qemu=1`:
 Resultados actuales:
 
 - `testDebugUnitTest`: **95/95 PASS**.
-- Suite instrumentada normal: **116 casos**, **113 PASS**, **3 assumptions** por
+- Suite instrumentada normal: **117 casos**, **114 PASS**, **3 assumptions** por
   fixtures live no suministrados en la batería completa.
-- Reejecución posterior a la corrección de logout: **116 casos OK**, con el mismo
-  resultado controlado de **113 PASS + 3 assumptions**; no hubo fallos.
+- Variante `offlinecheck`: **116 casos**, **113 PASS + 3 assumptions**, sin fallos.
 - Suite instrumentada `com.bsolutions.micatalogo.offlinecheck`: mismo resultado.
 - `InvoicePdfGeneratorTest`: **2/2 PASS**; PDF legible por `FileProvider` y carrito
   largo paginado en más de una página.
@@ -341,8 +340,9 @@ publicado en VPS o en la APK pública.
   replay/idempotencia, rollback de POS, cierre, cotizaciones, PDF y actualización
   pendiente sin usar producción.
 - Se recompiló Android para QA, se ejecutó la batería instrumentada segura únicamente
-  en `emulator-5554` y terminó sin fallos: **116/116 finalizados**, **113 PASS + 3
-  assumptions**.
+  en `emulator-5554` y terminó sin fallos: variante normal **117/117 finalizados**,
+  **114 PASS + 3 assumptions**; variante `offlinecheck` **116/116 finalizados**,
+  **113 PASS + 3 assumptions**.
 - Se ejecutaron `testDebugUnitTest` (**95/95 PASS**), compilación de pruebas Android,
   `lintDebug` y `git diff --check`; los warnings de lint restantes son no bloqueantes.
 - Se verificó la firma de la release local: paquete correcto, `versionCode 77`,
