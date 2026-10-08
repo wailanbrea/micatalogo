@@ -21,7 +21,8 @@ este corte. No se escribieron datos de producción.
 ### Backend/Web/API
 
 - Ruta: `C:\xampp\php\www\MiCatalogo`
-- Rama: `master`, **15 commits adelantados de `origin/master`**.
+- Rama: `master`, con commits locales de QA aún no publicados frente a `origin/master`
+  (el conteo debe verificarse antes de cualquier push).
 - Último commit funcional/QA local: `ddf30df docs: record web build and auth QA evidence`;
   los commits posteriores solo alinean esta documentación.
 - Corrección funcional local: `734b169 fix: revoke API token on mobile logout`.
@@ -278,6 +279,11 @@ publicado en VPS o en la APK pública.
   incluye login Web/API, cuentas suspendidas/inactivas/no verificadas, límites,
   actualización de perfil, logout y revocación de token. Caducidad real, dos dispositivos
   y reinstalación siguen fuera de evidencia.
+- Se ejecutó el contrato Android de caja local/remota: `CompleteSaleUseCaseTest` +
+  `RecordPaymentUseCaseTest`, **9/9 PASS instrumentados** en `emulator-5554`; se comprobó
+  que la venta remota no crea caja Room duplicada, que el cobro efectivo exige sesión
+  local, y que crédito, sobrepago y rollback mantienen saldos e inventario coherentes.
+  La caída física de red, la sincronización real y las etiquetas UI siguen pendientes.
 - Se ejecutó `npm run build` con Vite sin errores; el inventario actual conserva
   **216/216 rutas**, sin duplicados de método+URI, y el endpoint `api/v1/auth/logout`
   quedó confirmado con autenticación Sanctum. La revisión de `storage/{path}` verificó

@@ -6,7 +6,7 @@ El plan maestro contiene 196 casos discretos en sus listas. Las filas de esta ta
 de ejecución, no una inferencia de que una suite cubra automáticamente todos los
 casos de una familia.
 
-La matriz individual registra 110 `PASS`, 4 `FIXED_PASS`, 3 `PASS parcial`, 69 `NOT_RUN`,
+La matriz individual registra 110 `PASS`, 4 `FIXED_PASS`, 4 `PASS parcial`, 68 `NOT_RUN`,
 7 `BLOCKED_ENV` y 3 `REQUIERE_DECISION`; no se elevan casos no ejecutados por
 pertenecer a una suite verde.
 
@@ -60,6 +60,7 @@ Comandos reproducibles del corte: SQLite con `vendor/bin/pest --configuration ph
 | Android `compileDebugAndroidTestKotlin` + `assembleDebugAndroidTest` | PASS | compilación exitosa; solo warnings no bloqueantes |
 | Android privacidad financiera por rol | PASS | `compileDebugKotlin`, `compileDebugAndroidTestKotlin`, `testDebugUnitTest` (95/95) y batería instrumentada debug en `emulator-5554` (`116 tests: 113 PASS, 3 omitidos por assumption`); Inventario, catálogo, decants, salud de precios y precios automáticos no muestran costos/márgenes ni controles de administración a vendedores sin `finance` |
 | Android regresión UI de Contador en Finanzas/caja | PASS dirigido | `CashContractScreenTest`: 2/2 en `emulator-5554`; el modo solo lectura muestra el balance y no muestra `Abrir caja`, `Guardar movimiento` ni `Cerrar caja` |
+| Android contrato caja local/remota | PASS parcial | `CompleteSaleUseCaseTest` + `RecordPaymentUseCaseTest`: **9/9 PASS instrumentados** en `emulator-5554`; venta contado no crea movimiento Room duplicado, venta remota no exige sesión local, cobro efectivo sí exige sesión, y crédito/rollback conservan factura, stock, saldo y caja. Falta validar caída física de red, sincronización real y todas las etiquetas UI |
 | Android instrumented en emulador debug | PASS | Reejecución completa en `emulator-5554`: `com.bsolutions.micatalogo` y `com.bsolutions.micatalogo.offlinecheck` terminaron `OK (116 tests; 113 PASS y 3 omitidos por assumption)` después de recompilar e instalar solo debug; `PendingAppUpdateTest` quedó 3/3 e incluye persistencia del aviso pendiente entre recreaciones y limpieza cuando la versión instalada lo supera. El bloque de capturas de checkout, cotizaciones y cierre pasó también por clases aisladas tras un crash intermitente del servicio `UiAutomation` en la primera corrida. Incluye replay de pagos 401/426/429/500, bloqueos recuperables 403/409/422, no-replay tras revocación de permisos, conservación de tienda original en outbox, generación/paginación PDF y solo lectura financiera del Contador |
 | Android generación y paginación PDF | PASS dirigido | `InvoicePdfGeneratorTest`: **2/2 PASS** en `emulator-5554`; una factura abre mediante el `FileProvider` de la app y un carrito de 40 líneas genera más de una página. No sustituye compartir por WhatsApp, permisos, PDF con datos redactados por rol ni impresión física |
 | Reejecución dirigida de autenticación y sesión | PASS parcial | `AuthenticationTest` + `ApiAuthenticationTest`: **29 tests, 127 assertions PASS** en SQLite y MariaDB QA; login Web/API, cuentas suspendidas/inactivas/no verificadas, límites, actualización de perfil, revocación de token al cerrar sesión y rechazo de reutilización del token. No sustituye dos dispositivos, caducidad real, reinstalación ni validación física Android |
