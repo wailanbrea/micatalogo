@@ -16,6 +16,7 @@ La auditoría de `BSPOSNavigation.kt` y `BSPOSMainScreen.kt` confirma:
 
 - Compilación y unit tests de presentación: PASS.
 - Smoke instrumentado en emulador debug: las variantes principal y `com.bsolutions.micatalogo.offlinecheck` ejecutaron 113 casos PASS y omitieron 3 por assumption al no suministrar fixtures live (`OK (116 tests)`). Cubrió datos/sincronización, operaciones financieras, pantallas críticas, el no-replay de una venta bloqueada tras revocación de permisos, la conservación de tienda original en outbox, el modo financiero de solo lectura del Contador, la generación/paginación PDF y la persistencia del aviso de actualización. El runner seguro exige un destino emulador y no permite seleccionar el Samsung.
+- Fixtures live Android↔Laravel reejecutados el 2026-10-08 en `com.bsolutions.micatalogo.offlinecheck`: importador `OK (1 test)` y POS offline/reconexión `OK (2 tests)` con SQLite temporal y `adb reverse` local; el servidor y el reverse temporal se retiraron al terminar.
 - No se declara PASS visual solo por compilar.
 - Deben recorrerse por pantalla: carga, vacío, error, reintento, búsqueda, filtro, paginación, scroll, back, drawer, permisos, cambio de tienda y rotación.
 - Terminal y Cobrar tienen regresiones funcionales en tests; falta captura comparativa con la referencia Puntto.
