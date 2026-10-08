@@ -350,6 +350,10 @@ publicado en VPS o en la APK pública.
   **216/216 rutas**, sin duplicados de método+URI, y el endpoint `api/v1/auth/logout`
   quedó confirmado con autenticación Sanctum. La revisión de `storage/{path}` verificó
   que el PUT público de Laravel exige firma relativa válida; no se hicieron uploads.
+- Revalidación de solo lectura del corte actual: **216 rutas**, 0 duplicados de nombre o
+  método+URI; `micatalogo_qa_20261008` mantiene **61 migraciones Ran y 0 Pending**;
+  `release-readiness.php` confirmó usuarios, tiendas, productos, pedidos e invoices en
+  cero y manifestó la release pública 1.0.76/versionCode 77. No se escribió producción.
 - El chequeo local `release-readiness.php` terminó en modo lectura: usuarios, tiendas,
   productos, pedidos e invoices en el entorno QA quedaron en cero; no se ejecutaron
   migraciones ni escrituras contra producción.

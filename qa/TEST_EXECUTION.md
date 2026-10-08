@@ -79,6 +79,7 @@ Comandos reproducibles del corte: SQLite con `vendor/bin/pest --configuration ph
 | Android release 1.0.76, publicación | PASS | `bspos-1.0.76-release.apk`, 40.387.781 bytes, manifiesto versionCode 77 y SHA coincidente; la release 1.0.75 anterior permanece disponible |
 | Pint completo del checkout | NOT_RUN como corrección | `vendor/bin/pint --test` detectó 37 archivos con formato pendiente. No se reformatearon masivamente cambios locales de otras tareas; el workflow CI verifica el conjunto modificado de cada push/PR |
 | Migraciones MariaDB QA | PASS de lectura | `micatalogo_qa_20261008`: 61 migraciones `[1] Ran`, 0 `Pending` bajo `APP_ENV=testing`, `QA_ALLOW_MYSQL=1` y `DB_DATABASE` explícito |
+| Revalidación de higiene/rutas del corte actual | PASS de lectura | `route:list --json`: **216 rutas**, 0 duplicados de nombre o método+URI; `release-readiness.php` confirmó las cinco tablas críticas de QA en cero y la release pública 1.0.76/versionCode 77; sin escrituras |
 | Conexión local por defecto | NO EJECUTADA / RIESGO | el `.env` local resuelve `DB_DATABASE=micatalogo` y muestra 15 migraciones `Pending`; no se ejecutaron porque no está demostrada como esquema QA y el plan prohíbe alterar una base no aislada durante estas pruebas |
 | Pest completo Laravel / MariaDB QA | PASS | 495 tests, 5.073 assertions, 51.19 s en la reejecución más reciente; `micatalogo_qa_20261008` sin registros persistentes al terminar |
 | Preparación MariaDB QA aislada | PASS | `micatalogo_qa_20261008` creada localmente y migraciones aplicadas; no se usó producción |
