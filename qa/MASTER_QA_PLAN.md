@@ -5,9 +5,9 @@ Este documento es la ejecución controlada del plan contra los HEAD reales, no u
 
 ## Estado de arranque
 
-- Backend/Web/API: `9e1691dd2d1b80110d297ec03056aad57d1ad262` (`master`).
+- Backend/Web/API: `7348869f1a37ad00cdfaa83e02c0d23eb2ab8d93` (`master`).
 - Android: `60ef266`, versionName `1.0.76`, versionCode `77`.
-- VPS: `9e1691dd2d1b80110d297ec03056aad57d1ad262`, sin migraciones pendientes después del despliegue.
+- VPS: `7348869f1a37ad00cdfaa83e02c0d23eb2ab8d93`, sin migraciones pendientes después del despliegue.
 - Baseline actual: 494 pruebas backend, 5.069 assertions en SQLite y MariaDB QA; 94 pruebas unitarias Android. La variante principal tiene 113 instrumentadas en el emulador QA (`110 PASS`, 3 omitidas por fixtures live no suministrados); `com.bsolutions.micatalogo.offlinecheck` conserva su última ejecución completa de 112 (`109 PASS`, 3 omitidas). El corte incluye las regresiones F-046, F-047, F-048, F-049, F-050, F-051, F-052, F-053 y F-054: precisión de precio efectivo, normalización decimal del importador legacy, redacción financiera por rol y recuperación exacta de costos de decants.
 - APK 1.0.76 firmada y publicada; SHA-256 `24846233f98bfd099976d0965142b8aabca71a378659b74b5a8b14aa27334f6b`. La release anterior permanece disponible.
 - Alcance reconciliado: las listas de casos de la fuente contienen 196 identificadores únicos, no 140; la matriz individual y sus estados están en `qa/TRACEABILITY.md`.

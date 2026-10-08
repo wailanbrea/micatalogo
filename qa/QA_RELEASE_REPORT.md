@@ -19,7 +19,7 @@ bloqueos siguientes.
 - Inventario de rutas: `qa/ROUTE_ACCESS_MATRIX.md` contiene las 215 rutas individuales del checkout, con verbo, URI, nombre, clasificación estática y tipo de operación; permanece pendiente la ejecución positiva exhaustiva por actor/recurso.
 - CI: workflows locales añadidos para Web y Android; se validó su estructura y se ejecutaron localmente el build Vite y las tareas Android equivalentes, pero no se marcó una corrida GitHub Actions porque no hay ejecución remota disponible en este corte.
 - F-045 `NOT_RUN`: Pint completo del checkout reportó 37 archivos con deuda de formato; no se reformatearon cambios ajenos masivamente. Queda como riesgo P2 de calidad CI, separado de los gates funcionales P1.
-- Backend/Web/API: `9e1691d` publicado en `master` y desplegado en VPS.
+- Backend/Web/API: `7348869` publicado en `master` y desplegado en VPS.
 - Android: `60ef266`, 1.0.76/versionCode 77.
 - 494 tests backend PASS en SQLite y MariaDB QA aislada (5.069 assertions en cada corrida; corridas completas 38.56 s / 55.48 s) después de F-055; incluye reportes financieros, aging, valor de inventario, pagos y rentabilidad calculados en centavos, además de importación decimal, autorización financiera del catálogo y recuperación exacta de decants; 94 unit tests Android PASS.
 - Subconjunto dirigido adicional PASS en ambos motores: 110 tests y 732 assertions sobre importación adaptativa/segura, duplicados e idempotencia, POS web, combos, decants, devoluciones, FIFO, impuestos/descuentos, imágenes y atributos; SQLite 10.69 s, MariaDB QA 16.66 s. No eleva por sí solo los casos que exigen cobertura interplataforma, hardware o reglas de negocio aún no definidas.
