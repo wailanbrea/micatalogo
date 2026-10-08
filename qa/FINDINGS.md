@@ -2,7 +2,7 @@
 
 Fecha: 2026-10-08  
 HEAD Web/API: `32450ffc19380e1bea0ddc132c553835bdf9df1c`  
-HEAD Android: `1a8ba7fb0d2b50f743a2c07fec3877ef79a0c6ca`
+HEAD Android: `7ea2916`
 
 ## F-001 — Lint Android bloqueaba la validación estática
 
@@ -463,5 +463,13 @@ HEAD Android: `1a8ba7fb0d2b50f743a2c07fec3877ef79a0c6ca`
 - **Corrección aplicada:** `AppUpdatePolicy` y `AppUpdateViewModel` ahora omiten el updater de producción cuando `BuildConfig.DEBUG` es verdadero. El guard `qa/verify_android_release_target.ps1` sigue protegiendo cualquier instalación física autorizada.
 - **Regresión:** Android commit `c4aea97` ejecutó `testDebugUnitTest`: **95 tests, 0 fallos, 0 errores**; `compileReleaseKotlin` terminó correctamente; la build debug se instaló únicamente en `emulator-5554`, inició sin crash, no mostró el diálogo de actualización y el paquete instrumentado del updater terminó **4/4**. Los casos verifican que debug no consulte releases de producción y que release sí pueda hacerlo.
 - **Estado:** `FIXED_LOCAL_NOT_RELEASED`: la corrección está en GitHub, pero todavía no forma parte de una nueva APK publicada. La 1.0.76 vigente conserva el comportamiento anterior y no debe instalarse sobre debug.
+
+## F-058 — El aviso de actualización se perdía al recrear la app sin red
+
+- **Prioridad:** P1 preventiva de actualización Android.
+- **Síntoma:** si la app detectaba una versión nueva y luego el proceso se recreaba, el manifiesto pendiente solo vivía en el `ViewModel`; una caída de red podía dejar únicamente el diálogo genérico de error y no reabrir el aviso bloqueante.
+- **Corrección aplicada:** `AppUpdatePendingStore` guarda localmente únicamente los datos del manifiesto validado (versión, URL HTTPS, SHA-256, mínimo y notas). `AppUpdateViewModel` lo recupera ante errores de red/HTTP/respuesta inválida, lo conserva mientras la descarga o el instalador no terminan y lo limpia cuando la versión instalada ya lo supera o se descarta una actualización opcional.
+- **Regresión:** Android `7ea2916`: `testDebugUnitTest` 95/95, `compileReleaseKotlin` exitoso, `PendingAppUpdateTest` 3/3 y batería instrumentada principal `OK (114 tests; 111 PASS y 3 omitidos por assumption)`. No se publicó APK ni se modificó el Samsung.
+- **Estado:** `FIXED_LOCAL_NOT_RELEASED`; requiere una nueva APK release autorizada para llegar a dispositivos.
 
 El baseline local es verde después de F-001, F-002, F-003, F-006, F-007, F-008, F-010, F-011, F-012, F-014, F-015, F-016, F-017, F-018, F-019, F-021, F-022, F-023, F-024, F-025, F-026, F-027, F-028, F-029, F-030, F-031, F-032, F-033, F-034, F-035, F-037, F-039, F-040, F-041, F-042, F-043, F-044, F-046, F-047, F-048, F-049, F-050, F-051, F-052, F-053, F-054 y F-055. F-045 queda como riesgo P2 de CI y F-056 como bloqueo de instalación física. El release gate permanece **NOT_READY** por F-004, F-005, F-036, F-038 y F-056, además de las pruebas de estrés, visuales, escenarios offline adicionales y servicios externos pendientes. No se hicieron escrituras en producción durante este corte.
