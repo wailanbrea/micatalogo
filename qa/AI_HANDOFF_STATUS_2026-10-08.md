@@ -13,7 +13,7 @@ cambios locales aún no están publicados en VPS ni en una nueva APK, y permanec
 casos de negocio, visuales, hardware, offline físico y cobertura positiva completa
 sin cerrar.
 
-**Corte autoritativo:** el backend está en `af29543` y 59 commits adelantado frente
+**Corte autoritativo:** el backend está en `46f548c` y 66 commits adelantado frente
 a `origin/master`; el baseline final es **512 tests / 5.184 assertions PASS** tanto
 en SQLite como en MariaDB QA aislada. La auditoría monetaria de este corte no
 encontró `float/double` en las mutaciones financieras cubiertas; los casts restantes
@@ -559,7 +559,10 @@ por inferencia a partir de tests parciales:
 
 ## Commits locales de este corte
 
-- Backend: `af29543` (`fix: prevent duplicate product identities`), además de
+- Backend: `46f548c` (`test: cover partner cash API flow`), además de
+  `aa8a679` (`test: cover expense category API boundary`) y `e1019b4`
+  (`docs: record international purchase audit`), junto con
+  `af29543` (`fix: prevent duplicate product identities`), además de
   `b221052` (`docs: refresh QA baseline references`) y `7637b6d`
   (`test: reject API tokens for deleted accounts`), además de `9b7ca98`, `71255ec`,
   `6b83bf8` y `8bd67e3` y los commits funcionales/documentales anteriores. El
