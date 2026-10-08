@@ -1,9 +1,9 @@
 <?php
 
-use App\Models\Invoice;
 use App\Models\AttributeDefinition;
 use App\Models\CommercialQuote;
 use App\Models\CommercialQuoteItem;
+use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductInventory;
@@ -11,6 +11,7 @@ use App\Models\Shop;
 use App\Models\ShopSeller;
 use App\Models\User;
 use App\Services\CashRegisterService;
+use App\Services\SellerMenuService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 
@@ -582,6 +583,37 @@ test('authorization decisions are available to the mobile owner API', function (
         ->assertJsonPath('message', 'Solicitud aprobada.');
 });
 
+test('owner can reject an authorization request from the web module', function () {
+    $owner = User::factory()->create(['plan' => 'pro']);
+    $seller = User::factory()->create(['email' => 'web-reject-authorization-seller@example.com']);
+    $shop = Shop::factory()->for($owner)->create();
+    ShopSeller::create([
+        'shop_id' => $shop->id,
+        'user_id' => $seller->id,
+        'commission_type' => 'percentage',
+        'commission_value' => 5,
+        'is_active' => true,
+        'menu_permissions' => ['sales'],
+    ]);
+
+    $this->actingAs($seller, 'sanctum')
+        ->postJson("/api/v1/shops/{$shop->public_id}/authorization-requests", [
+            'action' => 'Aplicar descuento especial',
+            'context' => ['invoice' => 'FAC-REJECT-001'],
+        ])
+        ->assertCreated();
+
+    $authorization = $shop->authorizationRequests()->firstOrFail();
+
+    $this->actingAs($owner)
+        ->post(route('seller.shops.authorizations.reject', [$shop, $authorization]))
+        ->assertRedirect()
+        ->assertSessionHas('status', 'Solicitud rechazada.');
+
+    expect($authorization->fresh()->status)->toBe('rejected')
+        ->and($authorization->fresh()->decided_by)->toBe($owner->id);
+});
+
 test('day close exposes the simple date-based cash reconciliation flow', function () {
     $user = User::factory()->create(['plan' => 'pro']);
     $shop = Shop::factory()->for($user)->create();
@@ -718,7 +750,7 @@ test('barber shops hide and protect the decants module', function () {
     $user = User::factory()->create(['plan' => 'pro']);
     $shop = Shop::factory()->for($user)->create(['business_type' => 'barbershop']);
 
-    expect(app(\App\Services\SellerMenuService::class)->visibleForUser($shop, $user))->not->toContain('decants');
+    expect(app(SellerMenuService::class)->visibleForUser($shop, $user))->not->toContain('decants');
 
     $this->actingAs($user)
         ->get(route('seller.shops.feature', [$shop, 'feature' => 'decants']))

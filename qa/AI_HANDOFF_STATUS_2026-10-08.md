@@ -177,11 +177,14 @@ sintéticos y no deben copiarse a reportes.
 
 Evidencia QA más reciente:
 
-- Suite completa del corte actual: **499 tests / 5.099 assertions PASS** en SQLite y
-  MariaDB QA aislada, después de endurecer la validación monetaria de productos.
-- Benchmark de catálogo de 1.500 productos: máximo 17 consultas; p50/p95 más
-  reciente SQLite `334.61/345.77 ms`, MariaDB QA `323.90/339.09 ms`, memoria
-  `148/148 MB`. Sigue siendo benchmark local, no latencia real de red/dispositivo.
+- Suite completa del corte actual: **500 tests / 5.104 assertions PASS** en SQLite y
+  MariaDB QA aislada, después de endurecer la validación monetaria de productos,
+  cubrir las rutas financieras Web y probar el rechazo Web de autorizaciones.
+- Benchmark dirigido más reciente de catálogo de 1.500 productos: máximo 17
+  consultas; p50/p95 SQLite `287.65/298.86 ms`, MariaDB QA `264.94/282.65 ms`,
+  memoria `78/78 MB`. Sigue siendo benchmark local, no latencia real de
+  red/dispositivo; la corrida completa más reciente registró en MariaDB
+  `276.21/288.68 ms` y 148 MB.
 - Matriz dirigida RBAC/tenant: **24 tests / 369 assertions PASS** en ambos motores.
 - MariaDB QA: `61 Ran, 0 Pending`; tablas operativas quedaron en cero después de
   las corridas.
@@ -199,17 +202,17 @@ ni purgas sobre producción. No hay migraciones pendientes conocidas.
 
 ### Revalidación del baseline después de este traspaso
 
-- SQLite: `vendor\\bin\\pest --configuration phpunit.xml` terminó **499 tests / 5.099
-  assertions PASS** en 30.56 s.
+- SQLite: `vendor\\bin\\pest --configuration phpunit.xml` terminó **500 tests / 5.104
+  assertions PASS** en 31.71 s.
 - MariaDB QA: `APP_ENV=testing`, `QA_ALLOW_MYSQL=1`, base
-  `micatalogo_qa_20261008` y `qa\\phpunit.mysql.xml` terminaron **499 tests / 5.099
-  assertions PASS** en 47.12 s.
+  `micatalogo_qa_20261008` y `qa\\phpunit.mysql.xml` terminaron **500 tests / 5.104
+  assertions PASS** en 47.24 s.
 - `release-readiness.php` en esa base devolvió usuarios, tiendas, productos, pedidos e
   invoices en `0`; no creó datos ni ejecutó migraciones.
 - `migrate:status --env=testing` devolvió todas las migraciones visibles como
   `[1] Ran` y ninguna como `Pending`.
 - El benchmark de catálogo de esta corrida quedó en 17 consultas, p50/p95 de
-  271.92/283.56 ms en MariaDB QA y 148 MB de pico de memoria. Es medición local y no
+  276.21/288.68 ms en MariaDB QA y 148 MB de pico de memoria. Es medición local y no
   sustituye latencia de red o carga de producción.
 
 ## Cambios y defectos cubiertos
@@ -313,14 +316,17 @@ publicado en VPS o en la APK pública.
   financieros, importador, POS/Terminal, cotizaciones, decants, pedidos, cierres,
   actualizador y navegación Android/Web en los reportes de `qa/`.
 - Se ejecutó el baseline completo del backend con SQLite y MariaDB QA aislada:
-  **499 tests, 5.099 assertions PASS** en cada motor; migraciones QA: **61 ejecutadas,
+  **500 tests, 5.104 assertions PASS** en cada motor; migraciones QA: **61 ejecutadas,
   0 pendientes**; las tablas operativas de QA quedaron en cero.
 - Se corrigió la validación de costos/precios de productos para decidir positividad en
   centavos mediante `Money::toCents`, incluyendo la botella fuente de decants; la
   regresión HTTP de costo sub-centavo y el baseline completo pasaron en ambos motores.
 - Se añadió `SellerFinancialRoutesTest` para cubrir por Web la apertura y movimiento de
   caja, creación de gastos parciales, abonos y categorías; sus 3 casos pasaron dentro
-  del baseline actualizado de **499 tests / 5.099 assertions** en SQLite y MariaDB QA.
+  del baseline actualizado de **500 tests / 5.104 assertions** en SQLite y MariaDB QA.
+- Se añadió cobertura Web para rechazar una solicitud de autorización desde el módulo
+  de equipo; el estado quedó `rejected` y se registró el owner que decidió. El caso
+  pasó en SQLite y MariaDB QA dentro del baseline de **500 tests / 5.104 assertions**.
 - Se reforzó autenticación con una corrida dirigida: `AuthenticationTest` +
   `ApiAuthenticationTest`, **29 tests y 127 assertions PASS** en SQLite y MariaDB QA;
   incluye login Web/API, cuentas suspendidas/inactivas/no verificadas, límites,

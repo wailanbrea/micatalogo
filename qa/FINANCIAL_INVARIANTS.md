@@ -100,7 +100,7 @@ GROUP BY c.id, c.shop_id, c.balance;
 
 Las aserciones de Pest además comparan los valores en centavos, el `shop_id`, la
 referencia de idempotencia, el lote FIFO y el estado final. La suite completa del
-corte terminó en **499 pruebas / 5.099 aserciones PASS** por motor; las tablas
+corte terminó en **500 pruebas / 5.104 aserciones PASS** por motor; las tablas
 críticas quedaron en cero después de limpiar cada jornada QA.
 
 La regresión F-042 también verifica que una devolución decimal de `RD$0.01` no
