@@ -284,6 +284,10 @@ publicado en VPS o en la APK pública.
   que la venta remota no crea caja Room duplicada, que el cobro efectivo exige sesión
   local, y que crédito, sobrepago y rollback mantienen saldos e inventario coherentes.
   La caída física de red, la sincronización real y las etiquetas UI siguen pendientes.
+- Se añadió y ejecutó la regresión `CatalogSyncIntegrationTest` para el caso ACK→interrupción
+  antes de marcar `SENT`: **16/16 PASS** en `emulator-5554`; la venta queda en `RETRY` y
+  el siguiente sync la confirma con la misma UUID. Es una simulación determinista, no
+  sustituye matar el proceso físico ni probar una red intermitente en una release.
 - Se ejecutó `npm run build` con Vite sin errores; el inventario actual conserva
   **216/216 rutas**, sin duplicados de método+URI, y el endpoint `api/v1/auth/logout`
   quedó confirmado con autenticación Sanctum. La revisión de `storage/{path}` verificó
