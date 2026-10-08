@@ -1,6 +1,6 @@
 # Inventario funcional inicial
 
-Inventario derivado del código vivo de `routes/web.php`, `routes/api.php`, controladores, servicios, tests y las pantallas Android. El corte vigente corresponde al backend `88b3f66` y Android `e50e5ff`; ambos árboles contienen cambios locales aún no publicados.
+Inventario derivado del código vivo de `routes/web.php`, `routes/api.php`, controladores, servicios, tests y las pantallas Android. El corte vigente debe identificarse con `git log -1 --oneline` en cada repositorio; ambos árboles contienen cambios locales aún no publicados.
 
 | Módulo | Web/API | Android | Persistencia/offline | Permisos/plan | Estado inicial |
 |---|---|---|---|---|---|

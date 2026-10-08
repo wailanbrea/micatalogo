@@ -1,8 +1,9 @@
 # Hallazgos QA — corte 2026-10-08
 
 Fecha: 2026-10-08  
-HEAD Web/API del corte documentado: `88b3f66c7afbd675c4fdbd150d7a6ec3f8ad541c`
-HEAD Android del corte documentado: `e50e5ff73316a9555f77a79fe4457c2d105c91c6`
+HEAD Web/API y Android: verificar con `git log -1 --oneline` en cada checkout antes
+de usar este registro para una publicación; los hallazgos individuales conservan
+su SHA histórico cuando corresponde.
 
 > Nota de continuidad: los hallazgos individuales debajo conservan la evidencia del
 > momento en que cada uno fue descubierto. Para el estado vigente, la reejecución del
