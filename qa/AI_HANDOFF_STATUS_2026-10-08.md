@@ -320,6 +320,10 @@ publicado en VPS o en la APK pública.
   que la venta remota no crea caja Room duplicada, que el cobro efectivo exige sesión
   local, y que crédito, sobrepago y rollback mantienen saldos e inventario coherentes.
   La caída física de red, la sincronización real y las etiquetas UI siguen pendientes.
+- Se reejecutó la regresión financiera aislada en SQLite en memoria: **57 tests / 303
+  assertions PASS**, cubriendo FIFO por lotes, decants, reglas automáticas de precio,
+  ventas mixtas, crédito, abonos FIFO, caja, gastos, cierres, idempotencia y E2E-03.
+  No se escribieron datos persistentes ni se tocó MariaDB/VPS.
 - Se añadió y ejecutó la regresión `CatalogSyncIntegrationTest` para el caso ACK→interrupción
   antes de marcar `SENT`: **16/16 PASS** en `emulator-5554`; la venta queda en `RETRY` y
   el siguiente sync la confirma con la misma UUID. Es una simulación determinista, no
