@@ -62,8 +62,8 @@ Comandos reproducibles del corte: SQLite con `vendor/bin/pest --configuration ph
 | E2E Android↔Laravel del importador adaptativo | PASS | `InventoryImportLiveIntegrationTest`: `OK (1 test)` con SQLite temporal, servidor QA `127.0.0.1:8893` y `adb reverse`; preview fila 8, mapeo y confirmación de 2 productos, repetición sin duplicados |
 | E2E Android↔Laravel de venta POS offline/reconexión | PASS acotado | `PosSaleLiveIntegrationTest`: `OK (2 tests)`; dos ventas cash y una venta a crédito creadas offline en orden, cliente creado por API, deuda y abono por transferencia sincronizados, más una venta de decant que redujo la botella a 90 ml y el decant a 9 unidades; cierre/reapertura de Room, ACK real en Laravel QA y replay posterior sin duplicar (`4` facturas remotas) |
 | Android `lintDebug` después de correcciones QA | PASS | 0 errores; 55 warnings y 4 hints no bloqueantes registrados |
-| Android release 1.0.75, compilación limpia local | PASS de artefacto | versionCode 76, package correcto, no debug, SHA de APK `e32a55c4a04922f42eaa53baba57b353e2ec7af324ef7fb32e4a2b68298c4791`, certificado conservado; no instalada/publicada |
-| Android release posterior a F-044 | NOT_RUN | el endpoint publicado mantiene versionCode 76 y el proyecto declara 76; `release.ps1 -Mode Build` detuvo con `VERSION_NOT_NEWER`. El `assembleRelease` directo generó `app-release-unsigned.apk`, rechazado por no ser instalable/publicable |
+| Android release 1.0.76, compilación limpia local | PASS de artefacto | versionCode 77, package correcto, no debug, SHA de APK `24846233f98bfd099976d0965142b8aabca71a378659b74b5a8b14aa27334f6b`, certificado conservado; publicada y verificada por HTTP |
+| Android release 1.0.76, publicación | PASS | `bspos-1.0.76-release.apk`, 40.387.781 bytes, manifiesto versionCode 77 y SHA coincidente; la release 1.0.75 anterior permanece disponible |
 | Pint completo del checkout | NOT_RUN como corrección | `vendor/bin/pint --test` detectó 37 archivos con formato pendiente. No se reformatearon masivamente cambios locales de otras tareas; el workflow CI verifica el conjunto modificado de cada push/PR |
 | Migraciones MariaDB QA | PASS de lectura | `micatalogo_qa_20261008`: 61 migraciones `[1] Ran`, 0 `Pending` bajo `APP_ENV=testing`, `QA_ALLOW_MYSQL=1` y `DB_DATABASE` explícito |
 | Conexión local por defecto | NO EJECUTADA / RIESGO | el `.env` local resuelve `DB_DATABASE=micatalogo` y muestra 15 migraciones `Pending`; no se ejecutaron porque no está demostrada como esquema QA y el plan prohíbe alterar una base no aislada durante estas pruebas |
@@ -81,7 +81,7 @@ Comandos reproducibles del corte: SQLite con `vendor/bin/pest --configuration ph
 | Probe de confirmación concurrente de importación en MariaDB QA | PASS | 8 procesos sobre la misma sesión: 8 respuestas válidas, 1 producto creado, sesión confirmada una vez |
 | Probe de cierre diario concurrente en MariaDB QA | PASS | 8 procesos sobre la misma tienda/fecha: 8 respuestas válidas, 1 cierre diario y 0 conflictos de unicidad |
 | Integridad de datos VPS | PASS de lectura | snapshot 14 usuarios, 12 tiendas, 756 productos, 2 pedidos, 22 facturas |
-| Android físico con release instalada | NOT_RUN para 1.0.75 | no se autoriza instalar release en el Samsung en este corte; se añadió `qa/run_android_emulator_tests.ps1`, que rechaza seriales físicos |
+| Android físico con release instalada | NOT_RUN para 1.0.76 | publicación validada, pero la instalación release en el Samsung sigue pendiente; `qa/run_android_emulator_tests.ps1` rechaza seriales físicos |
 | Hardware BT/CameraX/R2 real | BLOCKED_ENV | falta ejecución controlada con hardware/servicios QA |
 
 ## Casos aún no aprobados
