@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Customer;
+use App\Models\CashMovement;
 use App\Models\InventoryMovement;
 use App\Models\Invoice;
 use App\Models\Product;
@@ -123,6 +124,19 @@ test('a POS sale uses the pos channel, derives partial status with customer debt
         'quantity' => -2,
         'unit_price' => 250,
     ]);
+});
+
+test('a POS sale can be paid without an open cash session', function () {
+    [$user, $shop, $product] = posSaleFixture(stock: 5, price: 300);
+
+    $this->withToken($user->createToken('BSPOS', ['pos:write'])->plainTextToken)
+        ->postJson("/api/v1/shops/{$shop->public_id}/pos-sales", posSalePayload((string) Str::uuid(), $product, 1, '300.00'))
+        ->assertCreated();
+
+    $invoice = Invoice::query()->with('payments')->sole();
+    expect($invoice->payments)->toHaveCount(1)
+        ->and($invoice->payments->sole()->cash_register_session_id)->toBeNull()
+        ->and(CashMovement::query()->count())->toBe(0);
 });
 
 test('a POS sale ignores client manipulation of payment status and derives paid when fully settled', function () {

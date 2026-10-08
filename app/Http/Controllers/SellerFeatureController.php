@@ -121,6 +121,25 @@ class SellerFeatureController extends Controller
             ],
         };
 
+        $related = array_values(array_filter($related, function ($item) use ($request, $shop, $menus): bool {
+            $path = parse_url($item['url'], PHP_URL_PATH);
+            $route = app('router')->getRoutes()->match(Request::create($path));
+            $menu = match ($route->getName()) {
+                'seller.shops.pos' => 'sales',
+                'seller.shops.business' => 'finance',
+                'seller.shops.inventory.index', 'seller.shops.inventory.lots' => 'inventory',
+                'seller.shops.products.index' => 'products',
+                'seller.shops.pricing.index' => 'pricing',
+                'seller.shops.customers.index' => 'customers',
+                'seller.shops.metrics.index' => 'metrics',
+                'seller.shops.sellers.index' => 'sellers',
+                'seller.shops.edit' => 'shop_settings',
+                default => null,
+            };
+
+            return $menu === null || in_array($menu, $menus->visibleForUser($shop, $request->user()), true);
+        }));
+
         return view('seller.features.show', [
             'shop' => $shop,
             'featureKey' => $feature,

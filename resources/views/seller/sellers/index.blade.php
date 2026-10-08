@@ -30,7 +30,7 @@
                         @forelse ($sellers as $seller)
                             @php($stat = $stats->get($seller->user_id))
                             @php($menuOptions = app(\App\Services\SellerMenuService::class)->assignableOptions())
-                            @php($enabledMenus = app(\App\Services\SellerMenuService::class)->normalize($seller->menu_permissions))
+                            @php($enabledMenus = app(\App\Services\SellerMenuService::class)->forAssignment($seller))
                             <article class="rounded-xl border border-slate-200 p-4 {{ $seller->is_active ? 'bg-white' : 'bg-slate-50 opacity-70' }}">
                                 <div class="flex flex-wrap items-start justify-between gap-4">
                                     <div><h2 class="font-bold text-slate-900">{{ $seller->user->name }}</h2><p class="mt-1 text-xs text-slate-500">{{ $seller->user->email }}</p><p class="mt-3 text-xs font-semibold text-slate-700">{{ number_format((int) ($stat->sales_count ?? 0)) }} ventas · RD$ {{ number_format((float) ($stat->sales_total ?? 0), 2) }} vendido</p></div>
@@ -42,6 +42,7 @@
                                     <input type="hidden" name="menu_permissions_configured" value="1">
                                     <div class="w-full rounded-xl bg-slate-50 p-3">
                                         <p class="text-xs font-bold text-slate-700">Menús visibles para este vendedor</p>
+                                        <p class="mt-1 text-xs text-slate-500">Solo tendrá acceso a los menús marcados, según el plan de la tienda. Desmarca un menú para revocar su acceso. Resumen muestra únicamente sus ventas; configuración y gestión del equipo quedan reservadas a la administración.</p>
                                         <div class="mt-2 grid gap-2 sm:grid-cols-2">
                                             @foreach ($menuOptions as $key => $label)
                                                 <label class="flex items-center gap-2 text-xs font-medium text-slate-600">
@@ -66,7 +67,27 @@
                     <form method="POST" action="{{ route('seller.shops.sellers.store', $shop) }}" class="mt-5 space-y-4">@csrf
                         <div><label class="text-xs font-bold text-slate-700">Correo del vendedor</label><input name="email" type="email" required value="{{ old('email') }}" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></div>
                         <div><label class="text-xs font-bold text-slate-700">Modalidad</label><select name="commission_type" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"><option value="percentage" @selected(old('commission_type') === 'percentage')>Porcentaje de venta</option><option value="fixed" @selected(old('commission_type') === 'fixed')>Monto fijo por venta</option></select></div>
-                        <div><label class="text-xs font-bold text-slate-700">Valor</label><input name="commission_value" type="number" min="0.01" step="0.01" required value="{{ old('commission_value') }}" placeholder="Ej.: 5.00" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"><p class="mt-1 text-[11px] text-slate-500">Para porcentaje, escribe 5 para 5%. Para monto fijo, escribe el valor en RD$.</p></div>
+                         <div><label class="text-xs font-bold text-slate-700">Valor</label><input name="commission_value" type="number" min="0.01" step="0.01" required value="{{ old('commission_value') }}" placeholder="Ej.: 5.00" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"><p class="mt-1 text-[11px] text-slate-500">Para porcentaje, escribe 5 para 5%. Para monto fijo, escribe el valor en RD$.</p></div>
+                         <?php
+                             $initialMenuOptions = app(\App\Services\SellerMenuService::class)->assignableOptions();
+                             $initialPermissions = old('menu_permissions_configured')
+                                 ? old('menu_permissions', [])
+                                 : app(\App\Services\SellerMenuService::class)->defaultPermissions();
+                         ?>
+                         <input type="hidden" name="menu_permissions_configured" value="1">
+                         <fieldset class="rounded-xl border border-slate-200 p-3">
+                             <legend class="px-1 text-xs font-bold text-slate-700">Menús del nuevo vendedor</legend>
+                             <p class="mb-3 text-xs text-slate-500">Marca los menús que podrá ver y abrir. Después puedes añadir o quitar accesos desde su ficha y guardar los cambios.</p>
+                             <div class="max-h-72 space-y-2 overflow-y-auto">
+                                 @foreach ($initialMenuOptions as $key => $label)
+                                     <label class="flex items-center gap-2 rounded-lg px-2 py-1 text-xs text-slate-700">
+                                         <input type="checkbox" name="menu_permissions[]" value="{{ $key }}" @checked(in_array($key, $initialPermissions, true)) class="rounded border-slate-300 text-blue-600">
+                                         <span>{{ $label }}</span>
+                                     </label>
+                                 @endforeach
+                             </div>
+                             <p class="mt-3 text-xs text-slate-500">Los módulos dependen del plan de la tienda. Configuración y gestión del equipo son exclusivas de la administración.</p>
+                         </fieldset>
                          <button class="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-700" @disabled(!$quota['can_add_sellers'])>Enviar invitación</button>
                          @if (!$quota['can_add_sellers'])<p class="text-xs font-semibold text-amber-700">Límite alcanzado. Vendedores adicionales: US$ {{ number_format($quota['additional_seat_price_usd'], 2) }}/mes.</p>@endif
                      </form>

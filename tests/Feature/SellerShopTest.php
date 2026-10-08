@@ -503,11 +503,14 @@ test('an assigned seller can see the shop catalog and selling entry without owne
 
     $this->actingAs($seller)
         ->get(route('seller.dashboard'))
+        ->assertRedirect(route('seller.shops.summary', $shop));
+
+    $this->get(route('seller.shops.summary', $shop))
         ->assertOk()
         ->assertSee('Tienda asignada')
-        ->assertSee('Guía para vendedores')
+        ->assertSee('Panel del vendedor')
         ->assertDontSee('Guía para administradores de tienda')
-        ->assertSee('Registrar venta')
+        ->assertSee('Nueva venta')
         ->assertSee('Productos')
         ->assertDontSee('Mis tiendas')
         ->assertDontSee('Configuración')

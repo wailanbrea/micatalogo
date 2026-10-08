@@ -30,6 +30,7 @@
     $idleClass = 'text-slate-300 hover:bg-white/10 hover:text-white';
     $visibleMenus = $contextShop ? app(\App\Services\SellerMenuService::class)->visibleForUser($contextShop, $user) : [];
     $canSeeMenu = fn (string $key): bool => ! $contextShop || in_array($key, $visibleMenus, true);
+    $canManageContext = $contextShop && app(\App\Services\SellerMenuService::class)->canManage($contextShop, $user);
     $isAssignedSellerOnly = $user?->isAssignedSellerOnly() ?? false;
     $canManageShops = ! $isAssignedSellerOnly;
     $canCreateShop = $isAdmin || ! ($user?->hasActiveShopAssignment() ?? false);
@@ -38,7 +39,7 @@
     $iconPath = 'M4 5h16v14H4zM8 9h8M8 13h5';
     $menuSections = $contextShop ? [
         ['label' => 'Operación', 'items' => [
-            ['key' => 'summary', 'label' => 'Resumen', 'url' => route('seller.shops.business', $contextShop), 'active' => request()->routeIs('seller.shops.business')],
+            ['key' => 'summary', 'label' => 'Resumen', 'url' => route('seller.shops.summary', $contextShop), 'active' => request()->routeIs('seller.shops.summary')],
             ['key' => 'sales', 'label' => 'Terminal', 'url' => route('seller.shops.pos', $contextShop), 'active' => $isPos, 'path' => 'M3 5h18v14H3zM7 9h4m-4 4h2m5-4h3m-3 4h3'],
             ['key' => 'sales', 'label' => 'Ventas', 'url' => $featureUrl('sales'), 'active' => $featureActive('sales')],
             ['key' => 'quotes', 'label' => 'Cotizaciones', 'url' => $featureUrl('quotes'), 'active' => $featureActive('quotes')],
@@ -60,10 +61,10 @@
             ['key' => 'storefront', 'label' => 'Mi tienda', 'url' => route('seller.shops.storefront', $contextShop), 'active' => $isStorefront],
             ['key' => 'services', 'label' => 'Servicios', 'url' => $featureUrl('services'), 'active' => $featureActive('services')],
             ['key' => 'price_health', 'label' => 'Salud de precios', 'url' => $featureUrl('price_health'), 'active' => $featureActive('price_health')],
-            ['key' => 'products', 'label' => 'Precios automáticos', 'url' => route('seller.shops.pricing.index', $contextShop), 'active' => $isPricing],
+            ['key' => 'pricing', 'label' => 'Precios automáticos', 'url' => $canManageContext ? route('seller.shops.pricing.index', $contextShop) : $featureUrl('pricing'), 'active' => $isPricing || $featureActive('pricing')],
             ['key' => 'decants', 'label' => 'Decants', 'url' => $featureUrl('decants'), 'active' => $featureActive('decants')],
             ['key' => 'attributes', 'label' => 'Marcas y atributos', 'url' => $featureUrl('attributes'), 'active' => $featureActive('attributes')],
-            ['key' => 'products', 'label' => 'Importar', 'url' => route('seller.shops.products.import.create', $contextShop), 'active' => $isImport],
+            ['key' => 'import', 'label' => 'Importar', 'url' => $canManageContext ? route('seller.shops.products.import.create', $contextShop) : $featureUrl('import'), 'active' => $isImport || $featureActive('import')],
         ]],
         ['label' => 'Cobros', 'items' => [
             ['key' => 'credit', 'label' => 'Crédito', 'url' => $featureUrl('credit'), 'active' => $featureActive('credit')],
@@ -96,12 +97,18 @@
             ['key' => 'cash', 'label' => 'Control de caja', 'url' => route('seller.shops.cash.index', $contextShop), 'active' => request()->routeIs('seller.shops.cash.*')],
             ['key' => 'metrics', 'label' => 'Métricas y QR', 'url' => route('seller.shops.metrics.index', $contextShop), 'active' => $isMetrics],
             ['key' => 'public_catalog', 'label' => 'Compartir catálogo', 'url' => route('shops.show', $contextShop), 'active' => false, 'external' => true],
-            ['key' => 'products', 'label' => 'Productos', 'url' => route('seller.shops.products.index', $contextShop), 'active' => $isProducts],
+            ['key' => 'products', 'label' => 'Productos', 'url' => route('seller.shops.products.index', $contextShop), 'active' => $isProducts && ! $isImport && ! $isBulkImport],
             ['key' => 'products', 'label' => 'Categorías', 'url' => route('seller.shops.categories.index', $contextShop), 'active' => $isCategories],
-            ['key' => 'products', 'label' => 'Subida masiva', 'url' => route('seller.shops.products.bulk.create', $contextShop), 'active' => $isBulkImport],
+            ['key' => 'import', 'label' => 'Subida masiva', 'url' => route('seller.shops.products.bulk.create', $contextShop), 'active' => $isBulkImport, 'manage_only' => true],
             ['key' => 'inventory', 'label' => 'Lotes y costos FIFO', 'url' => route('seller.shops.inventory.lots', $contextShop), 'active' => $isLots],
         ]],
     ] : [];
+    $menuSections = array_values(array_filter(array_map(function ($section) use ($canSeeMenu, $canManageContext) {
+        $section['items'] = array_values(array_filter($section['items'], fn ($item) =>
+            (in_array($item['key'], ['summary', 'downloads'], true) || $canSeeMenu($item['key']))
+            && (! ($item['manage_only'] ?? false) || $canManageContext)));
+        return $section;
+    }, $menuSections), fn ($section) => count($section['items']) > 0));
 @endphp
 
 <aside class="panel-sidebar fixed inset-y-0 left-0 z-40 hidden w-80 flex-col border-r border-slate-800 text-white md:flex" aria-label="Navegación del panel">
@@ -127,7 +134,7 @@
                 <p class="{{ $loop->first ? 'px-3 pb-2' : 'mt-5 px-3 pb-2 pt-2' }} text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">{{ $section['label'] }}</p>
                 @foreach ($section['items'] as $item)
                     @if (in_array($item['key'], ['summary', 'downloads'], true) || $canSeeMenu($item['key']))
-                        <a wire:navigate.hover href="{{ $item['url'] }}" @if ($item['external'] ?? false) target="_blank" @endif @if ($item['aria'] ?? false) aria-label="{{ $item['aria'] }}" @endif class="{{ $linkClass }} {{ ($item['active'] ?? false) ? $activeClass : $idleClass }}" @if ($item['label'] === 'Contenedores') title="Agrupa compras y recepciones grandes" @endif>
+                        <a wire:navigate.hover href="{{ $item['url'] }}" @if ($item['active'] ?? false) aria-current="page" @endif @if ($item['external'] ?? false) target="_blank" @endif @if ($item['aria'] ?? false) aria-label="{{ $item['aria'] }}" @endif class="{{ $linkClass }} {{ ($item['active'] ?? false) ? $activeClass : $idleClass }}" @if ($item['label'] === 'Contenedores') title="Agrupa compras y recepciones grandes" @endif>
                             <svg class="h-4 w-4 shrink-0 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $item['path'] ?? $iconPath }}"/></svg>
                             <span class="truncate">{{ $item['label'] }}</span>
                             @if ($item['label'] === 'Productos')<span class="ml-auto rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold text-stone-200">{{ $productCount }}</span>@endif
@@ -287,7 +294,7 @@
     </nav>
 
     <div class="border-t border-white/10 p-3">
-        @if ($contextShop)
+        @if ($contextShop && $canSeeMenu('shop_settings'))
             <a wire:navigate.hover href="{{ route('seller.shops.edit', $contextShop) }}" class="mb-3 flex items-center gap-3 rounded-2xl bg-white/10 p-3 text-white transition hover:bg-white/15">
                 <span class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-lg text-white shadow-sm">&#9733;</span>
                 <span class="min-w-0 flex-1">
@@ -301,7 +308,7 @@
                 <span class="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-sm font-black text-white">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
             <span class="min-w-0 flex-1">
                 <span class="block truncate text-sm font-bold text-white">{{ $user->name }}</span>
-                <span class="block text-xs text-slate-400">{{ $isAdmin ? 'Administrador' : 'Vendedor' }}</span>
+                <span class="block text-xs text-slate-400">{{ $isAdmin ? 'Administrador' : ($contextShop && $user->ownsShop($contextShop) ? 'Propietario' : ($canManageContext ? 'Administrador de tienda' : 'Vendedor')) }}</span>
             </span>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf

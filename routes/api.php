@@ -1,10 +1,9 @@
 <?php
 
-use App\Http\Controllers\Api\V1\AdminShopController;
-use App\Http\Controllers\Api\V1\AttributeController;
 use App\Http\Controllers\Api\V1\AccountantAccessController;
+use App\Http\Controllers\Api\V1\AdminShopController;
 use App\Http\Controllers\Api\V1\AndroidUpdateController;
-use App\Http\Controllers\SellerAuthorizationController;
+use App\Http\Controllers\Api\V1\AttributeController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CashRegisterController;
 use App\Http\Controllers\Api\V1\CatalogController;
@@ -15,14 +14,16 @@ use App\Http\Controllers\Api\V1\FinanceReportController;
 use App\Http\Controllers\Api\V1\InventoryImportController;
 use App\Http\Controllers\Api\V1\MobileOperationController;
 use App\Http\Controllers\Api\V1\OrderController;
-use App\Http\Controllers\Api\V1\PosSaleController;
 use App\Http\Controllers\Api\V1\PartnerController;
+use App\Http\Controllers\Api\V1\PosSaleController;
 use App\Http\Controllers\Api\V1\PricingController;
 use App\Http\Controllers\Api\V1\PurchaseController;
 use App\Http\Controllers\Api\V1\QuoteController;
 use App\Http\Controllers\Api\V1\ShopController;
 use App\Http\Controllers\Api\V1\ShopSettingsController;
+use App\Http\Controllers\SellerAuthorizationController;
 use App\Http\Controllers\SellerFeatureController;
+use App\Http\Controllers\SellerSummaryController;
 use App\Http\Middleware\EnsureApiAccountIsActive;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +35,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/me', [AuthController::class, 'me']);
         Route::put('/me', [AuthController::class, 'update']);
         Route::get('/shops', [ShopController::class, 'index']);
+        Route::get('/shops/{shop}/seller-summary', [SellerSummaryController::class, 'api'])->middleware('menu:sales');
         Route::get('/admin/shops', [AdminShopController::class, 'index']);
         Route::put('/admin/shops/{shop}', [AdminShopController::class, 'update']);
         Route::post('/shops/{shop}/sellers', [ShopController::class, 'storeSeller']);
@@ -75,16 +77,16 @@ Route::prefix('v1')->group(function (): void {
             ->middleware('throttle:catalog-media')
             ->middleware('abilities:catalog:read')
             ->where('barcode', '[0-9 -]{8,32}');
-        Route::post('/shops/{shop}/pos-sales', [PosSaleController::class, 'store'])->middleware('abilities:pos:write');
-        Route::post('/shops/{shop}/quotes', [QuoteController::class, 'store'])->middleware('abilities:pos:write');
-        Route::post('/shops/{shop}/quotes/{quote}/convert', [QuoteController::class, 'convert'])->middleware('abilities:pos:write');
+        Route::post('/shops/{shop}/pos-sales', [PosSaleController::class, 'store'])->middleware(['abilities:pos:write', 'menu:sales']);
+        Route::post('/shops/{shop}/quotes', [QuoteController::class, 'store'])->middleware(['abilities:pos:write', 'menu:quotes']);
+        Route::post('/shops/{shop}/quotes/{quote}/convert', [QuoteController::class, 'convert'])->middleware(['abilities:pos:write', 'menu:quotes']);
         Route::post('/shops/{shop}/orders/{order}/confirm', [OrderController::class, 'confirm'])->middleware(['abilities:pos:write', 'menu:orders']);
         Route::post('/shops/{shop}/mobile-operations', [MobileOperationController::class, 'store'])->middleware(['abilities:pos:write', 'throttle:60,1']);
-        Route::get('/shops/{shop}/customers', [CustomerController::class, 'index'])->middleware('abilities:customers:read');
-        Route::post('/shops/{shop}/customers', [CustomerController::class, 'store'])->middleware('abilities:customers:write');
-        Route::get('/shops/{shop}/customers/{customer}', [CustomerController::class, 'show'])->middleware('abilities:customers:read');
-        Route::post('/shops/{shop}/customers/{customer}/payments', [CustomerController::class, 'payment'])->middleware('abilities:customers:write');
-        Route::post('/shops/{shop}/customers/{customer}/adjustments', [CustomerController::class, 'adjustment'])->middleware('abilities:customers:write');
+        Route::get('/shops/{shop}/customers', [CustomerController::class, 'index'])->middleware(['abilities:customers:read', 'menu:customers']);
+        Route::post('/shops/{shop}/customers', [CustomerController::class, 'store'])->middleware(['abilities:customers:write', 'menu:customers']);
+        Route::get('/shops/{shop}/customers/{customer}', [CustomerController::class, 'show'])->middleware(['abilities:customers:read', 'menu:customers']);
+        Route::post('/shops/{shop}/customers/{customer}/payments', [CustomerController::class, 'payment'])->middleware(['abilities:customers:write', 'menu:customers']);
+        Route::post('/shops/{shop}/customers/{customer}/adjustments', [CustomerController::class, 'adjustment'])->middleware(['abilities:customers:write', 'menu:customers']);
 
         // Financial & Cash Control API
         Route::get('/shops/{shop}/finance/summary', [FinanceReportController::class, 'summary']);

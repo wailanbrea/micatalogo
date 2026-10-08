@@ -189,25 +189,35 @@ test('seller without shop owner or membership permissions cannot view business f
         ->assertOk();
 });
 
-test('shop on free plan cannot access expense module while pro plan can', function () {
+test('shops on free, basic and pro plans can access the expense module', function () {
     $freeOwner = User::factory()->create(['plan' => UserPlan::Free]);
     $freeShop = Shop::factory()->create(['user_id' => $freeOwner->id]);
+
+    $basicOwner = User::factory()->create(['plan' => UserPlan::Premium]);
+    $basicShop = Shop::factory()->create(['user_id' => $basicOwner->id]);
 
     $proOwner = User::factory()->create(['plan' => UserPlan::Pro]);
     $proShop = Shop::factory()->create(['user_id' => $proOwner->id]);
 
-    // Free plan accessing expenses web index is redirected with validation error on plan
+    // Free plan accessing expenses web index is allowed.
     $this->actingAs($freeOwner)
         ->get(route('seller.shops.expenses.index', $freeShop))
-        ->assertRedirect()
-        ->assertSessionHasErrors('plan');
+        ->assertOk();
 
-    // Free plan accessing expenses api index returns 422 with validation error
+    // Free plan accessing expenses API index is also allowed.
     $freeToken = $freeOwner->createToken('test', ['*'])->plainTextToken;
     $this->withToken($freeToken)
         ->getJson("/api/v1/shops/{$freeShop->public_id}/expenses")
-        ->assertUnprocessable()
-        ->assertJsonValidationErrors(['plan']);
+        ->assertOk();
+
+    // Basic plan can access expenses through both web and API.
+    $this->actingAs($basicOwner)
+        ->get(route('seller.shops.expenses.index', $basicShop))
+        ->assertOk();
+    $basicToken = $basicOwner->createToken('test', ['*'])->plainTextToken;
+    $this->withToken($basicToken)
+        ->getJson("/api/v1/shops/{$basicShop->public_id}/expenses")
+        ->assertOk();
 
     // Pro plan accessing expenses web index is allowed
     $this->actingAs($proOwner)

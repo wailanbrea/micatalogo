@@ -7,9 +7,9 @@ use App\Models\Shop;
 use App\Models\ShopSeller;
 use App\Models\User;
 use App\Notifications\SellerInvitationNotification;
-use App\Services\PlanLimitsService;
 use App\Services\BusinessCapabilityService;
 use App\Services\BusinessPresentationService;
+use App\Services\PlanLimitsService;
 use App\Services\SellerMenuService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -89,6 +89,8 @@ class ShopController extends Controller
             'email' => ['required', 'email:rfc', 'max:255'],
             'commission_type' => ['required', Rule::in(['percentage', 'fixed'])],
             'commission_value' => ['required', 'decimal:0,2', 'gt:0', 'max:99999999.99'],
+            'menu_permissions' => ['sometimes', 'array'],
+            'menu_permissions.*' => [Rule::in($menus->assignableKeys())],
         ]);
         $email = Str::lower(trim($validated['email']));
         $seller = User::query()->where('email', $email)->first();
@@ -115,8 +117,10 @@ class ShopController extends Controller
             'commission_value' => $validated['commission_value'],
             'is_active' => true,
         ])->save();
-        if ($isNewAssignment) {
-            $assignment->update(['menu_permissions' => $menus->assignableKeys()]);
+        if (array_key_exists('menu_permissions', $validated) || $isNewAssignment) {
+            $assignment->update(['menu_permissions' => $menus->normalize(
+                $validated['menu_permissions'] ?? $menus->defaultPermissions()
+            )]);
         }
 
         if (! $seller->hasVerifiedEmail()) {

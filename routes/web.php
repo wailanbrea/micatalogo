@@ -33,6 +33,7 @@ use App\Http\Controllers\SellerPosController;
 use App\Http\Controllers\SellerProductController;
 use App\Http\Controllers\SellerShopController;
 use App\Http\Controllers\SellerShopMetricController;
+use App\Http\Controllers\SellerSummaryController;
 use App\Http\Controllers\ShopPaymentAccountController;
 use App\Http\Controllers\ShopCategoryController;
 use App\Http\Controllers\ShopMemberController;
@@ -78,7 +79,7 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
         ->middleware('can:update,shop')
         ->name('shops.edit');
     Route::get('/tiendas/{shop}/mi-tienda', [SellerShopController::class, 'storefront'])
-        ->middleware('can:sell,shop')
+        ->middleware(['can:sell,shop', 'menu:storefront'])
         ->name('shops.storefront');
     Route::put('/tiendas/{shop}', [SellerShopController::class, 'update'])
         ->middleware('can:update,shop')
@@ -86,6 +87,8 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
     Route::delete('/tiendas/{shop}', [SellerShopController::class, 'destroy'])
         ->middleware('can:delete,shop')
         ->name('shops.destroy');
+    Route::get('/tiendas/{shop}/resumen', [SellerSummaryController::class, 'index'])
+        ->middleware('can:sell,shop')->name('shops.summary');
     Route::scopeBindings()->middleware(['can:sell,shop', 'menu:sales'])->group(function () {
         Route::get('/tiendas/{shop}/negocio', [SellerBusinessController::class, 'index'])
             ->middleware('can:viewFinance,shop')
@@ -96,7 +99,6 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
         Route::post('/tiendas/{shop}/pedidos/{order}/confirmar', [SellerBusinessController::class, 'confirm'])->name('shops.orders.confirm');
         Route::get('/tiendas/{shop}/pos', [SellerPosController::class, 'index'])->name('shops.pos');
         Route::post('/tiendas/{shop}/pos', [SellerPosController::class, 'store'])->name('shops.pos.store');
-        Route::get('/tiendas/{shop}/inventario', [SellerInventoryController::class, 'index'])->name('shops.inventory.index');
         Route::post('/tiendas/{shop}/inventario/cobro', [SellerInventoryController::class, 'checkout'])->name('shops.inventory.checkout');
         Route::post('/tiendas/{shop}/productos/{product}/inventario/venta', [SellerInventoryController::class, 'recordSale'])->name('shops.inventory.sale');
     });
@@ -113,6 +115,7 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
         Route::post('/tiendas/{shop}/caja/{session}/movimientos', [SellerCashRegisterController::class, 'movement'])->name('shops.cash.movement');
     });
     Route::scopeBindings()->middleware(['can:sell,shop', 'menu:inventory'])->group(function () {
+        Route::get('/tiendas/{shop}/inventario', [SellerInventoryController::class, 'index'])->name('shops.inventory.index');
         Route::get('/tiendas/{shop}/inventario/movimientos', [SellerInventoryController::class, 'movementsIndex'])->name('shops.inventory.movements.index');
         Route::get('/tiendas/{shop}/inventario/lotes', [SellerBusinessController::class, 'lots'])->name('shops.inventory.lots');
     });
@@ -141,10 +144,10 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
         Route::get('/tiendas/{shop}/qr/imprimir', [SellerShopMetricController::class, 'print'])->name('shops.qr.print');
     });
     Route::scopeBindings()->middleware('can:sell,shop')->group(function () {
-        Route::get('/tiendas/{shop}/cotizaciones/{quote}', [SellerCommerceController::class, 'showQuote'])->name('shops.quotes.show');
-        Route::get('/tiendas/{shop}/cotizaciones/{quote}/pdf', [SellerCommerceController::class, 'quotePdf'])->name('shops.quotes.pdf');
+        Route::get('/tiendas/{shop}/cotizaciones/{quote}', [SellerCommerceController::class, 'showQuote'])->middleware('menu:quotes')->name('shops.quotes.show');
+        Route::get('/tiendas/{shop}/cotizaciones/{quote}/pdf', [SellerCommerceController::class, 'quotePdf'])->middleware('menu:quotes')->name('shops.quotes.pdf');
         Route::get('/tiendas/{shop}/modulo/{feature}', [SellerFeatureController::class, 'show'])->name('shops.feature');
-        Route::post('/tiendas/{shop}/cierre-diario', [SellerDailyCloseController::class, 'store'])->name('shops.daily-close.store');
+        Route::post('/tiendas/{shop}/cierre-diario', [SellerDailyCloseController::class, 'store'])->middleware('menu:day_close')->name('shops.daily-close.store');
         Route::post('/tiendas/{shop}/autorizaciones/{authorizationRequest}/aprobar', [SellerAuthorizationController::class, 'approve'])
             ->middleware('can:update,shop')->name('shops.authorizations.approve');
         Route::post('/tiendas/{shop}/autorizaciones/{authorizationRequest}/rechazar', [SellerAuthorizationController::class, 'reject'])

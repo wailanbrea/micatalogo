@@ -43,7 +43,8 @@
         request()->routeIs('seller.shops.pricing.*') => 'Precios automáticos',
         request()->routeIs('seller.shops.storefront') => 'Mi tienda',
         request()->routeIs('seller.shops.edit') => 'Configuración',
-        request()->routeIs('seller.shops.business') => 'Ganancias y resumen',
+        request()->routeIs('seller.shops.summary') => 'Resumen',
+        request()->routeIs('seller.shops.business') => 'Ganancias',
         default => null,
     };
 @endphp

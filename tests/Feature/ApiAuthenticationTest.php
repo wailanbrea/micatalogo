@@ -182,7 +182,7 @@ test('a verified active seller can connect BSPOS and retrieve only their shops',
                 'can_add_users' => false,
                 'can_add_sellers' => true,
                 'additional_seat_price_usd' => 5,
-                'features' => ['catalog', 'whatsapp_orders', 'basic_inventory', 'bulk_import'],
+                'features' => ['catalog', 'whatsapp_orders', 'basic_inventory', 'bulk_import', 'expenses'],
             ],
             'menu_permissions' => app(SellerMenuService::class)->visibleForUser($shop, $user),
             'can_manage_sellers' => true,
@@ -208,12 +208,12 @@ test('a shop owner can configure the menus returned to an assigned seller', func
             'menu_permissions' => ['sales', 'customers'],
         ])
         ->assertOk()
-        ->assertExactJson(['menu_permissions' => ['sales', 'products', 'printers', 'customers']]);
+        ->assertExactJson(['menu_permissions' => ['sales', 'customers']]);
 
     $this->actingAs($seller, 'sanctum')
         ->getJson('/api/v1/shops')
         ->assertOk()
-        ->assertJsonPath('0.menu_permissions', ['sales', 'products', 'printers', 'customers'])
+        ->assertJsonPath('0.menu_permissions', ['sales', 'customers'])
         ->assertJsonPath('0.can_manage_sellers', false);
 
     $sellerToken = $seller->createToken('test', ['catalog:read'])->plainTextToken;
@@ -285,7 +285,7 @@ test('a shop owner can create a seller from the Android API', function () {
         ])
         ->assertCreated()
         ->assertJsonPath('seller.email', 'new-seller@example.com')
-        ->assertJsonPath('seller.menu_permissions', app(SellerMenuService::class)->assignableKeys());
+        ->assertJsonPath('seller.menu_permissions', ['sales', 'products', 'printers']);
 
     $seller = User::query()->where('email', 'new-seller@example.com')->firstOrFail();
     $this->assertDatabaseHas('shop_sellers', [

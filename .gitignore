@@ -30,3 +30,6 @@ Thumbs.db
 /public/downloads/*.apk
 /pantalla principal diseno
 landing-*.png
+/seller-dashboard-*.png
+/seller-form.png
+/seller-navigation-fixed-*.png

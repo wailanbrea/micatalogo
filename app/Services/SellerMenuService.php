@@ -44,10 +44,16 @@ class SellerMenuService
     public function normalize(?array $permissions): array
     {
         if ($permissions === null) {
-            return array_values(array_diff($this->assignableKeys(), ['finance']));
+            return [];
         }
 
         return array_values(array_intersect($this->assignableKeys(), $permissions));
+    }
+
+    /** @return list<string> */
+    public function defaultPermissions(): array
+    {
+        return ['sales', 'products', 'printers'];
     }
 
     public function canManage(Shop $shop, User $user): bool
@@ -112,12 +118,11 @@ class SellerMenuService
     public function forAssignment(?ShopSeller $assignment): array
     {
         if (! $assignment) {
-            return ['sales', 'products', 'printers'];
+            return [];
         }
 
-        return array_values(array_unique(array_merge(
-            ['sales', 'products', 'printers'],
-            $this->normalize($assignment->menu_permissions),
-        )));
+        return $assignment->menu_permissions === null
+            ? $this->defaultPermissions()
+            : $this->normalize($assignment->menu_permissions);
     }
 }

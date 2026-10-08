@@ -128,13 +128,13 @@
                         </div>
                     </div>
 
-                    <div class="mt-5 flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Filtrar por tipo de producto">
-                        <button type="button" @click="catalogTab = 'all'" :class="catalogTab === 'all' ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700'" class="shrink-0 rounded-full px-4 py-2 text-xs font-black transition">Todos</button>
+                    <div x-show="hasDecants" x-cloak class="mt-5 flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Filtrar por tipo de producto">
+                        <button type="button" @click="catalogTab = 'all'" :class="catalogTab === 'all' ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700'" class="shrink-0 rounded-full px-4 py-2 text-xs font-black transition">Todos los tipos</button>
                         <button type="button" @click="catalogTab = 'products'" :class="catalogTab === 'products' ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700'" class="shrink-0 rounded-full px-4 py-2 text-xs font-black transition">Productos</button>
                         <button x-show="hasDecants" x-cloak type="button" @click="catalogTab = 'decants'" :class="catalogTab === 'decants' ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700'" class="shrink-0 rounded-full px-4 py-2 text-xs font-black transition">Decants</button>
                     </div>
 
-                    <div class="mt-3 flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Filtrar por categoría">
+                    <div class="mt-3 flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Filtrar por categoría">
                         <button type="button" @click="selectedCategory = 'all'" :class="selectedCategory === 'all' ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700'" class="shrink-0 rounded-full px-5 py-2.5 text-sm font-bold transition">Todos</button>
                         <template x-for="category in categories" :key="category">
                             <button type="button" @click="selectedCategory = category" :class="selectedCategory === category ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700'" class="shrink-0 rounded-full px-5 py-2.5 text-sm font-bold transition" x-text="category"></button>

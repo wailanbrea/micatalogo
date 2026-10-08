@@ -13,6 +13,10 @@ class EnsureSellerMenuAccess
     {
         $shop = $request->route('shop');
         $user = $request->user();
+        if ($request->is('api/*') && $shop && $user) {
+            // Keep inaccessible tenants hidden, including deactivated sellers.
+            abort_unless($user->isAdmin() || $user->canSellAtShop($shop) || $user->isActiveShopAccountant($shop), 404);
+        }
         $visibleMenus = $shop && $user
             ? app(SellerMenuService::class)->visibleForUser($shop, $user)
             : [];

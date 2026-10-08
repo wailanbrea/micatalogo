@@ -41,7 +41,7 @@ class SellerManagementController extends Controller
 
     public function store(Request $request, Shop $shop, SellerMenuService $menus, PlanLimitsService $limits): RedirectResponse
     {
-        $validated = $this->validateSeller($request);
+        $validated = $this->validateSeller($request, $menus);
         $email = Str::lower(trim($validated['email']));
         $seller = User::query()->where('email', $email)->first();
         $wasInvited = ! $seller;
@@ -70,8 +70,11 @@ class SellerManagementController extends Controller
             'commission_value' => $validated['commission_value'],
             'is_active' => true,
         ])->save();
-        if ($isNewAssignment) {
-            $assignment->update(['menu_permissions' => $menus->assignableKeys()]);
+        if ($request->boolean('menu_permissions_configured') || $isNewAssignment) {
+            $permissions = $request->boolean('menu_permissions_configured')
+                ? ($validated['menu_permissions'] ?? [])
+                : $menus->defaultPermissions();
+            $assignment->update(['menu_permissions' => $menus->normalize($permissions)]);
         }
 
         if (! $seller->hasVerifiedEmail()) {
@@ -113,11 +116,14 @@ class SellerManagementController extends Controller
     }
 
     /** @return array<string, mixed> */
-    private function validateSeller(Request $request): array
+    private function validateSeller(Request $request, SellerMenuService $menus): array
     {
         return $request->validate([
             'email' => ['required', 'email:rfc', 'max:255'],
             ...$this->commissionRules(),
+            'menu_permissions_configured' => ['sometimes', 'boolean'],
+            'menu_permissions' => ['nullable', 'array'],
+            'menu_permissions.*' => [Rule::in($menus->assignableKeys())],
         ]);
     }
 

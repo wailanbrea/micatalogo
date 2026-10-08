@@ -24,9 +24,16 @@ use Illuminate\View\View;
 
 class SellerShopController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
         $user = $request->user();
+        if ($user->isAssignedSellerOnly() && ! $user->hasActiveShopMembership()) {
+            $assignedShops = Shop::whereHas('sellers', fn ($sellers) => $sellers
+                ->where('user_id', $user->id)->where('is_active', true))->limit(2)->get();
+            if ($assignedShops->count() === 1) {
+                return redirect()->route('seller.shops.summary', $assignedShops->first());
+            }
+        }
         $viewAll = $user->isAdmin() && $request->query('view') === 'all';
 
         $query = $viewAll
