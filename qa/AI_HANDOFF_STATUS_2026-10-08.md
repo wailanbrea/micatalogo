@@ -39,8 +39,8 @@ este corte. No se escribieron datos de producción.
 - Ruta real activa: `C:\Users\waila\AndroidStudioProjects\micatalogowebApp`.
 - La skill histórica menciona `BSPOS-MiCatalogo`; en esta máquina el checkout vigente
   es `micatalogowebApp`. No crear ni cambiar de proyecto sin comprobar Git.
-- Rama: `main`, **3 commits adelantados de `origin/main`**.
-- Último commit local: `de03913 test: cover replay after ack before local sent state`.
+- Rama: `main`, **4 commits adelantados de `origin/main`**.
+- Último commit local: `e50e5ff test: cover finance unavailable states`.
 - Cambios funcionales clave: `7ea2916` updater pendiente persistente, `c4aea97`
   bloqueo del updater de producción para builds debug, `7c32766` prueba de PDF,
   `5d57421` cierre de sesión con revocación remota y `de03913` regresión de replay
@@ -151,6 +151,11 @@ Resultados actuales:
   de invocarlo con el runner instrumentado falló solo por clasificación de test
   (`ClassNotFoundException`); se corrigió el procedimiento y no se modificó código ni
   datos de negocio.
+- `FinanceContentTest` terminó **2/2 PASS** en `emulator-5554` después de limpiar y
+  reconstruir la variante debug: Resumen y Flujo de efectivo muestran el estado de
+  datos no disponibles cuando el DTO falta y no fabrican `RD$ 0.00`. Se ejecutó con
+  `:app:connectedDebugAndroidTest` y el filtro de instrumentation; no se tocó el
+  Samsung ni se escribieron datos de negocio.
 - El Samsung no fue seleccionado por ninguna de estas pruebas.
 
 Comandos de prueba seguros:
@@ -324,9 +329,10 @@ publicado en VPS o en la APK pública.
   error y los reportes sin red todavía requieren ejecución en dispositivo.
 - Se inspeccionó `FinanceScreen`/`FinanceViewModel`: el error se publica por
   `Snackbar`/`UiErrorBus`; la pantalla conserva un `summary` anterior si una recarga
-  falla después de haber cargado datos. No existe todavía un test Compose directo que
-  compruebe el estado visual de error/offline, por lo que ese comportamiento queda
-  **NOT_RUN**, no PASS.
+  falla después de haber cargado datos. `FinanceContentTest` cubre ahora directamente
+  los estados nulos de Resumen y Flujo de efectivo (**2/2 PASS**), pero no cubre aún
+  la recarga fallida con datos previos, el estado offline global ni reportes sin red;
+  esas partes siguen **NOT_RUN**, no PASS.
 - Se ejecutó `npm run build` con Vite sin errores; el inventario actual conserva
   **216/216 rutas**, sin duplicados de método+URI, y el endpoint `api/v1/auth/logout`
   quedó confirmado con autenticación Sanctum. La revisión de `storage/{path}` verificó
@@ -385,9 +391,10 @@ por inferencia a partir de tests parciales:
    Bluetooth/impresión 58/80 mm, R2/colas y permisos modernos.
 9. Reducir la deuda de formato global (`vendor/bin/pint --test` aún reporta 37
    archivos), sin reformatear masivamente cambios ajenos sin revisar el diff.
-10. Añadir pruebas Compose para Finanzas y estados globales de error/offline, incluida
-    la decisión explícita sobre si se debe mostrar el último resumen o un estado de
-    datos no disponibles cuando falla una recarga.
+10. Ampliar las pruebas Compose para Finanzas y estados globales de error/offline,
+    incluida la decisión explícita sobre si se debe mostrar el último resumen o un
+    estado de datos no disponibles cuando falla una recarga; ya existe cobertura
+    directa 2/2 PASS para DTOs nulos.
 11. Solo después de lo anterior emitir `READY`; mientras exista cualquiera de estos
     bloqueos el estado correcto sigue siendo `NOT_READY`.
 
@@ -417,9 +424,9 @@ por inferencia a partir de tests parciales:
   posterior. El checkout está adelantado frente a `origin/master`; revisar la lista
   completa con `git log` y el `HEAD` actual antes de elegir qué publicar.
 - Android: `7ea2916` (updater pendiente persistente), `c4aea97` (debug fuera del
-  updater de producción), `7c32766` (PDF), `5d57421` (logout con revocación) y
-  `de03913` (replay ACK/interrupción). El checkout está 3 commits adelantado frente
-  a `origin/main`.
+  updater de producción), `7c32766` (PDF), `5d57421` (logout con revocación),
+  `de03913` (replay ACK/interrupción) y `e50e5ff` (estados financieros sin datos).
+  El checkout está 4 commits adelantado frente a `origin/main`.
 - La documentación de la reejecución live anterior permanece en el historial; no se
   hizo push de estos commits.
 - Ninguna clave, contraseña, token real ni archivo privado forma parte de este traspaso.
