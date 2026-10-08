@@ -28,9 +28,9 @@ este corte. No se escribieron datos de producción.
   `git rev-list --left-right --count origin/master...HEAD` porque la documentación
   de este archivo también modifica el conteo.
 - Última corrección funcional local: `734b169 fix: revoke API token on mobile logout`.
-- Último commit local: `536f7ef docs: finalize QA handoff for next AI`.
 - Los commits posteriores a `734b169` son documentación y evidencia QA; no deben
-  confundirse con un despliegue publicado.
+  confundirse con un despliegue publicado. El SHA exacto de `HEAD` debe obtenerse
+  con `git log -1 --oneline` porque este documento también evoluciona.
 - Cambios rastreados: limpios; quedan únicamente los no rastreados intencionales.
 - No tocar ni borrar los no rastreados existentes: `.github/`, `.playwright-cli/`, `output/`.
 
@@ -413,10 +413,9 @@ por inferencia a partir de tests parciales:
 
 ## Commits locales de este corte
 
-- Backend: `734b169` (`fix: revoke API token on mobile logout`) y la documentación
-  posterior hasta `536f7ef` (`docs: finalize QA handoff for next AI`). El checkout
-  está adelantado frente a `origin/master`; revisar la lista completa con `git log`
-  antes de elegir qué publicar.
+- Backend: `734b169` (`fix: revoke API token on mobile logout`) y documentación QA
+  posterior. El checkout está adelantado frente a `origin/master`; revisar la lista
+  completa con `git log` y el `HEAD` actual antes de elegir qué publicar.
 - Android: `7ea2916` (updater pendiente persistente), `c4aea97` (debug fuera del
   updater de producción), `7c32766` (PDF), `5d57421` (logout con revocación) y
   `de03913` (replay ACK/interrupción). El checkout está 3 commits adelantado frente
