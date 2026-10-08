@@ -84,6 +84,7 @@ Comandos reproducibles del corte: SQLite con `vendor/bin/pest --configuration ph
 | Integridad de datos VPS | PASS de lectura | snapshot 14 usuarios, 12 tiendas, 756 productos, 2 pedidos, 22 facturas |
 | Android físico con release instalada | NOT_RUN para 1.0.76 | publicación validada, pero la instalación release en el Samsung sigue pendiente; `qa/run_android_emulator_tests.ps1` rechaza seriales físicos |
 | Guard de release Android en destino físico | PASS diagnóstico | `qa/verify_android_release_target.ps1` comparó el Samsung `SM-S948U1` sin mutarlo y devolvió `blocked_signature_mismatch` para 1.0.27/debug frente a 1.0.76/release; el mismo guard rechaza `emulator-5554` para evitar instalar una release en el destino de pruebas |
+| Protección updater debug / compilación release | PASS local no publicado | Android `c4aea97`: `testDebugUnitTest` 95/95 y `compileReleaseKotlin` exitoso; debug ya no consulta el manifiesto de producción. La APK 1.0.76 publicada no contiene todavía este cambio |
 | Hardware BT/CameraX/R2 real | BLOCKED_ENV | falta ejecución controlada con hardware/servicios QA |
 
 ## Casos aún no aprobados
