@@ -177,6 +177,21 @@ Evidencia QA más reciente:
 No se ejecutaron seeds, truncates, `migrate:fresh`, `migrate:refresh`, `migrate:reset`
 ni purgas sobre producción. No hay migraciones pendientes conocidas.
 
+### Revalidación del baseline después de este traspaso
+
+- SQLite: `vendor\\bin\\pest --configuration phpunit.xml` terminó **495 tests / 5.073
+  assertions PASS** en 50.11 s.
+- MariaDB QA: `APP_ENV=testing`, `QA_ALLOW_MYSQL=1`, base
+  `micatalogo_qa_20261008` y `qa\\phpunit.mysql.xml` terminaron **495 tests / 5.073
+  assertions PASS** en 48.57 s.
+- `release-readiness.php` en esa base devolvió usuarios, tiendas, productos, pedidos e
+  invoices en `0`; no creó datos ni ejecutó migraciones.
+- `migrate:status --env=testing` devolvió todas las migraciones visibles como
+  `[1] Ran` y ninguna como `Pending`.
+- El benchmark de catálogo de esta corrida quedó en 17 consultas, p50/p95 de
+  271.92/283.56 ms en MariaDB QA y 148 MB de pico de memoria. Es medición local y no
+  sustituye latencia de red o carga de producción.
+
 ## Cambios y defectos cubiertos
 
 La cobertura y correcciones registradas incluyen, entre otros:
