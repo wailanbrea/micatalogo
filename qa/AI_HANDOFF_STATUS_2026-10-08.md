@@ -288,6 +288,9 @@ publicado en VPS o en la APK pública.
   antes de marcar `SENT`: **16/16 PASS** en `emulator-5554`; la venta queda en `RETRY` y
   el siguiente sync la confirma con la misma UUID. Es una simulación determinista, no
   sustituye matar el proceso físico ni probar una red intermitente en una release.
+- `FinancialContractTest` terminó **5/5 PASS**; los campos financieros obligatorios
+  ausentes fallan con error de contrato en vez de producir saldos cero falsos. La UI de
+  error y los reportes sin red todavía requieren ejecución en dispositivo.
 - Se ejecutó `npm run build` con Vite sin errores; el inventario actual conserva
   **216/216 rutas**, sin duplicados de método+URI, y el endpoint `api/v1/auth/logout`
   quedó confirmado con autenticación Sanctum. La revisión de `storage/{path}` verificó

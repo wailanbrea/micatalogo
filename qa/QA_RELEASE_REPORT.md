@@ -15,7 +15,7 @@ bloqueos siguientes.
 
 ## Evidencia
 
-- Trazabilidad individual: 196 casos listados; 110 `PASS`, 4 `FIXED_PASS`, 5 `PASS parcial`, 67 `NOT_RUN`, 7 `BLOCKED_ENV` y 3 `REQUIERE_DECISION`. Los estados son conservadores y están detallados en `qa/TRACEABILITY.md`.
+- Trazabilidad individual: 196 casos listados; 110 `PASS`, 4 `FIXED_PASS`, 6 `PASS parcial`, 66 `NOT_RUN`, 7 `BLOCKED_ENV` y 3 `REQUIERE_DECISION`. Los estados son conservadores y están detallados en `qa/TRACEABILITY.md`.
 - Inventario de rutas: `qa/ROUTE_ACCESS_MATRIX.md` contiene las 216 rutas individuales del checkout, con verbo, URI, nombre, clasificación estática y tipo de operación; permanece pendiente la ejecución positiva exhaustiva por actor/recurso.
 - CI: workflows locales añadidos para Web y Android; se validó su estructura y se ejecutaron localmente el build Vite y las tareas Android equivalentes, pero no se marcó una corrida GitHub Actions porque no hay ejecución remota disponible en este corte.
 - F-045 `NOT_RUN`: Pint completo del checkout reportó 37 archivos con deuda de formato; no se reformatearon cambios ajenos masivamente. Queda como riesgo P2 de calidad CI, separado de los gates funcionales P1.
