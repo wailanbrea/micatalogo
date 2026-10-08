@@ -1,13 +1,13 @@
 <?php
 
 use App\Enums\UserPlan;
-use App\Models\Shop;
-use App\Models\ShopSeller;
 use App\Models\Customer;
 use App\Models\Invoice;
-use App\Services\PaymentService;
+use App\Models\Shop;
+use App\Models\ShopSeller;
 use App\Models\User;
 use App\Services\CashRegisterService;
+use App\Services\PaymentService;
 use App\Services\SellerMenuService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -55,6 +55,30 @@ test('partial expense ACK refreshes authoritative balances and replay never pays
         ->assertJsonPath('client_operation_uuid', $payload['client_operation_uuid']);
     $this->withToken($token)->postJson("{$base}/expenses/{$id}/payments", $payload)->assertCreated()->assertExactJson($first->json());
     $this->withToken($token)->postJson("{$base}/expenses/{$id}/payments", array_replace($payload, ['amount' => '2000.00']))->assertConflict();
+});
+
+test('expense categories API seeds defaults once and remains tenant-scoped', function () {
+    $owner = User::factory()->create(['plan' => UserPlan::Pro]);
+    $otherOwner = User::factory()->create(['plan' => UserPlan::Pro]);
+    $shop = Shop::factory()->create(['user_id' => $owner->id]);
+    $otherShop = Shop::factory()->create(['user_id' => $otherOwner->id]);
+    $token = $owner->createToken('categories-contract', ['*'])->plainTextToken;
+    $otherToken = $otherOwner->createToken('categories-contract', ['*'])->plainTextToken;
+    $url = "/api/v1/shops/{$shop->public_id}/expense-categories";
+
+    $first = $this->withToken($token)->getJson($url)
+        ->assertOk()
+        ->assertJsonFragment(['name' => 'Alquiler', 'is_active' => true]);
+
+    $second = $this->withToken($token)->getJson($url)->assertOk();
+
+    expect($first->json())->toHaveCount(count($second->json()))
+        ->and($shop->expenseCategories()->count())->toBe(count($first->json()))
+        ->and($otherShop->expenseCategories()->count())->toBe(0);
+
+    auth()->forgetGuards();
+    $otherResponse = $this->withToken($otherToken)->getJson($url);
+    expect($otherResponse->status())->toBeIn([403, 404]);
 });
 
 test('financial menus enforce explicit independent delegation and legacy null never grants finance', function () {

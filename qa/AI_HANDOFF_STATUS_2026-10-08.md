@@ -14,7 +14,7 @@ casos de negocio, visuales, hardware, offline físico y cobertura positiva compl
 sin cerrar.
 
 **Corte autoritativo:** el backend está en `af29543` y 59 commits adelantado frente
-a `origin/master`; el baseline final es **510 tests / 5.167 assertions PASS** tanto
+a `origin/master`; el baseline final es **511 tests / 5.175 assertions PASS** tanto
 en SQLite como en MariaDB QA aislada. La auditoría monetaria de este corte no
 encontró `float/double` en las mutaciones financieras cubiertas; los casts restantes
 son adaptadores de salida, filtros de consulta o normalización de identificadores y
@@ -220,10 +220,10 @@ ni purgas sobre producción. No hay migraciones pendientes conocidas.
 
 ### Revalidación del baseline después de este traspaso
 
-- SQLite: `vendor\\bin\\pest --configuration phpunit.xml` terminó **510 tests / 5.167
+- SQLite: `vendor\\bin\\pest --configuration phpunit.xml` terminó **511 tests / 5.175
   assertions PASS** en 32.31 s.
 - MariaDB QA: `APP_ENV=testing`, `QA_ALLOW_MYSQL=1`, base
-  `micatalogo_qa_20261008` y `qa\\phpunit.mysql.xml` terminaron **510 tests / 5.167
+  `micatalogo_qa_20261008` y `qa\\phpunit.mysql.xml` terminaron **511 tests / 5.175
   assertions PASS** en 48.05 s.
 - `release-readiness.php` en esa base devolvió usuarios, tiendas, productos, pedidos e
   invoices en `0`; no creó datos ni ejecutó migraciones.
@@ -482,7 +482,7 @@ publicado en VPS o en la APK pública.
   código de barras normalizado para creación/edición Web y `product_upsert` móvil;
   las rutas ejecutan la comprobación dentro de una transacción que bloquea la tienda.
   `SellerProductTest` + `MobileOperationTest` pasan **34 tests / 231 assertions**
-  en SQLite y MariaDB QA. El baseline final queda en **510 tests / 5.167 assertions
+  en SQLite y MariaDB QA. El baseline final queda en **511 tests / 5.175 assertions
   PASS** por motor. El probe multiproceso `qa/product_identity_concurrency_probe.php`
   pasó con 1 creación y 7 conflictos controlados; sigue pendiente la matriz completa
   de entradas/escáner Web↔API↔Android.

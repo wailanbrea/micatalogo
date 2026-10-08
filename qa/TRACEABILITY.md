@@ -26,7 +26,7 @@ con una suite verde.
 
 La fuente maestra contiene **196 casos únicos** en sus listas (el encabezado histórico que indicaba 140 estaba desactualizado). La tabla no convierte una cobertura parcial en PASS: cada fila conserva el estado más conservador respaldado por la evidencia disponible.
 
-Reejecuciones dirigidas del corte 2026-10-08: el bloque catálogo/importación/comercio obtuvo `110/110 PASS` y `732/732 assertions` en SQLite y MariaDB QA; el bloque auth/planes/equipo/admin/finanzas/compras obtuvo `137/137 PASS` y `795/795 assertions` en ambos motores. La revalidación final dejó el baseline completo en `510/510 PASS` y `5.167/5.167 assertions` por motor, e incorporó la identidad de productos Web/API/Android (`34 tests / 231 assertions`). Estas corridas fortalecen la evidencia de las suites referenciadas, pero no elevan automáticamente un caso cuya definición exige cobertura Web↔Android, hardware, concurrencia específica o una decisión de producto.
+Reejecuciones dirigidas del corte 2026-10-08: el bloque catálogo/importación/comercio obtuvo `110/110 PASS` y `732/732 assertions` en SQLite y MariaDB QA; el bloque auth/planes/equipo/admin/finanzas/compras obtuvo `137/137 PASS` y `795/795 assertions` en ambos motores. La revalidación final dejó el baseline completo en `511/511 PASS` y `5.175/5.175 assertions` por motor, e incorporó la identidad de productos Web/API/Android (`34 tests / 231 assertions`) y el contrato positivo de categorías API de gastos. Estas corridas fortalecen la evidencia de las suites referenciadas, pero no elevan automáticamente un caso cuya definición exige cobertura Web↔Android, hardware, concurrencia específica o una decisión de producto.
 
 | ID | Caso resumido | Estado | Evidencia o bloqueo |
 |---|---|---|---|
