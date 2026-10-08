@@ -91,7 +91,7 @@ bloqueos siguientes.
 - Navegación Android auditada desde código: 54 destinos declarados y 54 registrados; `ShopSettings` usa una ruta parametrizada. Las implementaciones compartidas quedan marcadas como reutilización contextual, no como pantallas inexistentes.
 - Smoke UI web QA: panel y POS cargaron con el menú completo; el flujo agregar producto → Cobrar venta → confirmar venta pasó después de la regresión F-039. El registro público mostró dependencia externa de Turnstile y no se usó para escribir datos.
 - Revalidación de 1.0.75 en dispositivos que todavía tienen 1.0.74: `NOT_RUN`.
-- F-056: la validación criptográfica de la release es PASS, pero la instalación física queda `BLOCKED_ENV` hasta autorizar la retirada de la APK debug; un cambio de certificado no se resuelve con `-r` ni con un `versionCode` mayor.
+- F-056: la validación criptográfica de la release es PASS y el updater descargó `bspos-77.apk` con SHA correcto, pero la instalación física queda `BLOCKED_ENV` hasta autorizar la retirada de la APK debug; WorkManager no reporta trabajos pendientes y un cambio de certificado no se resuelve con `-r` ni con un `versionCode` mayor.
 
 ## Evidencia adicional de esta continuación
 
