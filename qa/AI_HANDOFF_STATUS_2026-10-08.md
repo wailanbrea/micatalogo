@@ -493,14 +493,15 @@ por inferencia a partir de tests parciales:
 
 ## Commits locales de este corte
 
-- Backend: `734b169` (`fix: revoke API token on mobile logout`) y `41c3819`
-  (`fix: validate product money in cents`), además de documentación QA posterior.
-  Revisar la lista completa con `git log` y el conteo frente a `origin/master` antes
-  de elegir qué publicar.
+- Backend: `71255ec` (`docs: refine shop lifecycle QA coverage`), `6b83bf8`
+  (`test: cover existing seller invitation accounts`) y `8bd67e3`
+  (`test: cover password reset token lifecycle`), además de los commits funcionales
+  y documentación QA anteriores. El checkout está **49 commits adelantado** frente a
+  `origin/master`; revisar la lista completa con `git log` antes de elegir qué publicar.
 - Android: `7ea2916` (updater pendiente persistente), `c4aea97` (debug fuera del
   updater de producción), `7c32766` (PDF), `5d57421` (logout con revocación),
   `de03913` (replay ACK/interrupción) y `e50e5ff` (estados financieros sin datos).
-  El checkout está 4 commits adelantado frente a `origin/main`.
+  El checkout Android está 4 commits adelantado frente a `origin/main`.
 - La documentación de la reejecución live anterior permanece en el historial; no se
   hizo push de estos commits.
 - Ninguna clave, contraseña, token real ni archivo privado forma parte de este traspaso.
