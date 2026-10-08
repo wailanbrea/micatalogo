@@ -324,6 +324,10 @@ publicado en VPS o en la APK pública.
   assertions PASS**, cubriendo FIFO por lotes, decants, reglas automáticas de precio,
   ventas mixtas, crédito, abonos FIFO, caja, gastos, cierres, idempotencia y E2E-03.
   No se escribieron datos persistentes ni se tocó MariaDB/VPS.
+- Se reejecutó la matriz de permisos y tenant en SQLite en memoria: **46 tests / 551
+  assertions PASS**, incluyendo owner, manager, vendedor, contador, admin global,
+  aislamiento entre tiendas, rutas mutantes, menús, redacción de costos/FIFO y módulos
+  operativos. No se escribieron datos persistentes.
 - Se añadió y ejecutó la regresión `CatalogSyncIntegrationTest` para el caso ACK→interrupción
   antes de marcar `SENT`: **16/16 PASS** en `emulator-5554`; la venta queda en `RETRY` y
   el siguiente sync la confirma con la misma UUID. Es una simulación determinista, no
