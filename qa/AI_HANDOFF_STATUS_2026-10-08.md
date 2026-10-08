@@ -328,6 +328,11 @@ publicado en VPS o en la APK pública.
   assertions PASS**, incluyendo owner, manager, vendedor, contador, admin global,
   aislamiento entre tiendas, rutas mutantes, menús, redacción de costos/FIFO y módulos
   operativos. No se escribieron datos persistentes.
+- Se reejecutó el bloque catálogo/importación/POS/pedidos en SQLite en memoria: **85
+  tests / 558 assertions PASS**, incluyendo importación por sesión, prevención de
+  duplicados, imágenes/Excel/PDF, lotes y stock, decants, mayoreo, replay idempotente,
+  pedido público, factura/caja y rollback atómico. No sustituye hardware, WhatsApp real
+  ni E2E Web↔Android.
 - Se añadió y ejecutó la regresión `CatalogSyncIntegrationTest` para el caso ACK→interrupción
   antes de marcar `SENT`: **16/16 PASS** en `emulator-5554`; la venta queda en `RETRY` y
   el siguiente sync la confirma con la misma UUID. Es una simulación determinista, no
