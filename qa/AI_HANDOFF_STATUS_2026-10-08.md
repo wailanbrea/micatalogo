@@ -104,6 +104,10 @@ Estado leído sin mutar:
 
 Verificador de solo lectura:
 
+> Este comando conserva la evidencia histórica. Su `-ApkPath` solo será válido
+> después de una nueva compilación release autorizada; actualmente ese artefacto no
+> existe en el checkout.
+
 ```powershell
 & 'C:\xampp\php\www\MiCatalogo\qa\verify_android_release_target.ps1' `
   -Serial 'adb-R3GL40GB6CE-io558r._adb-tls-connect._tcp' `
