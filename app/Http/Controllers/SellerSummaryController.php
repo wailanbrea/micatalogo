@@ -29,6 +29,7 @@ class SellerSummaryController extends Controller
                 'commission' => Money::toCents($sale->commission_amount),
                 'status' => $sale->status,
             ])->values(),
+            'seller_summary' => $data['sellerSummary']->values(),
             'has_more_sales' => $data['sales']->hasMorePages(),
         ]);
     }
@@ -60,7 +61,30 @@ class SellerSummaryController extends Controller
             'commission' => Money::toCents((string) $totals->commission_total),
         ];
         $metrics['average'] = $metrics['count'] ? intdiv($metrics['total'], $metrics['count']) : 0;
-        $sales = (clone $periodSales)->with('customer')->latest('issued_at')->paginate(8)->withQueryString();
+        $sellerTotals = ($canManage || $isAccountant)
+            ? (clone $periodSales)
+                ->whereNotNull('salesperson_id')
+                ->selectRaw('salesperson_id, COUNT(*) AS sales_count, COALESCE(SUM(total), 0) AS sales_total, COALESCE(SUM(commission_amount), 0) AS commission_total')
+                ->groupBy('salesperson_id')
+                ->get()
+                ->keyBy('salesperson_id')
+            : collect();
+        $sellerSummary = ($canManage || $isAccountant)
+            ? $shop->sellers()->with('user')->orderByDesc('is_active')->orderBy('created_at')->get()->map(function ($assignment) use ($sellerTotals): array {
+                $totals = $sellerTotals->get($assignment->user_id);
+
+                return [
+                    'id' => $assignment->user_id,
+                    'name' => $assignment->user?->name ?? 'Vendedor sin nombre',
+                    'email' => $assignment->user?->email ?? 'Sin correo',
+                    'is_active' => (bool) $assignment->is_active,
+                    'sales_count' => (int) ($totals?->sales_count ?? 0),
+                    'sales_total' => Money::toCents((string) ($totals?->sales_total ?? '0')),
+                    'commission_total' => Money::toCents((string) ($totals?->commission_total ?? '0')),
+                ];
+            })->values()
+            : collect();
+        $sales = (clone $periodSales)->with(['customer', 'salesperson'])->latest('issued_at')->paginate(8)->withQueryString();
         $daily = (clone $base)->whereBetween('issued_at', [today()->subDays(6), today()->endOfDay()])
             ->selectRaw('DATE(issued_at) AS day, COALESCE(SUM(total), 0) AS sales_total')
             ->groupByRaw('DATE(issued_at)')->get()->keyBy('day');
@@ -70,6 +94,6 @@ class SellerSummaryController extends Controller
             return ['label' => $date->format('d/m'), 'total' => Money::toCents((string) ($daily->get($date->toDateString())?->sales_total ?? '0'))];
         });
 
-        return view('seller.summary', compact('shop', 'visibleMenus', 'canManage', 'isAccountant', 'sales', 'period', 'periodLabel', 'metrics', 'chart'));
+        return view('seller.summary', compact('shop', 'visibleMenus', 'canManage', 'isAccountant', 'sales', 'sellerSummary', 'period', 'periodLabel', 'metrics', 'chart'));
     }
 }

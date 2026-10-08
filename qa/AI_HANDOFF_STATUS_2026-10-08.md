@@ -13,6 +13,21 @@ cambios locales aún no están publicados en VPS ni en una nueva APK, y permanec
 casos de negocio, visuales, hardware, offline físico y cobertura positiva completa
 sin cerrar.
 
+### Continuación local — resumen administrativo de vendedores
+
+Se incorporó al checkout local, sin push ni despliegue, el resumen administrativo
+agrupado por vendedor. La pantalla `seller.shops.summary` ahora muestra cada
+vendedor asignado (incluidos los desactivados), ventas válidas del período, total
+vendido, comisión registrada y estado; debajo conserva el detalle de cada factura
+con vendedor, fecha/hora, cliente, total, comisión y estado. La misma colección se
+expone en `seller-summary` para owner/contador; un vendedor normal recibe una
+colección vacía y continúa viendo únicamente sus propias ventas.
+
+La regresión nueva está cubierta por la prueba dirigida completa, que pasó **2 tests /
+40 assertions** en SQLite y MariaDB QA. La suite completa
+SQLite del checkout actual pasó **513 tests / 5.207 assertions**. Este cambio sigue
+sin estar publicado y no escribió datos de producción.
+
 **Corte autoritativo:** el backend está en `46f548c` y 66 commits adelantado frente
 a `origin/master`; el baseline final es **512 tests / 5.184 assertions PASS** tanto
 en SQLite como en MariaDB QA aislada. La auditoría monetaria de este corte no

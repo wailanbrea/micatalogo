@@ -242,6 +242,89 @@ test('seller dashboard isolates sales and frozen commissions by seller and perio
     $this->getJson(route('seller.shops.summary', [$shop, 'period' => 'invalid']))->assertUnprocessable();
 });
 
+test('administrator summary shows seller totals and sale date commission details', function () {
+    $this->travelTo(now()->setDate(2026, 10, 8)->setTime(15, 0));
+    [$owner, $shop, $seller, $assignment] = navigationSellerFixture();
+    $secondSeller = User::factory()->create(['name' => 'Vendedor Dos', 'email' => 'vendedor-dos@example.test']);
+    ShopSeller::create([
+        'shop_id' => $shop->id,
+        'user_id' => $secondSeller->id,
+        'is_active' => true,
+        'commission_type' => 'fixed',
+        'commission_value' => 75,
+        'menu_permissions' => ['sales'],
+    ]);
+
+    Invoice::create([
+        'shop_id' => $shop->id,
+        'user_id' => $owner->id,
+        'salesperson_id' => $seller->id,
+        'invoice_number' => 'SELLER-ONE-001',
+        'status' => 'paid',
+        'subtotal' => '1200.00',
+        'total' => '1200.00',
+        'commission_amount' => '60.00',
+        'issued_at' => now()->setTime(10, 15),
+    ]);
+    Invoice::create([
+        'shop_id' => $shop->id,
+        'user_id' => $owner->id,
+        'salesperson_id' => $secondSeller->id,
+        'invoice_number' => 'SELLER-TWO-001',
+        'status' => 'paid',
+        'subtotal' => '2500.00',
+        'total' => '2500.00',
+        'commission_amount' => '75.00',
+        'issued_at' => now()->setTime(11, 30),
+    ]);
+    Invoice::create([
+        'shop_id' => $shop->id,
+        'user_id' => $owner->id,
+        'salesperson_id' => $seller->id,
+        'invoice_number' => 'SELLER-ONE-CANCELLED',
+        'status' => 'cancelled',
+        'subtotal' => '9000.00',
+        'total' => '9000.00',
+        'commission_amount' => '450.00',
+        'issued_at' => now()->setTime(12, 0),
+    ]);
+
+    $this->actingAs($owner)->get(route('seller.shops.summary', $shop))
+        ->assertOk()
+        ->assertViewHas('sellerSummary', function ($summary) use ($seller, $secondSeller): bool {
+            return $summary->count() === 2
+                && $summary->firstWhere('id', $seller->id)['sales_count'] === 1
+                && $summary->firstWhere('id', $seller->id)['sales_total'] === 120000
+                && $summary->firstWhere('id', $seller->id)['commission_total'] === 6000
+                && $summary->firstWhere('id', $secondSeller->id)['sales_count'] === 1
+                && $summary->firstWhere('id', $secondSeller->id)['sales_total'] === 250000
+                && $summary->firstWhere('id', $secondSeller->id)['commission_total'] === 7500;
+        })
+        ->assertSee('Resumen de vendedores')
+        ->assertSee($secondSeller->name)
+        ->assertSee('SELLER-ONE-001')
+        ->assertSee('SELLER-TWO-001')
+        ->assertSee('Vendedor Dos')
+        ->assertDontSee('SELLER-ONE-CANCELLED');
+
+    $this->actingAs($seller)->get(route('seller.shops.summary', $shop))
+        ->assertOk()
+        ->assertDontSee('Resumen de vendedores')
+        ->assertDontSee('Vendedor Dos')
+        ->assertSee('SELLER-ONE-001')
+        ->assertDontSee('SELLER-TWO-001');
+
+    $this->actingAs($owner, 'sanctum')->getJson('/api/v1/shops/'.$shop->public_id.'/seller-summary')
+        ->assertOk()
+        ->assertJsonCount(2, 'seller_summary')
+        ->assertJsonFragment(['sales_count' => 1, 'sales_total' => 120000, 'commission_total' => 6000])
+        ->assertJsonFragment(['sales_count' => 1, 'sales_total' => 250000, 'commission_total' => 7500]);
+
+    $this->actingAs($seller, 'sanctum')->getJson('/api/v1/shops/'.$shop->public_id.'/seller-summary')
+        ->assertOk()
+        ->assertJsonCount(0, 'seller_summary');
+});
+
 test('owner and admin select menus when creating a seller and can revoke them later', function (bool $api, bool $admin) {
     [$owner, $shop] = navigationSellerFixture();
     $manager = $admin ? User::factory()->admin()->create() : $owner;

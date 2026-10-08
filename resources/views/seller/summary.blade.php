@@ -65,16 +65,49 @@
                         <p class="mt-3 text-xs text-slate-500">Comisión generada; no indica que ya haya sido pagada.</p>
                     </section>
                 </div>
+                @if ($canManage || $isAccountant)
+                    <section id="seller-summary" class="overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-sm">
+                        <div class="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 px-5 py-4 sm:px-6">
+                            <div>
+                                <h2 class="font-bold text-slate-900">Resumen de vendedores</h2>
+                                <p class="mt-1 text-xs text-slate-500">Ventas válidas del período, agrupadas por vendedor. La comisión es la registrada al momento de cada venta.</p>
+                            </div>
+                            @if (in_array('sellers', $visibleMenus, true))
+                                <a wire:navigate href="{{ route('seller.shops.sellers.index', $shop) }}" class="rounded-lg border border-blue-200 px-3 py-2 text-xs font-bold text-blue-700 transition hover:bg-blue-50">Administrar equipo →</a>
+                            @endif
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full min-w-[640px] text-left text-sm">
+                                <thead class="bg-blue-50/60 text-xs uppercase tracking-wide text-slate-500">
+                                    <tr><th class="px-5 py-3">Vendedor</th><th class="px-5 py-3 text-right">Ventas</th><th class="px-5 py-3 text-right">Total vendido</th><th class="px-5 py-3 text-right">Comisión ganada</th><th class="px-5 py-3">Estado</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    @forelse ($sellerSummary as $seller)
+                                        <tr>
+                                            <td class="px-5 py-4"><p class="font-bold text-slate-900">{{ $seller['name'] }}</p><p class="mt-1 text-xs text-slate-500">{{ $seller['email'] }}</p></td>
+                                            <td class="px-5 py-4 text-right font-semibold text-slate-700">{{ number_format($seller['sales_count']) }}</td>
+                                            <td class="whitespace-nowrap px-5 py-4 text-right font-bold text-slate-900">{{ $money($seller['sales_total']) }}</td>
+                                            <td class="whitespace-nowrap px-5 py-4 text-right font-black text-emerald-700">{{ $money($seller['commission_total']) }}</td>
+                                            <td class="px-5 py-4"><span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $seller['is_active'] ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500' }}">{{ $seller['is_active'] ? 'Activo' : 'Desactivado' }}</span></td>
+                                        </tr>
+                                    @empty
+                                        <tr><td colspan="5" class="px-5 py-10 text-center"><p class="font-semibold text-slate-700">Aún no hay vendedores asignados</p><p class="mt-2 text-sm text-slate-500">Cuando asignes un vendedor, sus ventas y comisiones aparecerán aquí.</p></td></tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                @endif
                 <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                     <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">{{ $canManage || $isAccountant ? 'Ventas recientes del equipo' : 'Tus ventas recientes' }}</h2><p class="mt-1 text-xs text-slate-500">Detalle del periodo seleccionado</p></div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-sm">
-                            <thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="px-5 py-3">Venta / fecha</th><th class="px-5 py-3">Cliente</th><th class="px-5 py-3 text-right">Total</th><th class="px-5 py-3 text-right">{{ $canManage || $isAccountant ? 'Comisión' : 'Tu ganancia' }}</th><th class="px-5 py-3">Estado</th></tr></thead>
+                            <thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="px-5 py-3">Venta / fecha</th>@if ($canManage || $isAccountant)<th class="px-5 py-3">Vendedor</th>@endif<th class="px-5 py-3">Cliente</th><th class="px-5 py-3 text-right">Total</th><th class="px-5 py-3 text-right">{{ $canManage || $isAccountant ? 'Comisión' : 'Tu ganancia' }}</th><th class="px-5 py-3">Estado</th></tr></thead>
                             <tbody class="divide-y divide-slate-100">
                                 @forelse ($sales as $sale)
-                                    <tr><td class="px-5 py-4"><p class="font-semibold text-slate-900">{{ $sale->invoice_number }}</p><p class="mt-1 text-xs text-slate-500">{{ $sale->issued_at->format('d/m/Y h:i A') }}</p></td><td class="px-5 py-4 text-slate-600">{{ $sale->customer?->name ?? 'Consumidor final' }}</td><td class="whitespace-nowrap px-5 py-4 text-right font-bold">{{ $money(\App\Support\Money::toCents($sale->total)) }}</td><td class="whitespace-nowrap px-5 py-4 text-right font-bold text-emerald-700">{{ $money(\App\Support\Money::toCents($sale->commission_amount)) }}</td><td class="px-5 py-4"><span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{{ ['paid' => 'Pagada', 'partial' => 'Pago parcial', 'pending' => 'Pendiente', 'unpaid' => 'Pendiente', 'draft' => 'Borrador'][$sale->status] ?? $sale->status }}</span></td></tr>
+                                    <tr><td class="px-5 py-4"><p class="font-semibold text-slate-900">{{ $sale->invoice_number }}</p><p class="mt-1 text-xs text-slate-500">{{ $sale->issued_at->format('d/m/Y h:i A') }}</p></td>@if ($canManage || $isAccountant)<td class="px-5 py-4 font-semibold text-slate-700">{{ $sale->salesperson?->name ?? 'Sin vendedor asignado' }}</td>@endif<td class="px-5 py-4 text-slate-600">{{ $sale->customer?->name ?? 'Consumidor final' }}</td><td class="whitespace-nowrap px-5 py-4 text-right font-bold">{{ $money(\App\Support\Money::toCents($sale->total)) }}</td><td class="whitespace-nowrap px-5 py-4 text-right font-bold text-emerald-700">{{ $money(\App\Support\Money::toCents($sale->commission_amount)) }}</td><td class="px-5 py-4"><span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{{ ['paid' => 'Pagada', 'partial' => 'Pago parcial', 'pending' => 'Pendiente', 'unpaid' => 'Pendiente', 'draft' => 'Borrador'][$sale->status] ?? $sale->status }}</span></td></tr>
                                 @empty
-                                    <tr><td colspan="5" class="px-5 py-12 text-center"><p class="font-semibold text-slate-700">Aún no hay ventas en este periodo</p><p class="mt-2 text-sm text-slate-500">Cuando registres una venta, aparecerán aquí su importe y comisión.</p></td></tr>
+                                    <tr><td colspan="{{ $canManage || $isAccountant ? 6 : 5 }}" class="px-5 py-12 text-center"><p class="font-semibold text-slate-700">Aún no hay ventas en este periodo</p><p class="mt-2 text-sm text-slate-500">Cuando registres una venta, aparecerán aquí su importe y comisión.</p></td></tr>
                                 @endforelse
                             </tbody>
                         </table>
