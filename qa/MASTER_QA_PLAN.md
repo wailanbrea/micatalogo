@@ -5,10 +5,10 @@ Este documento es la ejecución controlada del plan contra los HEAD reales, no u
 
 ## Estado de arranque
 
-- Backend/Web/API: `7348869f1a37ad00cdfaa83e02c0d23eb2ab8d93` (`master`).
-- Android: `7ea2916`, versionName `1.0.76`, versionCode `77` (la corrección del updater para builds debug y la persistencia del aviso pendiente están en código y aún no publicadas).
-- VPS: `7348869f1a37ad00cdfaa83e02c0d23eb2ab8d93`, sin migraciones pendientes después del despliegue.
-- Baseline actual: 495 pruebas backend, 5.073 assertions en SQLite y MariaDB QA; 95 pruebas unitarias Android. La variante principal y `com.bsolutions.micatalogo.offlinecheck` tienen 116 instrumentadas en el emulador QA (`113 PASS`, 3 omitidas por fixtures live no suministrados). El corte incluye las regresiones F-046, F-047, F-048, F-049, F-050, F-051, F-052, F-053 y F-054: precisión de precio efectivo, normalización decimal del importador legacy, redacción financiera por rol, recuperación exacta de costos de decants y revocación remota de sesión Android.
+- Backend/Web/API: consultar `git log -1 --oneline` en `C:\xampp\php\www\MiCatalogo`; en este corte el HEAD es `203b455` (`master`). Los commits locales no están publicados.
+- Android: consultar `git log -1 --oneline` en `C:\Users\waila\AndroidStudioProjects\micatalogowebApp`; en este corte el HEAD es `e50e5ff` (`main`). La versión pública sigue siendo `1.0.76`, versionCode `77`; las correcciones del updater para builds debug, persistencia del aviso pendiente, PDF, logout y los tests de Finanzas están en el checkout local y requieren una nueva release autorizada.
+- VPS: no se ejecutó despliegue en este corte; no inferir su estado desde este documento. Cualquier consulta o migración remota exige leer `bsolutions-infra/SKILL.md`, verificar el destino y mantener la prohibición de escribir producción sin autorización.
+- Baseline actual: 495 pruebas backend, 5.073 assertions en SQLite y MariaDB QA; 95 pruebas unitarias Android. La variante normal tiene 117 instrumentadas (`114 PASS`, 3 assumptions) y `offlinecheck` 116 (`113 PASS`, 3 assumptions) en el emulador QA. `CatalogSyncIntegrationTest` terminó 16/16, `FinancialContractTest` 5/5, `FinanceContentTest` 2/2 y `InvoicePdfGeneratorTest` 2/2. El corte incluye las regresiones F-046 a F-058 documentadas en `qa/FINDINGS.md`.
 - APK 1.0.76 firmada y publicada; SHA-256 `24846233f98bfd099976d0965142b8aabca71a378659b74b5a8b14aa27334f6b`. La release anterior permanece disponible.
 - Alcance reconciliado: las listas de casos de la fuente contienen 196 identificadores únicos, no 140; la matriz individual y sus estados están en `qa/TRACEABILITY.md`.
 - Automatización local añadida: `.github/workflows/qa.yml` ejecuta pruebas SQLite, build frontend, Pint sobre PHP modificados e inventario de rutas; el workflow Android ejecuta unitarias, assembleDebug, lint y compilación de fixtures instrumentados.
