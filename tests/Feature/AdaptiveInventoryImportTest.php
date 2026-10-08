@@ -91,6 +91,29 @@ test('legacy raw-row retries skip the same inventory instead of duplicating prod
         ->and($shop->products()->where('name', 'Producto sin código')->count())->toBe(1);
 });
 
+test('legacy raw rows persist price and cost using canonical decimal strings', function () {
+    $owner = User::factory()->create(['plan' => UserPlan::Pro]);
+    $shop = Shop::factory()->for($owner)->create();
+    $this->actingAs($owner, 'sanctum');
+
+    $this->postJson('/api/v1/shops/'.$shop->public_id.'/inventory-import', [
+        'rows' => [[
+            'line' => 2,
+            'name' => 'Importación exacta',
+            'price' => '0.29',
+            'cost_price' => '0.10',
+            'stock' => 3,
+            'valid' => true,
+        ]],
+    ])->assertCreated()->assertJsonPath('summary.created', 1);
+
+    $product = $shop->products()->where('name', 'Importación exacta')->firstOrFail();
+
+    expect($product->price)->toBe('0.29')
+        ->and($product->inventory->cost_price)->toBe('0.10')
+        ->and($product->inventory->stock_quantity)->toBe(3);
+});
+
 test('manual layout remapping uses temporary upload without rereading a file and attributes are opt in', function () {
     $owner = User::factory()->create(['plan' => UserPlan::Pro]);
     $shop = Shop::factory()->for($owner)->create();

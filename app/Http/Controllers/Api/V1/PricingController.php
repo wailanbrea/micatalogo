@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\Shop;
 use App\Services\ProductPricingService;
 use App\Services\SellerMenuService;
+use App\Support\Money;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -35,7 +36,7 @@ class PricingController extends Controller
                     continue;
                 }
                 $pricing->requirePro($product);
-                $pricing->propose($product, (float) $product->inventory->cost_price, $request->user()->id);
+                $pricing->propose($product, $product->inventory->cost_price, $request->user()->id);
                 $evaluated++;
             }
         });
@@ -70,7 +71,7 @@ class PricingController extends Controller
                 ['product_id' => $product->id],
                 [
                     'margin_percent' => $data['margin_percent'],
-                    'round_step_cents' => (int) round((float) $data['round_step'] * 100),
+                    'round_step_cents' => Money::toCents($data['round_step']),
                     'auto_increase' => (bool) ($data['auto_increase'] ?? false),
                     'pending_price' => null,
                     'created_at' => now(),
@@ -96,10 +97,11 @@ class PricingController extends Controller
         DB::transaction(function () use ($request, $product, $pricing, $data): void {
             $lockedProduct = Product::whereKey($product->id)->lockForUpdate()->firstOrFail();
             $rule = DB::table('product_price_rules')->where('product_id', $lockedProduct->id)->lockForUpdate()->first();
-            if (! $rule || $rule->pending_price === null || (float) $rule->pending_price !== (float) $data['expected_price']) {
+            if (! $rule || $rule->pending_price === null
+                || Money::toCents($rule->pending_price) !== Money::toCents($data['expected_price'])) {
                 throw ValidationException::withMessages(['pricing' => 'La propuesta cambió; revisa el precio antes de aprobar.']);
             }
-            $pricing->apply($lockedProduct, (float) $rule->pending_price, $request->user()->id, 'approved');
+            $pricing->apply($lockedProduct, $rule->pending_price, $request->user()->id, 'approved');
             DB::table('product_price_rules')->where('id', $rule->id)->update(['pending_price' => null, 'updated_at' => now()]);
         });
 

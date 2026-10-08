@@ -1,0 +1,10 @@
+prelude,,,,
+generated fixture,,,,
+do not use in production,,,,
+,,,,
+,,,,
+,,,,
+,,,,
+,,,,
+SKU,Nombre,Precio de venta,Cantidad,Costo
+SKU-QA-001,Producto QA,250.00,3,100.00

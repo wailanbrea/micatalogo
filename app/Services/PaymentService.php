@@ -244,6 +244,10 @@ class PaymentService
         ?string $reference = null
     ): array {
         return DB::transaction(function () use ($shop, $customer, $user, $amount, $paymentMethod, $transactionUuid, $payloadHash, $notes, $reference): array {
+            // Lock the shop before checking the idempotency UUID. This makes
+            // a concurrent retry observe the committed entry and return the
+            // same accounting result instead of racing customer/invoice locks.
+            Shop::query()->whereKey($shop->id)->lockForUpdate()->firstOrFail();
             $amountCents = Money::toCents($amount);
             if ($amountCents <= 0) {
                 throw new InvalidArgumentException('El monto del cobro debe ser mayor a cero.', 422);
@@ -344,8 +348,12 @@ class PaymentService
 
                 $invoiceTotalCents = Money::toCents($invoice->total);
                 $invoicePaidCents = (int) $invoice->payments()->sum('amount_cents');
-                $invoiceReturns = (float) DB::table('invoice_returns')->where('invoice_id', $invoice->id)->sum('total');
-                $invoiceReturnsCents = Money::toCents($invoiceReturns);
+                // Keep the database decimal as a string until it reaches the
+                // integer-cent boundary. A float here can turn a fractional
+                // return into an inaccurate outstanding balance.
+                $invoiceReturnsCents = Money::toCents(
+                    DB::table('invoice_returns')->where('invoice_id', $invoice->id)->sum('total') ?? 0
+                );
                 $invoicePendingCents = max(0, $invoiceTotalCents - $invoicePaidCents - $invoiceReturnsCents);
 
                 if ($invoicePendingCents <= 0) {
@@ -419,7 +427,11 @@ class PaymentService
                 'cash_register_affected' => $cashMovement !== null,
                 'cash_movement' => $cashMovement,
                 'entry' => $entry,
-                'server_timestamp' => now()->toIso8601String(),
+                // The replay must return the same timestamp as the original
+                // response. Use the persisted ledger entry instead of a new
+                // wall-clock value so MariaDB precision cannot change the
+                // idempotent response between requests.
+                'server_timestamp' => $entry->created_at?->toIso8601String() ?? now()->toIso8601String(),
             ];
         });
     }

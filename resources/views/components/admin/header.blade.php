@@ -26,6 +26,8 @@
     $isAdminUsers = request()->routeIs('admin.users.*');
     $activeShop = request()->route('shop');
     $activeShop = $activeShop instanceof \App\Models\Shop ? $activeShop : null;
+    $isAccountantContext = (bool) ($activeShop && $user?->isActiveShopAccountant($activeShop));
+    $contextRoleLabel = $isAdmin ? 'Administrador / Owner' : ($activeShop && $user?->ownsShop($activeShop) ? 'Propietario' : ($isAccountantContext ? 'Contador' : 'Vendedor'));
     $visibleMenus = $activeShop && $user
         ? app(\App\Services\SellerMenuService::class)->visibleForUser($activeShop, $user)
         : [];
@@ -125,7 +127,7 @@
                             <p class="text-xs font-bold text-slate-900 truncate">{{ $user->name }}</p>
                             <p class="text-[11px] text-slate-500 truncate">{{ $user->email }}</p>
                             <span class="mt-1 inline-flex items-center rounded-full {{ $isAdmin ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-blue-50 text-blue-700 border-blue-200' }} border px-2 py-0.5 text-[10px] font-bold">
-                                {{ $isAdmin ? 'Administrador / Owner' : 'Vendedor' }}
+                                {{ $contextRoleLabel }}
                             </span>
                         </div>
 
@@ -282,7 +284,7 @@
                 </div>
                 <div class="border-t border-slate-100 pt-2">
                     <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Analisis</p>
-                    @if ($canSeeMenu('sales') && $canSeeMenu('finance'))
+                    @if ($canSeeMenu('finance'))
                         <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.business') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.business', $activeShop) }}">Negocio y ganancias</a>
                     @endif
                     @if ($canSeeMenu('metrics'))

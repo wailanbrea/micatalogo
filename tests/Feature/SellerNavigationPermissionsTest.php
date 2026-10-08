@@ -1,7 +1,10 @@
 <?php
 
 use App\Models\Invoice;
+use App\Models\Product;
+use App\Models\ProductInventory;
 use App\Models\Shop;
+use App\Models\ShopMember;
 use App\Models\ShopSeller;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -36,6 +39,114 @@ test('seller navigation hides unassigned and administrative links and rejects di
     $this->get(route('admin.dashboard'))->assertForbidden();
 });
 
+test('limited seller cannot recover FIFO costs or margins through catalog JSON, HTML, or exports', function () {
+    [$owner, $shop, $seller, $assignment] = navigationSellerFixture(['sales', 'products']);
+    $product = Product::factory()->for($shop)->create(['name' => 'Producto financiero oculto', 'price' => '250.00']);
+    ProductInventory::create([
+        'product_id' => $product->id,
+        'track_inventory' => true,
+        'stock_quantity' => 4,
+        'cost_price' => '100.00',
+        'sold_quantity' => 0,
+        'low_stock_threshold' => 1,
+    ]);
+
+    // The seller can read the operational catalog, but its financial datum is
+    // masked without the explicitly delegated finance menu.
+    $catalogToken = $seller->createToken('qa-limited-catalog', ['catalog:read'])->plainTextToken;
+    app('auth')->forgetGuards();
+    $this->withToken($catalogToken)
+        ->getJson('/api/v1/shops/'.$shop->public_id.'/catalog')
+        ->assertOk()
+        ->assertJsonPath('products.0.name', 'Producto financiero oculto')
+        ->assertJsonPath('products.0.inventory.cost_price', null);
+
+    $ownerToken = $owner->createToken('qa-owner-catalog', ['catalog:read'])->plainTextToken;
+    app('auth')->forgetGuards();
+    $this->withToken($ownerToken)
+        ->getJson('/api/v1/shops/'.$shop->public_id.'/catalog')
+        ->assertOk()
+        ->assertJsonPath('products.0.inventory.cost_price', '100.00');
+
+    // Direct Web/API entry points remain denied; hiding sidebar links is not
+    // used as the security boundary.
+    $this->actingAs($seller)->get(route('seller.shops.business', $shop))->assertForbidden();
+    $this->get(route('seller.shops.feature', [$shop, 'feature' => 'reports']))->assertForbidden();
+    $this->get(route('seller.shops.reports.export', [$shop, 'format' => 'csv']))->assertForbidden();
+
+    $financeToken = $seller->createToken('qa-limited-finance', ['*'])->plainTextToken;
+    foreach ([
+        '/api/v1/shops/'.$shop->public_id.'/finance/summary',
+        '/api/v1/shops/'.$shop->public_id.'/reports/income-statement',
+        '/api/v1/shops/'.$shop->public_id.'/reports/cash-flow',
+        '/api/v1/shops/'.$shop->public_id.'/reports/export?format=csv',
+        '/api/v1/shops/'.$shop->public_id.'/features/reports',
+    ] as $url) {
+        app('auth')->forgetGuards();
+        $this->withToken($financeToken)->getJson($url)->assertForbidden();
+    }
+});
+
+test('seller operational modules redact financial details across web and feature APIs', function () {
+    [$owner, $shop, $seller] = navigationSellerFixture(['inventory', 'price_health', 'pricing', 'decants']);
+    $shop->update(['business_type' => 'perfume_store']);
+
+    $product = Product::factory()->for($shop)->create([
+        'name' => 'Perfume operativo sin costo visible',
+        'price' => '250.00',
+        'sale_unit' => 'bottle',
+        'volume_ml' => 100,
+    ]);
+    ProductInventory::create([
+        'product_id' => $product->id,
+        'track_inventory' => true,
+        'stock_quantity' => 4,
+        'cost_price' => '100.00',
+        'sold_quantity' => 0,
+        'low_stock_threshold' => 1,
+    ]);
+
+    $token = $seller->createToken('qa-operational-finance-redaction', ['*'])->plainTextToken;
+    foreach (['price_health', 'pricing', 'decants'] as $feature) {
+        app('auth')->forgetGuards();
+        $response = $this->withToken($token)
+            ->getJson('/api/v1/shops/'.$shop->public_id.'/features/'.$feature)
+            ->assertOk();
+        $rows = $response->json('module.rows') ?? [];
+        expect(json_encode($response->json(), JSON_THROW_ON_ERROR))
+            ->not->toContain('Costo actual RD$ 100.00')
+            ->not->toContain('Costo RD$ 100.00')
+            ->not->toContain('margin_percent')
+            ->not->toContain('target_margin_percent')
+            ->not->toContain('pending_price');
+        foreach ($rows as $row) {
+            expect(json_encode($row, JSON_THROW_ON_ERROR))->not->toContain('100.00');
+        }
+    }
+
+    $this->actingAs($seller)->get(route('seller.shops.inventory.index', $shop))
+        ->assertOk()
+        ->assertDontSee('Valor Stock')
+        ->assertDontSee('Ganancia Est.')
+        ->assertDontSee('Costo Compra')
+        ->assertDontSee('Margen')
+        ->assertDontSee('RD$ 100');
+
+    $this->actingAs($seller)->get(route('seller.shops.inventory.lots', $shop))
+        ->assertOk()
+        ->assertDontSee('Costo de entrada')
+        ->assertDontSee('Costo restante')
+        ->assertDontSee('RD$ 100.00');
+
+    $this->actingAs($seller)->get(route('seller.shops.feature', [$shop, 'feature' => 'price_health']))
+        ->assertOk()
+        ->assertSee('Revisión financiera')
+        ->assertDontSee('Costo RD$ 100.00')
+        ->assertDontSee('Margen bajo');
+
+    expect($owner->fresh()->id)->toBe($shop->user_id);
+});
+
 test('owner and administrator can grant and revoke individual seller menus', function (bool $admin) {
     [$owner, $shop, $seller, $assignment] = navigationSellerFixture();
     $manager = $admin ? User::factory()->admin()->create() : $owner;
@@ -62,6 +173,32 @@ test('summary and profits are distinct destinations with exactly one selected si
     expect($active->length)->toBe(1)
         ->and(trim($active->item(0)->textContent))->toBe('Resumen')
         ->and(route('seller.shops.summary', $shop))->not->toBe(route('seller.shops.business', $shop));
+});
+
+test('accountant sees financial navigation and summary without seller capabilities', function () {
+    [, $shop] = navigationSellerFixture();
+    $accountant = User::factory()->create(['name' => 'Contador QA']);
+    ShopMember::create(['shop_id' => $shop->id, 'user_id' => $accountant->id, 'role' => 'accountant', 'is_active' => true]);
+
+    $this->actingAs($accountant)->get(route('seller.shops.summary', $shop))->assertOk()
+        ->assertSee('Contador')->assertSee('Resumen financiero')
+        ->assertSee('Ganancias')->assertSee('Reportes')
+        ->assertDontSee('Panel del vendedor');
+    $this->get(route('seller.shops.business', $shop))->assertOk();
+    $this->get(route('seller.shops.feature', [$shop, 'feature' => 'reports']))->assertOk();
+    $this->get(route('seller.shops.feature', [$shop, 'feature' => 'accountant']))->assertForbidden();
+    $this->post(route('seller.shops.accountant.store', $shop), ['email' => 'another-accountant@example.test'])
+        ->assertForbidden();
+    $accountantToken = $accountant->createToken('qa-accountant', ['*'])->plainTextToken;
+    app('auth')->forgetGuards();
+    $this->withToken($accountantToken)
+        ->getJson('/api/v1/shops/'.$shop->public_id.'/features/accountant')
+        ->assertForbidden();
+    app('auth')->forgetGuards();
+    $this->withToken($accountantToken)
+        ->getJson('/api/v1/shops/'.$shop->public_id.'/features/reports')
+        ->assertOk();
+    $this->get(route('seller.shops.pos', $shop))->assertForbidden();
 });
 
 test('seller cannot change permissions or grant access to owner-only settings', function () {

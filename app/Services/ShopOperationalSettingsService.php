@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Shop;
+use App\Support\Money;
 
 class ShopOperationalSettingsService
 {
@@ -102,7 +103,12 @@ class ShopOperationalSettingsService
 
     public function taxRate(Shop $shop): float
     {
-        return (float) ($this->forShop($shop)['tax_rate'] ?? 0);
+        return $this->taxRateBasisPoints($shop) / 100.0;
+    }
+
+    public function taxRateBasisPoints(Shop $shop): int
+    {
+        return max(0, min(10000, Money::percentageToBasisPoints($this->forShop($shop)['tax_rate'] ?? 0)));
     }
 
     /** @param array<string, mixed> $settings */
@@ -117,7 +123,7 @@ class ShopOperationalSettingsService
             : 'America/Santo_Domingo';
         $merged['tax_rate'] = $merged['tax_rate'] === null || $merged['tax_rate'] === ''
             ? null
-            : round(max(0, min(100, (float) $merged['tax_rate'])), 2);
+            : Money::toDecimal(max(0, min(10000, Money::percentageToBasisPoints($merged['tax_rate']))));
         $merged['business_rnc'] = filled($merged['business_rnc']) ? trim((string) $merged['business_rnc']) : null;
         $merged['employee_count'] = $merged['employee_count'] === null || $merged['employee_count'] === ''
             ? null

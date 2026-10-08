@@ -56,13 +56,15 @@ class PosSaleController extends Controller
             'items.*.expected_source_product_id' => ['nullable', 'ulid'],
         ]);
         if (! array_key_exists('tax', $validated)) {
-            $taxRate = $operational->taxRate($shop);
-            if ($taxRate > 0) {
+            $taxRateBasisPoints = $operational->taxRateBasisPoints($shop);
+            if ($taxRateBasisPoints > 0) {
                 $subtotalCents = collect($validated['items'])->sum(
                     fn (array $item): int => Money::toCents($item['unit_price']) * (int) $item['quantity']
                         - Money::toCents($item['discount'] ?? 0)
                 ) - Money::toCents($validated['discount'] ?? 0);
-                $validated['tax'] = Money::toDecimal((int) round(max(0, $subtotalCents) * $taxRate / 100));
+                $validated['tax'] = Money::toDecimal(
+                    Money::percentageOfBasisPoints(max(0, $subtotalCents), $taxRateBasisPoints)
+                );
             }
         }
         $payloadHash = hash('sha256', json_encode($validated, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION));
@@ -110,7 +112,7 @@ class PosSaleController extends Controller
                     }
                     $expectedPrice = ($validated['sale_mode'] ?? 'retail') === 'wholesale'
                         ? $products[$item['product_id']]->wholesale_price
-                        : $products[$item['product_id']]->currentPrice();
+                        : $products[$item['product_id']]->currentPriceDecimal();
                     if ($expectedPrice === null || Money::toCents($item['unit_price']) !== Money::toCents($expectedPrice)) {
                         return response()->json([
                             'message' => 'The submitted price no longer matches the catalog.',
@@ -191,8 +193,8 @@ class PosSaleController extends Controller
                     'product' => $products[$item['product_id']],
                     'quantity' => (int) $item['quantity'],
                     'unit_price' => $item['unit_price'],
-                    'discount' => (float) ($item['discount'] ?? 0),
-                    'tax' => (float) ($item['tax'] ?? 0),
+                    'discount' => $item['discount'] ?? '0.00',
+                    'tax' => $item['tax'] ?? '0.00',
                 ], $validated['items']);
                 $sourceBottles = collect($sales)
                     ->map(fn (array $sale): ?Product => $sale['product']->isDecant() ? $sale['product']->sourceProduct : null)
@@ -205,8 +207,8 @@ class PosSaleController extends Controller
                     $request->user()->id,
                     'pos',
                     $derivedStatus,
-                    (float) ($validated['discount'] ?? 0),
-                    (float) ($validated['tax'] ?? 0),
+                    $validated['discount'] ?? '0.00',
+                    $validated['tax'] ?? '0.00',
                 );
                 $invoice = Invoice::query()->findOrFail($movements[0]->invoice_id);
                 $invoice->sale_mode = $validated['sale_mode'] ?? 'retail';

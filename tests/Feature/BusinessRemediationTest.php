@@ -38,6 +38,27 @@ test('API catalog sends active offer price and discounted taxed sale has matchin
         ->and((int) Invoice::first()->items->first()->general_discount_cents)->toBe(2000);
 });
 
+test('POS calcula el impuesto automático desde centavos y redondea medio centavo hacia arriba', function () {
+    [$user, $shop, $product] = businessFixture();
+    $product->update(['price' => '0.01', 'sale_price' => null]);
+    $product->inventory->update(['stock_quantity' => 1, 'cost_price' => '0.00']);
+    $shop->update(['operational_settings' => ['tax_rate' => '50.00']]);
+    $token = $user->createToken('tax-precision', ['pos:write'])->plainTextToken;
+
+    $this->withToken($token)
+        ->postJson('/api/v1/shops/'.$shop->public_id.'/pos-sales', [
+            'client_sale_uuid' => (string) Str::uuid(),
+            'payment_status' => 'paid',
+            'payments' => [['method' => 'cash', 'amount' => '0.02']],
+            'items' => [['product_id' => $product->public_id, 'quantity' => 1, 'unit_price' => '0.01']],
+        ])
+        ->assertCreated()
+        ->assertJsonPath('total', '0.02');
+
+    expect((string) Invoice::query()->sole()->tax)->toBe('0.01')
+        ->and((string) Invoice::query()->sole()->total)->toBe('0.02');
+});
+
 test('dashboard renders actual costs and order confirmation is idempotent', function () {
     [$user, $shop, $product] = businessFixture();
     $order = $shop->orders()->create(['order_number' => 'MC-TEST', 'currency' => 'DOP', 'subtotal' => 300, 'total' => 300, 'status' => 'sent_to_whatsapp']);
@@ -163,6 +184,27 @@ test('price proposal requires owner Pro and rejects stale approval', function ()
     expect((float) $product->fresh()->price)->toBe(200.0);
     $user->update(['plan' => UserPlan::Free]);
     $this->actingAs($user)->post($url, ['margin_percent' => 40, 'round_step' => 10])->assertSessionHasErrors('pricing');
+});
+
+test('web price approval compares decimal snapshots in cents', function () {
+    [$user, $shop, $product] = businessFixture();
+    DB::table('product_price_rules')->insert([
+        'product_id' => $product->id,
+        'margin_percent' => '40.00',
+        'round_step_cents' => 100,
+        'pending_price' => '200.10',
+        'auto_increase' => false,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $this->actingAs($user)
+        ->post(route('seller.shops.pricing.approve', [$shop, $product]), ['expected_price' => '200.10'])
+        ->assertRedirect()
+        ->assertSessionHas('status', 'Precio aprobado.');
+
+    expect($product->fresh()->price)->toBe('200.10')
+        ->and(DB::table('product_price_rules')->where('product_id', $product->id)->value('pending_price'))->toBeNull();
 });
 
 test('ads are shown only inside free catalogs', function () {

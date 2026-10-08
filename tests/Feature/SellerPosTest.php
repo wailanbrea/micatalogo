@@ -39,6 +39,7 @@ test('seller can open the web POS and register a paid sale', function () {
         ->assertSee('Recibido')
         ->assertSee('payment_note')
         ->assertSee('cashChange')
+        ->assertSee(':disabled="paymentKind !== \'mixed\'"', false)
         ->assertSee('Crear nuevo servicio')
         ->assertSee($product->name);
 

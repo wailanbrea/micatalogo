@@ -223,66 +223,90 @@ class CashRegisterService
             throw new AuthorizationException('No tienes permiso para registrar movimientos en la sesión de caja de otro usuario.', 403);
         }
 
-        // Check idempotency if clientOperationUuid provided
-        if ($clientOperationUuid) {
-            $existing = CashMovement::query()
-                ->where('shop_id', $session->shop_id)
-                ->where('client_operation_uuid', $clientOperationUuid)
-                ->first();
+        try {
+            return DB::transaction(function () use ($session, $user, $type, $amount, $notes, $referenceType, $referenceId, $clientOperationUuid, $payloadHash): CashMovement {
+                $session = CashRegisterSession::query()->lockForUpdate()->findOrFail($session->id);
 
-            if ($existing) {
-                if ($payloadHash && ! hash_equals((string) $existing->payload_sha256, $payloadHash)) {
-                    throw new InvalidArgumentException('Conflicto de idempotencia: el identificador de operación ya fue utilizado con datos distintos.', 409);
+                if ($session->status === 'closed') {
+                    throw new InvalidArgumentException('No se pueden registrar movimientos en una sesión de caja cerrada.', 422);
                 }
 
-                return $existing;
+                // The session lock serializes normal retries on the same
+                // register. The check must happen after acquiring it because
+                // an absent UUID has no row that can be locked.
+                if ($clientOperationUuid) {
+                    $existing = CashMovement::query()
+                        ->where('shop_id', $session->shop_id)
+                        ->where('client_operation_uuid', $clientOperationUuid)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if ($existing) {
+                        if ($payloadHash && ! hash_equals((string) $existing->payload_sha256, $payloadHash)) {
+                            throw new InvalidArgumentException('Conflicto de idempotencia: el identificador de operación ya fue utilizado con datos distintos.', 409);
+                        }
+
+                        return $existing;
+                    }
+                }
+
+                $rawCents = Money::toCents($amount);
+                if ($rawCents === 0) {
+                    throw new InvalidArgumentException('El monto del movimiento debe ser distinto de cero.', 422);
+                }
+
+                $allowedTypes = [
+                    'sale', 'customer_payment', 'expense', 'supplier_payment',
+                    'cash_in', 'cash_out', 'owner_contribution', 'owner_withdrawal', 'adjustment',
+                ];
+
+                if (! in_array($type, $allowedTypes, true)) {
+                    throw new InvalidArgumentException("Tipo de movimiento de caja no reconocido: {$type}.", 422);
+                }
+
+                $signedCents = match ($type) {
+                    'expense', 'supplier_payment', 'cash_out', 'owner_withdrawal' => -abs($rawCents),
+                    'sale', 'customer_payment', 'cash_in', 'owner_contribution' => abs($rawCents),
+                    'adjustment' => $rawCents,
+                    default => $rawCents,
+                };
+
+                return CashMovement::create([
+                    'public_id' => (string) Str::ulid(),
+                    'cash_register_session_id' => $session->id,
+                    'shop_id' => $session->shop_id,
+                    'user_id' => $user->id,
+                    'type' => $type,
+                    'amount' => Money::toDecimal($signedCents),
+                    'amount_cents' => $signedCents,
+                    'reference_type' => $referenceType,
+                    'reference_id' => $referenceId,
+                    'notes' => $notes,
+                    'occurred_at' => now(),
+                    'client_operation_uuid' => $clientOperationUuid,
+                    'payload_sha256' => $payloadHash,
+                ]);
+            });
+        } catch (QueryException $exception) {
+            // A duplicate UUID from another register can still race because
+            // the unique key is scoped to the shop, not the session. Convert
+            // that database race into the same idempotent replay contract.
+            if ($clientOperationUuid && (str_contains($exception->getMessage(), 'unique_cash_movement_shop_client_uuid') || str_contains($exception->getMessage(), 'Duplicate entry'))) {
+                $existing = CashMovement::query()
+                    ->where('shop_id', $session->shop_id)
+                    ->where('client_operation_uuid', $clientOperationUuid)
+                    ->first();
+                if ($existing) {
+                    if ($payloadHash && ! hash_equals((string) $existing->payload_sha256, $payloadHash)) {
+                        throw new InvalidArgumentException('Conflicto de idempotencia: el identificador de operación ya fue utilizado con datos distintos.', 409);
+                    }
+
+                    return $existing;
+                }
             }
+
+            throw $exception;
         }
-
-        return DB::transaction(function () use ($session, $user, $type, $amount, $notes, $referenceType, $referenceId, $clientOperationUuid, $payloadHash): CashMovement {
-            $session = CashRegisterSession::query()->lockForUpdate()->findOrFail($session->id);
-
-            if ($session->status === 'closed') {
-                throw new InvalidArgumentException('No se pueden registrar movimientos en una sesión de caja cerrada.', 422);
-            }
-
-            $rawCents = Money::toCents($amount);
-            if ($rawCents === 0) {
-                throw new InvalidArgumentException('El monto del movimiento debe ser distinto de cero.', 422);
-            }
-
-            $allowedTypes = [
-                'sale', 'customer_payment', 'expense', 'supplier_payment',
-                'cash_in', 'cash_out', 'owner_contribution', 'owner_withdrawal', 'adjustment',
-            ];
-
-            if (! in_array($type, $allowedTypes, true)) {
-                throw new InvalidArgumentException("Tipo de movimiento de caja no reconocido: {$type}.", 422);
-            }
-
-            $signedCents = match ($type) {
-                'expense', 'supplier_payment', 'cash_out', 'owner_withdrawal' => -abs($rawCents),
-                'sale', 'customer_payment', 'cash_in', 'owner_contribution' => abs($rawCents),
-                'adjustment' => $rawCents,
-                default => $rawCents,
-            };
-
-            return CashMovement::create([
-                'public_id' => (string) Str::ulid(),
-                'cash_register_session_id' => $session->id,
-                'shop_id' => $session->shop_id,
-                'user_id' => $user->id,
-                'type' => $type,
-                'amount' => Money::toDecimal($signedCents),
-                'amount_cents' => $signedCents,
-                'reference_type' => $referenceType,
-                'reference_id' => $referenceId,
-                'notes' => $notes,
-                'occurred_at' => now(),
-                'client_operation_uuid' => $clientOperationUuid,
-                'payload_sha256' => $payloadHash,
-            ]);
-        });
     }
 
     public function getSessionSummary(CashRegisterSession $session): array

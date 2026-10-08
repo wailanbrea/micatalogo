@@ -28,6 +28,11 @@ class CommercialQuote extends Model
         return 'public_id';
     }
 
+    public function isExpired(): bool
+    {
+        return $this->valid_until?->isBefore(today()) ?? false;
+    }
+
     public function shop(): BelongsTo { return $this->belongsTo(Shop::class); }
     public function customer(): BelongsTo { return $this->belongsTo(Customer::class); }
     public function user(): BelongsTo { return $this->belongsTo(User::class); }

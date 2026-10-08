@@ -8,14 +8,29 @@ use App\Models\Shop;
 use App\Services\PlanLimitsService;
 use App\Services\BusinessCapabilityService;
 use App\Services\BusinessPresentationService;
+use App\Services\SellerMenuService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class CatalogController extends Controller
 {
-    public function show(Request $request, Shop $shop, PlanLimitsService $limits, BusinessCapabilityService $capabilities, BusinessPresentationService $presentation): JsonResponse
+    public function show(
+        Request $request,
+        Shop $shop,
+        PlanLimitsService $limits,
+        BusinessCapabilityService $capabilities,
+        BusinessPresentationService $presentation,
+        SellerMenuService $menus,
+    ): JsonResponse
     {
         abort_unless($request->user()->canSellAtShop($shop), 404);
+
+        // Cost is an internal financial datum. Keep the response shape stable
+        // for Android, but never expose it to a seller without finance access.
+        $canViewSensitiveFinance = $menus->canManage($shop, $request->user())
+            || $request->user()->isAdmin()
+            || $request->user()->ownsShop($shop)
+            || in_array('finance', $menus->visibleForUser($shop, $request->user()), true);
 
         $categories = $shop->categories()
             ->orderBy('sort_order')
@@ -35,7 +50,7 @@ class CatalogController extends Controller
             ->with(['inventory', 'sourceProduct', 'primaryImage', 'comboItems.component.inventory'])
             ->orderBy('name')
             ->get()
-            ->map(fn (Product $product) => $this->productPayload($product))
+            ->map(fn (Product $product) => $this->productPayload($product, $canViewSensitiveFinance))
             ->values();
 
         return response()->json([
@@ -56,7 +71,7 @@ class CatalogController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function productPayload(Product $product): array
+    private function productPayload(Product $product, bool $canViewSensitiveFinance = false): array
     {
         $inventory = $product->inventory;
         $stockQuantity = $product->isCombo() ? $product->comboAvailableQuantity() : $inventory?->stock_quantity;
@@ -92,7 +107,7 @@ class CatalogController extends Controller
                 'stock_quantity' => $stockQuantity,
                 'available_ml' => $inventory?->available_ml,
                 'opened_bottles' => $inventory?->opened_bottles,
-                'cost_price' => $inventory?->cost_price,
+                'cost_price' => $canViewSensitiveFinance ? $inventory?->cost_price : null,
                 'low_stock_threshold' => $inventory?->low_stock_threshold,
             ],
             'updated_at' => $product->updated_at->toISOString(),

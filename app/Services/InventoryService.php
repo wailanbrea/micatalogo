@@ -23,7 +23,7 @@ class InventoryService
      *
      * @throws InvalidArgumentException
      */
-    public function recordSale(Product $product, int $quantity, ?string $notes = null, ?int $userId = null, bool $createInvoice = true, ?float $unitPrice = null, ?string $paymentMethod = 'cash'): InventoryMovement
+    public function recordSale(Product $product, int $quantity, ?string $notes = null, ?int $userId = null, bool $createInvoice = true, string|int|float|null $unitPrice = null, ?string $paymentMethod = 'cash'): InventoryMovement
     {
         if ($quantity <= 0) {
             throw new InvalidArgumentException('La cantidad vendida debe ser mayor a 0.');
@@ -51,7 +51,11 @@ class InventoryService
                     'sold_quantity' => 0,
                     'low_stock_threshold' => 0,
                 ]);
-                $unitCost = $inventory->cost_price === null ? null : (float) $inventory->cost_price;
+                // Keep service costs as decimal strings until Money normalizes them to cents.
+                // Converting through float here could corrupt fractional-cent boundaries.
+                $unitCost = $inventory->cost_price === null
+                    ? null
+                    : Money::toDecimal(Money::toCents($inventory->getRawOriginal('cost_price') ?? $inventory->cost_price));
                 $totalCostCents = $unitCost === null ? null : Money::toCents($unitCost) * $quantity;
                 $inventory->sold_quantity += $quantity;
                 $inventory->save();
@@ -62,7 +66,7 @@ class InventoryService
                     'quantity' => -$quantity,
                     'stock_before' => 0,
                     'stock_after' => 0,
-                    'unit_price' => $unitPrice ?? $product->currentPrice(),
+                    'unit_price' => $unitPrice ?? $product->currentPriceDecimal(),
                     'unit_cost' => $unitCost,
                     'total_cost_cents' => $totalCostCents,
                     'notes' => $notes ?: 'Venta de servicio sin inventario',
@@ -159,7 +163,7 @@ class InventoryService
                 'quantity' => -$quantity,
                 'stock_before' => $before,
                 'stock_after' => $after,
-                'unit_price' => $unitPrice ?? $product->currentPrice(),
+                'unit_price' => $unitPrice ?? $product->currentPriceDecimal(),
                 'unit_cost' => $inventory->cost_price,
                 'notes' => $notes ?: ($product->isDecant()
                     ? "Venta de decant de {$product->volume_ml} ml"
@@ -171,7 +175,7 @@ class InventoryService
             $costCents = $fifo->consume($fifoSource, $consumedMl ?? $quantity, $movement);
             $movement->update([
                 'total_cost_cents' => $costCents,
-                'unit_cost' => $costCents === null ? null : $costCents / (100 * $quantity),
+                'unit_cost' => Money::perUnitDecimal($costCents, $quantity),
             ]);
 
             if ($createInvoice) {
@@ -195,13 +199,13 @@ class InventoryService
     /**
      * Register all lines from a shared cart as one atomic checkout.
      *
-     * @param  array<int, array{product: Product, quantity: int, unit_price?: float}>  $sales
+     * @param  array<int, array{product: Product, quantity: int, unit_price?: string|int|float}>  $sales
      * @return array<int, InventoryMovement>
      */
-    public function recordCartSales(array $sales, ?int $userId = null, string $channel = 'whatsapp', string $paymentStatus = 'paid', float $discount = 0, float $tax = 0, ?string $paymentMethod = 'cash', ?Customer $customer = null, string|float|int $creditAmount = 0, ?string $paymentReference = null): array
+    public function recordCartSales(array $sales, ?int $userId = null, string $channel = 'whatsapp', string $paymentStatus = 'paid', string|int|float $discount = 0, string|int|float $tax = 0, ?string $paymentMethod = 'cash', ?Customer $customer = null, string|float|int $creditAmount = 0, ?string $paymentReference = null): array
     {
         return DB::transaction(function () use ($sales, $userId, $channel, $paymentStatus, $discount, $tax, $paymentMethod, $customer, $creditAmount, $paymentReference): array {
-            if ($sales === [] || $discount < 0 || $tax < 0) {
+            if ($sales === [] || Money::toCents($discount) < 0 || Money::toCents($tax) < 0) {
                 throw new InvalidArgumentException('La venta o sus importes no son válidos.');
             }
             $movements = collect($sales)->map(fn (array $sale) => $this->recordSale(
@@ -220,7 +224,7 @@ class InventoryService
         });
     }
 
-    private function recordComboSale(Product $combo, int $quantity, ?string $notes, ?int $userId, bool $createInvoice, ?float $unitPrice, ?string $paymentMethod): InventoryMovement
+    private function recordComboSale(Product $combo, int $quantity, ?string $notes, ?int $userId, bool $createInvoice, string|int|float|null $unitPrice, ?string $paymentMethod): InventoryMovement
     {
         if ($quantity <= 0) {
             throw new InvalidArgumentException('La cantidad vendida debe ser mayor a 0.');
@@ -261,8 +265,8 @@ class InventoryService
             'quantity' => -$quantity,
             'stock_before' => $stockBefore,
             'stock_after' => $stockAfter,
-            'unit_price' => $unitPrice ?? $combo->currentPrice(),
-            'unit_cost' => $quantity > 0 ? $totalCostCents / (100 * $quantity) : null,
+            'unit_price' => $unitPrice ?? $combo->currentPriceDecimal(),
+            'unit_cost' => Money::perUnitDecimal($totalCostCents, $quantity),
             'total_cost_cents' => $totalCostCents,
             'notes' => $notes ?: 'Venta de combo; se descontaron sus componentes',
             'user_id' => $userId,
@@ -294,13 +298,16 @@ class InventoryService
      *
      * @throws InvalidArgumentException
      */
-    public function recordRestock(Product $product, int $quantity, ?string $notes = null, ?int $userId = null, ?float $unitCost = null): InventoryMovement
+    public function recordRestock(Product $product, int $quantity, ?string $notes = null, ?int $userId = null, string|int|float|null $unitCost = null): InventoryMovement
     {
-        if ($quantity <= 0 || ($unitCost !== null && $unitCost < 0)) {
+        $unitCostCents = $unitCost === null ? null : Money::toCents($unitCost);
+        $unitCostDecimal = $unitCostCents === null ? null : Money::toDecimal($unitCostCents);
+
+        if ($quantity <= 0 || ($unitCostCents !== null && $unitCostCents < 0)) {
             throw new InvalidArgumentException('La cantidad a reponer debe ser mayor a 0.');
         }
 
-        return DB::transaction(function () use ($product, $quantity, $notes, $userId, $unitCost) {
+        return DB::transaction(function () use ($product, $quantity, $notes, $userId, $unitCost, $unitCostCents, $unitCostDecimal) {
             $product = Product::query()->lockForUpdate()->findOrFail($product->id);
             $inventory = ProductInventory::where('product_id', $product->id)
                 ->lockForUpdate()
@@ -319,22 +326,22 @@ class InventoryService
 
             $fifo = app(FifoCostService::class);
             $fifo->initialize($product, $inventory);
-            $cost = $unitCost ?? ($inventory->cost_price === null ? null : (float) $inventory->cost_price);
+            $costCents = $unitCostCents ?? ($inventory->cost_price === null ? null : Money::toCents($inventory->cost_price));
             $fifo->receive($product, $product->sale_unit === 'bottle' ? $quantity * (int) $product->volume_ml : $quantity,
-                $cost === null ? null : (int) round($cost * $quantity * 100));
+                $costCents === null ? null : $costCents * $quantity);
 
             $availableMl = $this->availableMl($product, $inventory);
             $inventory->stock_quantity = $after;
-            if ($unitCost !== null) {
-                $inventory->cost_price = $unitCost;
+            if ($unitCostDecimal !== null) {
+                $inventory->cost_price = $unitCostDecimal;
             }
             if ($availableMl !== null) {
                 $inventory->available_ml = $availableMl + ($product->sale_unit === 'bottle' ? $quantity * $product->volume_ml : $quantity);
             }
             $inventory->save();
 
-            if ($cost !== null) {
-                app(ProductPricingService::class)->propose($product, $cost, $userId);
+            if ($costCents !== null) {
+                app(ProductPricingService::class)->propose($product, Money::toDecimal($costCents), $userId);
             }
 
             $this->syncAvailability($product, $after);
@@ -395,7 +402,7 @@ class InventoryService
 
             return InventoryMovement::create(['product_id' => $product->id, 'type' => 'return', 'quantity' => $quantity,
                 'stock_before' => $before, 'stock_after' => $after, 'unit_price' => null,
-                'unit_cost' => $costCents === null ? null : $costCents / (100 * $quantity), 'total_cost_cents' => $costCents,
+                'unit_cost' => Money::perUnitDecimal($costCents, $quantity), 'total_cost_cents' => $costCents,
                 'user_id' => $userId, 'notes' => $notes ?: 'Devolución con costo de venta original', 'created_at' => now()]);
         });
     }
@@ -614,29 +621,40 @@ class InventoryService
             ->whereIn('product_id', $decants->pluck('id'))
             ->where('type', 'sale')
             ->whereNotNull('unit_price')
-            ->selectRaw('product_id, COALESCE(SUM(ABS(quantity) * unit_price), 0) as revenue')
+            ->get(['product_id', 'quantity', 'unit_price'])
             ->groupBy('product_id')
-            ->pluck('revenue', 'product_id');
+            ->map(fn ($movements): int => $movements->sum(
+                fn (InventoryMovement $movement): int => abs((int) $movement->quantity)
+                    * Money::toCents($movement->getRawOriginal('unit_price') ?? $movement->unit_price)
+            ));
 
         return $bottles->mapWithKeys(function (Product $bottle) use ($decants, $revenueByDecant): array {
-            $cost = (float) $bottle->inventory->cost_price;
-            $revenue = $decants
+            $costCents = Money::toCents(
+                $bottle->inventory->getRawOriginal('cost_price') ?? $bottle->inventory->cost_price
+            );
+            $revenueCents = $decants
                 ->where('inventory_source_product_id', $bottle->id)
-                ->sum(fn (Product $decant): float => (float) ($revenueByDecant[$decant->id] ?? 0));
-            $covered = $revenue >= $cost;
+                ->sum(fn (Product $decant): int => (int) ($revenueByDecant[$decant->id] ?? 0));
+            $covered = $revenueCents >= $costCents;
+            $percentTenths = $costCents > 0
+                ? min(1000, intdiv(($revenueCents * 1000) + intdiv($costCents, 2), $costCents))
+                : 1000;
+            $cost = (float) Money::toDecimal($costCents);
+            $revenue = (float) Money::toDecimal($revenueCents);
+            $difference = (float) Money::toDecimal($revenueCents - $costCents);
 
             return [$bottle->id => [
                 'source_product_id' => $bottle->public_id,
                 'source_product_name' => $bottle->name,
-                'cost' => round($cost, 2),
-                'revenue' => round($revenue, 2),
-                'difference' => round($revenue - $cost, 2),
-                'percent' => $cost > 0 ? min(100, round(($revenue / $cost) * 100, 1)) : 100,
+                'cost' => $cost,
+                'revenue' => $revenue,
+                'difference' => $difference,
+                'percent' => $percentTenths / 10,
                 'covered' => $covered,
                 'decants_count' => $decants->where('inventory_source_product_id', $bottle->id)->count(),
                 'message' => $covered
                     ? "Las ventas de decants ya cubrieron el costo de {$bottle->name}."
-                    : "Faltan RD$ ".number_format(max(0, $cost - $revenue), 2, '.', ',')." para cubrir {$bottle->name}.",
+                    : "Faltan RD$ ".number_format(max(0, $costCents - $revenueCents) / 100, 2, '.', ',')." para cubrir {$bottle->name}.",
             ]];
         })->all();
     }
@@ -644,7 +662,7 @@ class InventoryService
     /**
      * Persist a price snapshot and link the resulting invoice to its movements.
      *
-     * @param  array<int, array{product: Product, quantity: int, unit_price?: float}>  $sales
+     * @param  array<int, array{product: Product, quantity: int, unit_price?: string|int|float}>  $sales
      * @param  array<int, InventoryMovement>  $movements
      */
     private function createInvoiceForSales(int $shopId, array $sales, array $movements, ?int $userId, string $channel = 'whatsapp', string $paymentStatus = 'paid', float|string|int $discount = 0, float|string|int $tax = 0, ?string $paymentMethod = 'cash', ?Customer $customer = null, string|float|int $creditAmount = 0, ?string $paymentReference = null): Invoice
@@ -668,7 +686,7 @@ class InventoryService
         foreach ($sales as $index => $sale) {
             $product = $sale['product'];
             $quantity = (int) $sale['quantity'];
-            $unitPriceCents = Money::toCents($sale['unit_price'] ?? $product->currentPrice());
+            $unitPriceCents = Money::toCents($sale['unit_price'] ?? $product->currentPriceDecimal());
             $lineDiscountCents = Money::toCents($sale['discount'] ?? 0);
             $lineTaxCents = Money::toCents($sale['tax'] ?? 0);
 
@@ -772,8 +790,9 @@ class InventoryService
 
         if ($seller->commission_type === 'percentage') {
             // Represent percentage as basis points: 7.5% = 750 bps
-            $bps = (int) round(((float) $seller->commission_value) * 100);
-            $commissionCents = (int) round(($totalCents * $bps) / 10000);
+            $bps = Money::toCents($seller->getRawOriginal('commission_value') ?? $seller->commission_value);
+            // Integer half-up rounding: commission = sales cents * basis points / 10,000.
+            $commissionCents = intdiv(($totalCents * $bps) + 5000, 10000);
         } else {
             $commissionCents = Money::toCents($seller->commission_value);
         }

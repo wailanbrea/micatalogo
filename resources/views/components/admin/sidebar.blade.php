@@ -31,6 +31,8 @@
     $visibleMenus = $contextShop ? app(\App\Services\SellerMenuService::class)->visibleForUser($contextShop, $user) : [];
     $canSeeMenu = fn (string $key): bool => ! $contextShop || in_array($key, $visibleMenus, true);
     $canManageContext = $contextShop && app(\App\Services\SellerMenuService::class)->canManage($contextShop, $user);
+    $isAccountantContext = (bool) ($contextShop && $user?->isActiveShopAccountant($contextShop));
+    $contextRoleLabel = $isAdmin ? 'Administrador' : ($contextShop && $user->ownsShop($contextShop) ? 'Propietario' : ($canManageContext ? 'Administrador de tienda' : ($isAccountantContext ? 'Contador' : 'Vendedor')));
     $isAssignedSellerOnly = $user?->isAssignedSellerOnly() ?? false;
     $canManageShops = ! $isAssignedSellerOnly;
     $canCreateShop = $isAdmin || ! ($user?->hasActiveShopAssignment() ?? false);
@@ -224,10 +226,10 @@
                     <span>Clientes y cobros</span>
                 </a>
             @endif
-            @if ($canSeeMenu('cash') || $canSeeMenu('expenses') || ($canSeeMenu('sales') && $canSeeMenu('finance')))
+            @if ($canSeeMenu('cash') || $canSeeMenu('expenses') || $canSeeMenu('finance'))
                 <p class="mt-5 border-t border-white/10 px-3 pb-2 pt-5 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Finanzas</p>
             @endif
-            @if ($canSeeMenu('sales') && $canSeeMenu('finance'))
+            @if ($canSeeMenu('finance'))
                 <a wire:navigate.hover href="{{ route('seller.shops.business', $contextShop) }}" class="{{ $linkClass }} {{ request()->routeIs('seller.shops.business') ? $activeClass : $idleClass }}">
                     <span aria-hidden="true" class="w-5 text-center">↗</span><span>Ganancias y resumen</span>
                 </a>
@@ -308,7 +310,7 @@
                 <span class="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-sm font-black text-white">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
             <span class="min-w-0 flex-1">
                 <span class="block truncate text-sm font-bold text-white">{{ $user->name }}</span>
-                <span class="block text-xs text-slate-400">{{ $isAdmin ? 'Administrador' : ($contextShop && $user->ownsShop($contextShop) ? 'Propietario' : ($canManageContext ? 'Administrador de tienda' : 'Vendedor')) }}</span>
+                <span class="block text-xs text-slate-400">{{ $contextRoleLabel }}</span>
             </span>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf

@@ -279,29 +279,41 @@
                                 <div class="flex flex-wrap items-start justify-between gap-3">
                                     <div>
                                         <h2 id="price-health-filters-title" class="text-base font-black text-slate-900">Revisión de precios</h2>
-                                        <p class="mt-1 text-xs leading-5 text-slate-600">Encuentra rápidamente costos, márgenes y sugerencias pendientes. Las reglas se editan en Precios automáticos.</p>
+                                        @if ($showSensitiveFinance)
+                                            <p class="mt-1 text-xs leading-5 text-slate-600">Encuentra rápidamente costos, márgenes y sugerencias pendientes. Las reglas se editan en Precios automáticos.</p>
+                                        @else
+                                            <p class="mt-1 text-xs leading-5 text-slate-600">Consulta el estado operativo de los productos. La revisión financiera queda reservada al propietario o finanzas.</p>
+                                        @endif
                                     </div>
-                                    <a href="{{ route('seller.shops.pricing.index', $shop) }}" class="rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-black text-white hover:bg-indigo-700">Configurar reglas</a>
+                                    @if ($showSensitiveFinance)
+                                        <a href="{{ route('seller.shops.pricing.index', $shop) }}" class="rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-black text-white hover:bg-indigo-700">Configurar reglas</a>
+                                    @endif
                                 </div>
                                 <form method="GET" action="{{ route('seller.shops.feature', [$shop, 'feature' => 'price_health']) }}" class="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_200px_auto]">
                                     <label class="sr-only" for="price-health-search">Buscar productos</label>
-                                    <input id="price-health-search" name="q" value="{{ $priceHealthFilters['search'] }}" placeholder="Buscar producto, costo o estado..." class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                    <label class="sr-only" for="price-health-status">Filtrar salud de precio</label>
-                                    <select id="price-health-status" name="status" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                        @foreach (['all' => 'Todos', 'low_cost' => 'Bajo costo', 'low_margin' => 'Margen bajo', 'no_price' => 'Sin precio', 'no_cost' => 'Sin costo', 'cost_doubtful' => 'Costo dudoso', 'suggestions' => 'Sugerencias'] as $statusKey => $statusLabel)
-                                            <option value="{{ $statusKey }}" @selected($priceHealthFilters['status'] === $statusKey)>{{ $statusLabel }}</option>
-                                        @endforeach
-                                    </select>
+                                    <input id="price-health-search" name="q" value="{{ $priceHealthFilters['search'] }}" placeholder="Buscar producto..." class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    @if ($showSensitiveFinance)
+                                        <label class="sr-only" for="price-health-status">Filtrar salud de precio</label>
+                                        <select id="price-health-status" name="status" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                            @foreach (['all' => 'Todos', 'low_cost' => 'Bajo costo', 'low_margin' => 'Margen bajo', 'no_price' => 'Sin precio', 'no_cost' => 'Sin costo', 'cost_doubtful' => 'Costo dudoso', 'suggestions' => 'Sugerencias'] as $statusKey => $statusLabel)
+                                                <option value="{{ $statusKey }}" @selected($priceHealthFilters['status'] === $statusKey)>{{ $statusLabel }}</option>
+                                            @endforeach
+                                        </select>
+                                    @else
+                                        <input type="hidden" name="status" value="all">
+                                    @endif
                                     <button class="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-black text-white hover:bg-indigo-700">Aplicar filtros</button>
                                 </form>
-                                <div class="mt-3 flex flex-wrap gap-2">
-                                    @foreach (['all' => 'Todos', 'low_cost' => 'Bajo costo', 'low_margin' => 'Margen bajo', 'no_price' => 'Sin precio', 'no_cost' => 'Sin costo', 'cost_doubtful' => 'Costo dudoso', 'suggestions' => 'Sugerencias'] as $statusKey => $statusLabel)
-                                        <a href="{{ request()->fullUrlWithQuery(['status' => $statusKey]) }}" class="rounded-full px-3.5 py-2 text-xs font-black transition {{ $priceHealthFilters['status'] === $statusKey ? 'bg-indigo-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:text-indigo-700' }}">{{ $statusLabel }}</a>
-                                    @endforeach
-                                    @if ($priceHealthFilters['search'] !== '' || $priceHealthFilters['status'] !== 'all')
-                                        <a href="{{ route('seller.shops.feature', [$shop, 'feature' => 'price_health']) }}" class="rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-black text-slate-500 hover:text-indigo-700">Limpiar</a>
-                                    @endif
-                                </div>
+                                @if ($showSensitiveFinance)
+                                    <div class="mt-3 flex flex-wrap gap-2">
+                                        @foreach (['all' => 'Todos', 'low_cost' => 'Bajo costo', 'low_margin' => 'Margen bajo', 'no_price' => 'Sin precio', 'no_cost' => 'Sin costo', 'cost_doubtful' => 'Costo dudoso', 'suggestions' => 'Sugerencias'] as $statusKey => $statusLabel)
+                                            <a href="{{ request()->fullUrlWithQuery(['status' => $statusKey]) }}" class="rounded-full px-3.5 py-2 text-xs font-black transition {{ $priceHealthFilters['status'] === $statusKey ? 'bg-indigo-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:text-indigo-700' }}">{{ $statusLabel }}</a>
+                                        @endforeach
+                                        @if ($priceHealthFilters['search'] !== '' || $priceHealthFilters['status'] !== 'all')
+                                            <a href="{{ route('seller.shops.feature', [$shop, 'feature' => 'price_health']) }}" class="rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-black text-slate-500 hover:text-indigo-700">Limpiar</a>
+                                        @endif
+                                    </div>
+                                @endif
                                 <p class="mt-3 text-[11px] font-bold text-slate-500">{{ number_format((int) $priceHealthFilters['count']) }} producto(s) en esta vista</p>
                             </section>
                         @endif
@@ -634,8 +646,12 @@
                                 <div class="flex flex-wrap items-start justify-between gap-3">
                                     <div>
                                         <p class="text-[11px] font-black uppercase tracking-[0.16em] text-blue-600">Inventario compartido</p>
-                                        <h2 id="decants-sources-title" class="mt-1 text-base font-black text-slate-900">Botellas y recuperación del costo</h2>
-                                        <p class="mt-1 max-w-2xl text-xs leading-5 text-slate-500">Cada frasco conserva su costo de compra. Las ventas de sus decants se acumulan hasta cubrirlo, sin duplicar el valor del inventario.</p>
+                                        <h2 id="decants-sources-title" class="mt-1 text-base font-black text-slate-900">{{ $showSensitiveFinance ? 'Botellas y recuperación del costo' : 'Botellas y presentaciones' }}</h2>
+                                        @if ($showSensitiveFinance)
+                                            <p class="mt-1 max-w-2xl text-xs leading-5 text-slate-500">Cada frasco conserva su costo de compra. Las ventas de sus decants se acumulan hasta cubrirlo, sin duplicar el valor del inventario.</p>
+                                        @else
+                                            <p class="mt-1 max-w-2xl text-xs leading-5 text-slate-500">Consulta las botellas fuente, sus mililitros disponibles y las presentaciones listas para vender.</p>
+                                        @endif
                                     </div>
                                     <a wire:navigate.hover href="{{ route('seller.shops.inventory.index', $shop) }}" class="rounded-xl border border-blue-200 bg-white px-3.5 py-2 text-xs font-black text-blue-700 hover:bg-blue-50">Abrir inventario</a>
                                 </div>
@@ -648,13 +664,13 @@
                                                         <p class="truncate text-sm font-black text-slate-900">{{ $bottle['name'] }}</p>
                                                         <p class="mt-1 text-[11px] text-slate-500">{{ $bottle['volume_ml'] ?: '—' }} ml · {{ $bottle['decants_count'] }} presentación(es)</p>
                                                     </div>
-                                                    <span class="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black {{ $bottle['covered'] ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800' }}">{{ $bottle['covered'] ? 'Costo cubierto' : 'En recuperación' }}</span>
+                                                    <span class="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black {{ $showSensitiveFinance ? ($bottle['covered'] ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800') : 'bg-blue-50 text-blue-700' }}">{{ $showSensitiveFinance ? ($bottle['covered'] ? 'Costo cubierto' : 'En recuperación') : 'Operativa' }}</span>
                                                 </div>
                                                 <div class="mt-4 grid grid-cols-2 gap-2 text-xs">
                                                     <div class="rounded-xl bg-slate-50 p-3"><p class="font-bold text-slate-400">Disponible</p><p class="mt-1 font-black text-slate-900">{{ $bottle['available_ml'] === null ? 'Sin control' : number_format($bottle['available_ml']).' ml' }}</p><p class="mt-1 text-[10px] text-slate-500">{{ number_format((int) ($bottle['stock_quantity'] ?? 0)) }} sellada(s) · {{ number_format((int) ($bottle['opened_bottles'] ?? 0)) }} abierta(s)</p></div>
                                                     <div class="rounded-xl bg-slate-50 p-3"><p class="font-bold text-slate-400">Ingresos decants</p><p class="mt-1 font-black text-slate-900">RD$ {{ number_format((float) $bottle['revenue'], 2) }}</p></div>
                                                 </div>
-                                                @if ($bottle['cost'] !== null)
+                                                @if ($showSensitiveFinance && $bottle['cost'] !== null)
                                                     <div class="mt-3">
                                                         <div class="flex items-center justify-between text-[11px] font-bold"><span class="text-slate-500">Recuperación</span><span class="text-blue-700">{{ number_format((float) $bottle['percent'], 1) }}%</span></div>
                                                         <div class="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full {{ $bottle['covered'] ? 'bg-emerald-500' : 'bg-blue-600' }}" style="width: {{ min(100, max(0, (float) $bottle['percent'])) }}%"></div></div>
@@ -666,7 +682,7 @@
                                         @endforeach
                                     </div>
                                 @else
-                                    <div class="mt-4 rounded-2xl border border-dashed border-blue-200 bg-white px-4 py-8 text-center text-sm text-slate-500">Crea primero una botella con volumen y costo de compra para controlar sus decants.</div>
+                                    <div class="mt-4 rounded-2xl border border-dashed border-blue-200 bg-white px-4 py-8 text-center text-sm text-slate-500">Crea primero una botella con volumen e inventario activo para controlar sus decants.</div>
                                 @endif
                             </section>
                         @endif
@@ -836,6 +852,7 @@
                                         </div>
                                         <div class="flex flex-wrap gap-2">
                                             @foreach (($module['actions'] ?? []) as $action)
+                                                @continue(! $showSensitiveFinance && str_contains(mb_strtolower($action['label']), 'costos'))
                                                 @if ($action['modal'] ?? false)
                                                     <button type="button" @click="showOpenBottle = true" {{ empty($module['bottleSources']) ? 'disabled' : '' }} class="rounded-xl px-3 py-2 text-[11px] font-black {{ ($action['tone'] ?? 'secondary') === 'primary' ? 'bg-blue-600 text-white hover:bg-blue-700' : 'border border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700' }} disabled:cursor-not-allowed disabled:opacity-50">{{ $action['label'] }}</button>
                                                 @else

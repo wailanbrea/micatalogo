@@ -67,7 +67,7 @@ test('split payment validates that paid plus credit equals invoice total in cent
     ], $user);
 
     expect($payments)->toHaveCount(3)
-        ->and(InvoicePayment::where('invoice_id', $invoice->id)->sum('amount_cents'))->toBe(100000);
+        ->and((int) InvoicePayment::where('invoice_id', $invoice->id)->sum('amount_cents'))->toBe(100000);
 });
 
 test('cash sale automatically creates cash movement when cash register session is open', function () {
@@ -150,6 +150,33 @@ test('daily close calculates cash without requiring an open session and stores a
     expect($closure->expected_cash_cents)->toBe(40000)
         ->and($closure->counted_cash_cents)->toBe(35000)
         ->and($closure->difference_cents)->toBe(-5000);
+});
+
+test('daily close persists the exact cent calculation instead of reparsing a public float', function () {
+    [$user, $shop] = financialFixture();
+    $invoice = Invoice::create([
+        'shop_id' => $shop->id,
+        'user_id' => $user->id,
+        'invoice_number' => 'INV-CENT-CLOSE',
+        'subtotal' => '0.29',
+        'total' => '0.29',
+        'payment_status' => 'paid',
+        'issued_at' => now(),
+    ]);
+
+    app(PaymentService::class)->recordInvoicePayments($invoice, [
+        ['payment_method' => 'cash', 'amount' => '0.29'],
+    ], $user);
+
+    $summary = app(BusinessDashboardService::class)->getSummary($shop, now()->toDateString(), now()->toDateString());
+
+    $closure = app(DailyCloseService::class)->close($shop, $user, now()->toDateString(), '0.29', 'cent-precision');
+
+    expect($summary['cash_flow']['inflows']['sales_cash_cents'])->toBe(29)
+        ->and($closure->sales_cash_cents)->toBe(29)
+        ->and($closure->expected_cash_cents)->toBe(29)
+        ->and($closure->counted_cash_cents)->toBe(29)
+        ->and($closure->difference_cents)->toBe(0);
 });
 
 test('credit sale increases receivable and profit without increasing cash flow', function () {

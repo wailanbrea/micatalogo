@@ -76,7 +76,7 @@ class PublicOrderAndAttributesTest extends TestCase
         ]);
         $product = Product::factory()->create([
             'shop_id' => $shop->id,
-            'price' => 400,
+            'price' => '400.29',
             'moderation_status' => ProductModerationStatus::Active,
             'availability_status' => ProductAvailabilityStatus::Available,
         ]);
@@ -106,11 +106,11 @@ class PublicOrderAndAttributesTest extends TestCase
         $invoice = $order->fresh()->invoice_id ? Invoice::findOrFail($order->fresh()->invoice_id) : null;
         expect($order->fresh()->status)->toBe('confirmed')
             ->and($invoice)->not->toBeNull()
-            ->and((float) $invoice->total)->toBe(800.0)
+            ->and((string) $invoice->total)->toBe('800.58')
             ->and($product->fresh()->inventory->stock_quantity)->toBe(3)
-            ->and($session->fresh()->calculateExpectedBalance())->toBe(80000);
+            ->and($session->fresh()->calculateExpectedBalance())->toBe(80058);
 
-        $closed = $cash->closeSession($session->fresh(), $owner, 800, 'Cuadre automático de prueba');
+        $closed = $cash->closeSession($session->fresh(), $owner, '800.58', 'Cuadre automático de prueba');
         expect($closed->status)->toBe('closed')
             ->and($closed->difference_cents)->toBe(0);
         $this->assertDatabaseHas('cash_register_sessions', ['id' => $session->id, 'status' => 'closed']);

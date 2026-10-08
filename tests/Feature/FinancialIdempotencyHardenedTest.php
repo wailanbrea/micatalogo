@@ -1,12 +1,15 @@
 <?php
 
 use App\Enums\UserPlan;
+use App\Models\CashMovement;
+use App\Models\DailyClosure;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\Shop;
 use App\Models\ShopSeller;
 use App\Models\User;
 use App\Services\CashRegisterService;
+use App\Services\DailyCloseService;
 use App\Services\ExpenseService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -172,6 +175,52 @@ test('closing cash register session is idempotent upon exact replay but rejects 
     $hashB = hash('sha256', json_encode($closePayloadB, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION));
 
     expect(fn () => $cashService->closeSession($closedSession, $proOwner, '1200.00', 'Intento diferente', $closeUuid, $hashB))
+        ->toThrow(InvalidArgumentException::class);
+});
+
+test('cash movement replay is idempotent after the session lock is acquired', function () {
+    [$proOwner, , $shop] = createIdempotencyHardenedFixture();
+    $cashService = app(CashRegisterService::class);
+    $session = $cashService->openSession($shop, $proOwner, '100.00');
+    $uuid = (string) Str::uuid();
+    $hash = hash('sha256', 'qa-cash-movement-replay');
+
+    $first = $cashService->recordManualMovement(
+        $session,
+        $proOwner,
+        'cash_in',
+        '50.00',
+        'Entrada repetible',
+        $uuid,
+        $hash,
+    );
+    $replay = $cashService->recordManualMovement(
+        $session,
+        $proOwner,
+        'cash_in',
+        '50.00',
+        'Entrada repetible',
+        $uuid,
+        $hash,
+    );
+
+    expect($replay->id)->toBe($first->id)
+        ->and(CashMovement::query()->where('cash_register_session_id', $session->id)->count())->toBe(1)
+        ->and((int) CashMovement::query()->whereKey($first->id)->value('amount_cents'))->toBe(5000);
+});
+
+test('daily close replay is serialized by shop and rejects a conflicting count', function () {
+    [$proOwner, , $shop] = createIdempotencyHardenedFixture();
+    $service = app(DailyCloseService::class);
+    $date = now()->toDateString();
+
+    $first = $service->close($shop, $proOwner, $date, '0.00', 'Cierre QA');
+    $replay = $service->close($shop, $proOwner, $date, '0.00', 'Cierre QA');
+
+    expect($replay->id)->toBe($first->id)
+        ->and(DailyClosure::query()->where('shop_id', $shop->id)->whereDate('business_date', $date)->count())->toBe(1);
+
+    expect(fn () => $service->close($shop, $proOwner, $date, '1.00', 'Conflicto QA'))
         ->toThrow(InvalidArgumentException::class);
 });
 

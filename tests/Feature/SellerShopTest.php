@@ -132,6 +132,25 @@ test('a seller cannot edit another sellers shop', function () {
         ->assertForbidden();
 });
 
+test('shop forms render executable hour-copy Alpine selectors', function () {
+    $seller = User::factory()->create();
+    $shop = Shop::factory()->for($seller)->create();
+
+    $this->actingAs($seller)
+        ->get(route('seller.shops.edit', $shop))
+        ->assertOk()
+        ->assertSee('[data-hours-open=monday]', false)
+        ->assertSee('[data-hours-close=monday]', false)
+        ->assertDontSee('[data-hours-open=\\"monday\\"]', false);
+
+    $this->actingAs($seller)
+        ->get(route('seller.shops.create'))
+        ->assertOk()
+        ->assertSee('[data-hours-open=monday]', false)
+        ->assertSee('[data-hours-close=monday]', false)
+        ->assertDontSee('[data-hours-open=\\"monday\\"]', false);
+});
+
 test('mi tienda stays inside the panel and explains how to complete the storefront', function () {
     $seller = User::factory()->create();
     $shop = Shop::factory()->for($seller)->create([

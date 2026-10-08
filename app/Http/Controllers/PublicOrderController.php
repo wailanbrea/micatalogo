@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\ProductInventory;
 use App\Models\Shop;
 use App\Services\MetricRecordingService;
+use App\Support\Money;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -66,16 +67,16 @@ class PublicOrderController extends Controller
                     abort(422, "La cantidad solicitada de {$product->name} supera el stock disponible.");
                 }
 
-                $unitPrice = $product->currentPrice();
+                $unitPriceCents = $product->currentPriceCents();
                 $lines[] = [
                     'product' => $product,
                     'quantity' => $quantity,
-                    'unit_price' => $unitPrice,
-                    'line_total' => $unitPrice * $quantity,
+                    'unit_price_cents' => $unitPriceCents,
+                    'line_total_cents' => $unitPriceCents * $quantity,
                 ];
             }
 
-            $subtotal = collect($lines)->sum('line_total');
+            $subtotalCents = (int) collect($lines)->sum('line_total_cents');
             $order = $shop->orders()->create([
                 'order_number' => $this->nextOrderNumber(),
                 'customer_name' => $validated['customer_name'] ?? null,
@@ -83,8 +84,8 @@ class PublicOrderController extends Controller
                 'delivery_at' => $validated['delivery_at'] ?? null,
                 'notes' => $validated['notes'] ?? null,
                 'currency' => config('catalog.currency', 'DOP'),
-                'subtotal' => $subtotal,
-                'total' => $subtotal,
+                'subtotal' => Money::toDecimal($subtotalCents),
+                'total' => Money::toDecimal($subtotalCents),
                 'status' => 'sent_to_whatsapp',
             ]);
 
@@ -97,8 +98,8 @@ class PublicOrderController extends Controller
                         : $product->name,
                     'product_code' => $product->product_code,
                     'quantity' => $line['quantity'],
-                    'unit_price' => $line['unit_price'],
-                    'line_total' => $line['line_total'],
+                    'unit_price' => Money::toDecimal($line['unit_price_cents']),
+                    'line_total' => Money::toDecimal($line['line_total_cents']),
                 ]);
             }
 

@@ -6,6 +6,7 @@ use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductImageProcessingStatus;
 use App\Enums\ProductModerationStatus;
 use App\Traits\HasPublicId;
+use App\Support\Money;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -179,7 +180,10 @@ class Product extends Model
 
     public function isOnSale(?Carbon $at = null): bool
     {
-        if ($this->sale_price === null || $this->price === null || (float) $this->sale_price >= (float) $this->price) {
+        $salePriceCents = $this->storedPriceCents('sale_price');
+        $priceCents = $this->storedPriceCents('price');
+
+        if ($salePriceCents === null || $priceCents === null || $salePriceCents >= $priceCents) {
             return false;
         }
 
@@ -189,18 +193,51 @@ class Product extends Model
             && (! $this->sale_ends_at || $this->sale_ends_at->greaterThanOrEqualTo($at));
     }
 
+    /**
+     * Return the effective price as a canonical decimal string.
+     *
+     * Mutating flows must use this method (or currentPriceCents()) so a
+     * decimal price never crosses a float boundary before Money normalizes it.
+     */
+    public function currentPriceDecimal(): string
+    {
+        $attribute = $this->isOnSale() ? 'sale_price' : 'price';
+
+        return Money::toDecimal($this->storedPriceCents($attribute) ?? 0);
+    }
+
+    public function currentPriceCents(): int
+    {
+        return Money::toCents($this->currentPriceDecimal());
+    }
+
+    /**
+     * Legacy presentation accessor. New write paths must use currentPriceDecimal().
+     */
     public function currentPrice(): float
     {
-        return $this->isOnSale() ? (float) $this->sale_price : (float) $this->price;
+        return (float) $this->currentPriceDecimal();
     }
 
     public function discountPercent(): int
     {
-        if (! $this->isOnSale() || ! (float) $this->price) {
+        $priceCents = $this->storedPriceCents('price');
+        $salePriceCents = $this->storedPriceCents('sale_price');
+        if (! $this->isOnSale() || $priceCents === null || $priceCents <= 0 || $salePriceCents === null) {
             return 0;
         }
 
-        return (int) round(100 - (((float) $this->sale_price / (float) $this->price) * 100));
+        $discountCents = max(0, $priceCents - $salePriceCents);
+
+        return intdiv(($discountCents * 100 * 2) + $priceCents, 2 * $priceCents);
+    }
+
+    private function storedPriceCents(string $attribute): ?int
+    {
+        $raw = $this->getRawOriginal($attribute);
+        $value = $raw ?? $this->getAttribute($attribute);
+
+        return $value === null ? null : Money::toCents($value);
     }
 
     public function saleUnitLabel(): string

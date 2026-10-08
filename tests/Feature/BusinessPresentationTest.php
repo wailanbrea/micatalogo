@@ -1,7 +1,10 @@
 <?php
 
+use App\Enums\UserPlan;
+use App\Models\Product;
 use App\Models\Shop;
 use App\Models\User;
+use App\Services\BusinessProfileService;
 use App\Services\BusinessPresentationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -49,4 +52,91 @@ test('mobile shops and catalog endpoints expose the additive presentation contra
         ->assertOk()
         ->assertJsonPath('shop.presentation.archetype', 'hardware')
         ->assertJsonPath('shop.presentation.pos.search_placeholder', 'Buscar artículo, marca o código');
+});
+
+test('SHOP-004/005/010 every configured business type stays coherent across free basic and pro plans', function () {
+    $types = app(BusinessProfileService::class)->types();
+    // The live config currently contains 23 types (the master plan listed 21
+    // before vapes, pastry and related registration options were added).
+    expect($types)->toHaveCount(23);
+
+    foreach ($types as $type => $definition) {
+        foreach ([UserPlan::Free, UserPlan::Premium, UserPlan::Pro] as $plan) {
+            $user = User::factory()->create([
+                'plan' => $plan,
+                'email' => "matrix-{$type}-{$plan->value}@example.com",
+            ]);
+            $shop = Shop::factory()->for($user)->create(['business_type' => $type]);
+            $profile = app(BusinessProfileService::class)->profile($shop);
+            $presentation = app(BusinessPresentationService::class)->resolve($shop);
+
+            expect($profile['business_type'])->toBe($type)
+                ->and($profile['business_type_label'])->toBe($definition['label'])
+                ->and($profile['categories'])->not->toBeEmpty()
+                ->and($profile['product_fields'])->not->toBeEmpty()
+                ->and($profile['capabilities'])->toHaveKeys(config('business-types.implemented'))
+                ->and($presentation['archetype'])->toBe(config("business-types.type_archetypes.{$type}", 'general_retail'))
+                ->and($presentation['pos']['show_credit'])->toBe(($profile['capabilities']['credit'] ?? 'disabled') === 'enabled')
+                ->and($presentation['pos']['show_wholesale'])->toBe(($profile['capabilities']['wholesale'] ?? 'disabled') === 'enabled')
+                ->and($presentation['inventory']['enabled'])->toBe(($profile['capabilities']['inventory'] ?? 'disabled') === 'enabled');
+
+            if ($type === 'perfume_store') {
+                expect($profile['capabilities']['decants'])
+                    ->toBe($plan === UserPlan::Pro ? 'enabled' : 'disabled');
+            } else {
+                expect($profile['capabilities']['decants'])->not->toBe('enabled');
+            }
+
+            if (in_array($type, ['food_restaurant', 'pastry', 'professional_services', 'tattoo_studio'], true)) {
+                expect($presentation['pos']['show_inventory'])->toBeFalse()
+                    ->and($presentation['catalog']['show_stock'])->toBeFalse();
+            }
+        }
+    }
+});
+
+test('SHOP-003/006/010 one pro owner keeps multi-shop verticals and catalogs isolated', function () {
+    $owner = User::factory()->create([
+        'plan' => UserPlan::Pro,
+        'email' => 'multi-shop-qa@example.com',
+    ]);
+    $perfumeShop = Shop::factory()->for($owner)->create([
+        'name' => 'Perfumería Multi-Shop',
+        'business_type' => 'perfume_store',
+    ]);
+    $clothingShop = Shop::factory()->for($owner)->create([
+        'name' => 'Ropa Multi-Shop',
+        'business_type' => 'clothing',
+    ]);
+    $perfume = Product::factory()->for($perfumeShop)->create(['name' => 'Perfume exclusivo A']);
+    $clothing = Product::factory()->for($clothingShop)->create(['name' => 'Camisa exclusiva B']);
+    $token = $owner->createToken('multi-shop-qa')->plainTextToken;
+
+    expect(app(\App\Services\PlanLimitsService::class)->activeShopLimit($owner))->toBe(3);
+
+    $shops = $this->withToken($token)
+        ->getJson('/api/v1/shops')
+        ->assertOk()
+        ->json();
+
+    expect(collect($shops)->pluck('id')->all())
+        ->toContain($perfumeShop->public_id, $clothingShop->public_id);
+
+    $perfumeCatalog = $this->withToken($token)
+        ->getJson("/api/v1/shops/{$perfumeShop->public_id}/catalog")
+        ->assertOk()
+        ->assertJsonPath('shop.presentation.archetype', 'fragrance')
+        ->json('products');
+    $clothingCatalog = $this->withToken($token)
+        ->getJson("/api/v1/shops/{$clothingShop->public_id}/catalog")
+        ->assertOk()
+        ->assertJsonPath('shop.presentation.archetype', 'fashion')
+        ->json('products');
+
+    expect(collect($perfumeCatalog)->pluck('id')->all())
+        ->toContain($perfume->public_id)
+        ->not->toContain($clothing->public_id);
+    expect(collect($clothingCatalog)->pluck('id')->all())
+        ->toContain($clothing->public_id)
+        ->not->toContain($perfume->public_id);
 });

@@ -401,6 +401,50 @@ test('inventory reports when decant revenue covers the source bottle cost', func
         ->and($recovery['difference'])->toBe(200.0);
 });
 
+test('decant cost recovery compares revenue and bottle cost in integer cents', function () {
+    $user = User::factory()->create();
+    $shop = Shop::factory()->create(['user_id' => $user->id]);
+    $bottle = Product::factory()->create([
+        'shop_id' => $shop->id,
+        'sale_unit' => 'bottle',
+        'volume_ml' => 15,
+        'price' => 1,
+    ]);
+    $decant = Product::factory()->create([
+        'shop_id' => $shop->id,
+        'sale_unit' => 'decant',
+        'volume_ml' => 5,
+        'price' => '0.10',
+        'inventory_source_product_id' => $bottle->id,
+    ]);
+
+    ProductInventory::create([
+        'product_id' => $bottle->id,
+        'track_inventory' => true,
+        'cost_price' => '0.30',
+        'stock_quantity' => 1,
+        'available_ml' => 15,
+    ]);
+    ProductInventory::create([
+        'product_id' => $decant->id,
+        'track_inventory' => true,
+        'stock_quantity' => 3,
+    ]);
+
+    $inventory = app(InventoryService::class);
+    foreach (range(1, 3) as $unused) {
+        $inventory->recordSale($decant, 1, userId: $user->id, createInvoice: false, unitPrice: '0.10');
+    }
+
+    $recovery = $inventory->getCostRecoveryForBottles([$bottle])[$bottle->id];
+
+    expect($recovery['cost'])->toBe(0.3)
+        ->and($recovery['revenue'])->toBe(0.3)
+        ->and($recovery['difference'])->toBe(0.0)
+        ->and($recovery['percent'])->toBe(100)
+        ->and($recovery['covered'])->toBeTrue();
+});
+
 test('adjusting stock sets exact count without altering sold quantity', function () {
     $user = User::factory()->create();
     $shop = Shop::factory()->create(['user_id' => $user->id]);

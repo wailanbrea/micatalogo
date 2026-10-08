@@ -14,6 +14,7 @@ use App\Models\Shop;
 use App\Models\User;
 use App\Services\InventoryImport\ColumnDetector;
 use App\Services\InventoryImport\WorkbookReader;
+use App\Support\Money;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -673,13 +674,28 @@ class InventoryImportService
             throw ValidationException::withMessages(['rows' => 'Corrige las filas marcadas antes de importar.']);
         }
 
-        foreach ($rows as $row) {
-            if (! is_string($row['name'] ?? null) || trim($row['name']) === '' ||
-                ! is_numeric($row['price'] ?? null) || (float) $row['price'] < 0 ||
-                (($row['stock'] ?? null) !== null && (! is_numeric($row['stock']) || (int) $row['stock'] < 0))) {
+        $rows = $rows->map(function (array $row): array {
+            $price = self::parseMoney($row['price'] ?? null);
+            $costPrice = array_key_exists('cost_price', $row) && $row['cost_price'] !== null && $row['cost_price'] !== ''
+                ? self::parseMoney($row['cost_price'])
+                : null;
+
+            if (! is_string($row['name'] ?? null) || trim($row['name']) === ''
+                || $price === null || Money::toCents($price) < 0
+                || ($costPrice !== null && Money::toCents($costPrice) < 0)
+                || (($row['stock'] ?? null) !== null && (! is_numeric($row['stock']) || (int) $row['stock'] < 0))) {
                 throw ValidationException::withMessages(['rows' => 'La vista previa de inventario ya no es válida. Vuelve a cargar el archivo.']);
             }
-        }
+
+            // Keep raw-row compatibility while making the persisted boundary
+            // deterministic and independent of binary floating-point parsing.
+            $row['price'] = $price;
+            if ($costPrice !== null) {
+                $row['cost_price'] = $costPrice;
+            }
+
+            return $row;
+        });
 
         // Create a transient session and confirm it
         $session = InventoryImportSession::create([

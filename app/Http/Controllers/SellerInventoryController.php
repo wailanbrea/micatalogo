@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\Shop;
 use App\Services\InventoryService;
 use App\Services\PlanLimitsService;
+use App\Services\SellerMenuService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,7 +36,13 @@ class SellerInventoryController extends Controller
         return view('seller.inventory.movements-index', compact('shop', 'movements', 'search', 'type'));
     }
 
-    public function index(Request $request, Shop $shop, InventoryService $inventoryService, PlanLimitsService $limits): View
+    public function index(
+        Request $request,
+        Shop $shop,
+        InventoryService $inventoryService,
+        PlanLimitsService $limits,
+        SellerMenuService $menus
+    ): View
     {
         $validated = $request->validate([
             'q' => ['nullable', 'string', 'max:120'],
@@ -49,14 +56,16 @@ class SellerInventoryController extends Controller
         ]);
 
         $summary = $inventoryService->getShopInventorySummary($shop);
+        $showCosts = $menus->canManage($shop, $request->user())
+            || in_array('finance', $menus->visibleForUser($shop, $request->user()), true);
         $filters = [
             'q' => trim((string) ($validated['q'] ?? '')),
             'stock' => $validated['stock'] ?? 'all',
             'price_min' => $validated['price_min'] ?? null,
             'price_max' => $validated['price_max'] ?? null,
-            'cost_min' => $validated['cost_min'] ?? null,
-            'cost_max' => $validated['cost_max'] ?? null,
-            'sort' => $validated['sort'] ?? 'product',
+            'cost_min' => $showCosts ? ($validated['cost_min'] ?? null) : null,
+            'cost_max' => $showCosts ? ($validated['cost_max'] ?? null) : null,
+            'sort' => $showCosts ? ($validated['sort'] ?? 'product') : (($validated['sort'] ?? 'product') === 'cost' ? 'product' : ($validated['sort'] ?? 'product')),
             'direction' => $validated['direction'] ?? 'asc',
         ];
 
@@ -105,6 +114,7 @@ class SellerInventoryController extends Controller
             'summary' => $summary,
             'filters' => $filters,
             'quota' => $limits->shopQuota($shop),
+            'showCosts' => $showCosts,
         ]);
     }
 
@@ -182,7 +192,7 @@ class SellerInventoryController extends Controller
         ]);
 
         try {
-            $inventoryService->recordRestock($product, (int) $validated['quantity'], $validated['notes'] ?? null, $request->user()->id, isset($validated['unit_cost']) ? (float) $validated['unit_cost'] : null);
+            $inventoryService->recordRestock($product, (int) $validated['quantity'], $validated['notes'] ?? null, $request->user()->id, $validated['unit_cost'] ?? null);
 
             return back()->with('status', "Se repusieron {$validated['quantity']} unidad(es) en el inventario de {$product->name}.");
         } catch (InvalidArgumentException $e) {

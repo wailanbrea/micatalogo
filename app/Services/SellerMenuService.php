@@ -73,7 +73,11 @@ class SellerMenuService
         }
 
         if ($shop->members()->where('user_id', $user->id)->where('role', 'accountant')->where('is_active', true)->exists()) {
-            return ['accountant', 'finance', 'reports'];
+            // An accountant is a read-only financial collaborator. The
+            // accountant module contains owner/manager controls to grant or
+            // revoke other accountant access, so it must never be exposed to
+            // the accountant themselves.
+            return ['finance', 'reports'];
         }
 
         $assignment = $shop->sellers()

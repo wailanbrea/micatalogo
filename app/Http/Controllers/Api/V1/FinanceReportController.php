@@ -83,7 +83,7 @@ class FinanceReportController extends Controller
 
     public function closeDay(Request $request, Shop $shop, DailyCloseService $service, SellerMenuService $menus): JsonResponse
     {
-        $this->authorizeDayClose($request, $shop, $menus);
+        $this->authorizeDayClose($request, $shop, $menus, true);
 
         $validated = $request->validate([
             'date' => ['required', 'date_format:Y-m-d'],
@@ -109,12 +109,25 @@ class FinanceReportController extends Controller
         }
     }
 
-    private function authorizeDayClose(Request $request, Shop $shop, SellerMenuService $menus): void
+    private function authorizeDayClose(Request $request, Shop $shop, SellerMenuService $menus, bool $mutate = false): void
     {
-        abort_unless(
-            ($menus->canManage($shop, $request->user()) || $request->user()->canSellAtShop($shop) || $request->user()->isActiveShopAccountant($shop))
-            && in_array('finance', $menus->visibleForUser($shop, $request->user()), true),
-            403
-        );
+        $user = $request->user();
+        $visible = $menus->visibleForUser($shop, $user);
+        $canRead = ($menus->canManage($shop, $user) || $user->canSellAtShop($shop) || $user->isActiveShopAccountant($shop))
+            && in_array('finance', $visible, true);
+
+        if (! $mutate) {
+            abort_unless($canRead, 403);
+
+            return;
+        }
+
+        // Accountants are intentionally read-only. A seller may close only
+        // when the owner explicitly delegated the day_close menu; owners and
+        // managers retain the operational control path.
+        $canMutate = $menus->canManage($shop, $user)
+            || ($user->canSellAtShop($shop) && in_array('day_close', $visible, true));
+
+        abort_unless($canMutate, 403);
     }
 }

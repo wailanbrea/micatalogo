@@ -77,7 +77,7 @@ class SellerCommerceController extends Controller
         $subtotalCents = 0;
         foreach ($data['items'] as $line) {
             $product = $products->get($line['product_id']);
-            $unitPriceCents = Money::toCents($line['unit_price'] ?? $product->currentPrice());
+            $unitPriceCents = Money::toCents($line['unit_price'] ?? $product->currentPriceDecimal());
             $quantity = (int) $line['quantity'];
             $lineTotalCents = $unitPriceCents * $quantity;
             $subtotalCents += $lineTotalCents;
@@ -129,6 +129,12 @@ class SellerCommerceController extends Controller
         if ($quote->converted_invoice_id || $quote->status === 'converted') {
             return redirect()->to($quotesRoute)->withErrors(['quote' => 'Esta cotización ya fue convertida en venta.']);
         }
+        if ($quote->status === 'cancelled') {
+            return redirect()->to($quotesRoute)->withErrors(['quote' => 'Una cotización cancelada no puede convertirse en venta.']);
+        }
+        if ($quote->isExpired()) {
+            return redirect()->to($quotesRoute)->withErrors(['quote' => 'Una cotización vencida no puede convertirse en venta.']);
+        }
 
         try {
             DB::transaction(function () use ($request, $shop, $quote, $inventory): void {
@@ -141,7 +147,9 @@ class SellerCommerceController extends Controller
                 $sales = $quote->items->map(fn ($item) => [
                     'product' => $products->get($item->product_id),
                     'quantity' => (int) $item->quantity,
-                    'unit_price' => (float) $item->unit_price,
+                    // Keep the persisted decimal as a string until Money::toCents
+                    // normalizes it inside InventoryService.
+                    'unit_price' => (string) $item->unit_price,
                 ])->all();
                 $movements = $inventory->recordCartSales($sales, $request->user()->id, 'web', 'paid', 0, 0, 'cash');
                 $invoice = $movements[0]->fresh()->invoice;
@@ -313,7 +321,7 @@ class SellerCommerceController extends Controller
 
                 foreach ($lines as $line) {
                     $movement = $mode === 'received'
-                        ? $inventory->recordRestock($line['product'], $line['quantity'], $data['notes'] ?? null, $request->user()->id, (float) $line['unit_cost'])
+                        ? $inventory->recordRestock($line['product'], $line['quantity'], $data['notes'] ?? null, $request->user()->id, $line['unit_cost'])
                         : null;
                     $document->items()->create([
                         'product_id' => $line['product']->id,
@@ -370,7 +378,7 @@ class SellerCommerceController extends Controller
                     if ($item->inventory_movement_id) {
                         continue;
                     }
-                    $movement = $inventory->recordRestock($item->product, $item->quantity, $locked->notes, $request->user()->id, (float) $item->unit_cost);
+                    $movement = $inventory->recordRestock($item->product, $item->quantity, $locked->notes, $request->user()->id, $item->unit_cost);
                     $item->update(['inventory_movement_id' => $movement->id]);
                 }
                 $locked->update(['status' => 'received', 'received_at' => now()]);

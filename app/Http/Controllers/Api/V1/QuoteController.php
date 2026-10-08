@@ -49,7 +49,7 @@ class QuoteController extends Controller
         $subtotalCents = 0;
         foreach ($data['items'] as $item) {
             $product = $products[$item['product_id']];
-            $unitPriceCents = Money::toCents($item['unit_price'] ?? $product->currentPrice());
+            $unitPriceCents = Money::toCents($item['unit_price'] ?? $product->currentPriceDecimal());
             $quantity = (int) $item['quantity'];
             $lineTotalCents = $unitPriceCents * $quantity;
             $subtotalCents += $lineTotalCents;
@@ -102,6 +102,12 @@ class QuoteController extends Controller
         if ($quote->converted_invoice_id || $quote->status === 'converted') {
             return response()->json(['message' => 'Esta cotización ya fue convertida en venta.'], 409);
         }
+        if ($quote->status === 'cancelled') {
+            return response()->json(['message' => 'Una cotización cancelada no puede convertirse en venta.'], 409);
+        }
+        if ($quote->isExpired()) {
+            return response()->json(['message' => 'Una cotización vencida no puede convertirse en venta.'], 409);
+        }
 
         try {
             $invoiceNumber = DB::transaction(function () use ($request, $shop, $quote, $inventory): ?string {
@@ -114,7 +120,9 @@ class QuoteController extends Controller
                 $sales = $quote->items->map(fn ($item) => [
                     'product' => $products->get($item->product_id),
                     'quantity' => (int) $item->quantity,
-                    'unit_price' => (float) $item->unit_price,
+                    // Keep the persisted decimal as a string until Money::toCents
+                    // normalizes it inside InventoryService.
+                    'unit_price' => (string) $item->unit_price,
                 ])->all();
                 $movements = $inventory->recordCartSales($sales, $request->user()->id, 'mobile', 'paid', 0, 0, 'cash');
                 $invoice = $movements[0]->fresh()->invoice;

@@ -16,7 +16,9 @@
                         <a href="{{ route('seller.shops.quotes.pdf', [$shop, 'quote' => $quote->public_id]) }}" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-black text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">Descargar PDF</a>
                         @if ($quote->converted_invoice_id)
                             <span class="inline-flex items-center rounded-xl bg-emerald-50 px-4 py-2.5 text-sm font-black text-emerald-700">Convertida a venta</span>
-                        @elseif ($quote->valid_until && $quote->valid_until->isBefore(today()))
+                        @elseif ($quote->status === 'cancelled')
+                            <span class="inline-flex items-center rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-black text-slate-600">Cancelada</span>
+                        @elseif ($quote->isExpired())
                             <span class="inline-flex items-center rounded-xl bg-rose-50 px-4 py-2.5 text-sm font-black text-rose-700">Vencida</span>
                         @else
                             <form method="POST" action="{{ route('seller.shops.quotes.convert', [$shop, 'quote' => $quote->public_id]) }}">
@@ -29,7 +31,7 @@
 
                 <div class="mt-6 grid gap-3 sm:grid-cols-4">
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4"><p class="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Cliente</p><p class="mt-2 font-bold text-slate-900">{{ $quote->customer_name ?: 'Cliente general' }}</p></div>
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4"><p class="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Estado</p><p class="mt-2 font-bold text-slate-900">{{ $quote->status === 'converted' ? 'Convertida' : ($quote->valid_until && $quote->valid_until->isBefore(today()) ? 'Vencida' : 'Vigente') }}</p></div>
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4"><p class="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Estado</p><p class="mt-2 font-bold text-slate-900">{{ $quote->status === 'converted' ? 'Convertida' : ($quote->status === 'cancelled' ? 'Cancelada' : ($quote->isExpired() ? 'Vencida' : 'Vigente')) }}</p></div>
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4"><p class="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Válida hasta</p><p class="mt-2 font-bold text-slate-900">{{ $quote->valid_until?->format('d/m/Y') ?: 'Sin vencimiento' }}</p></div>
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4"><p class="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Artículos</p><p class="mt-2 font-bold text-slate-900">{{ number_format($quote->items->sum('quantity')) }}</p></div>
                 </div>

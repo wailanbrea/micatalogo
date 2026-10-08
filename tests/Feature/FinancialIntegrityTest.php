@@ -226,6 +226,84 @@ test('59. return deducts net sales and restocks fifo cost', function () {
         ->and($summary['income_statement']['gross_profit'])->toBe(600.0);
 });
 
+test('return totals stay exact when later credit collection allocates the remaining cents', function () {
+    [$owner, $shop, $product] = setupFinancialShop();
+    $customer = Customer::create([
+        'shop_id' => $shop->id,
+        'name' => 'Cliente retorno centavos',
+        'credit_limit' => '100.00',
+        'balance' => '10.00',
+    ]);
+    $invoice = Invoice::create([
+        'shop_id' => $shop->id,
+        'customer_id' => $customer->id,
+        'user_id' => $owner->id,
+        'invoice_number' => 'INV-RETURN-CENTS',
+        'subtotal' => '10.01',
+        'discount' => '0.00',
+        'tax' => '0.00',
+        'total' => '10.01',
+        'status' => 'pending',
+        'issued_at' => now(),
+    ]);
+    $item = InvoiceItem::create([
+        'invoice_id' => $invoice->id,
+        'product_id' => $product->id,
+        'product_name' => $product->name,
+        'quantity' => 1,
+        'unit_price' => '10.01',
+        'discount' => '0.00',
+        'tax' => '0.00',
+        'line_total' => '10.01',
+        'unit_cost_cents' => 40000,
+        'total_cost_cents' => 40000,
+        'is_cost_estimated' => false,
+    ]);
+    $operationId = DB::table('mobile_operations')->insertGetId([
+        'shop_id' => $shop->id,
+        'client_operation_uuid' => (string) Str::uuid(),
+        'type' => 'return',
+        'payload_sha256' => hash('sha256', 'fractional-return'),
+        'result' => json_encode(['ok' => true]),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    $returnId = DB::table('invoice_returns')->insertGetId([
+        'invoice_id' => $invoice->id,
+        'mobile_operation_id' => $operationId,
+        'total' => '0.01',
+        'notes' => 'QA centavos',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    DB::table('invoice_return_items')->insert([
+        'invoice_return_id' => $returnId,
+        'invoice_item_id' => $item->id,
+        'quantity' => 1,
+        'refund' => '0.01',
+        'tax_refund' => '0.00',
+        'total_cost_cents' => 40000,
+        'restock' => true,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $result = app(PaymentService::class)->recordCustomerDebtPayment(
+        $shop,
+        $customer,
+        $owner,
+        '10.00',
+        'bank_transfer',
+        (string) Str::uuid(),
+        hash('sha256', 'fractional-collection'),
+    );
+
+    expect($result['allocations'][0]['allocated_cents'])->toBe(1000)
+        ->and($result['allocations'][0]['remaining_invoice_balance'])->toBe('0.00')
+        ->and($invoice->fresh()->status)->toBe('paid')
+        ->and((string) $customer->fresh()->balance)->toBe('0.00');
+});
+
 // 60. Venta a crédito: genera ganancia y CxC, pero NO genera flujo de efectivo hasta el cobro
 test('60. credit sale increases receivable and profit without increasing cash flow', function () {
     [$owner, $shop, $product] = setupFinancialShop();
@@ -305,11 +383,11 @@ test('61. split payment sums exact cents and only cash affects cash register', f
 
     $session->refresh();
     // Only 400 cash should be added to cash register session
-    expect($session->movements()->where('type', 'sale')->sum('amount_cents'))->toBe(40000)
+    expect((int) $session->movements()->where('type', 'sale')->sum('amount_cents'))->toBe(40000)
         ->and($session->calculateExpectedBalance())->toBe(90000); // 500 opening + 400 cash
 
     // Invoice has 2 payment rows summing 1000.00
-    expect(InvoicePayment::where('invoice_id', $invoice->id)->sum('amount_cents'))->toBe(100000);
+    expect((int) InvoicePayment::where('invoice_id', $invoice->id)->sum('amount_cents'))->toBe(100000);
 });
 
 // 62. Prevención de crédito duplicado

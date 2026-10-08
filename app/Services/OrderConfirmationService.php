@@ -74,7 +74,9 @@ class OrderConfirmationService
                     throw ValidationException::withMessages(['order' => 'Un producto del pedido ya no está disponible.']);
                 }
 
-                return ['product' => $product, 'quantity' => $item->quantity, 'unit_price' => (float) $item->unit_price];
+                // The order snapshot is already a decimal string. Preserve it
+                // until Money::toCents so WhatsApp confirmations cannot lose cents.
+                return ['product' => $product, 'quantity' => $item->quantity, 'unit_price' => (string) $item->unit_price];
             })->all();
 
             $initialStatus = $creditCents === 0 ? 'paid' : ($totalCents === $creditCents ? 'pending' : 'partial');

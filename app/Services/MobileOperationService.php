@@ -13,6 +13,7 @@ use App\Models\Product;
 use App\Models\Shop;
 use App\Models\User;
 use App\Models\InventoryLot;
+use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
@@ -108,7 +109,11 @@ class MobileOperationService
                 }
             } else {
                 abort_if($product->trashed(), 409, 'El producto está en la papelera.');
-                if (isset($data['expected_price']) && (int) round($product->currentPrice() * 100) !== (int) round((float) $data['expected_price'] * 100)) {
+                $currentPrice = $product->isOnSale()
+                    ? ($product->getRawOriginal('sale_price') ?? $product->sale_price)
+                    : ($product->getRawOriginal('price') ?? $product->price);
+                if (isset($data['expected_price'])
+                    && Money::toCents($currentPrice) !== Money::toCents($data['expected_price'])) {
                     throw new InvalidArgumentException('El precio remoto cambió; revisa el conflicto antes de editar.', 409);
                 }
                 if ($hasPresentationInput) {
@@ -168,7 +173,7 @@ class MobileOperationService
                 $product->delete(); // Always reversible; ledger and images survive.
             } elseif ($data['type'] === 'restock') {
                 app(InventoryService::class)->recordRestock($product, $data['quantity'], $data['notes'] ?? null, $user->id,
-                    isset($data['unit_cost']) ? (float) $data['unit_cost'] : null);
+                    $data['unit_cost'] ?? null);
             } elseif ($data['type'] === 'open_bottle') {
                 app(BusinessCapabilityService::class)->assert($shop, 'decants');
                 $inventory = $product->inventory()->lockForUpdate()->firstOrFail();
@@ -233,9 +238,13 @@ class MobileOperationService
         }
 
         if ($saleUnit !== 'decant') {
-            if ($saleUnit === 'bottle'
-                && (! is_numeric($data['cost_price'] ?? null) || (float) ($data['cost_price'] ?? 0) <= 0)
-                && (! $product || $product->inventory?->cost_price === null || (float) $product->inventory->cost_price <= 0)) {
+            $inputCostCents = is_numeric($data['cost_price'] ?? null)
+                ? Money::toCents((string) $data['cost_price'])
+                : 0;
+            $existingCostCents = $product?->inventory?->cost_price === null
+                ? 0
+                : Money::toCents($product->inventory->getRawOriginal('cost_price') ?? $product->inventory->cost_price);
+            if ($saleUnit === 'bottle' && $inputCostCents <= 0 && $existingCostCents <= 0) {
                 throw ValidationException::withMessages(['cost_price' => 'Indica el costo de compra de la botella para calcular ganancias y recuperación de inversión.']);
             }
 
@@ -253,7 +262,8 @@ class MobileOperationService
         if (! in_array($source->sale_unit, ['bottle', 'ml'], true) || ! $source->volume_ml || ! $source->inventory?->track_inventory) {
             throw ValidationException::withMessages(['inventory_source_product_id' => 'La fuente debe ser una botella o producto medido en ml con volumen y control de inventario.']);
         }
-        if ($source->inventory->cost_price === null || (float) $source->inventory->cost_price <= 0) {
+        if ($source->inventory->cost_price === null
+            || Money::toCents($source->inventory->getRawOriginal('cost_price') ?? $source->inventory->cost_price) <= 0) {
             throw ValidationException::withMessages(['inventory_source_product_id' => 'La botella fuente no tiene costo de compra. Regístralo antes de crear el decant.']);
         }
         if ((int) $volume > (int) $source->volume_ml) {
@@ -344,10 +354,10 @@ class MobileOperationService
         }
         // Allocate invoice-level tax deterministically in cents, conserving the
         // full amount across all lines and subsequent partial returns.
-        $globalTax = (int) round((float) $invoice->tax * 100);
-        $weights = $rows->mapWithKeys(fn ($item) => [$item->id => max(0, (int) round((float) $item->line_total * 100) - (int) $item->general_discount_cents)]);
+        $globalTax = Money::toCents($invoice->tax);
+        $weights = $rows->mapWithKeys(fn ($item) => [$item->id => max(0, Money::toCents($item->line_total) - (int) $item->general_discount_cents)]);
         if ($weights->sum() === 0) {
-            $weights = $rows->mapWithKeys(fn ($item) => [$item->id => (int) round((float) $item->line_total * 100)]);
+            $weights = $rows->mapWithKeys(fn ($item) => [$item->id => Money::toCents($item->line_total)]);
             if ($weights->sum() === 0) {
                 $weights = $rows->mapWithKeys(fn ($item) => [$item->id => (int) $item->quantity]);
             }
@@ -383,26 +393,26 @@ class MobileOperationService
             if ($oldQty + $qty > $item->quantity) {
                 throw new InvalidArgumentException('La devolución supera las unidades vendidas.', 422);
             }
-            $refundCents = isset($line['refund_total']) ? (int) round((float) $line['refund_total'] * 100)
-                : (int) round((float) $line['refund_price'] * 100) * $qty;
-            $chargedCents = (int) round((float) $item->line_total * 100) - (int) $item->general_discount_cents + $taxShares[$item->id];
+            $refundCents = isset($line['refund_total']) ? Money::toCents($line['refund_total'])
+                : Money::toCents($line['refund_price']) * $qty;
+            $chargedCents = Money::toCents($item->line_total) - (int) $item->general_discount_cents + $taxShares[$item->id];
             $maxRefund = intdiv($chargedCents * ($oldQty + $qty), $item->quantity) - intdiv($chargedCents * $oldQty, $item->quantity);
             if ($refundCents > $maxRefund) {
                 throw new InvalidArgumentException('El reembolso supera lo cobrado por esas unidades.', 422);
             }
             $cost = $item->total_cost_cents === null ? null
                 : intdiv($item->total_cost_cents * ($oldQty + $qty), $item->quantity) - intdiv($item->total_cost_cents * $oldQty, $item->quantity);
-            $itemTaxCents = (int) round((float) $item->tax * 100) + $taxShares[$item->id];
+            $itemTaxCents = Money::toCents($item->tax) + $taxShares[$item->id];
             $taxCents = min($refundCents, intdiv($itemTaxCents * ($oldQty + $qty), $item->quantity) - intdiv($itemTaxCents * $oldQty, $item->quantity));
             DB::table('invoice_return_items')->insert(['invoice_return_id' => $returnId, 'invoice_item_id' => $item->id,
-                'quantity' => $qty, 'refund' => $refundCents / 100, 'tax_refund' => $taxCents / 100,
+                'quantity' => $qty, 'refund' => Money::toDecimal($refundCents), 'tax_refund' => Money::toDecimal($taxCents),
                 'total_cost_cents' => $cost, 'restock' => $line['restock'], 'created_at' => now(), 'updated_at' => now()]);
             if ($line['restock']) {
                 app(InventoryService::class)->recordReturn($product, $qty, $cost, $user->id, $data['notes'] ?? null);
             }
             $totalCents += $refundCents;
         }
-        DB::table('invoice_returns')->where('id', $returnId)->update(['total' => $totalCents / 100]);
+        DB::table('invoice_returns')->where('id', $returnId)->update(['total' => Money::toDecimal($totalCents)]);
 
         return ['return_id' => $returnId, 'total' => number_format($totalCents / 100, 2, '.', '')];
     }

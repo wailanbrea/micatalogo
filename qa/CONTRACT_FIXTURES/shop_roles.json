@@ -1,0 +1,14 @@
+{
+  "shops": [
+    {"key": "shop_a", "plan": "pro", "business_type": "perfumeria"},
+    {"key": "shop_b", "plan": "pro", "business_type": "ropa"}
+  ],
+  "actors": [
+    {"key": "owner_a", "role": "owner", "shop": "shop_a"},
+    {"key": "manager_a", "role": "manager", "shop": "shop_a"},
+    {"key": "seller_limited_a", "role": "seller", "shop": "shop_a", "permissions": ["sales"]},
+    {"key": "accountant_a", "role": "accountant", "shop": "shop_a", "read_only": true},
+    {"key": "owner_b", "role": "owner", "shop": "shop_b"},
+    {"key": "anonymous", "role": "anonymous", "shop": null}
+  ]
+}

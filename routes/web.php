@@ -89,10 +89,11 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
         ->name('shops.destroy');
     Route::get('/tiendas/{shop}/resumen', [SellerSummaryController::class, 'index'])
         ->middleware('can:sell,shop')->name('shops.summary');
-    Route::scopeBindings()->middleware(['can:sell,shop', 'menu:sales'])->group(function () {
+    Route::scopeBindings()->middleware(['can:sell,shop', 'can:viewFinance,shop', 'menu:finance'])->group(function () {
         Route::get('/tiendas/{shop}/negocio', [SellerBusinessController::class, 'index'])
-            ->middleware('can:viewFinance,shop')
             ->name('shops.business');
+    });
+    Route::scopeBindings()->middleware(['can:sell,shop', 'menu:sales'])->group(function () {
         Route::get('/tiendas/{shop}/pedidos/{order}/confirmar', [SellerBusinessController::class, 'confirmForm'])
             ->middleware('signed')
             ->name('shops.orders.confirm.show');

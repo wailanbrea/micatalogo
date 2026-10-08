@@ -23,7 +23,7 @@
                         </span>
                         <div>
                             <h1 class="text-2xl font-black text-slate-900 tracking-tight">Lotes de inventario (FIFO)</h1>
-                            <p class="mt-0.5 text-xs text-slate-500">Historial y saldos de mercancía registrada por orden de entrada y costo unitario real.</p>
+                            <p class="mt-0.5 text-xs text-slate-500">Historial y saldos de mercancía registrada por orden de entrada.@if ($showCosts) Costo unitario real incluido.@endif</p>
                         </div>
                     </div>
                 </div>
@@ -32,9 +32,11 @@
                     <a href="{{ route('seller.shops.inventory.index', $shop) }}" class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition">
                         <span>← Volver a Inventario</span>
                     </a>
-                    <a href="{{ route('seller.shops.business', $shop) }}" class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition">
-                        <span>Resumen financiero ↗</span>
-                    </a>
+                    @if ($showCosts)
+                        <a href="{{ route('seller.shops.business', $shop) }}" class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition">
+                            <span>Resumen financiero ↗</span>
+                        </a>
+                    @endif
                 </div>
             </div>
 
@@ -43,7 +45,7 @@
                 <div class="flex items-center justify-between border-b border-slate-100 pb-4">
                     <div>
                         <h2 class="text-base font-black text-slate-900">Historial de lotes registrados</h2>
-                        <p class="text-xs text-slate-500">Los costos se consumen en orden First-In, First-Out (primero en entrar, primero en salir) al facturar ventas.</p>
+                        <p class="text-xs text-slate-500">Las existencias se consumen en orden First-In, First-Out (primero en entrar, primero en salir) al facturar ventas.</p>
                     </div>
                     <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-800 tabular-nums">
                         {{ $lots->total() }} {{ $lots->total() === 1 ? 'lote' : 'lotes' }}
@@ -58,8 +60,10 @@
                                 <th class="px-4 py-3">Producto</th>
                                 <th class="px-4 py-3 text-right">Recibido</th>
                                 <th class="px-4 py-3 text-right">Restante</th>
-                                <th class="px-4 py-3 text-right">Costo de entrada</th>
-                                <th class="px-4 py-3 text-right">Costo restante</th>
+                                @if ($showCosts)
+                                    <th class="px-4 py-3 text-right">Costo de entrada</th>
+                                    <th class="px-4 py-3 text-right">Costo restante</th>
+                                @endif
                                 <th class="px-4 py-3">Origen</th>
                             </tr>
                         </thead>
@@ -78,19 +82,21 @@
                                     <td class="px-4 py-3 text-right font-black tabular-nums whitespace-nowrap {{ $lot->remaining_quantity > 0 ? 'text-emerald-700' : 'text-slate-400' }}">
                                         {{ number_format($lot->remaining_quantity) }} {{ $lot->quantity_unit }}
                                     </td>
-                                    <td class="px-4 py-3 text-right font-semibold text-slate-800 tabular-nums whitespace-nowrap">
-                                        @if ($lot->received_product_unit_cost_cents !== null)
-                                            RD$ {{ number_format($lot->received_product_unit_cost_cents / 100.0, 2) }}
-                                            <span class="block text-[10px] font-normal text-slate-500">
-                                                por {{ $lot->product?->sale_unit === 'bottle' ? 'botella' : ($lot->product?->sale_unit === 'ml' ? 'ml' : 'unidad') }}
-                                            </span>
-                                        @else
-                                            —
-                                        @endif
-                                    </td>
-                                    <td class="px-4 py-3 text-right font-bold text-slate-900 tabular-nums whitespace-nowrap">
-                                        {{ $lot->remaining_cost_cents !== null ? 'RD$ ' . number_format($lot->remaining_cost_cents / 100.0, 2) : '—' }}
-                                    </td>
+                                    @if ($showCosts)
+                                        <td class="px-4 py-3 text-right font-semibold text-slate-800 tabular-nums whitespace-nowrap">
+                                            @if ($lot->received_product_unit_cost_cents !== null)
+                                                RD$ {{ number_format($lot->received_product_unit_cost_cents / 100.0, 2) }}
+                                                <span class="block text-[10px] font-normal text-slate-500">
+                                                    por {{ $lot->product?->sale_unit === 'bottle' ? 'botella' : ($lot->product?->sale_unit === 'ml' ? 'ml' : 'unidad') }}
+                                                </span>
+                                            @else
+                                                —
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-3 text-right font-bold text-slate-900 tabular-nums whitespace-nowrap">
+                                            {{ $lot->remaining_cost_cents !== null ? 'RD$ ' . number_format($lot->remaining_cost_cents / 100.0, 2) : '—' }}
+                                        </td>
+                                    @endif
                                     <td class="px-4 py-3">
                                         <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-700 capitalize">
                                             {{ $lot->origin }}
@@ -99,7 +105,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="px-4 py-8 text-center text-slate-400">
+                                    <td colspan="{{ $showCosts ? 7 : 5 }}" class="px-4 py-8 text-center text-slate-400">
                                         Sin lotes de inventario registrados.
                                     </td>
                                 </tr>

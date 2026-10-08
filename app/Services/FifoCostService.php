@@ -6,6 +6,7 @@ use App\Models\InventoryLot;
 use App\Models\InventoryMovement;
 use App\Models\Product;
 use App\Models\ProductInventory;
+use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -29,7 +30,8 @@ class FifoCostService
             return;
         }
         $divisor = $product->sale_unit === 'bottle' ? max(1, (int) $product->volume_ml) : 1;
-        $cost = $inventory->cost_price === null ? null : (int) round($quantity * (float) $inventory->cost_price * 100 / $divisor);
+        $unitCostCents = $inventory->cost_price === null ? null : Money::toCents($inventory->cost_price);
+        $cost = $unitCostCents === null ? null : intdiv(($quantity * $unitCostCents) + intdiv($divisor, 2), $divisor);
         $this->receive($product, $quantity, $cost, 'opening_balance', $product->created_at);
     }
 

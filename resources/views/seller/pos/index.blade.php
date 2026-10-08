@@ -359,7 +359,7 @@
                                         </div>
                                         <span class="text-lg font-black text-amber-900" x-text="money(computedCreditAmount)"></span>
                                     </div>
-                                    <input id="mixed_credit_amount" x-model.number="mixedCreditAmount" type="number" min="0.01" step="0.01" :max="total" class="mt-3 w-full rounded-xl border border-amber-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100">
+                                    <input id="mixed_credit_amount" x-model.number="mixedCreditAmount" type="number" min="0.01" step="0.01" :max="total" :disabled="paymentKind !== 'mixed'" class="mt-3 w-full rounded-xl border border-amber-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100">
                                 </div>
 
                                 <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">

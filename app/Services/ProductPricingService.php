@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\UserPlan;
 use App\Models\Product;
+use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -16,7 +17,7 @@ class ProductPricingService
         }
     }
 
-    public function propose(Product $product, float $unitCost, ?int $userId): void
+    public function propose(Product $product, string|int|float $unitCost, ?int $userId): void
     {
         if (app(PlanLimitsService::class)->planFor($product->shop->user) !== UserPlan::Pro) {
             return;
@@ -25,26 +26,32 @@ class ProductPricingService
         if (! $rule) {
             return;
         }
-        $denominator = 10000 - (int) round((float) $rule->margin_percent * 100);
-        $numerator = (int) round($unitCost * 100) * 10000;
+        $unitCostCents = Money::toCents($unitCost);
+        // margin_percent is a percentage represented as basis points (40% = 4000).
+        // Keep the pricing mutation entirely in integer cents/basis points.
+        $marginBps = Money::toCents($rule->margin_percent);
+        $denominator = 10000 - $marginBps;
+        $numerator = $unitCostCents * 10000;
         $rawCents = intdiv($numerator + $denominator - 1, $denominator);
         $step = (int) $rule->round_step_cents;
-        $price = (intdiv($rawCents + $step - 1, $step) * $step) / 100;
+        $priceCents = intdiv($rawCents + $step - 1, $step) * $step;
         $pending = null;
-        if ($price > (float) $product->price && $rule->auto_increase) {
-            $this->apply($product, $price, $userId, 'receipt_increase');
-        } elseif ($price !== (float) $product->price) {
-            $pending = $price;
+        $currentPriceCents = Money::toCents($product->price);
+        if ($priceCents > $currentPriceCents && $rule->auto_increase) {
+            $this->apply($product, Money::toDecimal($priceCents), $userId, 'receipt_increase');
+        } elseif ($priceCents !== $currentPriceCents) {
+            $pending = Money::toDecimal($priceCents);
         }
         DB::table('product_price_rules')->where('id', $rule->id)->update(['pending_price' => $pending, 'updated_at' => now()]);
     }
 
-    public function apply(Product $product, float $price, ?int $userId, string $reason): void
+    public function apply(Product $product, string|int|float $price, ?int $userId, string $reason): void
     {
+        $priceDecimal = Money::toDecimal(Money::toCents($price));
         DB::table('product_price_changes')->insert([
             'product_id' => $product->id, 'user_id' => $userId, 'old_price' => $product->price,
-            'new_price' => $price, 'reason' => $reason, 'created_at' => now(), 'updated_at' => now(),
+            'new_price' => $priceDecimal, 'reason' => $reason, 'created_at' => now(), 'updated_at' => now(),
         ]);
-        $product->update(['price' => $price]);
+        $product->update(['price' => $priceDecimal]);
     }
 }

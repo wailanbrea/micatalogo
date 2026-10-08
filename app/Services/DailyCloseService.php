@@ -16,15 +16,37 @@ class DailyCloseService
 
     public function calculate(Shop $shop, ?string $date = null): array
     {
+        $calculation = $this->calculateCents($shop, $date);
+
+        return [
+            'business_date' => $calculation['business_date'],
+            'sales_cash' => $this->money($calculation['sales_cash_cents']),
+            'debt_collections_cash' => $this->money($calculation['debt_collections_cash_cents']),
+            'other_inflows_cash' => $this->money($calculation['other_inflows_cash_cents']),
+            'expenses_cash' => $this->money($calculation['expenses_cash_cents']),
+            'cash_out' => $this->money($calculation['cash_out_cents']),
+            'expected_cash' => $this->money($calculation['expected_cash_cents']),
+            'sales_card' => (float) ($calculation['sales_card'] ?? 0),
+            'sales_transfer' => (float) ($calculation['sales_transfer'] ?? 0),
+            'sales_other' => (float) ($calculation['sales_other'] ?? 0),
+            'debt_collections_total' => (float) ($calculation['debt_collections_total'] ?? 0),
+            'expenses_paid_total' => (float) ($calculation['expenses_paid_total'] ?? 0),
+            'closure' => $calculation['closure'] ? $this->serializeClosure($calculation['closure']) : null,
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function calculateCents(Shop $shop, ?string $date = null): array
+    {
         $businessDate = Carbon::parse($date ?: now()->toDateString())->toDateString();
         $summary = $this->dashboard->getSummary($shop, $businessDate, $businessDate);
         $cashFlow = $summary['cash_flow'];
 
-        $salesCashCents = Money::toCents($cashFlow['inflows']['sales_cash'] ?? 0);
-        $debtCollectionsCashCents = Money::toCents($cashFlow['inflows']['debt_collections_cash'] ?? 0);
-        $otherInflowsCashCents = Money::toCents($cashFlow['inflows']['other_inflows'] ?? 0);
-        $expensesCashCents = Money::toCents($cashFlow['outflows']['expenses_paid_cash'] ?? 0);
-        $cashOutCents = Money::toCents($cashFlow['outflows']['cash_out'] ?? 0);
+        $salesCashCents = (int) ($cashFlow['inflows']['sales_cash_cents'] ?? Money::toCents($cashFlow['inflows']['sales_cash'] ?? 0));
+        $debtCollectionsCashCents = (int) ($cashFlow['inflows']['debt_collections_cash_cents'] ?? Money::toCents($cashFlow['inflows']['debt_collections_cash'] ?? 0));
+        $otherInflowsCashCents = (int) ($cashFlow['inflows']['other_inflows_cents'] ?? Money::toCents($cashFlow['inflows']['other_inflows'] ?? 0));
+        $expensesCashCents = (int) ($cashFlow['outflows']['expenses_paid_cash_cents'] ?? Money::toCents($cashFlow['outflows']['expenses_paid_cash'] ?? 0));
+        $cashOutCents = (int) ($cashFlow['outflows']['cash_out_cents'] ?? Money::toCents($cashFlow['outflows']['cash_out'] ?? 0));
         $expectedCashCents = $salesCashCents + $debtCollectionsCashCents + $otherInflowsCashCents - $expensesCashCents - $cashOutCents;
         $closure = DailyClosure::query()
             ->where('shop_id', $shop->id)
@@ -33,24 +55,23 @@ class DailyCloseService
 
         return [
             'business_date' => $businessDate,
-            'sales_cash' => $this->money($salesCashCents),
-            'debt_collections_cash' => $this->money($debtCollectionsCashCents),
-            'other_inflows_cash' => $this->money($otherInflowsCashCents),
-            'expenses_cash' => $this->money($expensesCashCents),
-            'cash_out' => $this->money($cashOutCents),
-            'expected_cash' => $this->money($expectedCashCents),
-            'sales_card' => (float) ($cashFlow['inflows']['sales_card'] ?? 0),
-            'sales_transfer' => (float) ($cashFlow['inflows']['sales_transfer'] ?? 0),
-            'sales_other' => (float) ($cashFlow['inflows']['sales_other'] ?? 0),
-            'debt_collections_total' => (float) ($cashFlow['inflows']['debt_collections'] ?? 0),
-            'expenses_paid_total' => (float) ($cashFlow['outflows']['expenses_paid'] ?? 0),
-            'closure' => $closure ? $this->serializeClosure($closure) : null,
+            'sales_cash_cents' => $salesCashCents,
+            'debt_collections_cash_cents' => $debtCollectionsCashCents,
+            'other_inflows_cash_cents' => $otherInflowsCashCents,
+            'expenses_cash_cents' => $expensesCashCents,
+            'cash_out_cents' => $cashOutCents,
+            'expected_cash_cents' => $expectedCashCents,
+            'sales_card' => $cashFlow['inflows']['sales_card'] ?? 0,
+            'sales_transfer' => $cashFlow['inflows']['sales_transfer'] ?? 0,
+            'sales_other' => $cashFlow['inflows']['sales_other'] ?? 0,
+            'debt_collections_total' => $cashFlow['inflows']['debt_collections'] ?? 0,
+            'expenses_paid_total' => $cashFlow['outflows']['expenses_paid'] ?? 0,
+            'closure' => $closure,
         ];
     }
 
     public function close(Shop $shop, User $user, string $date, mixed $countedCash = null, ?string $notes = null): DailyClosure
     {
-        $calculation = $this->calculate($shop, $date);
         $countedCents = $countedCash === null || trim((string) $countedCash) === ''
             ? null
             : Money::toCents($countedCash);
@@ -59,12 +80,24 @@ class DailyCloseService
             throw new \InvalidArgumentException('El efectivo contado no puede ser negativo.', 422);
         }
 
-        return DB::transaction(function () use ($shop, $user, $calculation, $countedCents, $notes): DailyClosure {
-            $expectedCents = Money::toCents($calculation['expected_cash']);
-            $closure = DailyClosure::query()->firstOrNew([
-                'shop_id' => $shop->id,
-                'business_date' => $calculation['business_date'],
-            ]);
+        return DB::transaction(function () use ($shop, $user, $date, $countedCents, $notes): DailyClosure {
+            // Serialize closures for the same shop before firstOrNew. The unique
+            // (shop_id, business_date) index protects integrity, but without a
+            // shared lock concurrent close requests can still race into a 1062.
+            $shop = Shop::query()->lockForUpdate()->findOrFail($shop->id);
+            $calculation = $this->calculateCents($shop, $date);
+            $expectedCents = $calculation['expected_cash_cents'];
+            $closure = DailyClosure::query()
+                ->where('shop_id', $shop->id)
+                ->whereDate('business_date', $calculation['business_date'])
+                ->first();
+
+            if (! $closure) {
+                $closure = new DailyClosure([
+                    'shop_id' => $shop->id,
+                    'business_date' => $calculation['business_date'],
+                ]);
+            }
 
             if ($closure->exists
                 && $closure->counted_cash_cents !== null
@@ -79,11 +112,11 @@ class DailyCloseService
                 'expected_cash_cents' => $expectedCents,
                 'counted_cash_cents' => $countedCents,
                 'difference_cents' => $countedCents === null ? null : $countedCents - $expectedCents,
-                'sales_cash_cents' => Money::toCents($calculation['sales_cash']),
-                'debt_collections_cash_cents' => Money::toCents($calculation['debt_collections_cash']),
-                'other_inflows_cash_cents' => Money::toCents($calculation['other_inflows_cash']),
-                'expenses_cash_cents' => Money::toCents($calculation['expenses_cash']),
-                'cash_out_cents' => Money::toCents($calculation['cash_out']),
+                'sales_cash_cents' => $calculation['sales_cash_cents'],
+                'debt_collections_cash_cents' => $calculation['debt_collections_cash_cents'],
+                'other_inflows_cash_cents' => $calculation['other_inflows_cash_cents'],
+                'expenses_cash_cents' => $calculation['expenses_cash_cents'],
+                'cash_out_cents' => $calculation['cash_out_cents'],
                 'status' => 'closed',
                 'notes' => $notes,
                 'closed_at' => now(),

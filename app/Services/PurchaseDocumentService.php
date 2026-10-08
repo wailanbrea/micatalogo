@@ -65,7 +65,9 @@ class PurchaseDocumentService
             return [
                 'product' => $product,
                 'quantity' => $quantity,
-                'unit_cost' => $item['unit_cost'],
+                // Keep the persisted decimal aligned with the integer-cent
+                // source used for totals, lots and inventory movements.
+                'unit_cost' => Money::toDecimal($unitCostCents),
                 'unit_cost_cents' => $unitCostCents,
                 'line_total' => Money::toDecimal($unitCostCents * $quantity),
             ];
@@ -101,7 +103,7 @@ class PurchaseDocumentService
 
             foreach ($lines as $line) {
                 $movement = $mode === 'received'
-                    ? $this->inventory->recordRestock($line['product'], $line['quantity'], $data['notes'] ?? null, $user->id, (float) $line['unit_cost'])
+                    ? $this->inventory->recordRestock($line['product'], $line['quantity'], $data['notes'] ?? null, $user->id, $line['unit_cost'])
                     : null;
                 $document->items()->create([
                     'product_id' => $line['product']->id,
@@ -147,7 +149,7 @@ class PurchaseDocumentService
                 if ($item->inventory_movement_id) {
                     continue;
                 }
-                $movement = $this->inventory->recordRestock($item->product, $item->quantity, $locked->notes, $user->id, (float) $item->unit_cost);
+                $movement = $this->inventory->recordRestock($item->product, $item->quantity, $locked->notes, $user->id, $item->unit_cost);
                 $item->update(['inventory_movement_id' => $movement->id]);
             }
             $locked->update(['status' => 'received', 'received_at' => now()]);

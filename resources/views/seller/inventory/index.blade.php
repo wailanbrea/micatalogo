@@ -90,29 +90,31 @@
                     <p class="mt-0.5 text-[11px] {{ $summary['out_of_stock_count'] > 0 ? 'text-rose-800 font-medium' : 'text-slate-500' }}">Sin existencias</p>
                 </div>
 
-                <!-- Valor de Inventario a Costo -->
-                <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Valor Stock</span>
-                        <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                @if ($showCosts)
+                    <!-- Valor de Inventario a Costo -->
+                    <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Valor Stock</span>
+                            <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2 0 1.105 1.343 2 3 2s3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </div>
                         </div>
+                        <p class="mt-2 text-xl font-black text-slate-900 truncate">RD$ {{ number_format($summary['total_inventory_value'], 0) }}</p>
+                        <p class="mt-0.5 text-[11px] text-slate-500">Inversión mercancía</p>
                     </div>
-                    <p class="mt-2 text-xl font-black text-slate-900 truncate">RD$ {{ number_format($summary['total_inventory_value'], 0) }}</p>
-                    <p class="mt-0.5 text-[11px] text-slate-500">Inversión mercancía</p>
-                </div>
 
-                <!-- Ganancia Bruta Estimada -->
-                <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Ganancia Est.</span>
-                        <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                    <!-- Ganancia Bruta Estimada -->
+                    <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Ganancia Est.</span>
+                            <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                            </div>
                         </div>
+                        <p class="mt-2 text-xl font-black text-violet-700 truncate">RD$ {{ number_format($summary['total_gross_profit'], 0) }}</p>
+                        <p class="mt-0.5 text-[11px] text-slate-500">Margen ventas</p>
                     </div>
-                    <p class="mt-2 text-xl font-black text-violet-700 truncate">RD$ {{ number_format($summary['total_gross_profit'], 0) }}</p>
-                    <p class="mt-0.5 text-[11px] text-slate-500">Margen ventas</p>
-                </div>
+                @endif
             </section>
 
             @php
@@ -315,16 +317,18 @@
                             <input id="inventory-price-max" name="price_max" type="number" min="0" step="0.01" value="{{ $filters['price_max'] }}" placeholder="RD$ max." class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-2 lg:col-span-3">
-                        <div>
-                            <label class="text-xs font-semibold text-slate-700" for="inventory-cost-min">Costo desde</label>
-                            <input id="inventory-cost-min" name="cost_min" type="number" min="0" step="0.01" value="{{ $filters['cost_min'] }}" placeholder="RD$ min." class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+                    @if ($showCosts)
+                        <div class="grid grid-cols-2 gap-2 lg:col-span-3">
+                            <div>
+                                <label class="text-xs font-semibold text-slate-700" for="inventory-cost-min">Costo desde</label>
+                                <input id="inventory-cost-min" name="cost_min" type="number" min="0" step="0.01" value="{{ $filters['cost_min'] }}" placeholder="RD$ min." class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold text-slate-700" for="inventory-cost-max">Costo hasta</label>
+                                <input id="inventory-cost-max" name="cost_max" type="number" min="0" step="0.01" value="{{ $filters['cost_max'] }}" placeholder="RD$ max." class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+                            </div>
                         </div>
-                        <div>
-                            <label class="text-xs font-semibold text-slate-700" for="inventory-cost-max">Costo hasta</label>
-                            <input id="inventory-cost-max" name="cost_max" type="number" min="0" step="0.01" value="{{ $filters['cost_max'] }}" placeholder="RD$ max." class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
-                        </div>
-                    </div>
+                    @endif
                     <div class="flex items-end gap-2 lg:col-span-1">
                         <button type="submit" class="w-full rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white hover:bg-slate-800">Filtrar</button>
                     </div>
@@ -356,8 +360,10 @@
                                 <th class="px-4 py-3 text-right"><a class="inline-flex items-center gap-1 hover:text-blue-700" href="{{ $sortLink('stock') }}">Stock Actual <span aria-hidden="true">{{ $sortIndicator('stock') }}</span></a></th>
                                 <th class="px-4 py-3 text-right"><a class="inline-flex items-center gap-1 hover:text-blue-700" href="{{ $sortLink('sold') }}">Vendidos <span aria-hidden="true">{{ $sortIndicator('sold') }}</span></a></th>
                                 <th class="px-4 py-3 text-right"><a class="inline-flex items-center gap-1 hover:text-blue-700" href="{{ $sortLink('price') }}">Precio Venta <span aria-hidden="true">{{ $sortIndicator('price') }}</span></a></th>
-                                <th class="px-4 py-3 text-right"><a class="inline-flex items-center gap-1 hover:text-blue-700" href="{{ $sortLink('cost') }}">Costo Compra <span aria-hidden="true">{{ $sortIndicator('cost') }}</span></a></th>
-                                <th class="px-4 py-3 text-right">Margen</th>
+                                @if ($showCosts)
+                                    <th class="px-4 py-3 text-right"><a class="inline-flex items-center gap-1 hover:text-blue-700" href="{{ $sortLink('cost') }}">Costo Compra <span aria-hidden="true">{{ $sortIndicator('cost') }}</span></a></th>
+                                    <th class="px-4 py-3 text-right">Margen</th>
+                                @endif
                                 <th class="px-4 py-3 text-right">Acciones Rápidas</th>
                             </tr>
                         </thead>
@@ -432,49 +438,51 @@
                                         RD$ {{ number_format((float) $product->price, 0) }}
                                     </td>
 
-                                    <!-- Costo Compra (Privado) -->
-                                    <td class="px-4 py-3.5 text-right whitespace-nowrap">
-                                        @if ($isControlled && $inv->cost_price !== null)
-                                            <span class="font-mono text-xs font-semibold text-slate-700">
-                                                RD$ {{ number_format((float) $inv->cost_price, 0) }}
-                                            </span>
-                                            @if (isset($summary['cost_recovery'][$product->id]))
-                                                @php
-                                                    $recovery = $summary['cost_recovery'][$product->id];
-                                                @endphp
-                                                @if ($recovery['covered'])
-                                                    <span class="mt-1 block text-[10px] font-bold text-emerald-700">
-                                                        Costo cubierto · +RD$ {{ number_format($recovery['difference'], 0) }}
-                                                    </span>
-                                                @else
-                                                    <span class="mt-1 block text-[10px] font-semibold text-amber-700">
-                                                        Faltan RD$ {{ number_format(abs($recovery['difference']), 0) }}
+                                    @if ($showCosts)
+                                        <!-- Costo Compra (Privado) -->
+                                        <td class="px-4 py-3.5 text-right whitespace-nowrap">
+                                            @if ($isControlled && $inv->cost_price !== null)
+                                                <span class="font-mono text-xs font-semibold text-slate-700">
+                                                    RD$ {{ number_format((float) $inv->cost_price, 0) }}
+                                                </span>
+                                                @if (isset($summary['cost_recovery'][$product->id]))
+                                                    @php
+                                                        $recovery = $summary['cost_recovery'][$product->id];
+                                                    @endphp
+                                                    @if ($recovery['covered'])
+                                                        <span class="mt-1 block text-[10px] font-bold text-emerald-700">
+                                                            Costo cubierto · +RD$ {{ number_format($recovery['difference'], 0) }}
+                                                        </span>
+                                                    @else
+                                                        <span class="mt-1 block text-[10px] font-semibold text-amber-700">
+                                                            Faltan RD$ {{ number_format(abs($recovery['difference']), 0) }}
+                                                        </span>
+                                                    @endif
+                                                    <span class="block text-[10px] text-slate-400">
+                                                        Decants: RD$ {{ number_format($recovery['revenue'], 0) }} / botella: RD$ {{ number_format($recovery['cost'], 0) }}
                                                     </span>
                                                 @endif
-                                                <span class="block text-[10px] text-slate-400">
-                                                    Decants: RD$ {{ number_format($recovery['revenue'], 0) }} / botella: RD$ {{ number_format($recovery['cost'], 0) }}
-                                                </span>
+                                            @else
+                                                <span class="text-xs text-slate-400 italic">No fijado</span>
                                             @endif
-                                        @else
-                                            <span class="text-xs text-slate-400 italic">No fijado</span>
-                                        @endif
-                                    </td>
+                                        </td>
 
-                                    <!-- Margen -->
-                                    <td class="px-4 py-3.5 text-right whitespace-nowrap">
-                                        @if ($isControlled && $inv->cost_price !== null)
-                                            <span class="font-mono text-xs font-bold text-violet-700">
-                                                RD$ {{ number_format((float) $inv->unit_margin, 0) }}
-                                            </span>
-                                            @if ($inv->margin_percentage !== null)
-                                                <span class="block text-[10px] font-semibold text-slate-500">
-                                                    ({{ $inv->margin_percentage }}%)
+                                        <!-- Margen -->
+                                        <td class="px-4 py-3.5 text-right whitespace-nowrap">
+                                            @if ($isControlled && $inv->cost_price !== null)
+                                                <span class="font-mono text-xs font-bold text-violet-700">
+                                                    RD$ {{ number_format((float) $inv->unit_margin, 0) }}
                                                 </span>
+                                                @if ($inv->margin_percentage !== null)
+                                                    <span class="block text-[10px] font-semibold text-slate-500">
+                                                        ({{ $inv->margin_percentage }}%)
+                                                    </span>
+                                                @endif
+                                            @else
+                                                <span class="text-xs text-slate-400">-</span>
                                             @endif
-                                        @else
-                                            <span class="text-xs text-slate-400">-</span>
-                                        @endif
-                                    </td>
+                                        </td>
+                                    @endif
 
                                     <!-- Acciones Rápidas -->
                                     <td class="px-4 py-3.5 text-right whitespace-nowrap">
@@ -529,7 +537,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td class="px-4 py-8 text-center text-slate-500" colspan="8">
+                                    <td class="px-4 py-8 text-center text-slate-500" colspan="{{ $showCosts ? 8 : 6 }}">
                                         No hay productos que coincidan con los filtros seleccionados.
                                     </td>
                                 </tr>

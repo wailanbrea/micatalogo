@@ -7,6 +7,7 @@ use App\Models\ProductInventory;
 use App\Models\Shop;
 use App\Models\User;
 use App\Services\InventoryService;
+use App\Support\Money;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 
@@ -28,7 +29,7 @@ test('FIFO preserves old receipt costs and sale cost across different lots', fun
     $service->recordRestock($product, 2, null, $user->id, 1800);
     $sale = $service->recordSale($product, 3, null, $user->id);
     expect((int) $sale->total_cost_cents)->toBe(480000)
-        ->and(InventoryLot::where('product_id', $product->id)->sum('remaining_quantity'))->toBe(1)
+        ->and((int) InventoryLot::where('product_id', $product->id)->sum('remaining_quantity'))->toBe(1)
         ->and((int) $sale->invoice->items->first()->total_cost_cents)->toBe(480000);
     $product->inventory->update(['cost_price' => 2200]);
     expect((int) $sale->fresh()->total_cost_cents)->toBe(480000);
@@ -47,6 +48,64 @@ test('different receipts remain visible as separate lots with their own entry co
         ->and($lots[2]->received_product_unit_cost_cents)->toBe(230000)
         ->and($lots[1]->remaining_quantity)->toBe(2)
         ->and($lots[2]->remaining_quantity)->toBe(1);
+});
+
+test('decimal strings cross inventory mutation boundaries without float rounding', function () {
+    [$user, $shop, $product, $service] = fifoFixture();
+    $product->inventory->update(['stock_quantity' => 0, 'cost_price' => null]);
+
+    $service->recordRestock($product, 2, 'Costo con centavos', $user->id, '249.99');
+    $lot = InventoryLot::where('product_id', $product->id)->latest('id')->firstOrFail();
+
+    expect((int) $lot->received_cost_cents)->toBe(49998)
+        ->and((string) $product->fresh()->inventory->getRawOriginal('cost_price'))->toBe('249.99');
+
+    $sale = $service->recordSale($product->fresh(), 1, null, $user->id);
+
+    expect((int) $sale->total_cost_cents)->toBe(24999)
+        ->and((int) $lot->fresh()->remaining_cost_cents)->toBe(24999);
+});
+
+test('effective catalog prices cross POS mutations as exact decimal strings', function () {
+    [$user, $shop, $product, $service] = fifoFixture();
+    $product->update(['price' => '0.29', 'sale_price' => '0.28']);
+
+    expect($product->fresh()->currentPriceDecimal())->toBe('0.28')
+        ->and($product->fresh()->currentPriceCents())->toBe(28);
+
+    $movement = $service->recordSale($product->fresh(), 1, null, $user->id);
+    $invoiceItem = $movement->fresh()->invoice->items->first();
+
+    expect((string) $movement->unit_price)->toBe('0.28')
+        ->and((string) $invoiceItem->unit_price)->toBe('0.28')
+        ->and(Money::toCents($invoiceItem->line_total))->toBe(28);
+});
+
+test('per-unit movement costs divide cents deterministically without floats', function () {
+    expect(Money::perUnitDecimal(1, 3))->toBe('0.00')
+        ->and(Money::perUnitDecimal(2, 3))->toBe('0.01')
+        ->and(Money::perUnitDecimal(5, 2))->toBe('0.03')
+        ->and(Money::perUnitDecimal(null, 3))->toBeNull();
+});
+
+test('cart sale keeps discount and tax as exact cents at the service boundary', function () {
+    [$user, $shop, $product, $service] = fifoFixture();
+
+    $movements = $service->recordCartSales([
+        [
+            'product' => $product,
+            'quantity' => 1,
+            'unit_price' => '100.01',
+            'discount' => '0.01',
+            'tax' => '0.02',
+        ],
+    ], $user->id, 'pos', 'paid', '0.03', '0.04');
+    $invoice = $movements[0]->fresh()->invoice;
+
+    expect(Money::toCents($invoice->items->first()->line_total))->toBe(10002)
+        ->and(Money::toCents($invoice->discount))->toBe(3)
+        ->and(Money::toCents($invoice->tax))->toBe(4)
+        ->and(Money::toCents($invoice->total))->toBe(10003);
 });
 
 test('FIFO unknown costs remain unknown and failed sales do not consume lots', function () {

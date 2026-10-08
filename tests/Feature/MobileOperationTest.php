@@ -10,6 +10,8 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductInventory;
 use App\Models\Shop;
+use App\Models\ShopMember;
+use App\Models\ShopSeller;
 use App\Models\User;
 use App\Services\InventoryService;
 use App\Services\MediaStorageService;
@@ -20,6 +22,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
@@ -75,6 +78,134 @@ function mobileFixture(): array
 
     return [$user, $shop, $product, $user->createToken('test', ['pos:write'])->plainTextToken];
 }
+
+test('mobile operations preserve seller menu boundaries by operation type', function () {
+    [$owner, $shop, $product] = mobileFixture();
+    expect($owner->ownsShop($shop))->toBeTrue()
+        ->and(app(\App\Services\SellerMenuService::class)->visibleForUser($shop, $owner))->toContain('sales');
+
+    $productsSeller = User::factory()->create();
+    ShopSeller::create([
+        'shop_id' => $shop->id,
+        'user_id' => $productsSeller->id,
+        'is_active' => true,
+        'commission_type' => 'percentage',
+        'commission_value' => 5,
+        'menu_permissions' => ['products'],
+    ]);
+    $url = '/api/v1/shops/'.$shop->public_id.'/mobile-operations';
+    $saleUuid = (string) Str::uuid();
+    Sanctum::actingAs($owner, ['pos:write']);
+    $this->postJson('/api/v1/shops/'.$shop->public_id.'/pos-sales', [
+        'client_sale_uuid' => $saleUuid,
+        'payment_status' => 'paid',
+        'items' => [['product_id' => $product->public_id, 'quantity' => 1, 'unit_price' => '250.00']],
+    ])->assertCreated();
+
+    Sanctum::actingAs($productsSeller, ['pos:write']);
+    $this->postJson($url, [
+        'client_operation_uuid' => (string) Str::uuid(),
+        'type' => 'product_upsert',
+        'product_id' => $product->public_id,
+        'name' => 'No debe editarse por seller',
+        'price' => '300.00',
+    ])->assertForbidden();
+    expect($product->fresh()->name)->not->toBe('No debe editarse por seller');
+
+    $inventorySeller = User::factory()->create();
+    ShopSeller::create([
+        'shop_id' => $shop->id,
+        'user_id' => $inventorySeller->id,
+        'is_active' => true,
+        'commission_type' => 'percentage',
+        'commission_value' => 5,
+        'menu_permissions' => ['inventory'],
+    ]);
+    Sanctum::actingAs($inventorySeller, ['pos:write']);
+    $this->postJson($url, [
+        'client_operation_uuid' => (string) Str::uuid(),
+        'type' => 'restock',
+        'product_id' => $product->public_id,
+        'quantity' => 1,
+        'unit_cost' => '100.00',
+    ])->assertForbidden();
+    expect($product->fresh()->inventory->stock_quantity)->toBe(4);
+
+    $returnsSeller = User::factory()->create();
+    ShopSeller::create([
+        'shop_id' => $shop->id,
+        'user_id' => $returnsSeller->id,
+        'is_active' => true,
+        'commission_type' => 'percentage',
+        'commission_value' => 5,
+        'menu_permissions' => ['returns'],
+    ]);
+    Sanctum::actingAs($returnsSeller, ['pos:write']);
+    $this->postJson($url, [
+        'client_operation_uuid' => (string) Str::uuid(),
+        'type' => 'return',
+        'client_sale_uuid' => $saleUuid,
+        'items' => [['product_id' => $product->public_id, 'quantity' => 1, 'refund_price' => '250.00', 'restock' => true]],
+    ])->assertCreated()->assertJsonPath('total', '250.00');
+});
+
+test('mobile operation role matrix allows manager and blocks accountant mutations', function () {
+    [$owner, $shop, $product] = mobileFixture();
+    $manager = User::factory()->create();
+    ShopMember::create(['shop_id' => $shop->id, 'user_id' => $manager->id, 'role' => 'manager', 'is_active' => true]);
+    $accountant = User::factory()->create();
+    ShopMember::create(['shop_id' => $shop->id, 'user_id' => $accountant->id, 'role' => 'accountant', 'is_active' => true]);
+    expect($accountant->fresh()->canSellAtShop($shop))->toBeFalse();
+    $url = '/api/v1/shops/'.$shop->public_id.'/mobile-operations';
+
+    $managerToken = $manager->createToken('qa-manager', ['pos:write'])->plainTextToken;
+    app('auth')->forgetGuards();
+    $this->withToken($managerToken)->getJson('/api/v1/me')->assertOk()->assertJsonPath('email', $manager->email);
+    $this->withToken($managerToken)->postJson($url, [
+        'client_operation_uuid' => (string) Str::uuid(),
+        'type' => 'restock',
+        'product_id' => $product->public_id,
+        'quantity' => 1,
+        'unit_cost' => '100.00',
+    ])->assertCreated();
+    expect($product->fresh()->inventory->stock_quantity)->toBe(6);
+
+    $accountantToken = $accountant->createToken('qa-accountant', ['pos:write'])->plainTextToken;
+    app('auth')->forgetGuards();
+    $this->withToken($accountantToken)->getJson('/api/v1/me')->assertOk()->assertJsonPath('email', $accountant->email);
+    app('auth')->forgetGuards();
+    $this->withToken($accountantToken)->postJson($url, [
+        'client_operation_uuid' => (string) Str::uuid(),
+        'type' => 'restock',
+        'product_id' => $product->public_id,
+        'quantity' => 1,
+        'unit_cost' => '100.00',
+    ])->assertNotFound();
+    expect($product->fresh()->inventory->stock_quantity)->toBe(6);
+
+    expect(app(\App\Services\SellerMenuService::class)->visibleForUser($shop, $manager))
+        ->toContain('inventory')
+        ->and(app(\App\Services\SellerMenuService::class)->visibleForUser($shop, $accountant))
+        ->toBe(['finance', 'reports']);
+});
+
+test('platform admin cannot mutate a shop through the seller mobile operation endpoint', function () {
+    [$owner, $shop, $product] = mobileFixture();
+    $admin = User::factory()->admin()->create();
+    $token = $admin->createToken('qa-admin', ['pos:write'])->plainTextToken;
+    $url = '/api/v1/shops/'.$shop->public_id.'/mobile-operations';
+
+    $this->withToken($token)->postJson($url, [
+        'client_operation_uuid' => (string) Str::uuid(),
+        'type' => 'restock',
+        'product_id' => $product->public_id,
+        'quantity' => 1,
+        'unit_cost' => '100.00',
+    ])->assertNotFound();
+
+    expect($product->fresh()->inventory->stock_quantity)->toBe(5)
+        ->and($admin->canSellAtShop($shop))->toBeFalse();
+});
 
 test('mobile refund includes global invoice tax without turning it into profit', function () {
     [$user, $shop, $product, $token] = mobileFixture();

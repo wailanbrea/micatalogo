@@ -12,6 +12,10 @@ class MobileOperationController extends Controller
 {
     public function store(Request $request, Shop $shop, MobileOperationService $service)
     {
+        // Resolve the tenant boundary before validating operation-specific input.
+        // Otherwise an external actor could probe validation details for a shop
+        // they cannot access, even though no mutation would be committed.
+        abort_unless($request->user()->canSellAtShop($shop), 404);
         $type = $request->validate(['type' => ['required', 'in:product_upsert,product_archive,restock,adjustment,open_bottle,return']])['type'];
         $rules = ['type' => ['required'], 'client_operation_uuid' => ['required', 'uuid'], 'notes' => ['nullable', 'string', 'max:1000']];
         if ($type === 'return') {

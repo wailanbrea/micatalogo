@@ -37,6 +37,7 @@ class SellerSummaryController extends Controller
     {
         $visibleMenus = $menus->visibleForUser($shop, $request->user());
         $canManage = $menus->canManage($shop, $request->user());
+        $isAccountant = $request->user()->isActiveShopAccountant($shop);
         $period = $request->validate(['period' => ['sometimes', 'in:today,week,month']])['period'] ?? 'today';
         $from = match ($period) {
             'week' => today()->subDays(6),
@@ -49,7 +50,7 @@ class SellerSummaryController extends Controller
             default => 'Hoy',
         };
         $base = Invoice::query()->where('shop_id', $shop->id)
-            ->when(! $canManage, fn ($query) => $query->where('salesperson_id', $request->user()->id))
+            ->when(! $canManage && ! $isAccountant, fn ($query) => $query->where('salesperson_id', $request->user()->id))
             ->whereNotIn('status', ['cancelled', 'void']);
         $periodSales = (clone $base)->whereBetween('issued_at', [$from, today()->endOfDay()]);
         $totals = (clone $periodSales)->selectRaw('COUNT(*) AS sales_count, COALESCE(SUM(total), 0) AS sales_total, COALESCE(SUM(commission_amount), 0) AS commission_total')->first();
@@ -69,6 +70,6 @@ class SellerSummaryController extends Controller
             return ['label' => $date->format('d/m'), 'total' => Money::toCents((string) ($daily->get($date->toDateString())?->sales_total ?? '0'))];
         });
 
-        return view('seller.summary', compact('shop', 'visibleMenus', 'canManage', 'sales', 'period', 'periodLabel', 'metrics', 'chart'));
+        return view('seller.summary', compact('shop', 'visibleMenus', 'canManage', 'isAccountant', 'sales', 'period', 'periodLabel', 'metrics', 'chart'));
     }
 }

@@ -17,6 +17,14 @@ test('converts various valid monetary formats to cents accurately without float 
         ->and(Money::toCents('-50.25'))->toBe(-5025);
 });
 
+test('calculates percentage taxes from cents without floating point rounding', function () {
+    expect(Money::percentageToBasisPoints('18.00'))->toBe(1800)
+        ->and(Money::percentageToBasisPoints('0.50'))->toBe(50)
+        ->and(Money::percentageOfCents(10001, '18.00'))->toBe(1800)
+        ->and(Money::percentageOfBasisPoints(1, 5000))->toBe(1)
+        ->and(Money::percentageOfBasisPoints(1, -5000))->toBe(-1);
+});
+
 test('converts cents to decimal string deterministically', function () {
     expect(Money::toDecimal(0))->toBe('0.00')
         ->and(Money::toDecimal(1))->toBe('0.01')

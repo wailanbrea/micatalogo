@@ -612,57 +612,60 @@ class BusinessDashboardService
         }
         $invoiceCollections = $invoicePaymentsQuery
             ->whereBetween('received_at', [$fromDatetime, $toDatetime])
-            ->selectRaw('payment_method, SUM(amount_cents) / 100.0 as total')
+            ->selectRaw('payment_method, SUM(amount_cents) as total_cents')
             ->groupBy('payment_method')
             ->get()
             ->keyBy('payment_method');
 
-        $salesCash = (float) ($invoiceCollections->get('cash')?->total ?? 0);
-        $salesCard = (float) ($invoiceCollections->get('card')?->total ?? 0);
-        $salesTransfer = (float) ($invoiceCollections->get('bank_transfer')?->total ?? 0);
-        $salesOther = (float) ($invoiceCollections->get('other')?->total ?? 0);
+        $salesCashCents = (int) ($invoiceCollections->get('cash')?->total_cents ?? 0);
+        $salesCardCents = (int) ($invoiceCollections->get('card')?->total_cents ?? 0);
+        $salesTransferCents = (int) ($invoiceCollections->get('bank_transfer')?->total_cents ?? 0);
+        $salesOtherCents = (int) ($invoiceCollections->get('other')?->total_cents ?? 0);
 
         // Debt payments are allocated to invoice_payments, so retain their payment method.
         $debtPaymentCollections = DB::table('invoice_payments')
             ->where('shop_id', $shop->id)
             ->whereNotNull('customer_account_entry_id')
             ->whereBetween('received_at', [$fromDatetime, $toDatetime])
-            ->selectRaw('payment_method, SUM(amount_cents) / 100.0 as total')
+            ->selectRaw('payment_method, SUM(amount_cents) as total_cents')
             ->groupBy('payment_method')
             ->get()
             ->keyBy('payment_method');
-        $debtCollections = (float) ($debtPaymentCollections->sum('total') ?: abs(DB::table('customer_account_entries')
-            ->where('shop_id', $shop->id)
-            ->whereBetween('created_at', [$fromDatetime, $toDatetime])
-            ->where('type', 'payment')
-            ->sum('amount')));
-        $debtCollectionsCash = (float) ($debtPaymentCollections->get('cash')?->total ?? 0);
+        $debtCollectionsCents = (int) $debtPaymentCollections->sum('total_cents');
+        if ($debtCollectionsCents === 0) {
+            $legacyDebtAmount = DB::table('customer_account_entries')
+                ->where('shop_id', $shop->id)
+                ->whereBetween('created_at', [$fromDatetime, $toDatetime])
+                ->where('type', 'payment')
+                ->sum('amount');
+            $debtCollectionsCents = abs(Money::toCents($legacyDebtAmount));
+        }
+        $debtCollectionsCashCents = (int) ($debtPaymentCollections->get('cash')?->total_cents ?? 0);
 
         // Standalone cash register ins and owner contributions (excluding movements from sales/customer payments)
-        $cashInMovements = (float) DB::table('cash_movements')
+        $cashInMovementsCents = (int) DB::table('cash_movements')
             ->where('shop_id', $shop->id)
             ->whereBetween('occurred_at', [$fromDatetime, $toDatetime])
             ->whereIn('type', ['cash_in', 'owner_contribution'])
             ->whereNull('reference_type')
-            ->selectRaw('SUM(amount_cents) / 100.0 as total')
-            ->value('total') ?: 0.0;
+            ->sum('amount_cents');
 
-        $totalInflows = round($salesCash + $salesCard + $salesTransfer + $salesOther + $debtCollections + $cashInMovements, 2);
+        $totalInflowsCents = $salesCashCents + $salesCardCents + $salesTransferCents + $salesOtherCents + $debtCollectionsCents + $cashInMovementsCents;
 
         // 2. OUTFLOWS:
         // Actual paid expenses from expense_payments
         $expensePayments = DB::table('expense_payments')
             ->where('shop_id', $shop->id)
             ->whereBetween('paid_at', [$fromDatetime, $toDatetime])
-            ->selectRaw('payment_method, SUM(amount_cents) / 100.0 as total')
+            ->selectRaw('payment_method, SUM(amount_cents) as total_cents')
             ->groupBy('payment_method')
             ->get()
             ->keyBy('payment_method');
-        $expensesPaidFromPayments = (float) $expensePayments->sum('total');
-        $expensesPaidCash = (float) ($expensePayments->get('cash')?->total ?? 0);
+        $expensesPaidFromPaymentsCents = (int) $expensePayments->sum('total_cents');
+        $expensesPaidCashCents = (int) ($expensePayments->get('cash')?->total_cents ?? 0);
 
         // Fallback for legacy expenses without separate payment rows (if any)
-        $legacyExpensesPaid = (float) DB::table('expenses')
+        $legacyExpensesPaidCents = (int) DB::table('expenses')
             ->where('shop_id', $shop->id)
             ->whereBetween('occurred_at', [$fromDatetime, $toDatetime])
             ->where('payment_status', 'paid')
@@ -671,9 +674,8 @@ class BusinessDashboardService
                     ->from('expense_payments')
                     ->whereColumn('expense_payments.expense_id', 'expenses.id');
             })
-            ->selectRaw('SUM(amount_cents) / 100.0 as total')
-            ->value('total') ?: 0.0;
-        $legacyExpensesPaidCash = (float) DB::table('expenses')
+            ->sum('amount_cents');
+        $legacyExpensesPaidCashCents = (int) DB::table('expenses')
             ->where('shop_id', $shop->id)
             ->whereBetween('occurred_at', [$fromDatetime, $toDatetime])
             ->where('payment_status', 'paid')
@@ -683,42 +685,53 @@ class BusinessDashboardService
                     ->from('expense_payments')
                     ->whereColumn('expense_payments.expense_id', 'expenses.id');
             })
-            ->selectRaw('SUM(amount_cents) / 100.0 as total')
-            ->value('total') ?: 0.0;
+            ->sum('amount_cents');
 
-        $totalExpensesPaid = round($expensesPaidFromPayments + $legacyExpensesPaid, 2);
-        $totalExpensesPaidCash = round($expensesPaidCash + $legacyExpensesPaidCash, 2);
+        $totalExpensesPaidCents = $expensesPaidFromPaymentsCents + $legacyExpensesPaidCents;
+        $totalExpensesPaidCashCents = $expensesPaidCashCents + $legacyExpensesPaidCashCents;
 
         // Standalone cash register outs and owner withdrawals (excluding movements from expense payments)
-        $cashOutMovements = (float) abs(DB::table('cash_movements')
+        $cashOutMovementsCents = abs((int) DB::table('cash_movements')
             ->where('shop_id', $shop->id)
             ->whereBetween('occurred_at', [$fromDatetime, $toDatetime])
             ->whereIn('type', ['cash_out', 'owner_withdrawal'])
             ->whereNull('reference_type')
-            ->selectRaw('SUM(amount_cents) / 100.0 as total')
-            ->value('total') ?: 0.0);
+            ->sum('amount_cents'));
 
-        $totalOutflows = round($totalExpensesPaid + $cashOutMovements, 2);
-        $netCashFlow = round($totalInflows - $totalOutflows, 2);
+        $totalOutflowsCents = $totalExpensesPaidCents + $cashOutMovementsCents;
+        $netCashFlowCents = $totalInflowsCents - $totalOutflowsCents;
 
         return [
             'inflows' => [
-                'sales_cash' => round($salesCash, 2),
-                'sales_card' => round($salesCard, 2),
-                'sales_transfer' => round($salesTransfer, 2),
-                'sales_other' => round($salesOther, 2),
-                'debt_collections' => round($debtCollections, 2),
-                'debt_collections_cash' => round($debtCollectionsCash, 2),
-                'other_inflows' => round($cashInMovements, 2),
-                'total' => $totalInflows,
+                'sales_cash' => (float) Money::toDecimal($salesCashCents),
+                'sales_card' => (float) Money::toDecimal($salesCardCents),
+                'sales_transfer' => (float) Money::toDecimal($salesTransferCents),
+                'sales_other' => (float) Money::toDecimal($salesOtherCents),
+                'debt_collections' => (float) Money::toDecimal($debtCollectionsCents),
+                'debt_collections_cash' => (float) Money::toDecimal($debtCollectionsCashCents),
+                'other_inflows' => (float) Money::toDecimal($cashInMovementsCents),
+                'total' => (float) Money::toDecimal($totalInflowsCents),
+                'sales_cash_cents' => $salesCashCents,
+                'sales_card_cents' => $salesCardCents,
+                'sales_transfer_cents' => $salesTransferCents,
+                'sales_other_cents' => $salesOtherCents,
+                'debt_collections_cents' => $debtCollectionsCents,
+                'debt_collections_cash_cents' => $debtCollectionsCashCents,
+                'other_inflows_cents' => $cashInMovementsCents,
+                'total_cents' => $totalInflowsCents,
             ],
             'outflows' => [
-                'expenses_paid' => $totalExpensesPaid,
-                'expenses_paid_cash' => $totalExpensesPaidCash,
-                'cash_out' => round($cashOutMovements, 2),
-                'total' => $totalOutflows,
+                'expenses_paid' => (float) Money::toDecimal($totalExpensesPaidCents),
+                'expenses_paid_cash' => (float) Money::toDecimal($totalExpensesPaidCashCents),
+                'cash_out' => (float) Money::toDecimal($cashOutMovementsCents),
+                'total' => (float) Money::toDecimal($totalOutflowsCents),
+                'expenses_paid_cents' => $totalExpensesPaidCents,
+                'expenses_paid_cash_cents' => $totalExpensesPaidCashCents,
+                'cash_out_cents' => $cashOutMovementsCents,
+                'total_cents' => $totalOutflowsCents,
             ],
-            'net_cash_flow' => $netCashFlow,
+            'net_cash_flow' => (float) Money::toDecimal($netCashFlowCents),
+            'net_cash_flow_cents' => $netCashFlowCents,
         ];
     }
 }

@@ -48,6 +48,129 @@ test('cotizaciones convierten una sola vez y respetan inventario y FIFO', functi
     expect(Invoice::where('shop_id', $shop->id)->count())->toBe(1);
 });
 
+test('la conversión API de una cotización conserva los centavos del precio snapshot', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->for($user)->create();
+    $product = Product::factory()->for($shop)->create(['price' => '10.29']);
+    ProductInventory::create([
+        'product_id' => $product->id,
+        'track_inventory' => true,
+        'stock_quantity' => 4,
+        'cost_price' => '5.03',
+        'sold_quantity' => 0,
+    ]);
+    app(CashRegisterService::class)->openSession($shop, $user, '0.00');
+    $token = $user->createToken('qa-quote', ['pos:write'])->plainTextToken;
+
+    $quoteResponse = $this->withToken($token)->postJson(
+        "/api/v1/shops/{$shop->public_id}/quotes",
+        [
+            'customer_name' => 'Cliente centavos',
+            'items' => [['product_id' => $product->public_id, 'quantity' => 2, 'unit_price' => '10.29']],
+        ],
+    )->assertCreated()->assertJsonPath('quote.total', '20.58');
+
+    $quote = CommercialQuote::query()->where('shop_id', $shop->id)->sole();
+    $this->withToken($token)->postJson(
+        "/api/v1/shops/{$shop->public_id}/quotes/{$quote->public_id}/convert",
+    )->assertOk()->assertJsonPath('message', 'Cotización convertida en venta.');
+
+    $invoice = Invoice::query()->where('shop_id', $shop->id)->sole();
+    expect((string) $invoice->total)->toBe('20.58')
+        ->and((string) $invoice->items()->sole()->unit_price)->toBe('10.29')
+        ->and((int) $product->fresh()->inventory->stock_quantity)->toBe(2)
+        ->and($quote->fresh()->status)->toBe('converted');
+});
+
+test('web y API bloquean cotizaciones vencidas o canceladas sin mutar la venta', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->for($user)->create();
+    $product = Product::factory()->for($shop)->create(['price' => '250.00']);
+    ProductInventory::create([
+        'product_id' => $product->id,
+        'track_inventory' => true,
+        'stock_quantity' => 8,
+        'cost_price' => '100.00',
+        'sold_quantity' => 0,
+    ]);
+    app(CashRegisterService::class)->openSession($shop, $user, '0.00');
+
+    $createQuote = function (string $status, $validUntil) use ($shop, $user, $product): CommercialQuote {
+        $quote = CommercialQuote::create([
+            'shop_id' => $shop->id,
+            'user_id' => $user->id,
+            'quote_number' => 'COT-QA-'.strtoupper($status).'-'.fake()->unique()->numerify('###'),
+            'status' => $status,
+            'currency' => 'DOP',
+            'subtotal' => '250.00',
+            'discount' => '0.00',
+            'tax' => '0.00',
+            'total' => '250.00',
+            'valid_until' => $validUntil,
+        ]);
+        $quote->items()->create([
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'quantity' => 1,
+            'unit_price' => '250.00',
+            'line_total' => '250.00',
+        ]);
+
+        return $quote;
+    };
+
+    $expiredWeb = $createQuote('draft', today()->subDay());
+    $cancelledWeb = $createQuote('cancelled', today()->addDay());
+    $expiredApi = $createQuote('draft', today()->subDay());
+    $cancelledApi = $createQuote('cancelled', today()->addDay());
+
+    $this->actingAs($user)
+        ->post(route('seller.shops.quotes.convert', [$shop, 'quote' => $expiredWeb->public_id]))
+        ->assertRedirect(route('seller.shops.feature', [$shop, 'feature' => 'quotes']))
+        ->assertSessionHasErrors('quote');
+    $this->actingAs($user)
+        ->post(route('seller.shops.quotes.convert', [$shop, 'quote' => $cancelledWeb->public_id]))
+        ->assertRedirect(route('seller.shops.feature', [$shop, 'feature' => 'quotes']))
+        ->assertSessionHasErrors('quote');
+
+    $token = $user->createToken('qa-expired-quotes', ['pos:write'])->plainTextToken;
+    $this->withToken($token)
+        ->postJson("/api/v1/shops/{$shop->public_id}/quotes/{$expiredApi->public_id}/convert")
+        ->assertStatus(409)
+        ->assertJsonPath('message', 'Una cotización vencida no puede convertirse en venta.');
+    $this->withToken($token)
+        ->postJson("/api/v1/shops/{$shop->public_id}/quotes/{$cancelledApi->public_id}/convert")
+        ->assertStatus(409)
+        ->assertJsonPath('message', 'Una cotización cancelada no puede convertirse en venta.');
+
+    expect(Invoice::where('shop_id', $shop->id)->count())->toBe(0)
+        ->and(InventoryMovement::where('product_id', $product->id)->where('type', 'sale')->count())->toBe(0)
+        ->and((int) $product->fresh()->inventory->stock_quantity)->toBe(8);
+});
+
+test('el detalle de una cotización cancelada no ofrece convertirla ni la muestra vigente', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->for($user)->create();
+    $quote = CommercialQuote::create([
+        'shop_id' => $shop->id,
+        'user_id' => $user->id,
+        'quote_number' => 'COT-QA-CANCELLED-001',
+        'status' => 'cancelled',
+        'currency' => 'DOP',
+        'subtotal' => '250.00',
+        'discount' => '0.00',
+        'tax' => '0.00',
+        'total' => '250.00',
+        'valid_until' => today()->addDay(),
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('seller.shops.quotes.show', [$shop, 'quote' => $quote->public_id]))
+        ->assertOk()
+        ->assertSee('Cancelada')
+        ->assertDontSee('Convertir en venta');
+});
+
 test('recepción de compra crea suplidor, documento y lote separado con su costo', function () {
     $user = User::factory()->create(['plan' => 'pro']);
     $shop = Shop::factory()->for($user)->create();
@@ -65,12 +188,13 @@ test('recepción de compra crea suplidor, documento y lote separado con su costo
         'supplier_id' => $supplier->public_id,
         'product_id' => $product->public_id,
         'quantity' => 4,
-        'unit_cost' => '125.50',
+        'unit_cost' => '125.5',
     ])->assertSessionHasNoErrors();
 
     $document = PurchaseDocument::query()->where('shop_id', $shop->id)->sole();
     expect($document->total)->toBe('502.00')
         ->and($document->items()->count())->toBe(1)
+        ->and($document->items()->sole()->unit_cost)->toBe('125.50')
         ->and((int) $product->inventory()->first()->stock_quantity)->toBe(6)
         ->and($product->inventoryLots()->where('received_cost_cents', 50200)->exists())->toBeTrue();
 });

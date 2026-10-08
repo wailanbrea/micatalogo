@@ -23,7 +23,10 @@ class ProductFactory extends Factory
         return [
             'shop_id' => Shop::factory(),
             'name' => fake()->sentence(3),
-            'slug' => fake()->slug(3),
+            // Products have a real unique(shop_id, slug) constraint. Keep
+            // generated fixtures deterministic under MariaDB as well as
+            // SQLite, where random slug collisions are not always exposed.
+            'slug' => fake()->unique()->slug(3),
             'description' => fake()->paragraph(),
             'price' => fake()->randomFloat(2, 100, 10000),
             'currency' => 'DOP',

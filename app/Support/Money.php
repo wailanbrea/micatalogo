@@ -146,6 +146,64 @@ class Money
     }
 
     /**
+     * Format a total cost divided across units without entering floating point.
+     * The stored total in cents remains authoritative when the division is not exact.
+     */
+    public static function perUnitDecimal(?int $totalCents, int $quantity): ?string
+    {
+        if ($totalCents === null) {
+            return null;
+        }
+        if ($quantity <= 0) {
+            throw new InvalidArgumentException('La cantidad debe ser mayor que cero.');
+        }
+
+        $sign = $totalCents < 0 ? -1 : 1;
+        $absolute = abs($totalCents);
+        $unitCents = intdiv($absolute, $quantity);
+        $remainder = $absolute % $quantity;
+
+        if (($remainder * 2) >= $quantity) {
+            $unitCents++;
+        }
+
+        return self::toDecimal($sign * $unitCents);
+    }
+
+    /**
+     * Convert a percentage expressed with up to two decimals to basis points.
+     * For example, 18.00% becomes 1800 basis points.
+     */
+    public static function percentageToBasisPoints(mixed $percentage): int
+    {
+        return self::toCents($percentage);
+    }
+
+    /**
+     * Apply a percentage to an amount held in integer cents using half-up
+     * rounding, without entering floating point arithmetic.
+     */
+    public static function percentageOfCents(int $amountCents, mixed $percentage): int
+    {
+        return self::percentageOfBasisPoints($amountCents, self::percentageToBasisPoints($percentage));
+    }
+
+    /**
+     * Apply an already-normalized percentage (basis points) to integer cents.
+     */
+    public static function percentageOfBasisPoints(int $amountCents, int $basisPoints): int
+    {
+        if ($amountCents === 0 || $basisPoints === 0) {
+            return 0;
+        }
+
+        $sign = (($amountCents < 0) !== ($basisPoints < 0)) ? -1 : 1;
+        $product = abs($amountCents) * abs($basisPoints);
+
+        return $sign * intdiv($product + 5000, 10000);
+    }
+
+    /**
      * Format integer cents for human display with currency symbol.
      */
     public static function format(int $cents, string $currency = 'RD$'): string

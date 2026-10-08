@@ -85,6 +85,7 @@ class SellerFeatureController extends Controller
     ): View {
         abort_unless(isset(self::FEATURES[$feature]), 404);
         abort_unless(in_array($feature, $menus->visibleForUser($shop, $request->user()), true), 403);
+        $showSensitiveFinance = $this->canViewSensitiveFinance($shop, $request->user(), $menus);
 
         $related = match ($feature) {
             'sales', 'quotes', 'orders', 'encargos', 'shipments', 'day_close' => [
@@ -151,8 +152,10 @@ class SellerFeatureController extends Controller
                 $dashboard ?: app(BusinessDashboardService::class),
                 $request->query('period'),
                 $request->query('q'),
-                $request->query('status')
+                $request->query('status'),
+                $showSensitiveFinance
             ),
+            'showSensitiveFinance' => $showSensitiveFinance,
         ]);
     }
 
@@ -168,8 +171,18 @@ class SellerFeatureController extends Controller
         SellerMenuService $menus,
         ?BusinessDashboardService $dashboard = null
     ): JsonResponse {
+        // The API route is not wrapped by the web `can:sell,shop` middleware.
+        // Resolve the tenant boundary before checking feature visibility so a
+        // user cannot read another shop's module by guessing its public id.
+        abort_unless(
+            $request->user()->isAdmin()
+                || $request->user()->canSellAtShop($shop)
+                || $request->user()->isActiveShopAccountant($shop),
+            404
+        );
         abort_unless(isset(self::FEATURES[$feature]), 404);
         abort_unless(in_array($feature, $menus->visibleForUser($shop, $request->user()), true), 403);
+        $showSensitiveFinance = $this->canViewSensitiveFinance($shop, $request->user(), $menus);
 
         return response()->json([
             'feature_key' => $feature,
@@ -180,9 +193,16 @@ class SellerFeatureController extends Controller
                 $dashboard ?: app(BusinessDashboardService::class),
                 $request->query('period'),
                 $request->query('q'),
-                $request->query('status')
+                $request->query('status'),
+                $showSensitiveFinance
             ),
         ]);
+    }
+
+    private function canViewSensitiveFinance(Shop $shop, \App\Models\User $user, SellerMenuService $menus): bool
+    {
+        return $menus->canManage($shop, $user)
+            || in_array('finance', $menus->visibleForUser($shop, $user), true);
     }
 
     public function updateAttribute(
@@ -302,7 +322,8 @@ class SellerFeatureController extends Controller
         BusinessDashboardService $dashboard,
         ?string $period = null,
         ?string $search = null,
-        ?string $status = null
+        ?string $status = null,
+        bool $showSensitiveFinance = true
     ): array
     {
         return match ($feature) {
@@ -315,8 +336,8 @@ class SellerFeatureController extends Controller
             'containers', 'loads', 'suppliers', 'purchase_invoices' => $this->purchasingData($shop, $feature),
             'photos' => $this->photosData($shop),
             'services' => $this->servicesData($shop, $search),
-            'price_health' => $this->priceHealthData($shop, $status, $search),
-            'decants' => $this->decantsData($shop),
+            'price_health' => $this->priceHealthData($shop, $status, $search, $showSensitiveFinance),
+            'decants' => $this->decantsData($shop, $showSensitiveFinance),
             'attributes' => $this->attributesData($shop, $search),
             'credit' => $this->creditData($shop),
             'inventory_adjustments' => $this->inventoryAdjustmentsData($shop),
@@ -333,7 +354,7 @@ class SellerFeatureController extends Controller
             'storefront' => $this->storefrontData($shop),
             'metrics' => $this->metricsData($shop),
             'public_catalog' => $this->publicCatalogData($shop),
-            'pricing' => $this->pricingData($shop),
+            'pricing' => $this->pricingData($shop, $showSensitiveFinance),
             'import' => $this->importData($shop),
             'expenses' => $this->expensesData($shop),
             'shop_settings' => $this->shopSettingsData($shop),
@@ -371,6 +392,7 @@ class SellerFeatureController extends Controller
                 ['label' => 'Configurar apariencia', 'url' => route('seller.shops.edit', $shop), 'tone' => 'secondary'],
             ],
         ];
+        return $kpis;
     }
 
     private function metricsData(Shop $shop): array
@@ -422,11 +444,31 @@ class SellerFeatureController extends Controller
         ];
     }
 
-    private function pricingData(Shop $shop): array
+    private function pricingData(Shop $shop, bool $showSensitiveFinance = true): array
     {
         $products = $shop->products()->where('sale_unit', '!=', 'decant')->with('inventory')->orderBy('name')->limit(100)->get();
         $rules = DB::table('product_price_rules')->whereIn('product_id', $products->pluck('id'))->get()->keyBy('product_id');
         $pending = $rules->filter(fn ($rule) => $rule->pending_price !== null)->count();
+
+        if (! $showSensitiveFinance) {
+            return [
+                'kind' => 'table',
+                'kpis' => [
+                    ['label' => 'Productos evaluados', 'value' => number_format($products->count()), 'tone' => 'blue'],
+                    ['label' => 'Reglas configuradas', 'value' => number_format($rules->count()), 'tone' => 'emerald'],
+                    ['label' => 'Gestión financiera', 'value' => 'Restringida', 'tone' => 'slate'],
+                ],
+                'rows' => $products->map(fn (Product $product) => [
+                    'product_id' => (string) $product->public_id,
+                    'primary' => $product->name,
+                    'secondary' => 'Regla de precio administrada por el propietario o finanzas',
+                    'value' => 'Venta RD$ '.number_format($product->currentPrice(), 2),
+                    'status' => isset($rules[$product->id]) ? 'Regla activa' : 'Sin regla',
+                ])->all(),
+                'note' => 'La configuración de margen, costos FIFO y precios propuestos solo está disponible para el propietario o el equipo financiero.',
+                'actions' => [],
+            ];
+        }
 
         return [
             'kind' => 'table',
@@ -1221,9 +1263,37 @@ class SellerFeatureController extends Controller
         ];
     }
 
-    private function priceHealthData(Shop $shop, ?string $statusFilter = null, ?string $search = null): array
+    private function priceHealthData(Shop $shop, ?string $statusFilter = null, ?string $search = null, bool $showSensitiveFinance = true): array
     {
         $products = $shop->products()->with('inventory')->where('sale_unit', '!=', 'decant')->limit(100)->get();
+
+        if (! $showSensitiveFinance) {
+            $search = trim((string) $search);
+            $rows = $products
+                ->when($search !== '', fn ($collection) => $collection->filter(fn (Product $product): bool => str_contains(mb_strtolower($product->name), mb_strtolower($search))))
+                ->map(fn (Product $product): array => [
+                    'primary' => $product->name,
+                    'secondary' => 'La revisión de margen requiere acceso financiero',
+                    'value' => $product->currentPrice() > 0 ? 'Precio RD$ '.number_format($product->currentPrice(), 2) : 'Sin precio',
+                    'status' => 'Revisión administrativa',
+                ])->values();
+
+            return [
+                'kind' => 'table',
+                'kpis' => [
+                    ['label' => 'Productos evaluados', 'value' => number_format($products->count()), 'tone' => 'blue'],
+                    ['label' => 'Revisión financiera', 'value' => 'Restringida', 'tone' => 'slate'],
+                ],
+                'rows' => $rows->all(),
+                'filters' => [
+                    'search' => $search,
+                    'status' => 'all',
+                    'count' => $rows->count(),
+                ],
+                'note' => 'El propietario o el equipo financiero puede revisar costos, márgenes y sugerencias de precio.',
+            ];
+        }
+
         $rules = \DB::table('product_price_rules')->whereIn('product_id', $products->pluck('id'))->get()->keyBy('product_id');
         $targetMargin = 40.0;
         $rows = $products->map(function (Product $product) use ($rules, $targetMargin): array {
@@ -1289,7 +1359,7 @@ class SellerFeatureController extends Controller
         ];
     }
 
-    private function decantsData(Shop $shop): array
+    private function decantsData(Shop $shop, bool $showSensitiveFinance = true): array
     {
         $products = $shop->products()->with(['inventory', 'sourceProduct.inventory'])->where('sale_unit', 'decant')->get();
         $bottles = $shop->products()
@@ -1298,7 +1368,7 @@ class SellerFeatureController extends Controller
             ->orderBy('name')
             ->get();
         $recovery = app(InventoryService::class)->getCostRecoveryForBottles($bottles);
-        $bottleSources = $bottles->map(function (Product $bottle) use ($recovery, $shop): array {
+        $bottleSources = $bottles->map(function (Product $bottle) use ($recovery, $shop, $showSensitiveFinance): array {
             $inventory = $bottle->inventory;
             $availableMl = $inventory?->available_ml;
             if ($availableMl === null && $inventory?->track_inventory) {
@@ -1316,26 +1386,33 @@ class SellerFeatureController extends Controller
                 'opened_bottles' => (int) ($inventory?->opened_bottles ?? 0),
                 'available_ml' => $availableMl === null ? null : (int) $availableMl,
                 'decants_count' => $bottle->decantProducts->count(),
-                'cost' => $sourceRecovery['cost'] ?? null,
+                'cost' => $showSensitiveFinance ? ($sourceRecovery['cost'] ?? null) : null,
                 'revenue' => $sourceRecovery['revenue'] ?? 0,
-                'difference' => $sourceRecovery['difference'] ?? null,
-                'percent' => $sourceRecovery['percent'] ?? null,
-                'covered' => $sourceRecovery['covered'] ?? false,
-                'message' => $sourceRecovery['message'] ?? 'Registra el costo para medir cuándo se recupera la botella.',
+                'difference' => $showSensitiveFinance ? ($sourceRecovery['difference'] ?? null) : null,
+                'percent' => $showSensitiveFinance ? ($sourceRecovery['percent'] ?? null) : null,
+                'covered' => $showSensitiveFinance ? ($sourceRecovery['covered'] ?? false) : false,
+                'message' => $showSensitiveFinance
+                    ? ($sourceRecovery['message'] ?? 'Registra el costo para medir cuándo se recupera la botella.')
+                    : 'La recuperación del costo de la botella está reservada al propietario o finanzas.',
                 'url' => route('seller.shops.products.edit', [$shop, 'product' => $bottle]),
                 'open_url' => route('seller.shops.inventory.open-bottle', [$shop, 'product' => $bottle]),
             ];
         })->values()->all();
 
-        return [
+        $kpis = [
             'kind' => 'table',
             'kpis' => [
                 ['label' => 'Decants', 'value' => number_format($products->count()), 'tone' => 'blue'],
                 ['label' => 'Botellas fuente', 'value' => number_format($bottles->count()), 'tone' => 'emerald'],
                 ['label' => 'Ml disponibles', 'value' => number_format($bottleSources ? collect($bottleSources)->sum(fn (array $bottle) => $bottle['available_ml'] ?? 0) : 0), 'tone' => 'blue'],
-                ['label' => 'Costo recuperado', 'value' => number_format(collect($bottleSources)->where('covered', true)->count()).' botella(s)', 'tone' => 'amber'],
             ],
-            'rows' => $products->map(function (Product $product): array {
+        ];
+        if ($showSensitiveFinance) {
+            $kpis['kpis'][] = ['label' => 'Costo recuperado', 'value' => number_format(collect($bottleSources)->where('covered', true)->count()).' botella(s)', 'tone' => 'amber'];
+        }
+
+        $kpis += [
+            'rows' => $products->map(function (Product $product) use ($showSensitiveFinance): array {
                 $source = $product->sourceProduct;
                 $sourceInventory = $source?->inventory;
                 $availableMl = $sourceInventory?->available_ml;
@@ -1345,14 +1422,23 @@ class SellerFeatureController extends Controller
                         : (int) $sourceInventory->stock_quantity;
                 }
 
+                $sourceDescription = $source?->name
+                    ? 'Botella fuente: '.$source->name
+                        .' · '.($source->volume_ml ? $source->volume_ml.' ml de origen' : 'volumen pendiente')
+                        .' · '.($availableMl !== null ? number_format($availableMl).' ml disponibles' : 'ml no controlados')
+                    : 'Botella de origen no configurada';
+                if ($showSensitiveFinance && $source?->name) {
+                    $sourceDescription = str_replace(
+                        ' · '.($availableMl !== null ? number_format($availableMl).' ml disponibles' : 'ml no controlados'),
+                        ' · costo '.($sourceInventory?->cost_price !== null ? 'RD$ '.number_format((float) $sourceInventory->cost_price, 2) : 'pendiente')
+                            .' · '.($availableMl !== null ? number_format($availableMl).' ml disponibles' : 'ml no controlados'),
+                        $sourceDescription
+                    );
+                }
+
                 return [
                     'primary' => $product->name,
-                    'secondary' => $source?->name
-                        ? 'Botella fuente: '.$source->name
-                            .' · '.($source->volume_ml ? $source->volume_ml.' ml de origen' : 'volumen pendiente')
-                            .' · costo '.($sourceInventory?->cost_price !== null ? 'RD$ '.number_format((float) $sourceInventory->cost_price, 2) : 'pendiente')
-                            .' · '.($availableMl !== null ? number_format($availableMl).' ml disponibles' : 'ml no controlados')
-                        : 'Botella de origen no configurada',
+                    'secondary' => $sourceDescription,
                     'value' => $product->volume_ml
                         ? $product->volume_ml.' ml · '.number_format((int) ($product->inventory?->stock_quantity ?? 0)).' listos'
                         : 'Volumen pendiente',
@@ -1365,7 +1451,9 @@ class SellerFeatureController extends Controller
                             : ((int) ($product->inventory?->stock_quantity ?? 0) > 0 ? 'Listos' : 'A pedido')),
                 ];
             })->all(),
-            'note' => 'Los decants comparten el inventario de su producto de origen; no se duplica la valoración de la botella.',
+            'note' => $showSensitiveFinance
+                ? 'Los decants comparten el inventario de su producto de origen; no se duplica la valoración de la botella.'
+                : 'Los decants comparten el inventario de su producto de origen. Los indicadores de costo quedan reservados al propietario o finanzas.',
             'bottleSources' => $bottleSources,
             'actions' => [
                 ['label' => 'Abrir botella', 'url' => '#abrir-botella', 'tone' => 'secondary', 'modal' => true],
@@ -1374,6 +1462,8 @@ class SellerFeatureController extends Controller
                 ['label' => 'Ver lotes y costos FIFO', 'url' => route('seller.shops.inventory.lots', $shop), 'tone' => 'secondary'],
             ],
         ];
+
+        return $kpis;
     }
 
     private function attributesData(Shop $shop, ?string $search = null): array

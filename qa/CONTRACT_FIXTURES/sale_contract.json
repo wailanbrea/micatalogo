@@ -1,0 +1,17 @@
+{
+  "currency": "DOP",
+  "shop": "shop_a",
+  "product": {"key": "sku-fifo-001", "opening_stock": 3, "unit_cost_cents": 10000, "unit_price_cents": 25000},
+  "sale": {
+    "quantity": 3,
+    "cash_cents": 40000,
+    "card_cents": 15000,
+    "credit_cents": 20000,
+    "expected_total_cents": 75000,
+    "expected_cogs_cents": 30000,
+    "expected_gross_profit_cents": 45000
+  },
+  "collection": {"cash_cents": 12000, "expected_credit_balance_cents": 8000},
+  "expense": {"total_cents": 9000, "paid_cash_cents": 4000, "pending_cents": 5000},
+  "expected": {"cash_net_cents": 48000, "close_difference_cents": 0}
+}

@@ -146,7 +146,7 @@
                             @error('whatsapp_number') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
                     </div>
-                    <section id="hours" x-data="{ copyMonday() { const mondayOpen = document.querySelector('[data-hours-open=\"monday\"]')?.value; const mondayClose = document.querySelector('[data-hours-close=\"monday\"]')?.value; ['tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].forEach(day => { const open = document.querySelector('[data-hours-open=\"' + day + '\"]'); const close = document.querySelector('[data-hours-close=\"' + day + '\"]'); if (open) open.value = mondayOpen; if (close) close.value = mondayClose; }); } }" class="scroll-mt-24 rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+                    <section id="hours" x-data="{ copyMonday() { const mondayOpen = document.querySelector('[data-hours-open=monday]')?.value; const mondayClose = document.querySelector('[data-hours-close=monday]')?.value; ['tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].forEach(day => { const open = document.querySelector('[data-hours-open=' + day + ']'); const close = document.querySelector('[data-hours-close=' + day + ']'); if (open) open.value = mondayOpen; if (close) close.value = mondayClose; }); } }" class="scroll-mt-24 rounded-xl border border-slate-200 bg-slate-50/60 p-4">
                         <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div>
                                 <p class="text-sm font-bold text-slate-900">Horario</p>

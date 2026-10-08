@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Customer;
 use App\Models\CustomerAccountEntry;
 use App\Models\Invoice;
+use App\Models\Shop;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -53,6 +54,11 @@ class CustomerAccountService
     private function recordClientEntry(Customer $customer, string $type, int $amountCents, int $userId, string $transactionUuid, string $payloadHash, ?string $notes): CustomerAccountEntry
     {
         return DB::transaction(function () use ($customer, $type, $amountCents, $userId, $transactionUuid, $payloadHash, $notes): CustomerAccountEntry {
+            // Serialize client mutations per shop before checking the UUID. A
+            // missing row cannot be locked, so checking first would let two
+            // concurrent requests both pass the idempotency gate.
+            Shop::query()->whereKey($customer->shop_id)->lockForUpdate()->firstOrFail();
+            $customer = Customer::query()->lockForUpdate()->findOrFail($customer->id);
             $existing = CustomerAccountEntry::query()
                 ->where('shop_id', $customer->shop_id)
                 ->where('client_transaction_uuid', $transactionUuid)
@@ -71,7 +77,6 @@ class CustomerAccountService
                 throw new InvalidArgumentException('El monto debe ser distinto de cero.');
             }
 
-            $customer = Customer::query()->lockForUpdate()->findOrFail($customer->id);
             if (! $customer->is_active) {
                 throw new InvalidArgumentException('El cliente está inactivo.');
             }
