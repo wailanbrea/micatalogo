@@ -142,3 +142,7 @@ bloqueos siguientes.
 ## Próximo gate
 
 Usar la MariaDB QA ya preparada para ampliar ACL-001..015 con acciones positivas por verbo/ruta y preparar fixtures aislados para archivos/colas/R2/WhatsApp/hardware. FIN-001, INV-003, SALE-006..008, E2E-02, E2E-05 y la jornada positiva ACL-020 ya tienen evidencia aislada; siguen pendientes los OFF restantes, la matriz verbo × ruta completa y UI-001..004. Cualquier P0/P1 se corrige con regresión antes de avanzar.
+- Probe multiproceso de identidad: `qa/product_identity_concurrency_probe.php` lanzó
+  8 procesos contra la misma tienda QA y obtuvo **1 creación, 7 conflictos
+  controlados, 1 SKU y 1 barcode**, sin errores de base de datos ni duplicados. El
+  fixture fue retirado y las tablas críticas quedaron en cero.
