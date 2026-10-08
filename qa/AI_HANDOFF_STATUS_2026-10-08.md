@@ -13,6 +13,13 @@ cambios locales aún no están publicados en VPS ni en una nueva APK, y permanec
 casos de negocio, visuales, hardware, offline físico y cobertura positiva completa
 sin cerrar.
 
+**Corte autoritativo:** el backend está en `af29543` y 59 commits adelantado frente
+a `origin/master`; el baseline final es **510 tests / 5.167 assertions PASS** tanto
+en SQLite como en MariaDB QA aislada. La auditoría monetaria de este corte no
+encontró `float/double` en las mutaciones financieras cubiertas; los casts restantes
+son adaptadores de salida, filtros de consulta o normalización de identificadores y
+`NFR-003` conserva estado **PASS parcial**.
+
 No se hizo publicación, push, instalación ni desinstalación en el Samsung durante
 este corte. No se escribieron datos de producción.
 
@@ -213,11 +220,11 @@ ni purgas sobre producción. No hay migraciones pendientes conocidas.
 
 ### Revalidación del baseline después de este traspaso
 
-- SQLite: `vendor\\bin\\pest --configuration phpunit.xml` terminó **504 tests / 5.137
-  assertions PASS** en 35.04 s.
+- SQLite: `vendor\\bin\\pest --configuration phpunit.xml` terminó **510 tests / 5.167
+  assertions PASS** en 32.31 s.
 - MariaDB QA: `APP_ENV=testing`, `QA_ALLOW_MYSQL=1`, base
-  `micatalogo_qa_20261008` y `qa\\phpunit.mysql.xml` terminaron **504 tests / 5.137
-  assertions PASS** en 48.50 s.
+  `micatalogo_qa_20261008` y `qa\\phpunit.mysql.xml` terminaron **510 tests / 5.167
+  assertions PASS** en 48.05 s.
 - `release-readiness.php` en esa base devolvió usuarios, tiendas, productos, pedidos e
   invoices en `0`; no creó datos ni ejecutó migraciones.
 - `migrate:status --env=testing` devolvió todas las migraciones visibles como
@@ -283,6 +290,10 @@ Los detalles y límites están en:
 10. **Documentación/branches:** decidir qué commits locales se integran y hacer push
     solamente después de revisar el conteo actual de commits backend y los cuatro
     commits Android adelantados.
+11. **Catálogo/duplicados:** la creación y edición Web y `product_upsert` móvil ya
+    rechazan SKU/código de barras repetidos con bloqueo por tienda; falta un probe
+    multiproceso dedicado para dos creaciones manuales simultáneas y completar la
+    matriz de entradas, escáner, soft-delete/restauración y Web↔API↔Android.
 
 ## Verificación histórica de cierre de sesión y Samsung (2026-10-08)
 
@@ -476,6 +487,14 @@ publicado en VPS o en la APK pública.
   PASS** por motor. Sigue pendiente un probe multiproceso dedicado para creación
   manual y la matriz completa de entradas/escáner Web↔API↔Android.
 
+- Se auditó el inventario de conversiones `float/double` en servicios, modelos y
+  controladores financieros. Las rutas mutantes revisadas conservan entradas como
+  `string|int` hasta `Money::toCents()` y operan con centavos enteros; los casts
+  restantes son serialización de compatibilidad, filtros/sorts de consulta,
+  porcentajes visuales o normalización de identificadores de Excel. No se encontró
+  una nueva mutación insegura. `NFR-003` sigue **PASS parcial** hasta cerrar la
+  matriz verbo×ruta.
+
 Lo siguiente es el backlog real, en orden operativo. No debe marcarse como terminado
 por inferencia a partir de tests parciales:
 
@@ -531,7 +550,8 @@ por inferencia a partir de tests parciales:
 
 ## Commits locales de este corte
 
-- Backend: `b221052` (`docs: refresh QA baseline references`) y `7637b6d`
+- Backend: `af29543` (`fix: prevent duplicate product identities`), además de
+  `b221052` (`docs: refresh QA baseline references`) y `7637b6d`
   (`test: reject API tokens for deleted accounts`), además de `9b7ca98`, `71255ec`,
   `6b83bf8` y `8bd67e3` y los commits funcionales/documentales anteriores. El
   checkout está adelantado frente a `origin/master`; revisar el conteo exacto con

@@ -433,7 +433,7 @@ su SHA histórico cuando corresponde.
 - **Síntoma:** `GET /api/v1/shops/{shop}/catalog` incluía `products[].inventory.cost_price` para cualquier vendedor con permiso de venta. La interfaz podía ocultar parte de la información, pero el JSON directo permitía recuperar el costo unitario/FIFO sin `finance`.
 - **Causa raíz:** `CatalogController` serializaba el costo de inventario sin consultar el mapa de menús efectivo del actor.
 - **Corrección aplicada:** el catálogo conserva el campo contractual, pero lo devuelve como `null` para vendedores sin acceso explícito a `finance`; owner, admin, manager/contador con capacidad financiera y actores con `finance` conservan el valor necesario para sus funciones autorizadas.
-- **Regresión:** `SellerNavigationPermissionsTest` pasó **15 tests y 172 assertions** en SQLite y MariaDB QA. El vendedor limitado recibe `null` en el catálogo API, y las vistas Web de inventario/lotes y los módulos API/Web de salud de precios, precios automáticos y decants omiten costos, márgenes, FIFO valorado y exportaciones sensibles; el owner conserva el costo `RD$100.00`. Android compila y ejecuta la batería instrumentada con el mismo criterio: Inventario, catálogo, decants, salud de precios y precios automáticos muestran la operación permitida sin valores financieros ni controles de administración para un vendedor sin `finance`. El baseline vigente del corte quedó en **504 tests y 5.137 assertions PASS** por motor; la base QA quedó sin registros persistentes.
+- **Regresión:** `SellerNavigationPermissionsTest` pasó **15 tests y 172 assertions** en SQLite y MariaDB QA. El vendedor limitado recibe `null` en el catálogo API, y las vistas Web de inventario/lotes y los módulos API/Web de salud de precios, precios automáticos y decants omiten costos, márgenes, FIFO valorado y exportaciones sensibles; el owner conserva el costo `RD$100.00`. Android compila y ejecuta la batería instrumentada con el mismo criterio: Inventario, catálogo, decants, salud de precios y precios automáticos muestran la operación permitida sin valores financieros ni controles de administración para un vendedor sin `finance`. El baseline final del corte quedó en **510 tests y 5.167 assertions PASS** por motor; la base QA quedó sin registros persistentes.
 - **Estado:** `FIXED_PASS` para las superficies Web/API y Android cubiertas. PDF, caché Room después de revocación y la matriz exhaustiva verbo × ruta siguen `NOT_RUN`; no se eleva el gate por inferencia.
 
 ## F-054 — Recuperación de costo de decants calculada con punto flotante
@@ -449,7 +449,7 @@ su SHA histórico cuando corresponde.
 - **Prioridad:** P1 de exactitud financiera en dashboard, cartera, inventario y rentabilidad.
 - **Síntoma:** el dashboard convertía agregados de ventas, descuentos, impuestos, costos FIFO, cartera, gastos, flujo de caja y rentabilidad a decimales antes de operar; `ProductInventory`, `Invoice` y `Expense` también hacían divisiones o sumas monetarias en representación decimal. La respuesta final conserva números por compatibilidad, pero la ruta de cálculo podía depender del redondeo binario.
 - **Corrección aplicada:** los agregados SQL de reportes ahora llegan en centavos enteros; aging, inventario a costo, COGS, utilidad, flujo de caja, ingreso/gasto por categoría, pagos de factura, saldos pendientes, valor de inventario, margen y rentabilidad se calculan en centavos. La conversión decimal está confinada a adaptadores de presentación (`moneyNumber`, serializadores y contratos históricos).
-- **Regresión:** la suite completa terminó **504 tests y 5.137 assertions PASS** en SQLite y MariaDB QA; regresiones dirigidas de finanzas, cartera, inventario, roles, rutas financieras Web, rechazo Web de autorizaciones, categorías y medios de catálogo también pasan. El benchmark MariaDB de esta corrida registró p50 **275.54 ms**, p95 **293.61 ms**, máximo 17 consultas y pico 148 MB.
+- **Regresión:** el checkpoint financiero terminó 504/5.137 y la revalidación final terminó **510 tests y 5.167 assertions PASS** en SQLite y MariaDB QA; regresiones dirigidas de finanzas, cartera, inventario, roles, rutas financieras Web, rechazo Web de autorizaciones, categorías, medios de catálogo e identidad de productos también pasan. El benchmark MariaDB registrado dio p50 **275.54 ms**, p95 **293.61 ms**, máximo 17 consultas y pico 148 MB.
 - **Estado:** `FIXED_PASS` para las mutaciones y cálculos financieros cubiertos. `NFR-003` queda `PASS parcial`: permanecen conversiones de presentación, filtros numéricos de consulta y normalización de identificadores de Excel que no mutan dinero; la matriz verbo × ruta y las pruebas físicas/interplataforma siguen abiertas.
 
 ## F-056 — El Samsung conserva una APK debug incompatible con la release firmada
@@ -478,4 +478,21 @@ su SHA histórico cuando corresponde.
 - **Regresión:** Android `7ea2916`: `testDebugUnitTest` 95/95, `compileReleaseKotlin` exitoso, `PendingAppUpdateTest` 3/3 y batería instrumentada principal `OK (114 tests; 111 PASS y 3 omitidos por assumption)`. No se publicó APK ni se modificó el Samsung.
 - **Estado:** `FIXED_LOCAL_NOT_RELEASED`; requiere una nueva APK release autorizada para llegar a dispositivos.
 
-El baseline local es verde después de F-001, F-002, F-003, F-006, F-007, F-008, F-010, F-011, F-012, F-014, F-015, F-016, F-017, F-018, F-019, F-021, F-022, F-023, F-024, F-025, F-026, F-027, F-028, F-029, F-030, F-031, F-032, F-033, F-034, F-035, F-037, F-039, F-040, F-041, F-042, F-043, F-044, F-046, F-047, F-048, F-049, F-050, F-051, F-052, F-053, F-054 y F-055. F-045 queda como riesgo P2 de CI y F-056 como bloqueo de instalación física. El release gate permanece **NOT_READY** por F-004, F-005, F-036, F-038 y F-056, además de las pruebas de estrés, visuales, escenarios offline adicionales y servicios externos pendientes. No se hicieron escrituras en producción durante este corte.
+## F-059 — Auditoría de conversiones financieras restantes
+
+- **Prioridad:** P1 de exactitud financiera y trazabilidad del release gate.
+- **Alcance:** revisión estática dirigida de los casts `float/double` en servicios,
+  modelos y controladores de inventario, ventas, cobros, caja, cierres, compras,
+  reportes, catálogo y decants.
+- **Resultado:** las mutaciones revisadas conservan entradas monetarias como
+  `string|int` hasta `Money::toCents()` y operan con centavos enteros. Los casts
+  restantes están en respuestas de compatibilidad, accesores/etiquetas para UI,
+  filtros y ordenamientos de consulta, porcentajes visuales o normalización de
+  valores científicos/identificadores de Excel; no se encontró una nueva ruta que
+  persista dinero calculado con `float`.
+- **Límite:** esta auditoría no sustituye la ejecución positiva verbo×ruta ni una
+  prueba de concurrencia para creación manual; tampoco cambia el contrato numérico
+  existente de las respuestas. Por eso `NFR-003` queda `PASS parcial`.
+- **Estado:** `PASS parcial`, sin cambio funcional requerido en este corte.
+
+El baseline local es verde después de F-001, F-002, F-003, F-006, F-007, F-008, F-010, F-011, F-012, F-014, F-015, F-016, F-017, F-018, F-019, F-021, F-022, F-023, F-024, F-025, F-026, F-027, F-028, F-029, F-030, F-031, F-032, F-033, F-034, F-035, F-037, F-039, F-040, F-041, F-042, F-043, F-044, F-046, F-047, F-048, F-049, F-050, F-051, F-052, F-053, F-054, F-055 y F-059. F-045 queda como riesgo P2 de CI y F-056 como bloqueo de instalación física. El release gate permanece **NOT_READY** por F-004, F-005, F-036, F-038 y F-056, además de las pruebas de estrés, visuales, escenarios offline adicionales y servicios externos pendientes. No se hicieron escrituras en producción durante este corte.
