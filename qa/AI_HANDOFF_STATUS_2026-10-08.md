@@ -463,6 +463,11 @@ publicado en VPS o en la APK pública.
   terminó correctamente en modo solo lectura: tablas locales `users`, `shops`,
   `products`, `orders` e `invoices` en cero, `bcmath` disponible, lector de inventario
   disponible y manifiesto Android coherente con la release pública 1.0.76/code 77.
+- Revalidación instrumentada dirigida posterior: `CatalogSyncIntegrationTest`
+  terminó **16/16 PASS** y `PaymentSyncResilienceTest` **1/1 PASS** en
+  `emulator-5554`. No se instaló release, no se conectó Samsung y no se escribieron
+  datos de producción; esta evidencia confirma la resiliencia lógica de las colas,
+  pero no cierra el pendiente de red/kill físico ni la validación sobre release.
 
 Lo siguiente es el backlog real, en orden operativo. No debe marcarse como terminado
 por inferencia a partir de tests parciales:
