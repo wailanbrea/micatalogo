@@ -20,6 +20,13 @@
 | R-015 | P1 | Compras internacionales guardan moneda, tasa, flete y aduana, pero no convierten ni distribuyen esos costos al lote; FIFO y margen dependen de que el cliente envíe un costo ya aterrizado. | F-038; `qa/international_purchase_audit.php` observó USD 100 de subtotal y lote a 10.00 aun con tasa 60, flete 120 y aduana 80 | REQUIERE_DECISION |
 | R-016 | P2 | El checkout contiene deuda de formato PHP que hace fallar un Pint completo; el workflow nuevo la limita a los archivos modificados, pero esos archivos deben quedar formateados antes de considerar CI plenamente verde. | F-045; `vendor/bin/pint --test` reportó 37 archivos; no se hizo una reescritura masiva del árbol sucio | ABIERTO |
 
+## Addendum de baseline 2026-10-08
+
+El baseline autoritativo posterior al registro inicial es **510 tests / 5.167
+assertions PASS** por motor. La cobertura concurrente ahora incluye
+`qa/product_identity_concurrency_probe.php`: 8 procesos, 1 creación y 7 conflictos
+controlados para la misma identidad, con el fixture QA retirado al finalizar.
+
 La APK release 1.0.76 fue recompilada desde cero, verificada contra su metadata y
 certificado, publicada como `bspos-1.0.76-release.apk` y validada por HTTP con el
 SHA esperado. La comprobación de instalación/actualización en dispositivos queda
