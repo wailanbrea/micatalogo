@@ -290,10 +290,9 @@ Los detalles y límites están en:
 10. **Documentación/branches:** decidir qué commits locales se integran y hacer push
     solamente después de revisar el conteo actual de commits backend y los cuatro
     commits Android adelantados.
-11. **Catálogo/duplicados:** la creación y edición Web y `product_upsert` móvil ya
-    rechazan SKU/código de barras repetidos con bloqueo por tienda; falta un probe
-    multiproceso dedicado para dos creaciones manuales simultáneas y completar la
-    matriz de entradas, escáner, soft-delete/restauración y Web↔API↔Android.
+11. **Catálogo/duplicados:** el probe multiproceso ya pasó con 1 creación y 7
+    conflictos controlados sobre la misma tienda; queda completar la matriz de
+    entradas, escáner, soft-delete/restauración y Web↔API↔Android.
 
 ## Verificación histórica de cierre de sesión y Samsung (2026-10-08)
 
@@ -484,8 +483,9 @@ publicado en VPS o en la APK pública.
   las rutas ejecutan la comprobación dentro de una transacción que bloquea la tienda.
   `SellerProductTest` + `MobileOperationTest` pasan **34 tests / 231 assertions**
   en SQLite y MariaDB QA. El baseline final queda en **510 tests / 5.167 assertions
-  PASS** por motor. Sigue pendiente un probe multiproceso dedicado para creación
-  manual y la matriz completa de entradas/escáner Web↔API↔Android.
+  PASS** por motor. El probe multiproceso `qa/product_identity_concurrency_probe.php`
+  pasó con 1 creación y 7 conflictos controlados; sigue pendiente la matriz completa
+  de entradas/escáner Web↔API↔Android.
 
 - Se auditó el inventario de conversiones `float/double` en servicios, modelos y
   controladores financieros. Las rutas mutantes revisadas conservan entradas como

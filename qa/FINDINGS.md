@@ -490,8 +490,8 @@ su SHA histórico cuando corresponde.
   filtros y ordenamientos de consulta, porcentajes visuales o normalización de
   valores científicos/identificadores de Excel; no se encontró una nueva ruta que
   persista dinero calculado con `float`.
-- **Límite:** esta auditoría no sustituye la ejecución positiva verbo×ruta ni una
-  prueba de concurrencia para creación manual; tampoco cambia el contrato numérico
+- **Límite:** esta auditoría no sustituye la ejecución positiva verbo×ruta ni la
+  matriz Web↔API↔Android completa; tampoco cambia el contrato numérico
   existente de las respuestas. Por eso `NFR-003` queda `PASS parcial`.
 - **Estado:** `PASS parcial`, sin cambio funcional requerido en este corte.
 
