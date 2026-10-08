@@ -2,13 +2,13 @@
 
 // Verified against the signed artifact; no credentials belong in this manifest.
 return [
-    'version_code' => 67,
-    'version_name' => '1.0.66',
+    'version_code' => 75,
+    'version_name' => '1.0.74',
     'minimum_supported_version_code' => 23,
-    'apk_url' => 'https://micatalogo.bsolutions.dev/downloads/bspos-1.0.66-release.apk',
-    'apk_sha256' => '9268987cbc6d78d8b9c314e8847cc931d2e1e82c8f443e642af2bc4c8c14c4d0',
-    'release_notes' => 'Cotizaciones con botón visible Agregar, controles de cantidad, cuadrícula 2×2, carrito flotante y migración local segura.',
+    'apk_url' => 'https://micatalogo.bsolutions.dev/downloads/bspos-1.0.74-release.apk',
+    'apk_sha256' => 'ff39245a0379985d03dde34a0d972bbb353ca60889230f45155496fb8c1d2aea',
+    'release_notes' => 'Cierre de día rediseñado con datos reales, selección de clientes en cotizaciones, Terminal y cobro compactos, y mejoras de operaciones comerciales.',
     'release_date' => '2026-10-07',
     'min_sdk' => 26,
-    'size_bytes' => 39748801,
+    'size_bytes' => 40355009,
 ];
