@@ -446,6 +446,10 @@ publicado en VPS o en la APK pública.
   token BSPOS existente. Ambas regresiones pasan en SQLite y MariaDB QA; la suite
   completa queda en **508 tests / 5.152 assertions PASS** por motor. Solo permanece
   pendiente el recorrido físico Android de estos casos.
+- El verificador de readiness de release (`scripts/deployment/release-readiness.php`)
+  terminó correctamente en modo solo lectura: tablas locales `users`, `shops`,
+  `products`, `orders` e `invoices` en cero, `bcmath` disponible, lector de inventario
+  disponible y manifiesto Android coherente con la release pública 1.0.76/code 77.
 
 Lo siguiente es el backlog real, en orden operativo. No debe marcarse como terminado
 por inferencia a partir de tests parciales:
