@@ -23,12 +23,12 @@ este corte. No se escribieron datos de producción.
 - Ruta: `C:\xampp\php\www\MiCatalogo`
 - Rama: `master`, con commits locales de QA aún no publicados frente a `origin/master`
   (el conteo debe verificarse antes de cualquier push).
-- Último commit funcional/QA local: `ddf30df docs: record web build and auth QA evidence`;
-  los commits posteriores solo alinean esta documentación.
-- Corrección funcional local: `734b169 fix: revoke API token on mobile logout`.
-- Commits documentales/QA recientes: `9c7631c`, `dc7dac9`, `e19e668`, `9e17ee0`,
-  `eb9c75a` y los
-  commits previos conservados en el historial.
+- El checkout actual está **18 commits adelantado** de `origin/master`; confirmar el
+  conteo justo antes de cualquier push porque puede cambiar.
+- Última corrección funcional local: `734b169 fix: revoke API token on mobile logout`.
+- Último commit local: `68f21b5 docs: record Android contract validation`.
+- Los commits posteriores a `734b169` son documentación y evidencia QA; no deben
+  confundirse con un despliegue publicado.
 - Cambios rastreados: limpios; quedan únicamente los no rastreados intencionales.
 - No tocar ni borrar los no rastreados existentes: `.github/`, `.playwright-cli/`, `output/`.
 
@@ -37,11 +37,12 @@ este corte. No se escribieron datos de producción.
 - Ruta real activa: `C:\Users\waila\AndroidStudioProjects\micatalogowebApp`.
 - La skill histórica menciona `BSPOS-MiCatalogo`; en esta máquina el checkout vigente
   es `micatalogowebApp`. No crear ni cambiar de proyecto sin comprobar Git.
-- Rama: `main`, **2 commits adelantados de `origin/main`**.
-- Último commit local: `5d57421 fix: revoke MiCatalogo session on logout`.
+- Rama: `main`, **3 commits adelantados de `origin/main`**.
+- Último commit local: `de03913 test: cover replay after ack before local sent state`.
 - Cambios funcionales clave: `7ea2916` updater pendiente persistente, `c4aea97`
-  bloqueo del updater de producción para builds debug, `7c32766` prueba de PDF y
-  `5d57421` cierre de sesión con revocación remota.
+  bloqueo del updater de producción para builds debug, `7c32766` prueba de PDF,
+  `5d57421` cierre de sesión con revocación remota y `de03913` regresión de replay
+  después de ACK antes de marcar `SENT`.
 - Cambios rastreados: limpios. Conservar el no rastreado `.github/`.
 
 No usar `git reset --hard`, `git checkout --`, limpieza masiva ni borrar los
@@ -291,6 +292,11 @@ publicado en VPS o en la APK pública.
 - `FinancialContractTest` terminó **5/5 PASS**; los campos financieros obligatorios
   ausentes fallan con error de contrato en vez de producir saldos cero falsos. La UI de
   error y los reportes sin red todavía requieren ejecución en dispositivo.
+- Se inspeccionó `FinanceScreen`/`FinanceViewModel`: el error se publica por
+  `Snackbar`/`UiErrorBus`; la pantalla conserva un `summary` anterior si una recarga
+  falla después de haber cargado datos. No existe todavía un test Compose directo que
+  compruebe el estado visual de error/offline, por lo que ese comportamiento queda
+  **NOT_RUN**, no PASS.
 - Se ejecutó `npm run build` con Vite sin errores; el inventario actual conserva
   **216/216 rutas**, sin duplicados de método+URI, y el endpoint `api/v1/auth/logout`
   quedó confirmado con autenticación Sanctum. La revisión de `storage/{path}` verificó
@@ -315,6 +321,10 @@ publicado en VPS o en la APK pública.
 - Se implementó y probó la revocación remota de sesión: `POST /api/v1/auth/logout`
   elimina el token actual y Android limpia siempre su sesión local aun con error de red
   o token ya revocado.
+- La regresión Android añadida para ACK→interrupción se ejecutó de nuevo después de
+  instalar únicamente el APK de pruebas en el emulador: `CatalogSyncIntegrationTest`,
+  **16/16 PASS**. La aserción acepta el incremento interno de reintentos que ocurre
+  durante el manejo de la excepción; no cambia la garantía de UUID/replay.
 
 ## Trabajo que aún falta
 
@@ -322,7 +332,8 @@ Lo siguiente es el backlog real, en orden operativo. No debe marcarse como termi
 por inferencia a partir de tests parciales:
 
 1. Publicar, con autorización explícita, los commits locales backend y Android; antes
-   revisar los diffs y mantener el backup/controles de producción establecidos.
+   revisar los diffs, el conteo exacto frente a los remotos y mantener el
+   backup/controles de producción establecidos. Este corte no publicó nada.
 2. Crear una nueva release Android con `versionCode` mayor que 77 que incluya el
    updater persistente, el bloqueo de debug contra producción, PDF y logout; verificar
    firma, SHA, manifiesto y URL antes de publicarla.
@@ -343,7 +354,10 @@ por inferencia a partir de tests parciales:
    Bluetooth/impresión 58/80 mm, R2/colas y permisos modernos.
 9. Reducir la deuda de formato global (`vendor/bin/pint --test` aún reporta 37
    archivos), sin reformatear masivamente cambios ajenos sin revisar el diff.
-10. Solo después de lo anterior emitir `READY`; mientras exista cualquiera de estos
+10. Añadir pruebas Compose para Finanzas y estados globales de error/offline, incluida
+    la decisión explícita sobre si se debe mostrar el último resumen o un estado de
+    datos no disponibles cuando falla una recarga.
+11. Solo después de lo anterior emitir `READY`; mientras exista cualquiera de estos
     bloqueos el estado correcto sigue siendo `NOT_READY`.
 
 ## Secuencia recomendada para la siguiente IA
@@ -368,12 +382,14 @@ por inferencia a partir de tests parciales:
 
 ## Commits locales de este corte
 
-- Backend: `734b169` (`fix: revoke API token on mobile logout`) y `dc7dac9`
-  (`docs: refresh QA baseline after session revocation`), `9c7631c` (`docs: complete
-  QA handoff for next AI`) y `ddf30df` (`docs: record web build and auth QA evidence`),
-  con los commits locales anteriores aún adelantados a `origin/master`.
-- Android: `5d57421` (`fix: revoke MiCatalogo session on logout`), con `7c32766`
-  como commit Android anterior local.
+- Backend: `734b169` (`fix: revoke API token on mobile logout`) y la documentación
+  posterior hasta `68f21b5` (`docs: record Android contract validation`). El checkout
+  está adelantado frente a `origin/master`; revisar la lista completa con `git log`
+  antes de elegir qué publicar.
+- Android: `7ea2916` (updater pendiente persistente), `c4aea97` (debug fuera del
+  updater de producción), `7c32766` (PDF), `5d57421` (logout con revocación) y
+  `de03913` (replay ACK/interrupción). El checkout está 3 commits adelantado frente
+  a `origin/main`.
 - La documentación de la reejecución live anterior permanece en el historial; no se
   hizo push de estos commits.
 - Ninguna clave, contraseña, token real ni archivo privado forma parte de este traspaso.
