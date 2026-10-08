@@ -1,8 +1,8 @@
 # Hallazgos QA — corte 2026-10-08
 
 Fecha: 2026-10-08  
-HEAD Web/API del corte documentado: `9bef264c7fc6f260297455c6ff4c88224c3dca74`
-HEAD Android del corte documentado: `de03913b197300c7954f7f4229a57a802326cb59`
+HEAD Web/API del corte documentado: `88b3f66c7afbd675c4fdbd150d7a6ec3f8ad541c`
+HEAD Android del corte documentado: `e50e5ff73316a9555f77a79fe4457c2d105c91c6`
 
 > Nota de continuidad: los hallazgos individuales debajo conservan la evidencia del
 > momento en que cada uno fue descubierto. Para el estado vigente, la reejecución del
