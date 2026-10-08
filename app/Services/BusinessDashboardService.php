@@ -622,12 +622,21 @@ class BusinessDashboardService
         $salesTransfer = (float) ($invoiceCollections->get('bank_transfer')?->total ?? 0);
         $salesOther = (float) ($invoiceCollections->get('other')?->total ?? 0);
 
-        // Debt payments collected from customers
-        $debtCollections = (float) abs(DB::table('customer_account_entries')
+        // Debt payments are allocated to invoice_payments, so retain their payment method.
+        $debtPaymentCollections = DB::table('invoice_payments')
+            ->where('shop_id', $shop->id)
+            ->whereNotNull('customer_account_entry_id')
+            ->whereBetween('received_at', [$fromDatetime, $toDatetime])
+            ->selectRaw('payment_method, SUM(amount_cents) / 100.0 as total')
+            ->groupBy('payment_method')
+            ->get()
+            ->keyBy('payment_method');
+        $debtCollections = (float) ($debtPaymentCollections->sum('total') ?: abs(DB::table('customer_account_entries')
             ->where('shop_id', $shop->id)
             ->whereBetween('created_at', [$fromDatetime, $toDatetime])
             ->where('type', 'payment')
-            ->sum('amount'));
+            ->sum('amount')));
+        $debtCollectionsCash = (float) ($debtPaymentCollections->get('cash')?->total ?? 0);
 
         // Standalone cash register ins and owner contributions (excluding movements from sales/customer payments)
         $cashInMovements = (float) DB::table('cash_movements')
@@ -642,11 +651,15 @@ class BusinessDashboardService
 
         // 2. OUTFLOWS:
         // Actual paid expenses from expense_payments
-        $expensesPaidFromPayments = (float) DB::table('expense_payments')
+        $expensePayments = DB::table('expense_payments')
             ->where('shop_id', $shop->id)
             ->whereBetween('paid_at', [$fromDatetime, $toDatetime])
-            ->selectRaw('SUM(amount_cents) / 100.0 as total')
-            ->value('total') ?: 0.0;
+            ->selectRaw('payment_method, SUM(amount_cents) / 100.0 as total')
+            ->groupBy('payment_method')
+            ->get()
+            ->keyBy('payment_method');
+        $expensesPaidFromPayments = (float) $expensePayments->sum('total');
+        $expensesPaidCash = (float) ($expensePayments->get('cash')?->total ?? 0);
 
         // Fallback for legacy expenses without separate payment rows (if any)
         $legacyExpensesPaid = (float) DB::table('expenses')
@@ -660,8 +673,21 @@ class BusinessDashboardService
             })
             ->selectRaw('SUM(amount_cents) / 100.0 as total')
             ->value('total') ?: 0.0;
+        $legacyExpensesPaidCash = (float) DB::table('expenses')
+            ->where('shop_id', $shop->id)
+            ->whereBetween('occurred_at', [$fromDatetime, $toDatetime])
+            ->where('payment_status', 'paid')
+            ->where('payment_method', 'cash')
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('expense_payments')
+                    ->whereColumn('expense_payments.expense_id', 'expenses.id');
+            })
+            ->selectRaw('SUM(amount_cents) / 100.0 as total')
+            ->value('total') ?: 0.0;
 
         $totalExpensesPaid = round($expensesPaidFromPayments + $legacyExpensesPaid, 2);
+        $totalExpensesPaidCash = round($expensesPaidCash + $legacyExpensesPaidCash, 2);
 
         // Standalone cash register outs and owner withdrawals (excluding movements from expense payments)
         $cashOutMovements = (float) abs(DB::table('cash_movements')
@@ -682,11 +708,13 @@ class BusinessDashboardService
                 'sales_transfer' => round($salesTransfer, 2),
                 'sales_other' => round($salesOther, 2),
                 'debt_collections' => round($debtCollections, 2),
+                'debt_collections_cash' => round($debtCollectionsCash, 2),
                 'other_inflows' => round($cashInMovements, 2),
                 'total' => $totalInflows,
             ],
             'outflows' => [
                 'expenses_paid' => $totalExpensesPaid,
+                'expenses_paid_cash' => $totalExpensesPaidCash,
                 'cash_out' => round($cashOutMovements, 2),
                 'total' => $totalOutflows,
             ],

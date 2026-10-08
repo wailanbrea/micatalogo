@@ -153,6 +153,9 @@ test('mi tienda stays inside the panel and explains how to complete the storefro
         ->assertSee('Gestionar productos')
         ->assertSee('Ver enlace y QR')
         ->assertSee('Para que tu tienda se vea bien')
+        ->assertSee(route('seller.shops.storefront', [$shop, 'tab' => 'apariencia']), false)
+        ->assertSee(route('seller.shops.storefront', [$shop, 'tab' => 'contacto']), false)
+        ->assertSee(route('seller.shops.feature', [$shop, 'feature' => 'photos']), false)
         ->assertSee('Ver mi tienda')
         ->assertSee(route('shops.show', $shop), false)
         ->assertSee(route('seller.shops.storefront', $shop), false)
@@ -174,6 +177,142 @@ test('mi tienda tabs link to executable appearance contact and metrics screens',
         ->assertSee('id="apariencia"', false)
         ->assertSee('id="contacto"', false)
         ->assertSee('id="google"', false);
+});
+
+test('mi tienda renders every Puntto-style tab in the same panel', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->for($user)->create();
+
+    foreach ([
+        'apariencia' => 'Guardar apariencia',
+        'contacto' => 'Guardar contacto y horario',
+        'catalogo' => 'Guardar catálogo',
+        'vitrinas' => 'Guardar vitrinas',
+        'anuncios' => 'Guardar anuncios',
+        'google' => 'Guardar Google',
+    ] as $tab => $saveLabel) {
+        $this->actingAs($user)
+            ->get(route('seller.shops.storefront', [$shop, 'tab' => $tab]))
+            ->assertOk()
+            ->assertSee('aria-current="page"', false)
+            ->assertSee($saveLabel);
+    }
+});
+
+test('mi tienda can save catalog preferences without leaving the storefront context', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->for($user)->create();
+
+    $response = $this->actingAs($user)->put(route('seller.shops.update', $shop), [
+        'return_to' => 'storefront',
+        'return_tab' => 'catalogo',
+        'name' => $shop->name,
+        'slug' => $shop->slug,
+        'whatsapp_country_code' => $shop->whatsapp_country_code,
+        'whatsapp_number' => $shop->whatsapp_number,
+        'instagram' => $shop->instagram,
+        'offers_shipping' => $shop->offers_shipping ? '1' : '0',
+        'address' => $shop->address,
+        'maps_url' => $shop->maps_url,
+        'description' => $shop->description,
+        'primary_color' => '#2563EB',
+        'secondary_color' => '#0F172A',
+        'operational_settings' => [
+            'catalog' => [
+                'sort' => 'price_desc',
+                'offers_first' => '1',
+                'hide_out_of_stock' => '1',
+                'show_stock' => '0',
+                'allow_backorder' => '0',
+            ],
+        ],
+    ]);
+
+    $response->assertRedirect(route('seller.shops.storefront', [$shop, 'tab' => 'catalogo']));
+    expect($shop->fresh()->operational_settings['catalog']['sort'])->toBe('price_desc');
+    expect($shop->fresh()->operational_settings['catalog']['hide_out_of_stock'])->toBeTrue();
+});
+
+test('a shop owner can manage payment accounts without changing the shop record', function () {
+    $seller = User::factory()->create(['email_verified_at' => now()]);
+    $shop = Shop::factory()->for($seller)->create();
+
+    $this->actingAs($seller)
+        ->post(route('seller.shops.payment-accounts.store', $shop), [
+            'name' => 'Cuenta Popular',
+            'bank_name' => 'Banco Popular',
+            'account_number' => '123456789',
+            'account_holder' => 'BSolutions.dev',
+            'instructions' => 'Enviar comprobante por WhatsApp.',
+        ])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('shop_payment_accounts', [
+        'shop_id' => $shop->id,
+        'name' => 'Cuenta Popular',
+        'is_active' => 1,
+    ]);
+    $account = $shop->paymentAccounts()->firstOrFail();
+
+    $this->actingAs($seller)
+        ->put(route('seller.shops.payment-accounts.update', [$shop, $account]), [
+            'name' => 'Cuenta Popular Principal',
+            'bank_name' => 'Banco Popular',
+            'account_number' => '123456789',
+            'account_holder' => 'BSolutions.dev',
+            'instructions' => 'Actualizada',
+            'is_active' => '1',
+        ])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('shop_payment_accounts', ['id' => $account->id, 'name' => 'Cuenta Popular Principal']);
+
+    $this->actingAs($seller)
+        ->delete(route('seller.shops.payment-accounts.destroy', [$shop, $account]))
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('shop_payment_accounts', ['id' => $account->id, 'is_active' => 0]);
+});
+
+test('a shop owner can configure the full operational settings contract from the web', function () {
+    $seller = User::factory()->create(['email_verified_at' => now()]);
+    $shop = Shop::factory()->for($seller)->create();
+
+    $this->actingAs($seller)
+        ->get(route('seller.shops.edit', $shop))
+        ->assertOk()
+        ->assertSee('Comprobantes fiscales')
+        ->assertSee('Decants: tamaños predeterminados (ml)')
+        ->assertSee('Recetas / insumos');
+
+    $this->actingAs($seller)
+        ->put(route('seller.shops.update', $shop), shopPayload([
+            'operational_settings' => [
+                'timezone' => 'America/New_York',
+                'credit' => [
+                    'enabled' => '1',
+                    'default_days' => '45',
+                    'allow_partial_payments' => '1',
+                ],
+                'orders' => ['enabled' => '1'],
+                'recipes' => ['enabled' => '1'],
+                'wholesale' => ['enabled' => '1', 'minimum_quantity' => '12'],
+                'shipping' => ['enabled' => '1', 'types' => ['pickup', 'delivery']],
+                'decants' => ['enabled' => '1', 'default_ml' => ['5', '10', '30']],
+                'images' => ['max_per_product' => '6', 'auto_optimize' => '1'],
+                'payment_methods' => ['cash', 'bank_transfer', 'credit'],
+            ],
+        ]))
+        ->assertRedirect(route('seller.shops.edit', $shop));
+
+    $settings = $shop->fresh()->operational_settings;
+    expect($settings['timezone'])->toBe('America/New_York')
+        ->and($settings['credit']['default_days'])->toBe(45)
+        ->and($settings['wholesale']['minimum_quantity'])->toBe(12)
+        ->and($settings['images']['max_per_product'])->toBe(6)
+        ->and($settings['decants']['default_ml'])->toBe([5, 10, 30])
+        ->and($settings['shipping']['types'])->toBe(['pickup', 'delivery'])
+        ->and($settings['recipes']['enabled'])->toBeTrue();
 });
 
 test('a shop owner can save weekly hours and the public storefront displays them', function () {

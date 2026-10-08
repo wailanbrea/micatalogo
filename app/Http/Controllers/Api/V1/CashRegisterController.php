@@ -91,7 +91,7 @@ class CashRegisterController extends Controller
         abort_unless($service->canManageSession($shop, $request->user(), $session), 403, 'No tienes permiso para cerrar la sesión de caja de otro usuario.');
 
         $validated = $request->validate([
-            'counted_amount' => ['required', 'decimal:0,2', 'min:0'],
+            'counted_amount' => ['nullable', 'decimal:0,2', 'min:0'],
             'notes' => ['nullable', 'string', 'max:500'],
             'client_operation_uuid' => ['nullable', 'uuid'],
         ]);

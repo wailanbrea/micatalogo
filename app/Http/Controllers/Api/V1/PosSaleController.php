@@ -11,6 +11,7 @@ use App\Models\Shop;
 use App\Services\CustomerAccountService;
 use App\Services\InventoryService;
 use App\Services\PaymentService;
+use App\Services\ShopOperationalSettingsService;
 use App\Support\Money;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -25,7 +26,8 @@ class PosSaleController extends Controller
         Shop $shop,
         InventoryService $inventoryService,
         CustomerAccountService $customerAccountService,
-        PaymentService $paymentService
+        PaymentService $paymentService,
+        ShopOperationalSettingsService $operational
     ): JsonResponse {
         abort_unless($request->user()->canSellAtShop($shop), 404);
 
@@ -53,6 +55,16 @@ class PosSaleController extends Controller
             'items.*.expected_volume_ml' => ['nullable', 'integer', 'min:1'],
             'items.*.expected_source_product_id' => ['nullable', 'ulid'],
         ]);
+        if (! array_key_exists('tax', $validated)) {
+            $taxRate = $operational->taxRate($shop);
+            if ($taxRate > 0) {
+                $subtotalCents = collect($validated['items'])->sum(
+                    fn (array $item): int => Money::toCents($item['unit_price']) * (int) $item['quantity']
+                        - Money::toCents($item['discount'] ?? 0)
+                ) - Money::toCents($validated['discount'] ?? 0);
+                $validated['tax'] = Money::toDecimal((int) round(max(0, $subtotalCents) * $taxRate / 100));
+            }
+        }
         $payloadHash = hash('sha256', json_encode($validated, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION));
 
         try {

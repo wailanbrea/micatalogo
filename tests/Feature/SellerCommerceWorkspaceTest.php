@@ -54,9 +54,10 @@ test('recepción de compra crea suplidor, documento y lote separado con su costo
     $product = Product::factory()->for($shop)->create(['price' => 400]);
     ProductInventory::create(['product_id' => $product->id, 'track_inventory' => true, 'stock_quantity' => 2, 'cost_price' => 90, 'sold_quantity' => 0]);
 
-    $this->actingAs($user)->post(route('seller.shops.suppliers.store', $shop), ['name' => 'Suplidor FIFO'])
+    $this->actingAs($user)->post(route('seller.shops.suppliers.store', $shop), ['name' => 'Suplidor FIFO', 'invoice_currency' => 'USD'])
         ->assertSessionHasNoErrors();
     $supplier = $shop->suppliers()->sole();
+    expect($supplier->invoice_currency)->toBe('USD');
 
     $this->actingAs($user)->post(route('seller.shops.purchases.store', $shop), [
         'type' => 'purchase_invoice',
@@ -72,6 +73,67 @@ test('recepción de compra crea suplidor, documento y lote separado con su costo
         ->and($document->items()->count())->toBe(1)
         ->and((int) $product->inventory()->first()->stock_quantity)->toBe(6)
         ->and($product->inventoryLots()->where('received_cost_cents', 50200)->exists())->toBeTrue();
+});
+
+test('la web registra una carga logística sin inventario y evita recibirla como compra', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->for($user)->create();
+    $supplier = $shop->suppliers()->create(['name' => 'Courier web', 'invoice_currency' => 'USD', 'is_active' => true]);
+
+    $this->actingAs($user)->post(route('seller.shops.purchases.store', $shop), [
+        'type' => 'load',
+        'document_number' => 'Miami web octubre',
+        'supplier_id' => $supplier->public_id,
+        'currency' => 'USD',
+        'exchange_rate' => '59.50',
+        'carrier' => 'Courier web',
+        'tracking_number' => 'BL-WEB-001',
+        'expected_at' => '2026-10-30',
+        'shipping_pounds' => '12.5',
+        'freight_amount' => '45.00',
+        'customs_amount' => '10.00',
+        'mode' => 'received',
+        'notes' => 'Sin productos hasta asociar contenedores',
+    ])->assertSessionHasNoErrors();
+
+    $load = PurchaseDocument::where('shop_id', $shop->id)->sole();
+    expect($load->type)->toBe('load')
+        ->and($load->status)->toBe('draft')
+        ->and($load->currency)->toBe('USD')
+        ->and((string) $load->exchange_rate)->toBe('59.500000')
+        ->and($load->items()->count())->toBe(0);
+
+    $this->actingAs($user)->post(route('seller.shops.purchases.receive', [$shop, 'document' => $load->public_id]))
+        ->assertRedirect(route('seller.shops.feature', [$shop, 'feature' => 'loads']))
+        ->assertSessionHasErrors('purchase');
+    expect($load->fresh()->status)->toBe('draft');
+});
+
+test('registrar una deuda de suplidor no crea inventario ni lotes', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->for($user)->create();
+    $product = Product::factory()->for($shop)->create(['price' => 400]);
+    ProductInventory::create(['product_id' => $product->id, 'track_inventory' => true, 'stock_quantity' => 2, 'cost_price' => 90, 'sold_quantity' => 0]);
+    $supplier = $shop->suppliers()->create(['name' => 'Suplidor con deuda', 'invoice_currency' => 'USD', 'is_active' => true]);
+
+    $this->actingAs($user)->post(route('seller.shops.purchases.debts.store', $shop), [
+        'supplier_id' => $supplier->public_id,
+        'amount' => '275.40',
+        'currency' => 'USD',
+        'invoice_date' => '2026-10-01',
+        'due_at' => '2026-11-01',
+        'document_number' => 'FAC-DEUDA-001',
+        'notes' => 'Saldo anterior',
+    ])->assertSessionHasNoErrors();
+
+    $document = PurchaseDocument::where('shop_id', $shop->id)->sole();
+    expect($document->status)->toBe('debt')
+        ->and($document->payment_status)->toBe('pending')
+        ->and($document->currency)->toBe('USD')
+        ->and($document->total)->toBe('275.40')
+        ->and($document->items()->count())->toBe(0)
+        ->and((int) $product->inventory()->first()->fresh()->stock_quantity)->toBe(2)
+        ->and($product->inventoryLots()->count())->toBe(0);
 });
 
 test('las compras admiten varias líneas en borrador y solo reciben inventario una vez', function () {

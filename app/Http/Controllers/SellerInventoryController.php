@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\InventoryMovement;
 use App\Models\Product;
 use App\Models\Shop;
 use App\Services\InventoryService;
@@ -14,6 +15,26 @@ use InvalidArgumentException;
 
 class SellerInventoryController extends Controller
 {
+    public function movementsIndex(Request $request, Shop $shop): View
+    {
+        $filters = $request->validate([
+            'q' => ['nullable', 'string', 'max:120'],
+            'type' => ['nullable', 'in:sale,restock,opening,adjustment'],
+        ]);
+        $search = trim((string) ($filters['q'] ?? ''));
+        $type = $filters['type'] ?? '';
+        $movements = InventoryMovement::query()
+            ->with(['product' => fn ($query) => $query->withTrashed(), 'user'])
+            ->whereHas('product', fn ($query) => $query->withTrashed()->where('shop_id', $shop->id))
+            ->when($search !== '', fn ($query) => $query->whereHas('product', fn ($productQuery) => $productQuery->withTrashed()->where('name', 'like', "%{$search}%")))
+            ->when($type !== '', fn ($query) => $query->where('type', $type))
+            ->latest('created_at')
+            ->paginate(30)
+            ->withQueryString();
+
+        return view('seller.inventory.movements-index', compact('shop', 'movements', 'search', 'type'));
+    }
+
     public function index(Request $request, Shop $shop, InventoryService $inventoryService, PlanLimitsService $limits): View
     {
         $validated = $request->validate([
@@ -164,6 +185,27 @@ class SellerInventoryController extends Controller
             $inventoryService->recordRestock($product, (int) $validated['quantity'], $validated['notes'] ?? null, $request->user()->id, isset($validated['unit_cost']) ? (float) $validated['unit_cost'] : null);
 
             return back()->with('status', "Se repusieron {$validated['quantity']} unidad(es) en el inventario de {$product->name}.");
+        } catch (InvalidArgumentException $e) {
+            return back()->withErrors(['quantity' => $e->getMessage()]);
+        }
+    }
+
+    public function openBottle(Request $request, Shop $shop, Product $product, InventoryService $inventoryService): RedirectResponse
+    {
+        $validated = $request->validate([
+            'quantity' => ['required', 'integer', 'min:1', 'max:1000'],
+            'notes' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        try {
+            $inventoryService->openBottle(
+                $product,
+                (int) $validated['quantity'],
+                $validated['notes'] ?? null,
+                $request->user()->id,
+            );
+
+            return back()->with('status', "Se abrieron {$validated['quantity']} botella(s) de {$product->name}. Sus ml ya están disponibles para preparar decants.");
         } catch (InvalidArgumentException $e) {
             return back()->withErrors(['quantity' => $e->getMessage()]);
         }

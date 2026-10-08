@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\AttributeDefinition;
+use App\Models\AuthorizationRequest;
 use App\Models\BusinessPartner;
 use App\Models\CommercialQuote;
 use App\Models\Customer;
+use App\Models\CustomerAccountEntry;
 use App\Models\Expense;
 use App\Models\InventoryMovement;
 use App\Models\Invoice;
@@ -18,13 +20,16 @@ use App\Models\Shop;
 use App\Models\Supplier;
 use App\Models\SupportRequest;
 use App\Services\BusinessDashboardService;
-use App\Services\CashRegisterService;
+use App\Services\DailyCloseService;
 use App\Services\InventoryService;
 use App\Services\SellerMenuService;
 use App\Services\ShopAnalyticsService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -121,7 +126,14 @@ class SellerFeatureController extends Controller
             'featureKey' => $feature,
             'feature' => self::FEATURES[$feature],
             'related' => $related,
-            'module' => $this->moduleData($feature, $shop, $dashboard ?: app(BusinessDashboardService::class)),
+            'module' => $this->moduleData(
+                $feature,
+                $shop,
+                $dashboard ?: app(BusinessDashboardService::class),
+                $request->query('period'),
+                $request->query('q'),
+                $request->query('status')
+            ),
         ]);
     }
 
@@ -143,8 +155,56 @@ class SellerFeatureController extends Controller
         return response()->json([
             'feature_key' => $feature,
             'feature' => self::FEATURES[$feature],
-            'module' => $this->moduleData($feature, $shop, $dashboard ?: app(BusinessDashboardService::class)),
+            'module' => $this->moduleData(
+                $feature,
+                $shop,
+                $dashboard ?: app(BusinessDashboardService::class),
+                $request->query('period'),
+                $request->query('q'),
+                $request->query('status')
+            ),
         ]);
+    }
+
+    public function updateAttribute(
+        Request $request,
+        Shop $shop,
+        AttributeDefinition $attribute,
+        SellerMenuService $menus
+    ): RedirectResponse {
+        abort_unless($menus->canManage($shop, $request->user()), 403);
+        abort_unless($attribute->shop_id === $shop->id, 404);
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:100'],
+            'filterable' => ['sometimes', 'boolean'],
+            'required' => ['sometimes', 'boolean'],
+            'is_active' => ['sometimes', 'boolean'],
+        ]);
+        $name = trim((string) $data['name']);
+        abort_if($name === '', 422, 'El nombre del atributo no puede estar vacío.');
+
+        DB::transaction(function () use ($shop, $attribute, $data, $name): void {
+            $locked = AttributeDefinition::query()->whereKey($attribute->getKey())->lockForUpdate()->firstOrFail();
+            $duplicate = AttributeDefinition::query()
+                ->where('shop_id', $shop->id)
+                ->whereKeyNot($locked->getKey())
+                ->whereRaw('LOWER(name) = ?', [mb_strtolower($name)])
+                ->exists();
+            abort_if($duplicate, 422, 'Ya existe otro atributo con ese nombre.');
+
+            $locked->update([
+                'name' => $name,
+                'slug' => Str::slug($name),
+                'filterable' => array_key_exists('filterable', $data) ? (bool) $data['filterable'] : $locked->filterable,
+                'required' => array_key_exists('required', $data) ? (bool) $data['required'] : $locked->required,
+                'is_active' => array_key_exists('is_active', $data) ? (bool) $data['is_active'] : $locked->is_active,
+            ]);
+        });
+
+        $active = (bool) ($data['is_active'] ?? true);
+
+        return back()->with('status', $active ? 'Atributo actualizado.' : 'Atributo retirado. Sus valores históricos se conservaron.');
     }
 
     public function exportReports(
@@ -217,26 +277,33 @@ class SellerFeatureController extends Controller
      *
      * @return array{kind: string, kpis: array<int, array{label: string, value: string, tone: string}>, rows: array<int, array<string, mixed>>, note: ?string}
      */
-    private function moduleData(string $feature, Shop $shop, BusinessDashboardService $dashboard): array
+    private function moduleData(
+        string $feature,
+        Shop $shop,
+        BusinessDashboardService $dashboard,
+        ?string $period = null,
+        ?string $search = null,
+        ?string $status = null
+    ): array
     {
         return match ($feature) {
             'sales' => $this->salesData($shop),
             'quotes' => $this->quotesData($shop),
-            'orders' => $this->ordersData($shop),
-            'encargos' => $this->ordersData($shop, 'pending'),
-            'shipments' => $this->ordersData($shop, null, true),
-            'day_close' => $this->dayCloseData($shop),
+            'orders' => $this->ordersData($shop, $status, false, $search),
+            'encargos' => $this->encargosData($shop, $status, $search),
+            'shipments' => $this->ordersData($shop, $status, true, $search),
+            'day_close' => $this->dayCloseData($shop, $period),
             'containers', 'loads', 'suppliers', 'purchase_invoices' => $this->purchasingData($shop, $feature),
             'photos' => $this->photosData($shop),
-            'services' => $this->servicesData($shop),
-            'price_health' => $this->priceHealthData($shop),
+            'services' => $this->servicesData($shop, $search),
+            'price_health' => $this->priceHealthData($shop, $status, $search),
             'decants' => $this->decantsData($shop),
-            'attributes' => $this->attributesData($shop),
+            'attributes' => $this->attributesData($shop, $search),
             'credit' => $this->creditData($shop),
             'inventory_adjustments' => $this->inventoryAdjustmentsData($shop),
             'partners' => $this->partnersData($shop),
             'reports' => $this->reportsData($shop, $dashboard),
-            'commissions' => $this->commissionsData($shop),
+            'commissions' => $this->commissionsData($shop, $period),
             'authorizations' => $this->authorizationsData($shop),
             'accountant' => $this->accountantData($shop, $dashboard),
             'account' => $this->accountData($shop),
@@ -350,10 +417,15 @@ class SellerFeatureController extends Controller
                 ['label' => 'Bajadas por aprobar', 'value' => number_format($pending), 'tone' => $pending ? 'amber' : 'slate'],
             ],
             'rows' => $products->map(fn (Product $product) => [
+                'product_id' => (string) $product->public_id,
                 'primary' => $product->name,
                 'secondary' => $product->inventory?->cost_price !== null ? 'Costo actual RD$ '.number_format((float) $product->inventory->cost_price, 2) : 'Sin costo registrado',
                 'value' => 'Venta RD$ '.number_format($product->currentPrice(), 2),
                 'status' => isset($rules[$product->id]) ? ($rules[$product->id]->pending_price !== null ? 'Aprobación pendiente' : 'Regla activa') : 'Sin regla',
+                'margin_percent' => isset($rules[$product->id]) ? (string) $rules[$product->id]->margin_percent : '40',
+                'round_step' => isset($rules[$product->id]) ? number_format(((int) $rules[$product->id]->round_step_cents) / 100, 2, '.', '') : '1.00',
+                'auto_increase' => (bool) ($rules[$product->id]->auto_increase ?? false),
+                'pending_price' => isset($rules[$product->id]) && $rules[$product->id]->pending_price !== null ? number_format((float) $rules[$product->id]->pending_price, 2, '.', '') : null,
             ])->all(),
             'note' => 'Cada lote conserva su costo. Las subidas automáticas pueden aplicarse según la regla y las bajadas quedan pendientes de aprobación.',
             'actions' => [
@@ -534,7 +606,7 @@ class SellerFeatureController extends Controller
 
     private function purchasingData(Shop $shop, string $feature): array
     {
-        $documents = $shop->purchaseDocuments()->with(['supplier', 'items.product'])->latest()->limit(30)->get();
+        $documents = $shop->purchaseDocuments()->with(['supplier', 'items.product', 'parentDocument'])->latest()->limit(30)->get();
         $suppliers = $shop->suppliers()->get();
         $products = $shop->products()->whereHas('inventory', fn ($query) => $query->where('track_inventory', true))->orderBy('name')->limit(300)->get();
 
@@ -553,15 +625,20 @@ class SellerFeatureController extends Controller
         })->map(fn (PurchaseDocument $document) => [
             'id' => $document->public_id,
             'primary' => $document->document_number,
-            'secondary' => ($document->supplier?->name ?: 'Sin suplidor').' · '.($document->received_at?->format('d/m/Y H:i') ?: 'Sin fecha'),
+            'secondary' => ($document->supplier?->name ?: 'Sin suplidor').' · '.($document->status === 'debt' ? 'Factura '.($document->invoice_date?->format('d/m/Y') ?: 'sin fecha') : ($document->received_at?->format('d/m/Y H:i') ?: ($document->expected_at?->format('d/m/Y') ?: 'Sin fecha'))).($document->due_at ? ' · vence '.$document->due_at->format('d/m/Y') : ''),
             'value' => $this->money($document->total),
-            'status' => $document->status === 'draft' ? 'Borrador' : 'Recibida',
+            'status' => $document->status === 'draft' ? 'Borrador' : ($document->status === 'debt' ? 'Pendiente de pago' : 'Recibida'),
             'can_receive' => $document->status === 'draft',
+            'parent_document_id' => $document->parentDocument?->public_id,
+            'payment_status' => $document->payment_status,
+            'invoice_date' => $document->invoice_date?->format('d/m/Y'),
+            'due_at' => $document->due_at?->format('d/m/Y'),
+            'is_debt' => $document->status === 'debt',
         ])->values()->all();
         if ($feature === 'suppliers') {
             $rows = $suppliers->map(fn (Supplier $supplier) => [
                 'primary' => $supplier->name,
-                'secondary' => $supplier->phone ?: ($supplier->email ?: 'Sin contacto'),
+                'secondary' => ($supplier->invoice_currency ? 'Factura en '.$supplier->invoice_currency.' · ' : '').($supplier->phone ?: ($supplier->email ?: 'Sin contacto')),
                 'value' => number_format($supplier->purchaseDocuments()->count()).' compra(s)',
                 'status' => 'Activo',
             ])->all();
@@ -575,7 +652,7 @@ class SellerFeatureController extends Controller
                 ['label' => 'Productos controlados', 'value' => number_format($products->count()), 'tone' => 'slate'],
             ],
             'rows' => $rows,
-            'suppliers' => $suppliers->map(fn (Supplier $supplier) => ['id' => $supplier->public_id, 'name' => $supplier->name])->all(),
+            'suppliers' => $suppliers->map(fn (Supplier $supplier) => ['id' => $supplier->public_id, 'name' => $supplier->name, 'invoice_currency' => $supplier->invoice_currency])->all(),
             'purchaseProducts' => $products->map(fn (Product $product) => [
                 'id' => $product->public_id,
                 'name' => $product->name,
@@ -590,9 +667,20 @@ class SellerFeatureController extends Controller
         ];
     }
 
-    private function servicesData(Shop $shop): array
+    private function servicesData(Shop $shop, ?string $search = null): array
     {
-        $products = $shop->products()->where('sale_unit', 'service')->with('inventory')->latest()->limit(100)->get();
+        $search = trim((string) $search);
+        $products = $shop->products()
+            ->where('sale_unit', 'service')
+            ->with('inventory')
+            ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search): void {
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('product_code', 'like', "%{$search}%");
+            }))
+            ->latest()
+            ->limit(100)
+            ->get();
         $serviceIds = $products->pluck('id');
         $periodItems = $serviceIds->isEmpty()
             ? collect()
@@ -611,11 +699,17 @@ class SellerFeatureController extends Controller
                 ['label' => 'Ganancia · 30 días', 'value' => $this->money($revenue - $cost), 'tone' => 'amber'],
             ],
             'rows' => $products->map(fn (Product $product) => [
+                'id' => (string) $product->id,
                 'primary' => $product->name,
                 'secondary' => 'Precio RD$ '.number_format($product->currentPrice(), 2).' · '.($product->description ?: 'Sin descripción'),
                 'value' => $product->inventory?->cost_price !== null ? 'Insumos RD$ '.number_format((float) $product->inventory->cost_price, 2) : 'Sin costo de insumos',
                 'status' => $product->moderation_status->value === 'active' ? 'Publicado · cobrable' : 'Borrador · oculto en Terminal',
+                'edit_url' => route('seller.shops.products.edit', [$shop, $product]),
             ])->all(),
+            'filters' => [
+                'search' => $search,
+                'count' => $products->count(),
+            ],
             'note' => 'Los servicios se cobran desde Terminal, factura y caja sin descontar inventario. El costo de insumos es opcional y se usa para calcular la ganancia real.',
             'actions' => [
                 ['label' => 'Nuevo servicio', 'url' => route('seller.shops.products.create', $shop).'?sale_unit=service', 'tone' => 'primary'],
@@ -673,13 +767,18 @@ class SellerFeatureController extends Controller
     private function authorizationsData(Shop $shop): array
     {
         $sellers = $shop->sellers()->with('user')->where('is_active', true)->get();
+        $pendingRequests = $shop->authorizationRequests()
+            ->with('requester')
+            ->where('status', 'pending')
+            ->latest('created_at')
+            ->get();
 
         return [
             'kind' => 'table',
             'kpis' => [
                 ['label' => 'Usuarios con acceso', 'value' => number_format($sellers->count()), 'tone' => 'blue'],
                 ['label' => 'Con menú personalizado', 'value' => number_format($sellers->filter(fn ($seller) => is_array($seller->menu_permissions) && count($seller->menu_permissions))->count()), 'tone' => 'emerald'],
-                ['label' => 'Pendientes de revisar', 'value' => number_format($sellers->filter(fn ($seller) => ! $seller->menu_permissions)->count()), 'tone' => 'amber'],
+                ['label' => 'Pendientes de revisar', 'value' => number_format($pendingRequests->count()), 'tone' => $pendingRequests->count() ? 'amber' : 'slate'],
             ],
             'rows' => $sellers->map(fn ($seller) => [
                 'primary' => $seller->user?->name ?: 'Vendedor',
@@ -687,7 +786,17 @@ class SellerFeatureController extends Controller
                 'value' => is_array($seller->menu_permissions) && count($seller->menu_permissions) ? count($seller->menu_permissions).' menús' : 'Permisos estándar',
                 'status' => 'Activo',
             ])->all(),
-            'note' => 'Las autorizaciones actuales se administran desde Equipo y se aplican por tienda. Las acciones financieras sensibles siguen protegidas por permisos del servidor.',
+            'pendingRequests' => $pendingRequests->map(fn (AuthorizationRequest $authorization) => [
+                'id' => $authorization->public_id,
+                'action' => $authorization->action,
+                'context' => $authorization->context ?: [],
+                'requester' => $authorization->requester?->name ?: 'Vendedor',
+                'requester_email' => $authorization->requester?->email ?: 'Sin correo',
+                'created_at' => $authorization->created_at?->format('d/m/Y H:i'),
+                'approve_url' => route('seller.shops.authorizations.approve', [$shop, $authorization]),
+                'reject_url' => route('seller.shops.authorizations.reject', [$shop, $authorization]),
+            ])->values()->all(),
+            'note' => 'Las acciones sensibles pueden esperar aprobación del propietario. Las solicitudes conservan quién pidió permiso, el contexto y la decisión registrada.',
             'actions' => [['label' => 'Administrar equipo', 'url' => route('seller.shops.sellers.index', $shop), 'tone' => 'primary']],
         ];
     }
@@ -695,6 +804,7 @@ class SellerFeatureController extends Controller
     private function accountantData(Shop $shop, BusinessDashboardService $dashboard): array
     {
         $summary = $dashboard->getSummary($shop, now()->startOfMonth()->toDateString(), now()->toDateString(), 'profit', 'desc');
+        $accountants = $shop->members()->with('user')->where('role', 'accountant')->where('is_active', true)->get();
 
         return [
             'kind' => 'table',
@@ -706,7 +816,18 @@ class SellerFeatureController extends Controller
             'rows' => [
                 ['primary' => 'Estado financiero del mes', 'secondary' => 'Ventas, costos, gastos y comisiones integrados', 'value' => $this->money($summary['period']['operating_profit']), 'status' => 'Disponible'],
                 ['primary' => 'Costos FIFO', 'secondary' => 'Costo real capturado por lote', 'value' => $this->money($summary['current_state']['inventory_cost_value'] ?? 0), 'status' => 'Disponible'],
+                ...$accountants->map(fn ($member) => [
+                    'primary' => $member->user?->name ?: 'Contador',
+                    'secondary' => $member->user?->email ?: 'Sin correo',
+                    'value' => 'Solo lectura',
+                    'status' => 'Con acceso',
+                ])->all(),
             ],
+            'accountantMembers' => $accountants->map(fn ($member) => [
+                'id' => (string) $member->id,
+                'name' => $member->user?->name ?: 'Contador',
+                'email' => $member->user?->email ?: 'Sin correo',
+            ])->values()->all(),
             'note' => 'El contador consulta la misma fuente financiera que Ganancias; no se crean asientos paralelos.',
             'actions' => [
                 ['label' => 'Ver ganancias', 'url' => route('seller.shops.business', $shop), 'tone' => 'primary'],
@@ -848,13 +969,17 @@ class SellerFeatureController extends Controller
 
         $today = $shop->invoices()->whereDate('issued_at', today())->where('status', '!=', 'void');
         $rows = (clone $filtered)->latest('issued_at')->limit(100)->get();
+        $operationCount = (clone $filtered)->count();
+        $totalSold = (float) (clone $filtered)->sum('total');
+        $creditCount = (clone $filtered)->whereIn('status', ['credit', 'partial'])->count();
 
         return [
             'kind' => 'table',
             'kpis' => [
-                ['label' => $period === 'today' ? 'Ventas de hoy' : 'Ventas del período', 'value' => $this->money((clone $filtered)->sum('total')), 'tone' => 'blue'],
-                ['label' => 'Operaciones', 'value' => number_format((clone $filtered)->count()), 'tone' => 'slate'],
-                ['label' => 'Cuentas pendientes', 'value' => $this->money((clone $filtered)->whereIn('status', ['credit', 'partial'])->sum('total')), 'tone' => 'amber'],
+                ['label' => $period === 'today' ? 'Ventas de hoy' : 'Ventas del período', 'value' => number_format($operationCount), 'tone' => 'blue'],
+                ['label' => 'Total vendido', 'value' => $this->money($totalSold), 'tone' => 'blue'],
+                ['label' => 'Promedio por venta', 'value' => $this->money($operationCount > 0 ? $totalSold / $operationCount : 0), 'tone' => 'slate'],
+                ['label' => 'A crédito', 'value' => number_format($operationCount > 0 ? ($creditCount / $operationCount) * 100 : 0, 0).'% ', 'tone' => $creditCount > 0 ? 'amber' : 'emerald'],
             ],
             'filters' => [
                 'period' => $period,
@@ -872,14 +997,21 @@ class SellerFeatureController extends Controller
         ];
     }
 
-    private function ordersData(Shop $shop, ?string $status = null, bool $shipping = false): array
+    private function ordersData(Shop $shop, ?string $status = null, bool $shipping = false, ?string $search = null): array
     {
+        $search = trim((string) $search);
         $query = $shop->orders()->with('items')->latest();
-        if ($status !== null) {
+        if ($status !== null && $status !== 'all') {
             $query->where('status', $status);
         }
         if ($shipping) {
             $query->whereIn('delivery_type', ['delivery', 'shipping', 'envio']);
+        }
+        if ($search !== '') {
+            $query->where(function ($query) use ($search): void {
+                $query->where('order_number', 'like', "%{$search}%")
+                    ->orWhere('customer_name', 'like', "%{$search}%");
+            });
         }
         $orders = $query->limit(30)->get();
 
@@ -897,19 +1029,87 @@ class SellerFeatureController extends Controller
                 'value' => $this->money($order->total),
                 'status' => $this->orderStatus($order),
                 'can_confirm' => $order->invoice_id === null && $order->status !== 'cancelled',
+                'confirm_url' => $order->invoice_id === null && $order->status !== 'cancelled'
+                    ? URL::temporarySignedRoute('seller.shops.orders.confirm.show', now()->addDays(7), [$shop, $order])
+                    : null,
             ])->all(),
+            'filters' => [
+                'search' => $search,
+                'status' => $status ?: 'all',
+                'count' => $orders->count(),
+            ],
+            'actions' => [
+                ['label' => 'Compartir mi tienda', 'url' => 'https://wa.me/?text='.rawurlencode('Mira mi catálogo: '.route('shops.show', $shop)), 'tone' => 'primary'],
+                ['label' => 'Abrir mi tienda', 'url' => route('seller.shops.storefront', $shop), 'tone' => 'secondary'],
+                ['label' => 'Ir a Terminal', 'url' => route('seller.shops.pos', $shop), 'tone' => 'secondary'],
+            ],
             'note' => $shipping ? 'Los envíos se filtran desde los pedidos que tienen entrega configurada.' : 'Confirma un pedido únicamente cuando la mercancía esté lista para descontar inventario.',
         ];
     }
 
-    private function dayCloseData(Shop $shop): array
+    private function encargosData(Shop $shop, ?string $status = null, ?string $search = null): array
     {
-        $invoices = $shop->invoices()->whereDate('issued_at', today())->where('status', '!=', 'void');
-        $expenses = $shop->expenses()->whereDate('occurred_at', today());
-        $session = $shop->cashRegisterSessions()->where('status', 'open')->first();
+        $status = in_array($status, ['all', 'today', 'tomorrow', 'overdue', 'no_date'], true) ? $status : 'all';
+        $search = trim((string) $search);
+        $open = $shop->orders()
+            ->with('items')
+            ->whereNull('invoice_id')
+            ->whereNotIn('status', ['cancelled', 'confirmed'])
+            ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search): void {
+                $query->where('order_number', 'like', "%{$search}%")
+                    ->orWhere('customer_name', 'like', "%{$search}%");
+            }))
+            ->when($status === 'today', fn ($query) => $query->whereDate('delivery_at', today()))
+            ->when($status === 'tomorrow', fn ($query) => $query->whereDate('delivery_at', today()->addDay()))
+            ->when($status === 'overdue', fn ($query) => $query->whereNotNull('delivery_at')->whereDate('delivery_at', '<', today()))
+            ->when($status === 'no_date', fn ($query) => $query->whereNull('delivery_at'))
+            ->latest('delivery_at')
+            ->latest()
+            ->limit(30)
+            ->get();
+        $scheduled = $shop->orders()->whereNull('invoice_id')->whereNotIn('status', ['cancelled', 'confirmed']);
+
+        $row = fn (Order $order): array => [
+            'id' => (string) $order->id,
+            'primary' => $order->order_number,
+            'secondary' => ($order->customer_name ?: 'Cliente sin nombre').' · '.($order->delivery_type ?: 'Por coordinar').' · '.($order->delivery_at?->format('d/m/Y') ?: 'Sin fecha'),
+            'value' => $this->money($order->total),
+            'status' => $this->orderStatus($order),
+            'can_confirm' => true,
+            'confirm_url' => URL::temporarySignedRoute('seller.shops.orders.confirm.show', now()->addDays(7), [$shop, $order]),
+        ];
+
+        return [
+            'kind' => 'orders',
+            'kpis' => [
+                ['label' => 'Hoy', 'value' => number_format((clone $scheduled)->whereDate('delivery_at', today())->count()), 'tone' => 'blue'],
+                ['label' => 'Mañana', 'value' => number_format((clone $scheduled)->whereDate('delivery_at', today()->addDay())->count()), 'tone' => 'emerald'],
+                ['label' => 'Atrasados', 'value' => number_format((clone $scheduled)->whereNotNull('delivery_at')->whereDate('delivery_at', '<', today())->count()), 'tone' => 'rose'],
+            ],
+            'rows' => $open->map($row)->all(),
+            'filters' => [
+                'search' => $search,
+                'status' => $status,
+                'count' => $open->count(),
+            ],
+            'actions' => [
+                ['label' => 'Compartir mi tienda', 'url' => 'https://wa.me/?text='.rawurlencode('Mira mi catálogo: '.route('shops.show', $shop)), 'tone' => 'primary'],
+                ['label' => 'Ir a Terminal', 'url' => route('seller.shops.pos', $shop), 'tone' => 'secondary'],
+            ],
+            'note' => 'Los encargos con fecha aparecen organizados por entrega. Confirma el encargo al convertirlo en venta para descontar inventario y registrar el cobro.',
+        ];
+    }
+
+    private function dayCloseData(Shop $shop, ?string $requestedDate = null): array
+    {
+        $date = $requestedDate && preg_match('/^\d{4}-\d{2}-\d{2}$/', $requestedDate)
+            ? $requestedDate
+            : today()->toDateString();
+        $invoices = $shop->invoices()->whereDate('issued_at', $date)->where('status', '!=', 'void');
+        $expenses = $shop->expenses()->whereDate('occurred_at', $date);
         $payments = InvoicePayment::query()
             ->where('shop_id', $shop->id)
-            ->whereDate('received_at', today());
+            ->whereDate('received_at', $date);
         $salePayments = (clone $payments)->whereNull('customer_account_entry_id');
         $debtPayments = (clone $payments)->whereNotNull('customer_account_entry_id');
         $paymentBreakdown = (clone $salePayments)
@@ -927,8 +1127,8 @@ class SellerFeatureController extends Controller
         $refunds = DB::table('invoice_returns')
             ->join('invoices', 'invoices.id', '=', 'invoice_returns.invoice_id')
             ->where('invoices.shop_id', $shop->id)
-            ->whereDate('invoice_returns.created_at', today());
-        $cashSummary = $session ? app(CashRegisterService::class)->getSessionSummary($session) : null;
+            ->whereDate('invoice_returns.created_at', $date);
+        $dailyClose = app(DailyCloseService::class)->calculate($shop, $date);
         $paidSalesCents = (int) (clone $salePayments)->sum('amount_cents');
         $debtPaymentsCents = (int) (clone $debtPayments)->sum('amount_cents');
         $expenseCents = (int) (clone $expenses)->sum('amount_cents');
@@ -940,12 +1140,12 @@ class SellerFeatureController extends Controller
                 ['label' => 'Ventas cobradas', 'value' => $this->money($paidSalesCents / 100), 'tone' => 'blue'],
                 ['label' => 'Abonos recibidos', 'value' => $this->money($debtPaymentsCents / 100), 'tone' => 'emerald'],
                 ['label' => 'Gastos del día', 'value' => $this->money($expenseCents / 100), 'tone' => 'rose'],
-                ['label' => 'Caja', 'value' => $session ? 'Abierta' : 'Cerrada', 'tone' => $session ? 'emerald' : 'slate'],
+                ['label' => 'Efectivo esperado', 'value' => $this->money($dailyClose['expected_cash']), 'tone' => 'emerald'],
             ],
             'rows' => [
                 ['primary' => 'Ventas registradas', 'secondary' => 'Facturas no anuladas de hoy', 'value' => number_format((clone $invoices)->count()), 'status' => 'Listo'],
                 ['primary' => 'Gastos registrados', 'secondary' => 'Egresos con fecha de hoy', 'value' => number_format((clone $expenses)->count()), 'status' => 'Listo'],
-                ['primary' => 'Sesión de caja', 'secondary' => $session?->opened_at?->format('d/m/Y H:i') ?: 'No hay una sesión abierta', 'value' => $session ? 'Abierta' : 'Revisar', 'status' => $session ? 'Activa' : 'Pendiente'],
+                ['primary' => 'Cierre diario', 'secondary' => $dailyClose['closure'] ? 'Guardado por '.$dailyClose['closure']['closed_at'] : 'Todavía no guardado', 'value' => $dailyClose['closure'] ? 'Cerrado' : 'Pendiente', 'status' => $dailyClose['closure'] ? 'Listo' : 'Revisar'],
             ],
             'day_close' => [
                 'sales_total' => $this->money($paidSalesCents / 100),
@@ -955,17 +1155,20 @@ class SellerFeatureController extends Controller
                 'collections_count' => (int) (clone $debtPayments)->count(),
                 'expenses_total' => $this->money($expenseCents / 100),
                 'refunds_total' => $this->money($refundCents / 100),
-                'cash' => $cashSummary ? [
-                    'in' => $this->money($cashSummary['total_in']),
-                    'out' => $this->money($cashSummary['total_out']),
-                    'expected' => $this->money($cashSummary['expected_amount']),
-                ] : null,
+                'date' => $date,
+                'cash' => [
+                    'in' => $this->money($dailyClose['sales_cash'] + $dailyClose['debt_collections_cash'] + $dailyClose['other_inflows_cash']),
+                    'out' => $this->money($dailyClose['expenses_cash'] + $dailyClose['cash_out']),
+                    'expected' => $this->money($dailyClose['expected_cash']),
+                    'sales' => $this->money($dailyClose['sales_cash']),
+                    'collections' => $this->money($dailyClose['debt_collections_cash']),
+                    'expenses' => $this->money($dailyClose['expenses_cash']),
+                    'cash_out' => $this->money($dailyClose['cash_out']),
+                ],
             ],
-            'session' => $session ? [
-                'id' => $session->public_id,
-                'expected' => number_format($session->calculateExpectedBalance() / 100, 2, '.', ''),
-            ] : null,
-            'note' => 'El cierre resume ventas, gastos y caja. El arqueo usa la misma sesión financiera y conserva la diferencia registrada.',
+            'date' => $date,
+            'closure' => $dailyClose['closure'],
+            'note' => 'El cierre diario funciona sin abrir una sesión. Solo el efectivo entra en el esperado; tarjetas y transferencias se revisan aparte.',
         ];
     }
 
@@ -999,26 +1202,70 @@ class SellerFeatureController extends Controller
         ];
     }
 
-    private function priceHealthData(Shop $shop): array
+    private function priceHealthData(Shop $shop, ?string $statusFilter = null, ?string $search = null): array
     {
         $products = $shop->products()->with('inventory')->where('sale_unit', '!=', 'decant')->limit(100)->get();
         $rules = \DB::table('product_price_rules')->whereIn('product_id', $products->pluck('id'))->get()->keyBy('product_id');
-        $pending = $rules->filter(fn ($rule) => $rule->pending_price !== null)->count();
-        $withoutCost = $products->filter(fn (Product $product) => $product->inventory?->cost_price === null)->count();
+        $targetMargin = 40.0;
+        $rows = $products->map(function (Product $product) use ($rules, $targetMargin): array {
+            $cost = $product->inventory?->cost_price;
+            $price = (float) $product->currentPrice();
+            $rule = $rules[$product->id] ?? null;
+            $margin = $cost !== null && $price > 0
+                ? (($price - (float) $cost) / $price) * 100
+                : null;
+            $target = $rule?->margin_percent !== null ? (float) $rule->margin_percent : $targetMargin;
+            $status = match (true) {
+                $price <= 0 => 'Sin precio',
+                $cost === null => 'Sin costo',
+                (float) $cost <= 0 => 'Costo dudoso',
+                $price < (float) $cost => 'Bajo costo',
+                $margin !== null && $margin < $target => 'Margen bajo',
+                $rule?->pending_price !== null => 'Sugerencia',
+                default => 'Bien',
+            };
+
+            return [
+                'primary' => $product->name,
+                'secondary' => $cost !== null ? 'Costo RD$ '.number_format((float) $cost, 2) : 'Costo pendiente',
+                'value' => $price > 0 ? 'Precio RD$ '.number_format($price, 2) : 'Sin precio',
+                'status' => $status,
+                'margin_percent' => $margin === null ? null : number_format($margin, 1, '.', '').' %',
+                'target_margin_percent' => number_format($target, 1, '.', '').' %',
+                'suggested_price' => $rule?->pending_price === null ? null : number_format((float) $rule->pending_price, 2, '.', ''),
+            ];
+        })->values();
+
+        $allowedFilters = ['all', 'low_cost', 'low_margin', 'no_price', 'no_cost', 'cost_doubtful', 'suggestions'];
+        $statusFilter = in_array($statusFilter, $allowedFilters, true) ? $statusFilter : 'all';
+        $search = trim((string) $search);
+        $statusMap = [
+            'low_cost' => 'Bajo costo',
+            'low_margin' => 'Margen bajo',
+            'no_price' => 'Sin precio',
+            'no_cost' => 'Sin costo',
+            'cost_doubtful' => 'Costo dudoso',
+            'suggestions' => 'Sugerencia',
+        ];
+        $filteredRows = $rows
+            ->when($statusFilter !== 'all', fn ($collection) => $collection->where('status', $statusMap[$statusFilter]))
+            ->when($search !== '', fn ($collection) => $collection->filter(fn (array $row): bool => collect([$row['primary'], $row['secondary'], $row['value'], $row['status']])->contains(fn ($value): bool => str_contains(mb_strtolower((string) $value), mb_strtolower($search)))))
+            ->values();
 
         return [
             'kind' => 'table',
             'kpis' => [
-                ['label' => 'Reglas activas', 'value' => number_format($rules->count()), 'tone' => 'blue'],
-                ['label' => 'Aprobaciones', 'value' => number_format($pending), 'tone' => $pending ? 'amber' : 'emerald'],
-                ['label' => 'Sin costo', 'value' => number_format($withoutCost), 'tone' => $withoutCost ? 'rose' : 'emerald'],
+                ['label' => 'Bajo costo', 'value' => number_format($rows->where('status', 'Bajo costo')->count()), 'tone' => 'rose'],
+                ['label' => 'Margen bajo', 'value' => number_format($rows->where('status', 'Margen bajo')->count()), 'tone' => 'amber'],
+                ['label' => 'Sin precio', 'value' => number_format($rows->where('status', 'Sin precio')->count()), 'tone' => 'rose'],
+                ['label' => 'Sugerencias', 'value' => number_format($rows->where('status', 'Sugerencia')->count()), 'tone' => 'blue'],
             ],
-            'rows' => $products->map(fn (Product $product) => [
-                'primary' => $product->name,
-                'secondary' => $product->inventory?->cost_price !== null ? 'Costo RD$ '.number_format((float) $product->inventory->cost_price, 2) : 'Costo pendiente',
-                'value' => 'Precio RD$ '.number_format($product->currentPrice(), 2),
-                'status' => isset($rules[$product->id]) ? ($rules[$product->id]->pending_price !== null ? 'Revisar' : 'Regla activa') : 'Sin regla',
-            ])->all(),
+            'rows' => $filteredRows->all(),
+            'filters' => [
+                'search' => $search,
+                'status' => $statusFilter,
+                'count' => $filteredRows->count(),
+            ],
             'note' => 'Las bajadas de precio siguen esperando aprobación y las ventas conservan el costo real del lote.',
         ];
     }
@@ -1043,8 +1290,11 @@ class SellerFeatureController extends Controller
             $sourceRecovery = $recovery[$bottle->id] ?? null;
 
             return [
+                'id' => $bottle->public_id,
                 'name' => $bottle->name,
                 'volume_ml' => (int) ($bottle->volume_ml ?? 0),
+                'stock_quantity' => (int) ($inventory?->stock_quantity ?? 0),
+                'opened_bottles' => (int) ($inventory?->opened_bottles ?? 0),
                 'available_ml' => $availableMl === null ? null : (int) $availableMl,
                 'decants_count' => $bottle->decantProducts->count(),
                 'cost' => $sourceRecovery['cost'] ?? null,
@@ -1054,6 +1304,7 @@ class SellerFeatureController extends Controller
                 'covered' => $sourceRecovery['covered'] ?? false,
                 'message' => $sourceRecovery['message'] ?? 'Registra el costo para medir cuándo se recupera la botella.',
                 'url' => route('seller.shops.products.edit', [$shop, 'product' => $bottle]),
+                'open_url' => route('seller.shops.inventory.open-bottle', [$shop, 'product' => $bottle]),
             ];
         })->values()->all();
 
@@ -1086,22 +1337,37 @@ class SellerFeatureController extends Controller
                     'value' => $product->volume_ml
                         ? $product->volume_ml.' ml · '.number_format((int) ($product->inventory?->stock_quantity ?? 0)).' listos'
                         : 'Volumen pendiente',
-                    'status' => $source ? 'Vinculado' : 'Revisar',
+                    'status' => !$source
+                        ? 'Sin botella'
+                        : (($sourceInventory?->available_ml !== null
+                            && $product->volume_ml
+                            && (int) $sourceInventory->available_ml <= (int) $product->volume_ml)
+                            ? 'Se agota'
+                            : ((int) ($product->inventory?->stock_quantity ?? 0) > 0 ? 'Listos' : 'A pedido')),
                 ];
             })->all(),
             'note' => 'Los decants comparten el inventario de su producto de origen; no se duplica la valoración de la botella.',
             'bottleSources' => $bottleSources,
             'actions' => [
-                ['label' => 'Crear presentación decant', 'url' => route('seller.shops.products.create', $shop).'?sale_unit=decant', 'tone' => 'primary'],
+                ['label' => 'Abrir botella', 'url' => '#abrir-botella', 'tone' => 'secondary', 'modal' => true],
+                ['label' => 'Preparar decant', 'url' => route('seller.shops.products.create', $shop).'?sale_unit=decant', 'tone' => 'primary'],
                 ['label' => 'Ver inventario compartido', 'url' => route('seller.shops.inventory.index', $shop), 'tone' => 'secondary'],
                 ['label' => 'Ver lotes y costos FIFO', 'url' => route('seller.shops.inventory.lots', $shop), 'tone' => 'secondary'],
             ],
         ];
     }
 
-    private function attributesData(Shop $shop): array
+    private function attributesData(Shop $shop, ?string $search = null): array
     {
-        $attributes = $shop->attributeDefinitions()->with('shopCategory')->get();
+        $search = trim((string) $search);
+        $attributes = $shop->attributeDefinitions()
+            ->where('is_active', true)
+            ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search): void {
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('type', 'like', "%{$search}%");
+            }))
+            ->with('shopCategory')
+            ->get();
 
         return [
             'kind' => 'table',
@@ -1111,11 +1377,16 @@ class SellerFeatureController extends Controller
                 ['label' => 'Filtrables', 'value' => number_format($attributes->where('filterable', true)->count()), 'tone' => 'emerald'],
             ],
             'rows' => $attributes->map(fn (AttributeDefinition $attribute) => [
+                'id' => (string) $attribute->id,
                 'primary' => $attribute->name,
                 'secondary' => $attribute->shopCategory?->name ?: 'Todas las categorías',
                 'value' => ucfirst($attribute->type),
                 'status' => $attribute->required ? 'Obligatorio' : 'Opcional',
+                'filterable' => (bool) $attribute->filterable,
+                'edit_url' => route('seller.shops.attributes.update', [$shop, 'attribute' => $attribute]),
+                'retire_url' => route('seller.shops.attributes.update', [$shop, 'attribute' => $attribute]),
             ])->all(),
+            'filters' => ['search' => $search, 'count' => $attributes->count()],
             'note' => 'La definición de atributos ya está centralizada en el catálogo y se puede reutilizar para marcas, tallas, colores o concentraciones.',
         ];
     }
@@ -1123,6 +1394,26 @@ class SellerFeatureController extends Controller
     private function creditData(Shop $shop): array
     {
         $customers = $shop->customers()->where('balance', '>', 0)->orderByDesc('balance')->limit(30)->get();
+        $payments = CustomerAccountEntry::query()
+            ->where('shop_id', $shop->id)
+            ->where('type', 'payment')
+            ->with('customer')
+            ->latest('created_at')
+            ->limit(30)
+            ->get();
+
+        $receivableRows = $customers->map(fn (Customer $customer): array => [
+            'primary' => $customer->name,
+            'secondary' => $customer->phone ?: 'Sin teléfono',
+            'value' => $this->money($customer->balance),
+            'status' => (float) $customer->balance > (float) $customer->credit_limit ? 'Excedido' : 'Pendiente',
+        ])->values()->all();
+        $paidRows = $payments->map(fn (CustomerAccountEntry $entry): array => [
+            'primary' => $entry->customer?->name ?: 'Cliente eliminado',
+            'secondary' => ($entry->created_at?->format('d/m/Y H:i') ?: 'Sin fecha').' · '.($entry->notes ?: 'Abono registrado'),
+            'value' => $this->money(abs((float) $entry->amount)),
+            'status' => 'Pagado',
+        ])->values()->all();
 
         return [
             'kind' => 'table',
@@ -1131,12 +1422,11 @@ class SellerFeatureController extends Controller
                 ['label' => 'Por cobrar', 'value' => $this->money($shop->customers()->sum('balance')), 'tone' => 'rose'],
                 ['label' => 'Límite asignado', 'value' => $this->money($shop->customers()->sum('credit_limit')), 'tone' => 'blue'],
             ],
-            'rows' => $customers->map(fn (Customer $customer) => [
-                'primary' => $customer->name,
-                'secondary' => $customer->phone ?: 'Sin teléfono',
-                'value' => $this->money($customer->balance),
-                'status' => (float) $customer->balance > (float) $customer->credit_limit ? 'Excedido' : 'Pendiente',
-            ])->all(),
+            'rows' => $receivableRows,
+            'creditTabs' => [
+                'receivable' => $receivableRows,
+                'paid' => $paidRows,
+            ],
             'note' => 'Los créditos y abonos se registran desde Clientes para conservar la asignación contable y evitar saldos manuales.',
         ];
     }
@@ -1230,9 +1520,44 @@ class SellerFeatureController extends Controller
         ];
     }
 
-    private function commissionsData(Shop $shop): array
+    private function commissionsData(Shop $shop, ?string $period = null): array
     {
-        $invoices = $shop->invoices()->with('salesperson')->where('commission_amount', '>', 0)->latest('issued_at')->limit(30)->get();
+        $period = in_array($period, ['current_fortnight', 'previous_fortnight', 'month'], true)
+            ? $period
+            : 'current_fortnight';
+        [$from, $to] = $this->commissionPeriod($period);
+        $invoices = $shop->invoices()
+            ->with('salesperson')
+            ->whereNotNull('salesperson_id')
+            ->where('status', '!=', 'void')
+            ->whereBetween('issued_at', [$from, $to])
+            ->latest('issued_at')
+            ->limit(100)
+            ->get();
+        $returnsBySeller = DB::table('invoice_returns')
+            ->join('invoices', 'invoices.id', '=', 'invoice_returns.invoice_id')
+            ->where('invoices.shop_id', $shop->id)
+            ->whereNotNull('invoices.salesperson_id')
+            ->whereBetween('invoice_returns.created_at', [$from, $to])
+            ->selectRaw('invoices.salesperson_id, COALESCE(SUM(invoice_returns.total), 0) as total')
+            ->groupBy('invoices.salesperson_id')
+            ->pluck('total', 'salesperson_id');
+        $summaryRows = $invoices->groupBy('salesperson_id')->map(function ($sellerInvoices, $sellerId) use ($returnsBySeller): array {
+            $first = $sellerInvoices->first();
+            $returns = (float) ($returnsBySeller->get($sellerId) ?? 0);
+            $type = $first?->commission_type;
+            $rate = $type === 'percentage' ? number_format((float) $first->commission_value, 2).'%' : ($type === 'fixed' ? 'Fijo' : '—');
+
+            return [
+                'primary' => $first?->salesperson?->name ?: 'Vendedor no asignado',
+                'secondary' => number_format($sellerInvoices->count()).' venta(s)',
+                'rate' => $rate,
+                'sales' => $this->money($sellerInvoices->sum('total')),
+                'returns' => $returns > 0 ? $this->money($returns) : '—',
+                'base' => $this->money($sellerInvoices->sum('total') - $returns),
+                'commission' => $this->money($sellerInvoices->sum('commission_amount')),
+            ];
+        })->values()->all();
 
         return [
             'kind' => 'table',
@@ -1247,8 +1572,42 @@ class SellerFeatureController extends Controller
                 'value' => $this->money($invoice->commission_amount),
                 'status' => 'Calculada',
             ])->all(),
-            'note' => 'Las comisiones se leen desde la fotografía guardada en cada venta; cambiar una regla no altera ventas históricas.',
+            'commissionRows' => $summaryRows,
+            'commissionPeriods' => [
+                'current_fortnight' => 'Esta quincena',
+                'previous_fortnight' => 'Quincena pasada',
+                'month' => 'Este mes',
+            ],
+            'commissionPeriod' => $period,
+            'commissionDateLabel' => $from->format('Y-m-d').' a '.$to->format('Y-m-d'),
+            'commissionPayable' => $this->money($invoices->sum('commission_amount')),
+            'note' => 'Período: '.$this->commissionPeriodLabel($period).'. Las comisiones se leen desde la fotografía guardada en cada venta; cambiar una regla no altera ventas históricas.',
         ];
+    }
+
+    /** @return array{0: \Carbon\Carbon, 1: \Carbon\Carbon} */
+    private function commissionPeriod(string $period): array
+    {
+        $today = now();
+
+        return match ($period) {
+            'month' => [$today->copy()->startOfMonth(), $today->copy()->endOfDay()],
+            'previous_fortnight' => $today->day <= 15
+                ? [$today->copy()->subMonthNoOverflow()->day(16)->startOfDay(), $today->copy()->subMonthNoOverflow()->endOfMonth()]
+                : [$today->copy()->startOfMonth()->startOfDay(), $today->copy()->day(15)->endOfDay()],
+            default => $today->day <= 15
+                ? [$today->copy()->startOfMonth()->startOfDay(), $today->copy()->day(15)->endOfDay()]
+                : [$today->copy()->day(16)->startOfDay(), $today->copy()->endOfMonth()],
+        };
+    }
+
+    private function commissionPeriodLabel(string $period): string
+    {
+        return match ($period) {
+            'month' => 'este mes',
+            'previous_fortnight' => 'quincena pasada',
+            default => 'quincena actual',
+        };
     }
 
     private function money(float|int|string|null $amount): string

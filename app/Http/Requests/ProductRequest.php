@@ -39,6 +39,15 @@ class ProductRequest extends FormRequest
             'sale_starts_at' => ['nullable', 'date'],
             'sale_ends_at' => ['nullable', 'date', 'after_or_equal:sale_starts_at'],
             'sale_unit' => ['nullable', Rule::in(['unit', 'bottle', 'ml', 'decant', 'service'])],
+            'is_combo' => ['nullable', 'boolean'],
+            'combo_items' => ['nullable', 'array', 'max:30'],
+            'combo_items.*.product_id' => [
+                'required',
+                'integer',
+                'distinct',
+                Rule::exists('products', 'id')->where('shop_id', $shop?->id),
+            ],
+            'combo_items.*.quantity' => ['required', 'integer', 'min:1', 'max:1000'],
             'volume_ml' => ['required_if:sale_unit,bottle,ml,decant', 'nullable', 'integer', 'min:1', 'max:100000'],
             'inventory_source_product_id' => [
                 'required_if:sale_unit,decant',
@@ -93,6 +102,37 @@ class ProductRequest extends FormRequest
                 }
                 if (! is_numeric($this->input('price')) || (float) $this->input('price') <= 0) {
                     $validator->errors()->add('price', 'Indica un precio mayor que RD$ 0 para el servicio.');
+                }
+            }
+
+            if ($this->boolean('is_combo')) {
+                if ($saleUnit !== 'unit') {
+                    $validator->errors()->add('sale_unit', 'Un combo se vende como una unidad agrupada.');
+                }
+
+                $items = collect($this->input('combo_items', []))
+                    ->filter(fn ($item): bool => filled($item['product_id'] ?? null));
+                if ($items->isEmpty()) {
+                    $validator->errors()->add('combo_items', 'Agrega al menos un producto al combo.');
+                }
+
+                $ids = $items->pluck('product_id')->map(fn ($id): int => (int) $id)->values();
+                if ($ids->isNotEmpty()) {
+                    $components = $shop?->products()->with('inventory')->whereIn('id', $ids)->get()->keyBy('id');
+                    foreach ($ids as $id) {
+                        $component = $components->get($id);
+                        if (! $component) {
+                            continue;
+                        }
+                        if ($component->isCombo()) {
+                            $validator->errors()->add('combo_items', 'No se pueden anidar combos dentro de otros combos.');
+                        } elseif ($component->isService() || ! $component->inventory?->track_inventory) {
+                            $validator->errors()->add('combo_items', "El producto {$component->name} debe tener inventario activo y no puede ser un servicio.");
+                        }
+                        if ((int) data_get($this->route('product'), 'id', 0) === $component->id) {
+                            $validator->errors()->add('combo_items', 'Un combo no puede contenerse a sí mismo.');
+                        }
+                    }
                 }
             }
 

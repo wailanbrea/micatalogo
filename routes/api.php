@@ -1,7 +1,10 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AdminShopController;
+use App\Http\Controllers\Api\V1\AttributeController;
+use App\Http\Controllers\Api\V1\AccountantAccessController;
 use App\Http\Controllers\Api\V1\AndroidUpdateController;
+use App\Http\Controllers\SellerAuthorizationController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CashRegisterController;
 use App\Http\Controllers\Api\V1\CatalogController;
@@ -13,9 +16,12 @@ use App\Http\Controllers\Api\V1\InventoryImportController;
 use App\Http\Controllers\Api\V1\MobileOperationController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\PosSaleController;
+use App\Http\Controllers\Api\V1\PartnerController;
+use App\Http\Controllers\Api\V1\PricingController;
 use App\Http\Controllers\Api\V1\PurchaseController;
 use App\Http\Controllers\Api\V1\QuoteController;
 use App\Http\Controllers\Api\V1\ShopController;
+use App\Http\Controllers\Api\V1\ShopSettingsController;
 use App\Http\Controllers\SellerFeatureController;
 use App\Http\Middleware\EnsureApiAccountIsActive;
 use Illuminate\Support\Facades\Route;
@@ -31,13 +37,35 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/admin/shops', [AdminShopController::class, 'index']);
         Route::put('/admin/shops/{shop}', [AdminShopController::class, 'update']);
         Route::post('/shops/{shop}/sellers', [ShopController::class, 'storeSeller']);
+        Route::post('/shops/{shop}/accountant-access', [AccountantAccessController::class, 'store']);
         Route::put('/shops/{shop}/sellers/{seller}/menus', [ShopController::class, 'updateSellerMenus']);
         Route::get('/shops/{shop}/catalog', [CatalogController::class, 'show']);
+        Route::get('/shops/{shop}/settings', [ShopSettingsController::class, 'show'])->middleware('menu:shop_settings');
+        Route::put('/shops/{shop}/settings', [ShopSettingsController::class, 'update'])->middleware('menu:shop_settings');
+        Route::post('/shops/{shop}/media/logo', [ShopSettingsController::class, 'uploadLogo'])->middleware('menu:shop_settings');
         Route::get('/shops/{shop}/features/{feature}', [SellerFeatureController::class, 'api'])
             ->where('feature', '[a-z_]+');
+        Route::post('/shops/{shop}/authorization-requests', [SellerAuthorizationController::class, 'storeApi']);
+        Route::post('/shops/{shop}/authorization-requests/{authorizationRequest}/approve', [SellerAuthorizationController::class, 'approveApi']);
+        Route::post('/shops/{shop}/authorization-requests/{authorizationRequest}/reject', [SellerAuthorizationController::class, 'rejectApi']);
+        Route::post('/shops/{shop}/pricing/recalculate', [PricingController::class, 'recalculate'])
+            ->middleware('menu:pricing');
+        Route::put('/shops/{shop}/attributes/{attribute}', [AttributeController::class, 'update'])
+            ->middleware('menu:attributes');
+        Route::post('/shops/{shop}/products/{product}/pricing-rule', [PricingController::class, 'storeRule'])
+            ->middleware('menu:pricing');
+        Route::post('/shops/{shop}/products/{product}/pricing-approval', [PricingController::class, 'approve'])
+            ->middleware('menu:pricing');
+        Route::post('/shops/{shop}/partners', [PartnerController::class, 'store'])
+            ->middleware('menu:partners');
+        Route::post('/shops/{shop}/partners/{partner}/transactions', [PartnerController::class, 'transaction'])
+            ->middleware('menu:partners');
         Route::get('/shops/{shop}/reports/export', [SellerFeatureController::class, 'exportReports'])
             ->middleware('menu:reports');
         Route::get('/shops/{shop}/purchases', [PurchaseController::class, 'index'])->middleware('menu:containers');
+        Route::get('/shops/{shop}/suppliers', [PurchaseController::class, 'suppliers'])->middleware('menu:suppliers');
+        Route::post('/shops/{shop}/suppliers', [PurchaseController::class, 'storeSupplier'])->middleware('menu:suppliers');
+        Route::post('/shops/{shop}/purchases/preview', [PurchaseController::class, 'preview'])->middleware('menu:containers');
         Route::post('/shops/{shop}/purchases', [PurchaseController::class, 'store'])->middleware('menu:containers');
         Route::post('/shops/{shop}/purchases/{document}/receive', [PurchaseController::class, 'receive'])->middleware('menu:containers');
         Route::post('/shops/{shop}/inventory-import/preview', [InventoryImportController::class, 'preview']);
@@ -62,6 +90,8 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/shops/{shop}/finance/summary', [FinanceReportController::class, 'summary']);
         Route::get('/shops/{shop}/reports/income-statement', [FinanceReportController::class, 'incomeStatement']);
         Route::get('/shops/{shop}/reports/cash-flow', [FinanceReportController::class, 'cashFlow']);
+        Route::get('/shops/{shop}/finance/day-close', [FinanceReportController::class, 'dayClose']);
+        Route::post('/shops/{shop}/finance/day-close', [FinanceReportController::class, 'closeDay']);
 
         Route::get('/shops/{shop}/cash-sessions/current', [CashRegisterController::class, 'current'])->middleware('menu:cash');
         Route::post('/shops/{shop}/cash-sessions/open', [CashRegisterController::class, 'open'])->middleware('menu:cash');

@@ -7,6 +7,7 @@ use App\Enums\ProductImageProcessingStatus;
 use App\Enums\ProductModerationStatus;
 use App\Models\Shop;
 use App\Services\MetricRecordingService;
+use App\Services\ShopOperationalSettingsService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -23,7 +24,17 @@ class PublicShopController extends Controller
         $minPrice = $request->filled('min_price') && is_numeric($request->query('min_price')) ? (float) $request->query('min_price') : null;
         $maxPrice = $request->filled('max_price') && is_numeric($request->query('max_price')) ? (float) $request->query('max_price') : null;
         $stock = $request->query('stock');
-        $sort = $request->query('sort', 'latest');
+        $catalogSettings = app(ShopOperationalSettingsService::class)->forShop($shop)['catalog'];
+        $sortWasExplicit = $request->has('sort');
+        $sort = $request->query('sort');
+        if (! in_array($sort, ['latest', 'price_asc', 'price_desc', 'name_asc'], true)) {
+            $sort = match ($catalogSettings['sort']) {
+                'price_asc' => 'price_asc',
+                'price_desc' => 'price_desc',
+                'name_asc' => 'name_asc',
+                default => 'latest',
+            };
+        }
         $selectedAttributes = collect($request->input('atributo', []))
             ->map(fn ($values) => is_array($values) ? collect($values)->filter()->values()->all() : array_filter([(string) $values]))
             ->filter(fn ($values) => $values !== [])
@@ -110,6 +121,9 @@ class PublicShopController extends Controller
                 $query->whereHas('inventory', fn ($inventory) => $inventory
                     ->where('track_inventory', true)
                     ->where('stock_quantity', '>', 0))
+                    ->orWhere(fn ($combo) => $combo
+                        ->where('is_combo', true)
+                        ->where('availability_status', ProductAvailabilityStatus::Available))
                     ->orWhere(function ($untracked) {
                         $untracked->where('availability_status', ProductAvailabilityStatus::Available)
                             ->where(function ($inventory) {
@@ -118,6 +132,31 @@ class PublicShopController extends Controller
                             });
                     });
             });
+        }
+
+        if ($catalogSettings['hide_out_of_stock']) {
+            $productsQuery->where(function ($query) {
+                $query->whereHas('inventory', fn ($inventory) => $inventory
+                    ->where(function ($inventory) {
+                        $inventory->where('track_inventory', false)
+                            ->orWhere('stock_quantity', '>', 0);
+                    }))
+                    ->orWhere(fn ($combo) => $combo
+                        ->where('is_combo', true)
+                        ->where('availability_status', ProductAvailabilityStatus::Available))
+                    ->orWhere(function ($untracked) {
+                        $untracked->where('availability_status', ProductAvailabilityStatus::Available)
+                            ->whereDoesntHave('inventory');
+                    });
+            });
+        }
+
+        if ($catalogSettings['offers_first']) {
+            $now = now();
+            $productsQuery->orderByRaw(
+                'CASE WHEN sale_price IS NOT NULL AND sale_price < price AND (sale_starts_at IS NULL OR sale_starts_at <= ?) AND (sale_ends_at IS NULL OR sale_ends_at >= ?) THEN 0 ELSE 1 END',
+                [$now, $now]
+            );
         }
 
         if ($sort === 'price_asc') {
@@ -136,7 +175,7 @@ class PublicShopController extends Controller
             || $maxPrice !== null
             || $stock === 'available'
             || $selectedAttributes !== []
-            || ($sort && $sort !== 'latest');
+            || ($sortWasExplicit && $sort !== 'latest');
 
         $products = $productsQuery->paginate(16)->withQueryString();
 

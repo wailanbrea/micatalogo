@@ -14,7 +14,7 @@ class ShopPolicy
 
     public function view(User $user, Shop $shop): bool
     {
-        return $user->ownsShop($shop) || $user->isActiveShopMember($shop);
+        return $user->ownsShop($shop) || $user->isActiveShopMember($shop) || $user->isActiveShopAccountant($shop);
     }
 
     public function create(User $user): bool
@@ -24,18 +24,21 @@ class ShopPolicy
 
     public function update(User $user, Shop $shop): bool
     {
-        return $user->ownsShop($shop) || $user->isActiveShopMember($shop);
+        return $user->ownsShop($shop) || $user->isActiveShopManager($shop);
     }
 
     public function viewFinance(User $user, Shop $shop): bool
     {
-        return ($user->isAdmin() || $user->canSellAtShop($shop))
+        return ($user->isAdmin() || $user->canSellAtShop($shop) || $user->isActiveShopAccountant($shop))
             && in_array('finance', app(\App\Services\SellerMenuService::class)->visibleForUser($shop, $user), true);
     }
 
     public function sell(User $user, Shop $shop): bool
     {
-        return $user->canSellAtShop($shop);
+        // Feature pages use this ability as a shop-context gate. Mutating
+        // routes still require their own menu/ability checks, so accountants
+        // can read finance/help modules without gaining POS access.
+        return $user->canSellAtShop($shop) || $user->isActiveShopAccountant($shop);
     }
 
     public function delete(User $user, Shop $shop): bool

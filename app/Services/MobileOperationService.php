@@ -60,6 +60,10 @@ class MobileOperationService
             $hasPresentationInput = array_key_exists('sale_unit', $data)
                 || array_key_exists('volume_ml', $data)
                 || array_key_exists('inventory_source_product_id', $data);
+            $isCombo = (bool) ($data['is_combo'] ?? (array_key_exists('combo_items', $data) ? true : ($product?->isCombo() ?? false)));
+            if ($isCombo) {
+                abort_if(($data['sale_unit'] ?? $product?->sale_unit ?? 'unit') !== 'unit', 422, 'Un combo se vende como una unidad agrupada.');
+            }
             $presentation = ! $product || $hasPresentationInput
                 ? $this->mobilePresentation($shop, $data, $product)
                 : [
@@ -73,12 +77,14 @@ class MobileOperationService
                 $name = $data['name'] ?? throw ValidationException::withMessages(['name' => 'Indica el nombre.']);
                 $price = $data['price'] ?? throw ValidationException::withMessages(['price' => 'Indica el precio.']);
                 $isService = $presentation['sale_unit'] === 'service';
+                $published = (bool) ($data['published'] ?? true);
                 $product = $shop->products()->make(['name' => $name, 'price' => $price,
                     'slug' => (Str::slug($name) ?: 'producto').'-'.strtolower($data['product_id']),
-                    'currency' => 'DOP', 'sale_unit' => $presentation['sale_unit'], 'volume_ml' => $presentation['volume_ml'],
+                    'currency' => 'DOP', 'sale_unit' => $presentation['sale_unit'], 'is_combo' => $isCombo, 'volume_ml' => $presentation['volume_ml'],
                     'inventory_source_product_id' => $presentation['inventory_source_product_id'],
-                    'moderation_status' => ProductModerationStatus::Active,
-                    'availability_status' => $isService ? ProductAvailabilityStatus::Available : ProductAvailabilityStatus::OutOfStock, 'published_at' => now()]);
+                    'moderation_status' => $published ? ProductModerationStatus::Active : ProductModerationStatus::Draft,
+                    'availability_status' => $isService ? ProductAvailabilityStatus::Available : ProductAvailabilityStatus::OutOfStock,
+                    'published_at' => $published ? now() : null]);
                 $product->forceFill(['public_id' => $data['product_id']])->save();
                 $initialStock = 0;
                 $initialAvailableMl = null;
@@ -95,9 +101,9 @@ class MobileOperationService
                             : ProductAvailabilityStatus::OutOfStock,
                     ])->save();
                 }
-                $product->inventory()->create(['track_inventory' => ! $isService, 'stock_quantity' => $isService ? 0 : $initialStock, 'available_ml' => null,
-                    'cost_price' => $data['cost_price'] ?? null, 'sold_quantity' => 0, 'low_stock_threshold' => $data['minimum_stock'] ?? 3]);
-                if (! $isService) {
+                $product->inventory()->create(['track_inventory' => ! $isService && ! $isCombo, 'stock_quantity' => $isService || $isCombo ? 0 : $initialStock, 'available_ml' => null,
+                    'cost_price' => $isCombo ? null : ($data['cost_price'] ?? null), 'sold_quantity' => 0, 'low_stock_threshold' => $data['minimum_stock'] ?? 3]);
+                if (! $isService && ! $isCombo) {
                     app(InventoryService::class)->synchronizeDecantStock($product);
                 }
             } else {
@@ -118,6 +124,12 @@ class MobileOperationService
                         'inventory_source_product_id' => $presentation['inventory_source_product_id'],
                     ]);
                 }
+                if (array_key_exists('is_combo', $data)) {
+                    $product->is_combo = $isCombo;
+                    if ($isCombo) {
+                        $product->sale_unit = 'unit';
+                    }
+                }
             }
             foreach (['name' => 'name', 'internal_code' => 'product_code', 'barcode' => 'barcode', 'description' => 'description'] as $input => $column) {
                 if (array_key_exists($input, $data)) {
@@ -133,9 +145,19 @@ class MobileOperationService
                 $product->shop_category_id = $category->id;
             }
             $product->save();
+            if (array_key_exists('combo_items', $data) || ($product->isCombo() && ! $product->comboItems()->exists())) {
+                $this->syncMobileComboItems($shop, $product, $data['combo_items'] ?? []);
+            }
             app(InventoryService::class)->synchronizeDecantStock($product);
             if (isset($data['minimum_stock'])) {
                 $product->inventory?->update(['low_stock_threshold' => $data['minimum_stock']]);
+            }
+            if (array_key_exists('published', $data)) {
+                $published = (bool) $data['published'];
+                $product->forceFill([
+                    'moderation_status' => $published ? ProductModerationStatus::Active : ProductModerationStatus::Draft,
+                    'published_at' => $published ? ($product->published_at ?: now()) : null,
+                ])->save();
             }
             if (isset($data['image_base64'])) {
                 $this->productImage($shop, $product, $data);
@@ -147,6 +169,16 @@ class MobileOperationService
             } elseif ($data['type'] === 'restock') {
                 app(InventoryService::class)->recordRestock($product, $data['quantity'], $data['notes'] ?? null, $user->id,
                     isset($data['unit_cost']) ? (float) $data['unit_cost'] : null);
+            } elseif ($data['type'] === 'open_bottle') {
+                app(BusinessCapabilityService::class)->assert($shop, 'decants');
+                $inventory = $product->inventory()->lockForUpdate()->firstOrFail();
+                if ($inventory->stock_quantity !== $data['expected_stock']) {
+                    throw new InvalidArgumentException('La cantidad de botellas cambió; vuelve a sincronizar antes de abrirla.', 409);
+                }
+                if (array_key_exists('expected_available_ml', $data) && $inventory->available_ml !== $data['expected_available_ml']) {
+                    throw new InvalidArgumentException('Los mililitros disponibles cambiaron; vuelve a sincronizar antes de abrirla.', 409);
+                }
+                app(InventoryService::class)->openBottle($product, $data['quantity'], $data['notes'] ?? null, $user->id);
             } elseif ($data['type'] === 'adjustment') {
                 $inventory = $product->inventory()->lockForUpdate()->firstOrFail();
                 if ($inventory->stock_quantity !== $data['expected_stock']) {
@@ -159,8 +191,11 @@ class MobileOperationService
             }
         }
 
-        return ['product_id' => $product->public_id, 'price' => number_format($product->fresh()->currentPrice(), 2, '.', ''),
-            'stock' => $product->inventory?->fresh()?->stock_quantity];
+        $fresh = $product->fresh(['inventory', 'comboItems.component.inventory']);
+        return ['product_id' => $fresh->public_id, 'price' => number_format($fresh->currentPrice(), 2, '.', ''),
+            'stock' => $fresh->isCombo() ? $fresh->comboAvailableQuantity() : $fresh->inventory?->stock_quantity,
+            'opened_bottles' => $fresh->inventory?->opened_bottles,
+            'available_ml' => $fresh->inventory?->available_ml];
     }
 
     /**
@@ -170,6 +205,10 @@ class MobileOperationService
      */
     private function mobilePresentation(Shop $shop, array $data, ?Product $product): array
     {
+        if ((bool) ($data['is_combo'] ?? $product?->isCombo() ?? false)) {
+            return ['sale_unit' => 'unit', 'volume_ml' => null, 'inventory_source_product_id' => null];
+        }
+
         $saleUnit = (string) ($data['sale_unit'] ?? $product?->sale_unit ?? 'unit');
         $volume = array_key_exists('volume_ml', $data) ? $data['volume_ml'] : $product?->volume_ml;
         $sourcePublicId = array_key_exists('inventory_source_product_id', $data)
@@ -222,6 +261,36 @@ class MobileOperationService
         }
 
         return ['sale_unit' => 'decant', 'volume_ml' => (int) $volume, 'inventory_source_product_id' => $source->id];
+    }
+
+    private function syncMobileComboItems(Shop $shop, Product $product, array $items): void
+    {
+        if (! $product->isCombo()) {
+            $product->comboItems()->delete();
+            return;
+        }
+
+        $resolved = [];
+        foreach ($items as $item) {
+            $component = $shop->products()->with('inventory')->where('public_id', $item['product_id'] ?? null)->first();
+            if (! $component || $component->id === $product->id || $component->isCombo() || $component->isService() || ! $component->inventory?->track_inventory) {
+                throw ValidationException::withMessages(['combo_items' => 'Cada componente debe ser un producto con inventario activo y no puede ser otro combo.']);
+            }
+            $resolved[$component->id] = ($resolved[$component->id] ?? 0) + (int) $item['quantity'];
+        }
+        if ($resolved === []) {
+            throw ValidationException::withMessages(['combo_items' => 'Agrega al menos un producto al combo.']);
+        }
+
+        $product->comboItems()->delete();
+        foreach ($resolved as $componentId => $quantity) {
+            $product->comboItems()->create(['component_product_id' => $componentId, 'quantity' => $quantity]);
+        }
+        $product->forceFill([
+            'availability_status' => $product->fresh(['comboItems.component.inventory'])->comboAvailableQuantity() > 0
+                ? ProductAvailabilityStatus::Available
+                : ProductAvailabilityStatus::OutOfStock,
+        ])->saveQuietly();
     }
 
     private function productImage(Shop $shop, Product $product, array $data): void

@@ -78,6 +78,24 @@
                     </p>
                 </div>
 
+                <div class="rounded-2xl border border-blue-100 bg-blue-50/60 p-4 sm:p-5">
+                    <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                        <div>
+                            <p class="text-[11px] font-black uppercase tracking-[0.16em] text-blue-700">Regla global</p>
+                            <h2 class="mt-1 text-base font-black text-slate-900">Configura todos los productos de una vez</h2>
+                            <p class="mt-1 max-w-2xl text-xs leading-5 text-blue-900/70">No cambia precios ahora. Solo deja la misma regla preparada para los próximos costos recibidos.</p>
+                        </div>
+                        <form method="POST" action="{{ route('seller.shops.pricing.bulk-rule', $shop) }}" class="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                            @csrf
+                            <input type="hidden" name="scope" value="all">
+                            <label class="text-xs font-bold text-slate-700">Margen %<input name="margin_percent" type="number" min="0" max="95" step="0.01" value="40" required class="mt-1 w-full rounded-lg border border-blue-200 bg-white px-2.5 py-2 text-xs"></label>
+                            <label class="text-xs font-bold text-slate-700">Redondear a RD$<input name="round_step" type="number" min="0.01" step="0.01" value="1.00" required class="mt-1 w-full rounded-lg border border-blue-200 bg-white px-2.5 py-2 text-xs"></label>
+                            <label class="flex items-center gap-2 self-end pb-2 text-xs font-semibold text-slate-700"><input name="auto_increase" type="checkbox" value="1" class="rounded text-blue-600"> Aplicar subidas automáticamente</label>
+                            <button class="self-end rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-black text-white hover:bg-blue-700">Guardar regla global</button>
+                        </form>
+                    </div>
+                </div>
+
                 <div class="space-y-4 pt-2">
                     @forelse ($products as $product)
                         @php($rule = $rules->get($product->id))

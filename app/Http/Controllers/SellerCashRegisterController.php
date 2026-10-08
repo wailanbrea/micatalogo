@@ -91,7 +91,7 @@ class SellerCashRegisterController extends Controller
         abort_unless($cashRegisterService->canManageSession($shop, $request->user(), $session), 403, 'No tienes permiso para cerrar la sesión de caja de otro usuario.');
 
         $validated = $request->validate([
-            'counted_amount' => ['required', 'numeric', 'min:0'],
+            'counted_amount' => ['nullable', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
@@ -103,12 +103,13 @@ class SellerCashRegisterController extends Controller
                 $validated['notes'] ?? null
             );
 
-            $diff = $closed->difference_cents / 100.0;
-            $diffText = $diff == 0.0
-                ? 'Arqueo perfecto: caja cuadrada.'
-                : ($diff > 0
-                    ? 'Caja cerrada con SOBRANTE de RD$ '.number_format($diff, 2)
-                    : 'Caja cerrada con FALTANTE de RD$ '.number_format(abs($diff), 2));
+            $diffText = $closed->difference_cents === null
+                ? 'Cierre sin arqueo registrado.'
+                : (($closed->difference_cents / 100.0) == 0.0
+                    ? 'Arqueo perfecto: caja cuadrada.'
+                    : ($closed->difference_cents > 0
+                        ? 'Caja cerrada con SOBRANTE de RD$ '.number_format($closed->difference_cents / 100.0, 2)
+                        : 'Caja cerrada con FALTANTE de RD$ '.number_format(abs($closed->difference_cents / 100.0), 2)));
 
             return back()->with('status', 'Caja cerrada. '.$diffText);
         } catch (InvalidArgumentException $e) {

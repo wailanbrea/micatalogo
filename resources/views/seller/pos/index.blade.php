@@ -141,6 +141,16 @@
                         </template>
                     </div>
 
+                    @can('update', $shop)
+                        <div class="mt-3 flex justify-end">
+                            <a href="{{ route('seller.shops.products.create', $shop).'?sale_unit=service' }}" class="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3.5 py-2 text-xs font-black text-blue-700 transition hover:border-blue-300 hover:bg-blue-100" aria-label="Crear nuevo servicio">
+                                <span class="text-base leading-none">＋</span>
+                                Servicio
+                                <kbd class="rounded-md bg-white px-1.5 py-0.5 text-[10px] font-black text-blue-600 ring-1 ring-blue-200">F4</kbd>
+                            </a>
+                        </div>
+                    @endcan
+
                     <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
                         <template x-for="product in filteredProducts" :key="product.id">
                             <article class="group relative flex min-h-[285px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg hover:shadow-blue-100/60">
@@ -323,6 +333,22 @@
                                         @endforeach
                                     </div>
                                     <input id="payment_method" type="hidden" x-model="paymentMethod">
+                                    <div x-show="paymentMethod === 'bank_transfer'" x-cloak class="mt-3 rounded-2xl border border-blue-200 bg-blue-50/70 p-4">
+                                        <div class="flex items-center justify-between gap-3">
+                                            <div><p class="text-xs font-black uppercase tracking-[0.14em] text-blue-900">Cuentas para transferir</p><p class="mt-1 text-[11px] text-blue-800">Selecciona o comparte estos datos con el cliente.</p></div>
+                                            <span class="rounded-full bg-white px-2.5 py-1 text-[10px] font-black text-blue-700">{{ $paymentAccounts->count() }} activa(s)</span>
+                                        </div>
+                                        @forelse ($paymentAccounts as $account)
+                                            <div class="mt-3 rounded-xl border border-blue-100 bg-white p-3 text-xs text-slate-700">
+                                                <p class="font-black text-slate-900">{{ $account->name }}</p>
+                                                <p class="mt-1">{{ $account->bank_name ?: 'Banco no indicado' }} · {{ $account->account_number ?: 'Número no indicado' }}</p>
+                                                @if ($account->account_holder)<p class="mt-1">Titular: {{ $account->account_holder }}</p>@endif
+                                                @if ($account->instructions)<p class="mt-1 text-slate-500">{{ $account->instructions }}</p>@endif
+                                            </div>
+                                        @empty
+                                            <p class="mt-3 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-amber-700">Configura una cuenta de pago desde Configuración para mostrarla aquí.</p>
+                                        @endforelse
+                                    </div>
                                 </div>
 
                                 <div x-show="paymentKind === 'mixed'" x-cloak class="rounded-2xl border border-amber-200 bg-amber-50/70 p-4">

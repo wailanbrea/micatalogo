@@ -4,6 +4,7 @@ use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductModerationStatus;
 use App\Enums\UserPlan;
 use App\Models\GlobalCategory;
+use App\Models\InventoryMovement;
 use App\Models\Product;
 use App\Models\ProductInventory;
 use App\Models\Shop;
@@ -42,6 +43,22 @@ test('a verified seller can create a product in their shop', function () {
 
     $product = Product::where('slug', 'laptop-gamer-rtx')->firstOrFail();
     expect($product->published_at)->not->toBeNull();
+});
+
+test('the decant workflow opens the correct product presentation from its dedicated action', function () {
+    $seller = User::factory()->create(['email_verified_at' => now(), 'plan' => UserPlan::Pro]);
+    $shop = Shop::factory()->for($seller)->create(['business_type' => 'perfume_store']);
+
+    $this->actingAs($seller)
+        ->get(route('seller.shops.products.create', [$shop, 'sale_unit' => 'bottle']))
+        ->assertOk()
+        ->assertSee('value="bottle"', false);
+
+    $this->actingAs($seller)
+        ->get(route('seller.shops.products.create', [$shop, 'sale_unit' => 'decant']))
+        ->assertOk()
+        ->assertSee('value="decant"', false)
+        ->assertSee('Botella fuente y costo de origen', false);
 });
 
 test('a seller cannot create a product in another sellers shop', function () {
@@ -175,6 +192,56 @@ test('a seller can delete and restore their product', function () {
         ->assertRedirect(route('seller.shops.products.index', $shop));
 
     expect($product->fresh()->trashed())->toBeFalse();
+});
+
+test('inventory product list exposes active archived and combo views', function () {
+    $seller = User::factory()->create(['email_verified_at' => now()]);
+    $shop = Shop::factory()->for($seller)->create();
+    $active = Product::factory()->for($shop)->create(['name' => 'Producto activo']);
+    Product::factory()->for($shop)->create(['name' => 'Producto archivado'])->delete();
+    Product::factory()->for($shop)->create(['name' => 'Combo semanal', 'is_combo' => true]);
+
+    $this->actingAs($seller)
+        ->get(route('seller.shops.products.index', [$shop, 'view' => 'archived']))
+        ->assertOk()
+        ->assertSee('Archivados')
+        ->assertSee('Producto archivado')
+        ->assertSee('Restaurar');
+
+    $this->actingAs($seller)
+        ->get(route('seller.shops.products.index', [$shop, 'view' => 'combos']))
+        ->assertOk()
+        ->assertSee('Combo semanal')
+        ->assertDontSee('Producto archivado');
+
+    $this->actingAs($seller)
+        ->get(route('seller.shops.products.combos.create', $shop))
+        ->assertOk()
+        ->assertSee('Vender como combo');
+});
+
+test('inventory exposes a global movement history with product filters', function () {
+    $seller = User::factory()->create(['email_verified_at' => now()]);
+    $shop = Shop::factory()->for($seller)->create();
+    $product = Product::factory()->for($shop)->create(['name' => 'Perfume movimiento']);
+    ProductInventory::create(['product_id' => $product->id, 'track_inventory' => true, 'stock_quantity' => 8, 'sold_quantity' => 2]);
+    InventoryMovement::create([
+        'product_id' => $product->id,
+        'user_id' => $seller->id,
+        'type' => 'restock',
+        'quantity' => 10,
+        'stock_before' => 0,
+        'stock_after' => 10,
+        'notes' => 'Lote inicial',
+    ]);
+
+    $this->actingAs($seller)
+        ->get(route('seller.shops.inventory.movements.index', [$shop, 'q' => 'Perfume', 'type' => 'restock']))
+        ->assertOk()
+        ->assertSee('Movimientos')
+        ->assertSee('Perfume movimiento')
+        ->assertSee('Lote inicial')
+        ->assertSee('Reposición');
 });
 
 test('a seller can open the product edit form', function () {

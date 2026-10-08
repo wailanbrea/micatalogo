@@ -31,6 +31,9 @@ class InventoryService
 
         return DB::transaction(function () use ($product, $quantity, $notes, $userId, $createInvoice, $unitPrice, $paymentMethod) {
             $product = Product::query()->lockForUpdate()->findOrFail($product->id);
+            if ($product->isCombo()) {
+                return $this->recordComboSale($product, $quantity, $notes, $userId, $createInvoice, $unitPrice, $paymentMethod);
+            }
             $inventory = ProductInventory::where('product_id', $product->id)
                 ->lockForUpdate()
                 ->first();
@@ -125,7 +128,13 @@ class InventoryService
             if ($product->isDecant()) {
                 $sourceAvailableAfter = $availableMl - $consumedMl;
                 $sourceInventory->available_ml = $sourceAvailableAfter;
-                $sourceInventory->stock_quantity = $this->stockUnitsFromMl($source, $sourceAvailableAfter);
+                // Once a bottle is opened, its remaining milliliters are not
+                // another sealed bottle. Keep unopened bottle stock separate
+                // so a decant sale cannot silently make an opened bottle
+                // sellable as a full bottle again.
+                if ($source->sale_unit !== 'bottle' || (int) $sourceInventory->opened_bottles === 0) {
+                    $sourceInventory->stock_quantity = $this->stockUnitsFromMl($source, $sourceAvailableAfter);
+                }
                 $sourceInventory->save();
             } else {
                 $inventory->stock_quantity = $after;
@@ -209,6 +218,75 @@ class InventoryService
 
             return $movements;
         });
+    }
+
+    private function recordComboSale(Product $combo, int $quantity, ?string $notes, ?int $userId, bool $createInvoice, ?float $unitPrice, ?string $paymentMethod): InventoryMovement
+    {
+        if ($quantity <= 0) {
+            throw new InvalidArgumentException('La cantidad vendida debe ser mayor a 0.');
+        }
+
+        $combo->load(['comboItems.component.inventory', 'comboItems.component.comboItems']);
+        if ($combo->comboItems->isEmpty()) {
+            throw new InvalidArgumentException("El combo {$combo->name} no tiene productos configurados.");
+        }
+
+        $stockBefore = $combo->comboAvailableQuantity();
+        if ($stockBefore < $quantity) {
+            throw new InvalidArgumentException("Stock insuficiente para {$combo->name}. Solo quedan {$stockBefore} combos disponibles.", 409);
+        }
+
+        $componentMovements = [];
+        foreach ($combo->comboItems as $item) {
+            $component = $item->component;
+            if (! $component || $component->isCombo()) {
+                throw new InvalidArgumentException('El combo contiene un producto no válido.');
+            }
+            $componentMovements[] = $this->recordSale(
+                $component,
+                $quantity * (int) $item->quantity,
+                $notes ?: "Componente de combo {$combo->name}",
+                $userId,
+                false,
+                null,
+                $paymentMethod ?? 'cash'
+            );
+        }
+
+        $stockAfter = $combo->comboAvailableQuantity();
+        $totalCostCents = collect($componentMovements)->sum(fn (InventoryMovement $movement): int => (int) ($movement->total_cost_cents ?? 0));
+        $movement = InventoryMovement::create([
+            'product_id' => $combo->id,
+            'type' => 'sale',
+            'quantity' => -$quantity,
+            'stock_before' => $stockBefore,
+            'stock_after' => $stockAfter,
+            'unit_price' => $unitPrice ?? $combo->currentPrice(),
+            'unit_cost' => $quantity > 0 ? $totalCostCents / (100 * $quantity) : null,
+            'total_cost_cents' => $totalCostCents,
+            'notes' => $notes ?: 'Venta de combo; se descontaron sus componentes',
+            'user_id' => $userId,
+            'created_at' => now(),
+        ]);
+        $movement->setAttribute('component_movement_ids', collect($componentMovements)->pluck('id')->all());
+
+        $this->syncDependentCombos($componentMovements);
+
+        if ($createInvoice) {
+            $this->createInvoiceForSales(
+                $combo->shop_id,
+                [['product' => $combo, 'quantity' => $quantity, 'unit_price' => $unitPrice]],
+                [$movement],
+                $userId,
+                'web',
+                'paid',
+                0,
+                0,
+                $paymentMethod ?? 'cash'
+            );
+        }
+
+        return $movement;
     }
 
     /**
@@ -300,7 +378,11 @@ class InventoryService
             $fifo->receive($source, $canonical, $costCents, 'sale_return');
             if ($available !== null) {
                 $sourceInventory->available_ml = $available + $canonical;
-                $sourceInventory->stock_quantity = $this->stockUnitsFromMl($source, $available + $canonical);
+                if ($source->sale_unit === 'bottle' && ! $product->isDecant()) {
+                    $sourceInventory->stock_quantity += $quantity;
+                } elseif ($source->sale_unit !== 'bottle' || (int) $sourceInventory->opened_bottles === 0) {
+                    $sourceInventory->stock_quantity = $this->stockUnitsFromMl($source, $available + $canonical);
+                }
             } else {
                 $sourceInventory->stock_quantity += $quantity;
             }
@@ -315,6 +397,61 @@ class InventoryService
                 'stock_before' => $before, 'stock_after' => $after, 'unit_price' => null,
                 'unit_cost' => $costCents === null ? null : $costCents / (100 * $quantity), 'total_cost_cents' => $costCents,
                 'user_id' => $userId, 'notes' => $notes ?: 'Devolución con costo de venta original', 'created_at' => now()]);
+        });
+    }
+
+    /**
+     * Move sealed bottle stock into the opened-bottle pool used by decants.
+     * This does not consume FIFO cost or change total milliliters: the cost
+     * remains attached to the source lot until a bottle/decant is sold.
+     */
+    public function openBottle(Product $product, int $quantity, ?string $notes = null, ?int $userId = null): InventoryMovement
+    {
+        if ($quantity <= 0) {
+            throw new InvalidArgumentException('La cantidad de botellas debe ser mayor que 0.');
+        }
+
+        return DB::transaction(function () use ($product, $quantity, $notes, $userId) {
+            $product = Product::query()->lockForUpdate()->findOrFail($product->id);
+            $inventory = ProductInventory::where('product_id', $product->id)->lockForUpdate()->first();
+
+            if ($product->sale_unit !== 'bottle') {
+                throw new InvalidArgumentException('Solo puedes abrir productos configurados como botella completa.');
+            }
+            if (! $product->volume_ml) {
+                throw new InvalidArgumentException('La botella debe tener un volumen en ml.');
+            }
+            if (! $inventory?->track_inventory) {
+                throw new InvalidArgumentException('Activa el control de inventario para abrir esta botella.');
+            }
+            if ($inventory->stock_quantity < $quantity) {
+                throw new InvalidArgumentException("Solo quedan {$inventory->stock_quantity} botella(s) sellada(s) de {$product->name}.");
+            }
+
+            $before = $inventory->stock_quantity;
+            $availableBefore = $inventory->available_ml ?? ($before * (int) $product->volume_ml);
+            $inventory->stock_quantity -= $quantity;
+            $inventory->opened_bottles = (int) $inventory->opened_bottles + $quantity;
+            // Opening a bottle changes its sealed state, not the total liquid
+            // represented by the source inventory.
+            $inventory->available_ml = $availableBefore;
+            $inventory->save();
+
+            $this->syncAvailability($product, $inventory->stock_quantity);
+            $this->syncDependentDecants($product);
+
+            return InventoryMovement::create([
+                'product_id' => $product->id,
+                'type' => 'opening',
+                'quantity' => -$quantity,
+                'stock_before' => $before,
+                'stock_after' => $inventory->stock_quantity,
+                'unit_price' => $product->price,
+                'unit_cost' => $inventory->cost_price,
+                'notes' => $notes ?: "Apertura de {$quantity} botella(s) para preparar decants",
+                'user_id' => $userId,
+                'created_at' => now(),
+            ]);
         });
     }
 
@@ -355,6 +492,10 @@ class InventoryService
             $inventory->stock_quantity = $after;
             if ($product->sale_unit === 'bottle') {
                 $inventory->available_ml = $after * $product->volume_ml;
+                // A physical-count adjustment establishes a new sealed
+                // baseline, so previously opened bottles cannot remain in the
+                // count implicitly.
+                $inventory->opened_bottles = 0;
             } elseif ($product->sale_unit === 'ml') {
                 $inventory->available_ml = $after;
             } else {
@@ -553,7 +694,12 @@ class InventoryService
             ]);
 
             if (isset($movements[$index])) {
+                $componentMovementIds = (array) $movements[$index]->getAttribute('component_movement_ids');
+                unset($movements[$index]['component_movement_ids']);
                 $movements[$index]->forceFill(['invoice_id' => $invoice->id])->saveQuietly();
+                foreach ($componentMovementIds as $componentMovementId) {
+                    InventoryMovement::whereKey($componentMovementId)->update(['invoice_id' => $invoice->id]);
+                }
             }
         }
 
@@ -714,6 +860,28 @@ class InventoryService
             $decant->inventory->save();
             $this->syncAvailability($decant, $stock);
         });
+    }
+
+    private function syncDependentCombos(array $movements): void
+    {
+        $componentIds = collect($movements)->pluck('product_id')->filter()->unique()->values();
+        if ($componentIds->isEmpty()) {
+            return;
+        }
+
+        Product::query()
+            ->where('is_combo', true)
+            ->whereHas('comboItems', fn ($query) => $query->whereIn('component_product_id', $componentIds))
+            ->with(['comboItems.component.inventory'])
+            ->get()
+            ->each(function (Product $combo): void {
+                $status = $combo->comboAvailableQuantity() > 0
+                    ? ProductAvailabilityStatus::Available
+                    : ProductAvailabilityStatus::OutOfStock;
+                if ($combo->availability_status !== $status) {
+                    $combo->forceFill(['availability_status' => $status])->saveQuietly();
+                }
+            });
     }
 
     private function syncAvailability(Product $product, int $stock): void

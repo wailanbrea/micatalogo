@@ -20,7 +20,7 @@ class Shop extends Model
         'name', 'slug', 'description', 'logo_object_key', 'cover_object_key',
         'primary_color', 'secondary_color', 'whatsapp_country_code', 'whatsapp_number',
         'offers_shipping', 'instagram', 'address', 'maps_url', 'status', 'discovery_enabled',
-        'business_hours', 'product_limit', 'inventory_import_mapping',
+        'business_hours', 'operational_settings', 'product_limit', 'inventory_import_mapping',
         'business_type', 'business_capability_overrides', 'business_profile_version', 'onboarding_completed_at',
     ];
 
@@ -34,6 +34,7 @@ class Shop extends Model
             'offers_shipping' => 'boolean',
             'discovery_enabled' => 'boolean',
             'business_hours' => 'array',
+            'operational_settings' => 'array',
             'product_limit' => 'integer',
             'inventory_import_mapping' => 'array',
             'business_capability_overrides' => 'array',
@@ -115,9 +116,25 @@ class Shop extends Model
         return $this->hasMany(InvoicePayment::class);
     }
 
+    public function paymentAccounts(): HasMany
+    {
+        return $this->hasMany(ShopPaymentAccount::class)->orderBy('sort_order');
+    }
+
     public function cashRegisterSessions(): HasMany
     {
         return $this->hasMany(CashRegisterSession::class)->latest('opened_at');
+    }
+
+    /**
+     * Laravel's scoped implicit binding resolves the {session} parameter
+     * through this conventional relation name. Keep the explicit
+     * cashRegisterSessions() relation for the domain API and expose this
+     * alias so cash close actions do not fail before reaching the controller.
+     */
+    public function sessions(): HasMany
+    {
+        return $this->hasMany(CashRegisterSession::class);
     }
 
     public function cashMovements(): HasMany
@@ -158,6 +175,11 @@ class Shop extends Model
     public function partners(): HasMany
     {
         return $this->hasMany(BusinessPartner::class)->where('is_active', true)->orderBy('name');
+    }
+
+    public function authorizationRequests(): HasMany
+    {
+        return $this->hasMany(AuthorizationRequest::class)->latest('created_at');
     }
 
     public function expensePayments(): HasMany

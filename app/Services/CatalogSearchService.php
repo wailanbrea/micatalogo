@@ -66,6 +66,9 @@ class CatalogSearchService
                 $products->whereHas('inventory', fn ($inventory) => $inventory
                     ->where('track_inventory', true)
                     ->where('stock_quantity', '>', 0))
+                    ->orWhere(fn ($combo) => $combo
+                        ->where('is_combo', true)
+                        ->where('availability_status', ProductAvailabilityStatus::Available))
                     ->orWhere(function ($untracked) {
                         $untracked->where('availability_status', ProductAvailabilityStatus::Available)
                             ->where(function ($inventory) {

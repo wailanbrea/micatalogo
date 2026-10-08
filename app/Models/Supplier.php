@@ -13,7 +13,7 @@ class Supplier extends Model
 {
     use HasFactory, HasPublicId, SoftDeletes;
 
-    protected $fillable = ['shop_id', 'name', 'phone', 'email', 'address', 'notes', 'is_active'];
+    protected $fillable = ['shop_id', 'name', 'invoice_currency', 'phone', 'email', 'address', 'notes', 'is_active'];
     protected function casts(): array { return ['is_active' => 'boolean']; }
     public function getRouteKeyName(): string { return 'public_id'; }
     public function shop(): BelongsTo { return $this->belongsTo(Shop::class); }

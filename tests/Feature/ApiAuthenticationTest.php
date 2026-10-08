@@ -5,10 +5,13 @@ use App\Enums\UserStatus;
 use App\Models\Product;
 use App\Models\Shop;
 use App\Models\ShopSeller;
+use App\Models\ShopPaymentAccount;
 use App\Models\User;
 use App\Services\BusinessPresentationService;
 use App\Services\SellerMenuService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
@@ -25,6 +28,59 @@ test('the Android update manifest is publicly available', function () {
     $this->getJson('/api/v1/app-updates/android')
         ->assertOk()
         ->assertExactJson(config('bspos.android_update'));
+});
+
+test('Android settings expose active payment accounts without exposing disabled ones', function () {
+    $user = User::factory()->create(['email' => 'settings@example.com']);
+    $shop = Shop::factory()->for($user)->create();
+    ShopPaymentAccount::create([
+        'shop_id' => $shop->id,
+        'name' => 'Cuenta principal',
+        'bank_name' => 'Banco de prueba',
+        'account_number' => '000123',
+        'account_holder' => 'BSolutions',
+        'is_active' => true,
+    ]);
+    ShopPaymentAccount::create([
+        'shop_id' => $shop->id,
+        'name' => 'Cuenta desactivada',
+        'is_active' => false,
+    ]);
+
+    $login = $this->postJson('/api/v1/auth/login', [
+        'email' => 'settings@example.com',
+        'password' => 'password',
+        'device_name' => 'Configuración',
+    ]);
+
+    $this->withToken($login->json('access_token'))
+        ->getJson('/api/v1/shops/'.$shop->public_id.'/settings')
+        ->assertOk()
+        ->assertJsonPath('google.target_score', 90)
+        ->assertJsonPath('google.checks.0.key', 'logo')
+        ->assertJsonPath('payment_accounts.0.name', 'Cuenta principal')
+        ->assertJsonMissing(['name' => 'Cuenta desactivada']);
+});
+
+test('Android can upload a shop logo through the authenticated settings API', function () {
+    Storage::fake('public');
+    $owner = User::factory()->create(['email' => 'logo-api@example.com']);
+    $shop = Shop::factory()->for($owner)->create(['logo_object_key' => null]);
+    $token = $owner->createToken('BSPOS', ['shop_settings:write'])->plainTextToken;
+
+    $response = $this->withToken($token)->post(
+        "/api/v1/shops/{$shop->public_id}/media/logo",
+        ['logo' => UploadedFile::fake()->image('logo.png', 500, 500)],
+    );
+
+    $response
+        ->assertOk()
+        ->assertJsonPath('message', 'Logo actualizado.')
+        ->assertJsonPath('logo_url', fn ($url): bool => is_string($url) && $url !== '');
+
+    $shop->refresh();
+    expect($shop->logo_object_key)->toEndWith('.webp');
+    expect(Storage::disk('public')->exists($shop->logo_object_key))->toBeTrue();
 });
 
 test('the API rejects Android clients below the configured minimum version', function () {
@@ -98,6 +154,7 @@ test('a verified active seller can connect BSPOS and retrieve only their shops',
                 'cash' => 'enabled',
                 'expenses' => 'enabled',
                 'finance' => 'enabled',
+                'services' => 'enabled',
                 'sku' => 'enabled',
                 'barcode' => 'enabled',
                 'public_catalog' => 'enabled',

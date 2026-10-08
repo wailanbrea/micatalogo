@@ -13,12 +13,16 @@ class AttributeDefinition extends Model
 
     protected $fillable = [
         'shop_id', 'shop_category_id', 'name', 'slug', 'type',
-        'filterable', 'required', 'display_order',
+        'filterable', 'required', 'display_order', 'is_active',
     ];
 
     protected function casts(): array
     {
-        return ['filterable' => 'boolean', 'required' => 'boolean'];
+        return [
+            'filterable' => 'boolean',
+            'required' => 'boolean',
+            'is_active' => 'boolean',
+        ];
     }
 
     public function shop(): BelongsTo

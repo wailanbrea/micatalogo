@@ -95,7 +95,7 @@ class SellerBusinessController extends Controller
 
     public function pricing(Request $request, Shop $shop)
     {
-        $products = $shop->products()->where('sale_unit', '!=', 'decant')->with('inventory')->get();
+        $products = $shop->products()->where(fn ($query) => $query->whereNull('sale_unit')->orWhere('sale_unit', '!=', 'decant'))->with('inventory')->get();
         $rules = DB::table('product_price_rules')->whereIn('product_id', $products->pluck('id'))->get()->keyBy('product_id');
 
         return view('seller.pricing.index', compact('shop', 'products', 'rules'));
@@ -122,6 +122,36 @@ class SellerBusinessController extends Controller
         });
 
         return back()->with('status', 'Regla guardada. Se evaluará al recibir mercancía.');
+    }
+
+    public function bulkRule(Request $request, Shop $shop, ProductPricingService $pricing)
+    {
+        $data = $request->validate([
+            'margin_percent' => ['required', 'numeric', 'min:0', 'max:95'],
+            'round_step' => ['required', 'decimal:0,2', 'min:0.01', 'max:10000'],
+            'auto_increase' => ['sometimes', 'boolean'],
+            'scope' => ['required', 'in:all'],
+        ]);
+        $products = $shop->products()->where(fn ($query) => $query->whereNull('sale_unit')->orWhere('sale_unit', '!=', 'decant'))->get(['id', 'shop_id']);
+        if ($products->isEmpty()) {
+            return back()->withErrors(['pricing' => 'Agrega al menos un producto antes de crear una regla global.']);
+        }
+        $pricing->requirePro($products->first());
+        $payload = [
+            'margin_percent' => $data['margin_percent'],
+            'round_step_cents' => (int) round((float) $data['round_step'] * 100),
+            'auto_increase' => $data['auto_increase'] ?? false,
+            'pending_price' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+        DB::transaction(function () use ($products, $payload): void {
+            foreach ($products as $product) {
+                DB::table('product_price_rules')->updateOrInsert(['product_id' => $product->id], $payload);
+            }
+        });
+
+        return back()->with('status', 'Regla global guardada para '.$products->count().' producto(s). Las subidas se aplicarán según la configuración y las bajadas quedarán para aprobación.');
     }
 
     public function approve(Request $request, Shop $shop, Product $product, ProductPricingService $pricing)

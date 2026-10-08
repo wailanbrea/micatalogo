@@ -78,6 +78,44 @@ test('Pro rule rounds increases and never applies decreases without approval', f
         ->and((float) DB::table('product_price_rules')->value('pending_price'))->toBe(2000.0);
 });
 
+test('Pro can recalculate existing pricing rules without silently applying a decrease', function () {
+    [$user, $shop, $product] = fifoFixture();
+    $product->update(['price' => 1000]);
+    DB::table('product_price_rules')->insert([
+        'product_id' => $product->id,
+        'margin_percent' => 40,
+        'round_step_cents' => 100,
+        'auto_increase' => false,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $this->actingAs($user, 'sanctum')
+        ->postJson("/api/v1/shops/{$shop->public_id}/pricing/recalculate")
+        ->assertOk()
+        ->assertJsonPath('evaluated', 1);
+
+    expect((float) $product->fresh()->price)->toBe(1000.0)
+        ->and((float) DB::table('product_price_rules')->where('product_id', $product->id)->value('pending_price'))->toBe(2500.0);
+});
+
+test('Pro puede aplicar una regla global sin cambiar precios de inmediato', function () {
+    [$user, $shop, $product] = fifoFixture();
+    $second = Product::factory()->create(['shop_id' => $shop->id, 'price' => 800]);
+
+    $response = $this->actingAs($user)->post(route('seller.shops.pricing.bulk-rule', $shop), [
+        'scope' => 'all',
+        'margin_percent' => '35',
+        'round_step' => '5.00',
+        'auto_increase' => '1',
+    ]);
+    $response->assertSessionHasNoErrors();
+
+    expect(DB::table('product_price_rules')->whereIn('product_id', [$product->id, $second->id])->count())->toBe(2)
+        ->and((float) $product->fresh()->price)->toBe(2500.0)
+        ->and((float) $second->fresh()->price)->toBe(800.0);
+});
+
 test('ml FIFO conserves cents and decants share source lots without double valuation', function () {
     [$user, $shop, $product, $service] = fifoFixture();
     $product->update(['sale_unit' => 'bottle', 'volume_ml' => 100]);

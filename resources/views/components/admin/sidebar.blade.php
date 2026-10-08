@@ -38,7 +38,7 @@
     $iconPath = 'M4 5h16v14H4zM8 9h8M8 13h5';
     $menuSections = $contextShop ? [
         ['label' => 'Operación', 'items' => [
-            ['key' => 'summary', 'label' => 'Resumen', 'url' => route('seller.dashboard'), 'active' => request()->routeIs('seller.dashboard')],
+            ['key' => 'summary', 'label' => 'Resumen', 'url' => route('seller.shops.business', $contextShop), 'active' => request()->routeIs('seller.shops.business')],
             ['key' => 'sales', 'label' => 'Terminal', 'url' => route('seller.shops.pos', $contextShop), 'active' => $isPos, 'path' => 'M3 5h18v14H3zM7 9h4m-4 4h2m5-4h3m-3 4h3'],
             ['key' => 'sales', 'label' => 'Ventas', 'url' => $featureUrl('sales'), 'active' => $featureActive('sales')],
             ['key' => 'quotes', 'label' => 'Cotizaciones', 'url' => $featureUrl('quotes'), 'active' => $featureActive('quotes')],
@@ -46,6 +46,7 @@
             ['key' => 'encargos', 'label' => 'Encargos', 'url' => $featureUrl('encargos'), 'active' => $featureActive('encargos')],
             ['key' => 'shipments', 'label' => 'Envíos', 'url' => $featureUrl('shipments'), 'active' => $featureActive('shipments')],
             ['key' => 'day_close', 'label' => 'Cierre de día', 'url' => $featureUrl('day_close'), 'active' => $featureActive('day_close')],
+            ['key' => 'downloads', 'label' => 'Descargar la app', 'url' => route('downloads.index'), 'active' => request()->routeIs('downloads.*')],
         ]],
         ['label' => 'Compras', 'items' => [
             ['key' => 'containers', 'label' => 'Contenedores', 'url' => $featureUrl('containers'), 'active' => $featureActive('containers')],
@@ -125,7 +126,7 @@
             @foreach ($menuSections as $section)
                 <p class="{{ $loop->first ? 'px-3 pb-2' : 'mt-5 px-3 pb-2 pt-2' }} text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">{{ $section['label'] }}</p>
                 @foreach ($section['items'] as $item)
-                    @if ($item['key'] === 'summary' || $canSeeMenu($item['key']))
+                    @if (in_array($item['key'], ['summary', 'downloads'], true) || $canSeeMenu($item['key']))
                         <a wire:navigate.hover href="{{ $item['url'] }}" @if ($item['external'] ?? false) target="_blank" @endif @if ($item['aria'] ?? false) aria-label="{{ $item['aria'] }}" @endif class="{{ $linkClass }} {{ ($item['active'] ?? false) ? $activeClass : $idleClass }}" @if ($item['label'] === 'Contenedores') title="Agrupa compras y recepciones grandes" @endif>
                             <svg class="h-4 w-4 shrink-0 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $item['path'] ?? $iconPath }}"/></svg>
                             <span class="truncate">{{ $item['label'] }}</span>

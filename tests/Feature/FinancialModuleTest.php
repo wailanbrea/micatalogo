@@ -13,6 +13,7 @@ use App\Models\Shop;
 use App\Models\User;
 use App\Services\BusinessDashboardService;
 use App\Services\CashRegisterService;
+use App\Services\DailyCloseService;
 use App\Services\ExpenseService;
 use App\Services\PaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -101,6 +102,54 @@ test('cash sale automatically creates cash movement when cash register session i
 
     // Verify expected closing balance: 1000 + 500 = 1500
     expect($session->calculateExpectedBalance())->toBe(150000);
+});
+
+test('daily close calculates cash without requiring an open session and stores an optional count', function () {
+    [$user, $shop, $product] = financialFixture();
+    $paymentService = app(PaymentService::class);
+    $expenseService = app(ExpenseService::class);
+
+    $invoice = Invoice::create([
+        'shop_id' => $shop->id,
+        'user_id' => $user->id,
+        'invoice_number' => 'INV-DAILY-CLOSE',
+        'subtotal' => 800,
+        'total' => 800,
+        'payment_status' => 'paid',
+        'issued_at' => now(),
+    ]);
+
+    $paymentService->recordInvoicePayments($invoice, [
+        ['payment_method' => 'cash', 'amount' => 500],
+        ['payment_method' => 'card', 'amount' => 300],
+    ], $user);
+
+    $category = ExpenseCategory::create([
+        'shop_id' => $shop->id,
+        'name' => 'Gasto diario',
+        'is_active' => true,
+    ]);
+    $expenseService->recordExpense($shop, $user, [
+        'expense_category_id' => $category->id,
+        'description' => 'Compra menor',
+        'amount' => 100,
+        'payment_method' => 'cash',
+        'occurred_at' => now()->toDateString(),
+    ]);
+
+    $service = app(DailyCloseService::class);
+    $calculation = $service->calculate($shop, now()->toDateString());
+
+    expect($calculation['sales_cash'])->toBe(500.0)
+        ->and($calculation['expenses_cash'])->toBe(100.0)
+        ->and($calculation['expected_cash'])->toBe(400.0)
+        ->and($calculation['closure'])->toBeNull();
+
+    $closure = $service->close($shop, $user, now()->toDateString(), 350, 'Faltante de prueba');
+
+    expect($closure->expected_cash_cents)->toBe(40000)
+        ->and($closure->counted_cash_cents)->toBe(35000)
+        ->and($closure->difference_cents)->toBe(-5000);
 });
 
 test('credit sale increases receivable and profit without increasing cash flow', function () {

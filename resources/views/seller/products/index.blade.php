@@ -35,8 +35,14 @@
 
                     @if ($totalProducts < $maxProducts)
                         <div class="flex flex-wrap items-center justify-end gap-2">
+                            <a class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-xs hover:bg-slate-50" href="{{ route('seller.shops.inventory.movements.index', $shop) }}">
+                                Movimientos
+                            </a>
                             <a class="rounded-md border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 shadow-xs hover:bg-indigo-100" href="{{ route('seller.shops.products.import.create', $shop) }}">
                                 Importar CSV/XLSX
+                            </a>
+                            <a class="rounded-md border border-violet-200 bg-violet-50 px-3 py-2 text-sm font-semibold text-violet-700 shadow-xs hover:bg-violet-100" href="{{ route('seller.shops.products.combos.create', $shop) }}">
+                                Nuevo combo
                             </a>
                             <a class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-xs hover:bg-slate-50" href="{{ route('seller.shops.products.bulk.create', $shop) }}">
                                 Subida masiva
@@ -49,6 +55,12 @@
                         <span class="rounded-md bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">Límite alcanzado ({{ $maxProducts }}/{{ $maxProducts }})</span>
                     @endif
                 </div>
+
+                <nav class="mt-5 flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3" aria-label="Vistas del inventario">
+                    <a href="{{ route('seller.shops.products.index', $shop) }}" class="rounded-full px-3 py-1.5 text-xs font-black {{ $view === '' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">Activos {{ number_format($totalProducts) }}</a>
+                    <a href="{{ route('seller.shops.products.index', [$shop, 'view' => 'archived']) }}" class="rounded-full px-3 py-1.5 text-xs font-black {{ $view === 'archived' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">Archivados {{ number_format($trashedCount) }}</a>
+                    <a href="{{ route('seller.shops.products.index', [$shop, 'view' => 'combos']) }}" class="rounded-full px-3 py-1.5 text-xs font-black {{ $view === 'combos' ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">Combos</a>
+                </nav>
 
                 <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -140,6 +152,13 @@
                                             <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
                                                 <i class="h-1.5 w-1.5 rounded-full bg-emerald-500"></i> Disponible
                                             </span>
+                                        @elseif ($product->isCombo())
+                                            @php $comboStock = $product->comboAvailableQuantity(); @endphp
+                                            <span class="inline-flex items-center gap-1 rounded-full {{ $comboStock > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }} px-2 py-0.5 text-xs font-bold">
+                                                <i class="h-1.5 w-1.5 rounded-full {{ $comboStock > 0 ? 'bg-emerald-500' : 'bg-rose-500' }}"></i>
+                                                {{ $comboStock > 0 ? 'Combos: '.$comboStock : 'Agotado' }}
+                                            </span>
+                                            <span class="block text-[10px] text-slate-400">Stock calculado por componentes</span>
                                         @elseif ($product->isInventoryTracked())
                                             @php $inv = $product->inventory; @endphp
                                             @if ($inv->stock_quantity <= 0)
@@ -175,7 +194,10 @@
                                         @endif
                                     </td>
                                     @if ($showStock)<td class="px-4 py-3.5 whitespace-nowrap">
-                                        @if ($product->inventory?->track_inventory)
+                                        @if ($product->isCombo())
+                                            <span class="font-mono font-bold text-slate-900">{{ number_format($product->comboAvailableQuantity()) }}</span>
+                                            <span class="text-xs text-slate-500">combos</span>
+                                        @elseif ($product->inventory?->track_inventory)
                                             <span class="font-mono font-bold text-slate-900">{{ number_format($product->inventory->stock_quantity) }}</span>
                                             <span class="text-xs text-slate-500">{{ $product->stockUnitLabel() }}</span>
                                         @else
@@ -189,13 +211,20 @@
                                     </td>
                                     <td class="px-4 py-3.5 text-right whitespace-nowrap">
                                         <div class="flex items-center justify-end gap-2">
-                                            <a class="text-xs font-semibold text-blue-700 hover:text-blue-900" href="{{ route('products.show', [$shop, $product]) }}" target="_blank">Ver</a>
-                                            <a class="text-xs font-semibold text-slate-700 hover:text-slate-950" href="{{ route('seller.shops.products.edit', [$shop, $product]) }}">Editar</a>
-                                            <form method="POST" action="{{ route('seller.shops.products.destroy', [$shop, $product]) }}" onsubmit="return confirm('¿Deseas enviar este producto a la papelera?')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button class="text-xs font-semibold text-red-600 hover:text-red-800" type="submit">Eliminar</button>
-                                            </form>
+                                            @if ($view === 'archived')
+                                                <form method="POST" action="{{ route('seller.shops.products.restore', [$shop, $product->public_id]) }}">
+                                                    @csrf
+                                                    <button class="text-xs font-semibold text-emerald-700 hover:text-emerald-900" type="submit">Restaurar</button>
+                                                </form>
+                                            @else
+                                                <a class="text-xs font-semibold text-blue-700 hover:text-blue-900" href="{{ route('products.show', [$shop, $product]) }}" target="_blank">Ver</a>
+                                                <a class="text-xs font-semibold text-slate-700 hover:text-slate-950" href="{{ route('seller.shops.products.edit', [$shop, $product]) }}">Editar</a>
+                                                <form method="POST" action="{{ route('seller.shops.products.destroy', [$shop, $product]) }}" onsubmit="return confirm('¿Deseas enviar este producto a la papelera?')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button class="text-xs font-semibold text-red-600 hover:text-red-800" type="submit">Eliminar</button>
+                                                </form>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>

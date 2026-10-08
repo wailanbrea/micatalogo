@@ -40,6 +40,7 @@ class Product extends Model
         'sale_ends_at',
         'currency',
         'sale_unit',
+        'is_combo',
         'volume_ml',
         'inventory_source_product_id',
         'availability_status',
@@ -56,6 +57,7 @@ class Product extends Model
             'sale_starts_at' => 'datetime',
             'sale_ends_at' => 'datetime',
             'volume_ml' => 'integer',
+            'is_combo' => 'boolean',
             'source_created_at' => 'datetime',
             'availability_status' => ProductAvailabilityStatus::class,
             'moderation_status' => ProductModerationStatus::class,
@@ -132,6 +134,39 @@ class Product extends Model
         return $this->hasMany(self::class, 'inventory_source_product_id');
     }
 
+    public function comboItems(): HasMany
+    {
+        return $this->hasMany(ProductComboItem::class, 'product_id');
+    }
+
+    public function isCombo(): bool
+    {
+        return (bool) $this->is_combo;
+    }
+
+    public function comboAvailableQuantity(): int
+    {
+        if (! $this->isCombo()) {
+            return (int) ($this->inventory?->stock_quantity ?? 0);
+        }
+
+        $items = $this->relationLoaded('comboItems')
+            ? $this->comboItems
+            : $this->comboItems()->with('component.inventory')->get();
+
+        if ($items->isEmpty()) {
+            return 0;
+        }
+
+        return (int) $items->min(function (ProductComboItem $item): int {
+            $stock = (int) ($item->component?->isCombo()
+                ? $item->component->comboAvailableQuantity()
+                : ($item->component?->inventory?->stock_quantity ?? 0));
+
+            return intdiv(max(0, $stock), max(1, (int) $item->quantity));
+        });
+    }
+
     public function isDecant(): bool
     {
         return $this->sale_unit === 'decant';
@@ -170,6 +205,10 @@ class Product extends Model
 
     public function saleUnitLabel(): string
     {
+        if ($this->isCombo()) {
+            return 'Combo';
+        }
+
         return match ($this->sale_unit) {
             'bottle' => 'Botella completa',
             'ml' => 'Mililitro',
@@ -206,6 +245,10 @@ class Product extends Model
 
     public function getInventoryStatusAttribute(): string
     {
+        if ($this->isCombo()) {
+            return $this->comboAvailableQuantity() > 0 ? 'available' : 'out_of_stock';
+        }
+
         if (! $this->isInventoryTracked()) {
             return $this->availability_status->value;
         }

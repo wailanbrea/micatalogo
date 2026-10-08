@@ -84,6 +84,11 @@ class CashRegisterSession extends Model
         return $this->status === 'closed';
     }
 
+    public function getRouteKeyName(): string
+    {
+        return 'public_id';
+    }
+
     public function calculateExpectedBalance(): int
     {
         $opening = $this->opening_amount_cents;

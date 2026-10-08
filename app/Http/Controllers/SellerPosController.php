@@ -8,6 +8,7 @@ use App\Services\BusinessPresentationService;
 use App\Services\CustomerAccountService;
 use App\Services\InventoryService;
 use App\Services\PaymentService;
+use App\Services\ShopOperationalSettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -20,9 +21,10 @@ class SellerPosController extends Controller
         $products = $shop->products()
             ->where(function ($query): void {
                 $query->whereHas('inventory', fn ($inventory) => $inventory->where('track_inventory', true))
-                    ->orWhere('sale_unit', 'service');
+                    ->orWhere('sale_unit', 'service')
+                    ->orWhere('is_combo', true);
             })
-            ->with(['inventory', 'images', 'primaryImage', 'sourceProduct.inventory', 'shopCategory', 'globalCategory', 'attributeValues.attributeDefinition'])
+            ->with(['inventory', 'images', 'primaryImage', 'sourceProduct.inventory', 'shopCategory', 'globalCategory', 'attributeValues.attributeDefinition', 'comboItems.component.inventory'])
             ->orderBy('name')
             ->get()
             ->map(function ($product): array {
@@ -32,9 +34,11 @@ class SellerPosController extends Controller
                     : null;
                 $stock = $product->isService()
                     ? null
+                    : ($product->isCombo()
+                    ? $product->comboAvailableQuantity()
                     : ($product->isDecant() && $product->volume_ml
                     ? intdiv(max(0, (int) $sourceAvailableMl), (int) $product->volume_ml)
-                    : (int) ($product->inventory?->stock_quantity ?? 0));
+                    : (int) ($product->inventory?->stock_quantity ?? 0)));
 
                 return [
                 'id' => $product->public_id,
@@ -59,6 +63,12 @@ class SellerPosController extends Controller
                 'source_available_ml' => $sourceAvailableMl,
                 'is_decant' => $product->isDecant(),
                 'is_service' => $product->isService(),
+                'is_combo' => $product->isCombo(),
+                'combo_items' => $product->isCombo() ? $product->comboItems->map(fn ($item): array => [
+                    'product_id' => $item->component?->public_id,
+                    'name' => $item->component?->name,
+                    'quantity' => (int) $item->quantity,
+                ])->values()->all() : [],
                 'image_url' => $product->image_url,
                 'category' => $product->shopCategory?->name ?? $product->globalCategory?->name ?? 'Sin categoría',
                 ];
@@ -90,6 +100,7 @@ class SellerPosController extends Controller
             'shop' => $shop,
             'products' => $products,
             'customers' => $customers,
+            'paymentAccounts' => $shop->paymentAccounts()->where('is_active', true)->get(),
             'presentation' => $presentation->resolve($shop),
             'paymentMethods' => config('catalog.payment_methods', []),
             'clientSaleUuid' => old('client_sale_uuid') ?: (string) Str::uuid(),
@@ -106,7 +117,8 @@ class SellerPosController extends Controller
         PosSaleController $posSaleController,
         InventoryService $inventoryService,
         CustomerAccountService $customerAccountService,
-        PaymentService $paymentService
+        PaymentService $paymentService,
+        ShopOperationalSettingsService $operational
     ): RedirectResponse {
         $response = $posSaleController->store(
             $request,
@@ -114,6 +126,7 @@ class SellerPosController extends Controller
             $inventoryService,
             $customerAccountService,
             $paymentService,
+            $operational,
         );
 
         $payload = $response->getData(true);

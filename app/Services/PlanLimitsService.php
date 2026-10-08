@@ -56,7 +56,7 @@ class PlanLimitsService
 
     public function userCount(Shop $shop): int
     {
-        return 1 + $shop->members()->where('is_active', true)->count();
+        return 1 + $shop->members()->where('is_active', true)->where('role', '!=', 'accountant')->count();
     }
 
     public function sellerCount(Shop $shop): int

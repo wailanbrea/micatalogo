@@ -2,6 +2,7 @@
     @php
         $hoursForForm = app(\App\Services\ShopHoursService::class)->forForm(old('business_hours', $shop->business_hours));
         $hourLabels = \App\Services\ShopHoursService::DAYS;
+        $operational = app(\App\Services\ShopOperationalSettingsService::class)->forShop($shop);
     @endphp
     <!-- Persistent Unified Navigation -->
     <x-admin.header 
@@ -181,6 +182,116 @@
                     </div>
                     <label class="flex items-center gap-3 rounded-md border border-slate-200 p-4 text-sm text-slate-700"><input name="offers_shipping" type="hidden" value="0"><input class="rounded border-slate-300 text-blue-600 focus:ring-blue-600" name="offers_shipping" type="checkbox" value="1" @checked(old('offers_shipping', $shop->offers_shipping))><span><strong class="block text-slate-900">Ofrecemos envio</strong>Indica si esta tienda puede enviar productos.</span></label>
 
+                    <section id="operational-settings" class="scroll-mt-24 rounded-xl border border-blue-100 bg-blue-50/50 p-4">
+                        <div>
+                            <p class="text-sm font-bold text-slate-900">Configuración operativa</p>
+                            <p class="mt-0.5 text-xs text-slate-600">Moneda, impuestos, métodos de pago y módulos que también se sincronizan con la app MiCatalogo.</p>
+                        </div>
+                        <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                            <label class="text-xs font-semibold text-slate-600">Moneda
+                                <input name="operational_settings[currency]" maxlength="3" value="{{ old('operational_settings.currency', $operational['currency']) }}" class="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm uppercase text-slate-900">
+                            </label>
+                            <label class="text-xs font-semibold text-slate-600">Símbolo
+                                <input name="operational_settings[currency_symbol]" maxlength="5" value="{{ old('operational_settings.currency_symbol', $operational['currency_symbol']) }}" class="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+                            </label>
+                            <label class="text-xs font-semibold text-slate-600">ITBIS (%)
+                                <input name="operational_settings[tax_rate]" type="number" min="0" max="100" step="0.01" value="{{ old('operational_settings.tax_rate', $operational['tax_rate']) }}" class="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+                            </label>
+                            <label class="text-xs font-semibold text-slate-600">RNC
+                                <input name="operational_settings[business_rnc]" value="{{ old('operational_settings.business_rnc', $operational['business_rnc']) }}" placeholder="Opcional" class="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900">
+                            </label>
+                        </div>
+                        <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                            <label class="flex items-center gap-2 text-xs font-semibold text-slate-700"><input type="hidden" name="operational_settings[credit][enabled]" value="0"><input type="checkbox" name="operational_settings[credit][enabled]" value="1" @checked(old('operational_settings.credit.enabled', $operational['credit']['enabled'])) class="rounded border-slate-300 text-blue-600"> Permitir crédito</label>
+                            <label class="flex items-center gap-2 text-xs font-semibold text-slate-700"><input type="hidden" name="operational_settings[wholesale][enabled]" value="0"><input type="checkbox" name="operational_settings[wholesale][enabled]" value="1" @checked(old('operational_settings.wholesale.enabled', $operational['wholesale']['enabled'])) class="rounded border-slate-300 text-blue-600"> Activar mayorista</label>
+                            <label class="flex items-center gap-2 text-xs font-semibold text-slate-700"><input type="hidden" name="operational_settings[decants][enabled]" value="0"><input type="checkbox" name="operational_settings[decants][enabled]" value="1" @checked(old('operational_settings.decants.enabled', $operational['decants']['enabled'])) class="rounded border-slate-300 text-blue-600"> Activar decants</label>
+                            <label class="flex items-center gap-2 text-xs font-semibold text-slate-700"><input type="hidden" name="operational_settings[images][auto_optimize]" value="0"><input type="checkbox" name="operational_settings[images][auto_optimize]" value="1" @checked(old('operational_settings.images.auto_optimize', $operational['images']['auto_optimize'])) class="rounded border-slate-300 text-blue-600"> Optimizar imágenes</label>
+                        </div>
+
+                        <div class="mt-5 grid gap-4 border-t border-blue-100 pt-4 sm:grid-cols-2 lg:grid-cols-4">
+                            <label class="text-xs font-semibold text-slate-600">Zona horaria
+                                <select name="operational_settings[timezone]" class="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-slate-900">
+                                    @foreach (['America/Santo_Domingo' => 'Santo Domingo (UTC−04:00)', 'America/New_York' => 'Nueva York (UTC−05/04:00)', 'America/Mexico_City' => 'Ciudad de México (UTC−06/05:00)', 'America/Bogota' => 'Bogotá (UTC−05:00)', 'America/Panama' => 'Panamá (UTC−05:00)', 'Europe/Madrid' => 'Madrid (UTC+01/02:00)'] as $timezone => $label)
+                                        <option value="{{ $timezone }}" @selected(old('operational_settings.timezone', $operational['timezone']) === $timezone)>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            </label>
+                            <label class="text-xs font-semibold text-slate-600">Días de crédito por defecto
+                                <input name="operational_settings[credit][default_days]" type="number" inputmode="numeric" min="0" max="3650" step="1" value="{{ old('operational_settings.credit.default_days', $operational['credit']['default_days']) }}" class="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-slate-900">
+                            </label>
+                            <label class="text-xs font-semibold text-slate-600">Mínimo mayorista (unidades)
+                                <input name="operational_settings[wholesale][minimum_quantity]" type="number" inputmode="numeric" min="1" max="100000" step="1" value="{{ old('operational_settings.wholesale.minimum_quantity', $operational['wholesale']['minimum_quantity']) }}" class="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-slate-900">
+                            </label>
+                            <label class="text-xs font-semibold text-slate-600">Imágenes por producto
+                                <input name="operational_settings[images][max_per_product]" type="number" inputmode="numeric" min="1" max="20" step="1" value="{{ old('operational_settings.images.max_per_product', $operational['images']['max_per_product']) }}" class="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-slate-900">
+                            </label>
+                        </div>
+
+                        <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                            <label class="flex items-center gap-2 text-xs font-semibold text-slate-700"><input type="hidden" name="operational_settings[credit][allow_partial_payments]" value="0"><input type="checkbox" name="operational_settings[credit][allow_partial_payments]" value="1" @checked(old('operational_settings.credit.allow_partial_payments', $operational['credit']['allow_partial_payments'])) class="rounded border-slate-300 text-blue-600"> Permitir abonos</label>
+                            <label class="flex items-center gap-2 text-xs font-semibold text-slate-700"><input type="hidden" name="operational_settings[orders][enabled]" value="0"><input type="checkbox" name="operational_settings[orders][enabled]" value="1" @checked(old('operational_settings.orders.enabled', $operational['orders']['enabled'])) class="rounded border-slate-300 text-blue-600"> Recibir pedidos online</label>
+                            <label class="flex items-center gap-2 text-xs font-semibold text-slate-700"><input type="hidden" name="operational_settings[quick_service][enabled]" value="0"><input type="checkbox" name="operational_settings[quick_service][enabled]" value="1" @checked(old('operational_settings.quick_service.enabled', $operational['quick_service']['enabled'])) class="rounded border-slate-300 text-blue-600"> Servicio rápido</label>
+                            <label class="flex items-center gap-2 text-xs font-semibold text-slate-700"><input type="hidden" name="operational_settings[recipes][enabled]" value="0"><input type="checkbox" name="operational_settings[recipes][enabled]" value="1" @checked(old('operational_settings.recipes.enabled', $operational['recipes']['enabled'])) class="rounded border-slate-300 text-blue-600"> Recetas / insumos</label>
+                        </div>
+
+                        <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            <div class="rounded-lg border border-slate-200 bg-white p-3">
+                                <p class="text-xs font-bold text-slate-800">Recibo</p>
+                                <div class="mt-2 grid gap-2 text-xs text-slate-700">
+                                    @foreach (['show_logo' => 'Mostrar logo', 'show_customer' => 'Mostrar cliente', 'show_seller' => 'Mostrar vendedor', 'show_notes' => 'Mostrar notas'] as $receiptKey => $receiptLabel)
+                                        <label class="flex items-center gap-2"><input type="hidden" name="operational_settings[receipt][{{ $receiptKey }}]" value="0"><input type="checkbox" name="operational_settings[receipt][{{ $receiptKey }}]" value="1" @checked(old('operational_settings.receipt.' . $receiptKey, $operational['receipt'][$receiptKey])) class="rounded border-slate-300 text-blue-600"> {{ $receiptLabel }}</label>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <div class="rounded-lg border border-slate-200 bg-white p-3">
+                                <p class="text-xs font-bold text-slate-800">Comprobantes fiscales</p>
+                                <label class="mt-2 flex items-center gap-2 text-xs text-slate-700"><input type="hidden" name="operational_settings[fiscal][enabled]" value="0"><input type="checkbox" name="operational_settings[fiscal][enabled]" value="1" @checked(old('operational_settings.fiscal.enabled', $operational['fiscal']['enabled'])) class="rounded border-slate-300 text-blue-600"> Activar comprobantes</label>
+                                <select name="operational_settings[fiscal][invoice_type]" class="mt-2 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900">
+                                    @foreach (['consumer' => 'Consumidor final', 'credit' => 'Crédito fiscal', 'special' => 'Régimen especial'] as $invoiceType => $invoiceLabel)
+                                        <option value="{{ $invoiceType }}" @selected(old('operational_settings.fiscal.invoice_type', $operational['fiscal']['invoice_type']) === $invoiceType)>{{ $invoiceLabel }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="rounded-lg border border-slate-200 bg-white p-3">
+                                <p class="text-xs font-bold text-slate-800">Compras y recepción</p>
+                                <div class="mt-2 grid gap-2 text-xs text-slate-700">
+                                    <label class="flex items-center gap-2"><input type="hidden" name="operational_settings[purchases][allow_partial_receive]" value="0"><input type="checkbox" name="operational_settings[purchases][allow_partial_receive]" value="1" @checked(old('operational_settings.purchases.allow_partial_receive', $operational['purchases']['allow_partial_receive'])) class="rounded border-slate-300 text-blue-600"> Permitir recepción parcial</label>
+                                    <label class="flex items-center gap-2"><input type="hidden" name="operational_settings[purchases][require_supplier]" value="0"><input type="checkbox" name="operational_settings[purchases][require_supplier]" value="1" @checked(old('operational_settings.purchases.require_supplier', $operational['purchases']['require_supplier'])) class="rounded border-slate-300 text-blue-600"> Exigir suplidor</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            <div class="rounded-lg border border-slate-200 bg-white p-3">
+                                <p class="text-xs font-bold text-slate-800">Envíos</p>
+                                <label class="mt-2 flex items-center gap-2 text-xs text-slate-700"><input type="hidden" name="operational_settings[shipping][enabled]" value="0"><input type="checkbox" name="operational_settings[shipping][enabled]" value="1" @checked(old('operational_settings.shipping.enabled', $operational['shipping']['enabled'])) class="rounded border-slate-300 text-blue-600"> Activar tipos de entrega</label>
+                                <div class="mt-2 flex flex-wrap gap-3 text-xs text-slate-700">
+                                    @foreach (['pickup' => 'Recoger', 'delivery' => 'Entrega'] as $shippingType => $shippingLabel)
+                                        <label class="flex items-center gap-2"><input type="checkbox" name="operational_settings[shipping][types][]" value="{{ $shippingType }}" @checked(in_array($shippingType, old('operational_settings.shipping.types', $operational['shipping']['types']), true)) class="rounded border-slate-300 text-blue-600"> {{ $shippingLabel }}</label>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <div class="rounded-lg border border-slate-200 bg-white p-3">
+                                <p class="text-xs font-bold text-slate-800">Decants: tamaños predeterminados (ml)</p>
+                                <div class="mt-2 grid grid-cols-3 gap-2">
+                                    @foreach (array_pad(array_values(old('operational_settings.decants.default_ml', $operational['decants']['default_ml'])), 3, '') as $ml)
+                                        <input name="operational_settings[decants][default_ml][]" type="number" inputmode="numeric" min="1" max="10000" step="1" value="{{ $ml }}" class="block w-full rounded-lg border border-slate-300 bg-white px-2 py-2 text-xs text-slate-900" aria-label="Tamaño de decant en mililitros">
+                                    @endforeach
+                                </div>
+                            </div>
+                            <div class="rounded-lg border border-slate-200 bg-white p-3">
+                                <p class="text-xs font-bold text-slate-800">Métodos de pago visibles</p>
+                                <div class="mt-2 grid gap-2 text-xs text-slate-700">
+                                    @foreach (config('catalog.payment_methods', []) as $methodKey => $method)
+                                        <label class="flex items-center gap-2"><input type="checkbox" name="operational_settings[payment_methods][]" value="{{ $methodKey }}" @checked(in_array($methodKey, old('operational_settings.payment_methods', $operational['payment_methods']), true)) class="rounded border-slate-300 text-blue-600"> {{ $method['label'] }}</label>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="mt-3 text-xs text-slate-500">Efectivo permanece siempre disponible para que el cierre de caja sea consistente. Los valores numéricos aceptan únicamente cantidades enteras o decimales según el campo.</p>
+                    </section>
+
                     @if ($shop->exists && auth()->user()?->isAdmin())
                         <section class="rounded-xl border border-rose-200 bg-rose-50/50 p-4">
                             <div>
@@ -221,6 +332,48 @@
                         @endif
                     </div>
                 </form>
+                @if ($shop->exists)
+                    <section id="payment-accounts" class="mt-6 rounded-xl border border-blue-100 bg-blue-50/50 p-4 sm:p-5">
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                                <p class="text-sm font-bold text-slate-900">Cuentas de pago</p>
+                                <p class="mt-0.5 text-xs text-slate-600">Cuentas que puedes mostrar al cliente cuando pague por transferencia bancaria.</p>
+                            </div>
+                            <span class="rounded-full bg-white px-3 py-1 text-[11px] font-black text-blue-700">{{ ($paymentAccounts ?? collect())->where('is_active', true)->count() }} activas</span>
+                        </div>
+                        <div class="mt-4 space-y-3">
+                            @forelse (($paymentAccounts ?? collect())->where('is_active', true) as $account)
+                                <form method="POST" action="{{ route('seller.shops.payment-accounts.update', [$shop, 'paymentAccount' => $account]) }}" class="rounded-xl border border-slate-200 bg-white p-4">
+                                    @csrf @method('PUT')
+                                    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                        <label class="text-xs font-bold text-slate-600">Nombre visible<input required name="name" value="{{ $account->name }}" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal"></label>
+                                        <label class="text-xs font-bold text-slate-600">Banco<input name="bank_name" value="{{ $account->bank_name }}" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal"></label>
+                                        <label class="text-xs font-bold text-slate-600">Número de cuenta<input name="account_number" value="{{ $account->account_number }}" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal"></label>
+                                        <label class="text-xs font-bold text-slate-600">Titular<input name="account_holder" value="{{ $account->account_holder }}" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal"></label>
+                                    </div>
+                                    <div class="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
+                                        <label class="min-w-0 flex-1 text-xs font-bold text-slate-600">Instrucciones para el cliente<textarea name="instructions" rows="1" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal">{{ $account->instructions }}</textarea></label>
+                                        <div class="flex gap-2"><button class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-black text-white hover:bg-blue-700">Guardar</button></div>
+                                    </div>
+                                </form>
+                                <form method="POST" action="{{ route('seller.shops.payment-accounts.destroy', [$shop, 'paymentAccount' => $account]) }}" class="-mt-12 mr-3 flex justify-end"><input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="_method" value="DELETE"><button class="rounded-lg px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50">Desactivar</button></form>
+                            @empty
+                                <p class="rounded-xl border border-dashed border-blue-200 bg-white px-4 py-6 text-center text-sm text-slate-500">Aún no has agregado cuentas de pago.</p>
+                            @endforelse
+                        </div>
+                        <form method="POST" action="{{ route('seller.shops.payment-accounts.store', $shop) }}" class="mt-4 rounded-xl border border-dashed border-blue-200 bg-white p-4">
+                            @csrf
+                            <p class="text-xs font-black uppercase tracking-wide text-blue-800">Agregar cuenta</p>
+                            <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                <input required name="name" placeholder="Ej. Cuenta Popular" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                                <input name="bank_name" placeholder="Banco" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                                <input name="account_number" placeholder="Número de cuenta" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                                <input name="account_holder" placeholder="Titular" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                            </div>
+                            <div class="mt-3 flex flex-col gap-3 sm:flex-row"><textarea name="instructions" rows="1" placeholder="Instrucciones opcionales" class="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm"></textarea><button class="rounded-lg bg-blue-600 px-4 py-2 text-xs font-black text-white hover:bg-blue-700">Agregar cuenta</button></div>
+                        </form>
+                    </section>
+                @endif
                 @if ($shop->exists)
                     <form id="delete-shop" method="POST" action="{{ route('seller.shops.destroy', $shop) }}">@csrf @method('DELETE')</form>
                 @endif

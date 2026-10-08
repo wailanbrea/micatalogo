@@ -32,7 +32,7 @@ class CatalogController extends Controller
             ->values();
 
         $products = $shop->products()
-            ->with(['inventory', 'sourceProduct', 'primaryImage'])
+            ->with(['inventory', 'sourceProduct', 'primaryImage', 'comboItems.component.inventory'])
             ->orderBy('name')
             ->get()
             ->map(fn (Product $product) => $this->productPayload($product))
@@ -59,9 +59,11 @@ class CatalogController extends Controller
     private function productPayload(Product $product): array
     {
         $inventory = $product->inventory;
+        $stockQuantity = $product->isCombo() ? $product->comboAvailableQuantity() : $inventory?->stock_quantity;
 
         return [
             'id' => $product->public_id,
+            'slug' => $product->slug,
             'category_id' => $product->shop_category_id ? (string) $product->shop_category_id : null,
             'source_product_id' => $product->sourceProduct?->public_id,
             'name' => $product->name,
@@ -76,13 +78,20 @@ class CatalogController extends Controller
             'wholesale_price' => $product->wholesale_price,
             'currency' => $product->currency,
             'sale_unit' => $product->sale_unit,
+            'is_combo' => $product->isCombo(),
+            'combo_items' => $product->isCombo() ? $product->comboItems->map(fn ($item): array => [
+                'product_id' => $item->component?->public_id,
+                'name' => $item->component?->name,
+                'quantity' => (int) $item->quantity,
+            ])->values()->all() : [],
             'volume_ml' => $product->volume_ml,
             'availability_status' => $product->inventory_status,
             'moderation_status' => $product->moderation_status->value,
             'inventory' => [
-                'track_inventory' => $inventory?->track_inventory ?? false,
-                'stock_quantity' => $inventory?->stock_quantity,
+                'track_inventory' => $product->isCombo() || ($inventory?->track_inventory ?? false),
+                'stock_quantity' => $stockQuantity,
                 'available_ml' => $inventory?->available_ml,
+                'opened_bottles' => $inventory?->opened_bottles,
                 'cost_price' => $inventory?->cost_price,
                 'low_stock_threshold' => $inventory?->low_stock_threshold,
             ],

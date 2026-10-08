@@ -202,6 +202,52 @@ test('mobile bottle count detects decant sales even when whole bottle stock is u
     expect($product->fresh()->inventory->available_ml)->toBe(400);
 });
 
+test('mobile opening a bottle is idempotent and preserves total source ml', function () {
+    $user = User::factory()->create(['plan' => UserPlan::Pro]);
+    $shop = Shop::factory()->create(['user_id' => $user->id, 'business_type' => 'perfume_store']);
+    $product = Product::factory()->create([
+        'shop_id' => $shop->id,
+        'name' => 'Perfume fuente móvil',
+        'sale_unit' => 'bottle',
+        'volume_ml' => 100,
+        'price' => 2800,
+    ]);
+    ProductInventory::create([
+        'product_id' => $product->id,
+        'track_inventory' => true,
+        'stock_quantity' => 4,
+        'available_ml' => 400,
+        'cost_price' => 1200,
+    ]);
+    $token = $user->createToken('test', ['pos:write'])->plainTextToken;
+    $url = '/api/v1/shops/'.$shop->public_id.'/mobile-operations';
+    $payload = [
+        'client_operation_uuid' => (string) Str::uuid(),
+        'type' => 'open_bottle',
+        'product_id' => $product->public_id,
+        'quantity' => 1,
+        'expected_stock' => 4,
+        'expected_available_ml' => 400,
+        'notes' => 'Preparación de decants',
+    ];
+
+    $this->withToken($token)->postJson($url, $payload)
+        ->assertCreated()
+        ->assertJsonPath('stock', 3)
+        ->assertJsonPath('opened_bottles', 1)
+        ->assertJsonPath('available_ml', 400);
+    $this->withToken($token)->postJson($url, $payload)->assertCreated();
+    expect($product->fresh()->inventory->stock_quantity)->toBe(3)
+        ->and($product->fresh()->inventory->opened_bottles)->toBe(1)
+        ->and($product->fresh()->inventory->available_ml)->toBe(400)
+        ->and(DB::table('inventory_movements')->where('type', 'opening')->count())->toBe(1);
+
+    $stale = $payload;
+    $stale['client_operation_uuid'] = (string) Str::uuid();
+    $this->withToken($token)->postJson($url, $stale)->assertStatus(409);
+    expect($product->fresh()->inventory->stock_quantity)->toBe(3);
+});
+
 test('mobile returns restore original sold cost not the latest receipt cost and cannot duplicate', function () {
     [$user, $shop, $product, $token] = mobileFixture();
     $saleUuid = (string) Str::uuid();

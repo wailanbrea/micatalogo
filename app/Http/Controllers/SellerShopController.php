@@ -14,9 +14,11 @@ use App\Services\MediaStorageService;
 use App\Services\PlanLimitsService;
 use App\Services\QrCodeSvgService;
 use App\Services\ShopHoursService;
+use App\Services\ShopOperationalSettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -155,12 +157,20 @@ class SellerShopController extends Controller
 
     public function edit(Shop $shop): View
     {
-        return view('seller.shops.form', compact('shop'));
+        return view('seller.shops.form', [
+            'shop' => $shop,
+            'paymentAccounts' => $shop->paymentAccounts()->get(),
+        ]);
     }
 
-    public function storefront(Shop $shop, QrCodeSvgService $qrCodeService): View
+    public function storefront(Request $request, Shop $shop, QrCodeSvgService $qrCodeService): View
     {
         $hours = app(ShopHoursService::class);
+        $operational = app(ShopOperationalSettingsService::class)->forShop($shop);
+        $allowedTabs = ['resumen', 'apariencia', 'contacto', 'catalogo', 'vitrinas', 'anuncios', 'google'];
+        $activeTab = in_array($request->query('tab'), $allowedTabs, true)
+            ? (string) $request->query('tab')
+            : 'resumen';
         $shopUrl = route('shops.show', $shop);
         $products = $shop->products()
             ->with('primaryImage')
@@ -177,43 +187,43 @@ class SellerShopController extends Controller
                 'label' => 'Sube tu logo',
                 'description' => 'Es lo primero que ve el cliente al abrir.',
                 'done' => filled($shop->logo_url),
-                'url' => route('seller.shops.edit', $shop).'#logo',
+                'url' => route('seller.shops.storefront', [$shop, 'tab' => 'apariencia']),
             ],
             [
                 'label' => 'Pon tu WhatsApp',
                 'description' => 'Sin él, el cliente no tiene cómo preguntarte.',
                 'done' => filled($shop->whatsapp_number),
-                'url' => route('seller.shops.edit', $shop).'#whatsapp_number',
+                'url' => route('seller.shops.storefront', [$shop, 'tab' => 'contacto']),
             ],
             [
                 'label' => $withoutPhotoCount > 0 ? $withoutPhotoCount.' producto(s) sin foto' : 'Revisa las fotos',
                 'description' => 'Un producto sin foto casi nunca se vende.',
                 'done' => $withoutPhotoCount === 0 && $productCount > 0,
-                'url' => route('seller.shops.products.index', $shop),
+                'url' => route('seller.shops.feature', [$shop, 'feature' => 'photos']),
             ],
             [
                 'label' => 'Define tu horario',
                 'description' => 'Para que sepan cuándo pueden pasar o escribirte.',
                 'done' => $hours->isConfigured($shop->business_hours),
-                'url' => route('seller.shops.edit', $shop).'#hours',
+                'url' => route('seller.shops.storefront', [$shop, 'tab' => 'contacto']),
             ],
             [
                 'label' => 'Completa la presentación',
                 'description' => 'Una descripción clara explica qué vendes y por qué elegirte.',
                 'done' => filled($shop->description) && filled($shop->cover_url),
-                'url' => route('seller.shops.edit', $shop).'#description',
+                'url' => route('seller.shops.storefront', [$shop, 'tab' => 'apariencia']),
             ],
             [
                 'label' => 'Escribe tu dirección',
                 'description' => 'Si vendes en local, es cómo te encuentran.',
                 'done' => filled($shop->address),
-                'url' => route('seller.shops.edit', $shop).'#address',
+                'url' => route('seller.shops.storefront', [$shop, 'tab' => 'contacto']),
             ],
             [
                 'label' => 'Enlaza tus redes',
                 'description' => 'Tu tienda y tu Instagram se apuntan el uno al otro.',
                 'done' => filled($shop->instagram),
-                'url' => route('seller.shops.edit', $shop).'#instagram',
+                'url' => route('seller.shops.storefront', [$shop, 'tab' => 'contacto']),
             ],
         ];
 
@@ -228,7 +238,10 @@ class SellerShopController extends Controller
             'checklist' => $checklist,
             'completedChecklist' => collect($checklist)->where('done', true)->count(),
             'businessHours' => $hours->isConfigured($shop->business_hours) ? $hours->forForm($shop->business_hours) : null,
+            'hoursForForm' => $hours->forForm($shop->business_hours),
             'businessHoursStatus' => $hours->currentStatus($shop->business_hours),
+            'activeTab' => $activeTab,
+            'operational' => $operational,
             'qrSvg' => $qrCodeService->generateSvg($shopUrl, 220),
         ]);
     }
@@ -254,6 +267,11 @@ class SellerShopController extends Controller
         $shop->update($attributes);
         $presets->apply($shop->fresh());
 
+        if ($request->string('return_to')->value() === 'storefront') {
+            return to_route('seller.shops.storefront', [$shop, 'tab' => $request->string('return_tab')->value() ?: 'apariencia'])
+                ->with('status', 'Cambios guardados.');
+        }
+
         return to_route('seller.shops.edit', $shop)->with('status', 'Cambios guardados.');
     }
 
@@ -266,7 +284,7 @@ class SellerShopController extends Controller
 
     private function attributes(array $input, ?Shop $shop = null): array
     {
-        return [
+        $attributes = [
             ...$input,
             'business_type' => $input['business_type'] ?? $shop?->business_type ?? 'general_retail',
             'slug' => $this->availableSlug($input['slug'] ?: $input['name'], $shop),
@@ -276,6 +294,14 @@ class SellerShopController extends Controller
                 ? app(ShopHoursService::class)->normalize($input['business_hours'])
                 : ($shop?->business_hours),
         ];
+
+        if (Schema::hasColumn('shops', 'operational_settings')) {
+            $attributes['operational_settings'] = app(ShopOperationalSettingsService::class)->normalizeForStorage(
+                $input['operational_settings'] ?? ($shop?->operational_settings ?? [])
+            );
+        }
+
+        return $attributes;
     }
 
     private function availableSlug(string $value, ?Shop $shop = null): string

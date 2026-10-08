@@ -52,7 +52,11 @@ class SellerMenuService
 
     public function canManage(Shop $shop, User $user): bool
     {
-        return $user->isAdmin() || $user->ownsShop($shop) || $user->isActiveShopMember($shop);
+        return $user->isAdmin() || $user->ownsShop($shop) || $shop->members()
+            ->where('user_id', $user->id)
+            ->where('role', 'manager')
+            ->where('is_active', true)
+            ->exists();
     }
 
     /** @return list<string> */
@@ -60,6 +64,10 @@ class SellerMenuService
     {
         if ($this->canManage($shop, $user)) {
             return $this->keys();
+        }
+
+        if ($shop->members()->where('user_id', $user->id)->where('role', 'accountant')->where('is_active', true)->exists()) {
+            return ['accountant', 'finance', 'reports'];
         }
 
         $assignment = $shop->sellers()

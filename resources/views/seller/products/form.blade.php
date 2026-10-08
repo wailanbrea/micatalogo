@@ -33,6 +33,15 @@
             'track_inventory' => (bool) $inventory?->track_inventory,
         ];
     })->values();
+    $comboOptions = $componentProducts->map(fn ($component) => [
+        'id' => $component->id,
+        'name' => $component->name,
+        'stock' => (int) ($component->inventory?->stock_quantity ?? 0),
+        'unit' => $component->saleUnitLabel(),
+    ])->values();
+    $savedComboItems = $product->exists
+        ? $product->comboItems()->get()->map(fn ($item) => ['product_id' => $item->component_product_id, 'quantity' => $item->quantity])->values()
+        : collect();
 @endphp
 <x-layouts.app :title="($product->exists ? 'Editar ' . $productLabel : $newProductLabel) . ' | ' . $shop->name">
     <!-- Persistent Unified Navigation -->
@@ -68,7 +77,7 @@
                     </div>
                 @endif
 
-                <form class="mt-6 space-y-6" method="POST" enctype="multipart/form-data" action="{{ $product->exists ? route('seller.shops.products.update', [$shop, $product]) : route('seller.shops.products.store', $shop) }}" x-data="{ trackInventory: {{ $showInventory && old('track_inventory', $product->exists ? ($product->inventory?->track_inventory ?? false) : true) && $product->sale_unit !== 'service' ? 'true' : 'false' }}, saleUnit: '{{ old('sale_unit', $product->sale_unit ?? 'unit') }}', sourceProductId: '{{ old('inventory_source_product_id', $product->inventory_source_product_id) }}', sourceProducts: @js($sourceOptions), get selectedSource() { return this.sourceProducts.find(source => String(source.id) === String(this.sourceProductId)) || null }, imagePreview: null, imageSearch: { query: '', results: [], selected: null, loading: false, error: '', endpoint: '{{ route('seller.shops.products.images.search', $shop) }}' }, async searchImages() { const query = (this.imageSearch.query || document.getElementById('name')?.value || '').trim(); if (query.length < 2) { this.imageSearch.error = 'Escribe primero el nombre del producto.'; return; } this.imageSearch.query = query; this.imageSearch.loading = true; this.imageSearch.error = ''; try { const response = await fetch(`${this.imageSearch.endpoint}?q=${encodeURIComponent(query)}`, { headers: { Accept: 'application/json' } }); const payload = await response.json(); if (!response.ok) throw new Error(payload.message || 'No se pudieron consultar imágenes.'); this.imageSearch.results = payload.results || []; if (!this.imageSearch.results.length) this.imageSearch.error = 'No encontramos imágenes para ese nombre. Prueba con otra búsqueda.'; } catch (error) { this.imageSearch.error = error.message; } finally { this.imageSearch.loading = false; } } }">
+                <form class="mt-6 space-y-6" method="POST" enctype="multipart/form-data" action="{{ $product->exists ? route('seller.shops.products.update', [$shop, $product]) : route('seller.shops.products.store', $shop) }}" x-data="{ trackInventory: {{ $showInventory && old('track_inventory', $product->exists ? ($product->inventory?->track_inventory ?? false) : true) && $product->sale_unit !== 'service' && ! $product->isCombo() ? 'true' : 'false' }}, saleUnit: '{{ old('sale_unit', $product->sale_unit ?? 'unit') }}', isCombo: {{ old('is_combo', $product->isCombo()) ? 'true' : 'false' }}, comboRows: @js(old('combo_items', $savedComboItems->all())), comboOptions: @js($comboOptions), sourceProductId: '{{ old('inventory_source_product_id', $product->inventory_source_product_id) }}', sourceProducts: @js($sourceOptions), get selectedSource() { return this.sourceProducts.find(source => String(source.id) === String(this.sourceProductId)) || null }, imagePreview: null, imageSearch: { query: '', results: [], selected: null, loading: false, error: '', endpoint: '{{ route('seller.shops.products.images.search', $shop) }}' }, async searchImages() { const query = (this.imageSearch.query || document.getElementById('name')?.value || '').trim(); if (query.length < 2) { this.imageSearch.error = 'Escribe primero el nombre del producto.'; return; } this.imageSearch.query = query; this.imageSearch.loading = true; this.imageSearch.error = ''; try { const response = await fetch(`${this.imageSearch.endpoint}?q=${encodeURIComponent(query)}`, { headers: { Accept: 'application/json' } }); const payload = await response.json(); if (!response.ok) throw new Error(payload.message || 'No se pudieron consultar imágenes.'); this.imageSearch.results = payload.results || []; if (!this.imageSearch.results.length) this.imageSearch.error = 'No encontramos imágenes para ese nombre. Prueba con otra búsqueda.'; } catch (error) { this.imageSearch.error = error.message; } finally { this.imageSearch.loading = false; } } }">
                     @csrf
                     @if ($product->exists)
                         @method('PUT')
@@ -263,6 +272,36 @@
                         </div>
                     </div>
                     @endif
+
+                    <section class="rounded-xl border border-violet-200 bg-violet-50/50 p-4 sm:p-5">
+                        <div class="flex items-start gap-3">
+                            <input id="is_combo" name="is_combo" value="1" type="checkbox" x-model="isCombo" @change="if (isCombo) { trackInventory = false; saleUnit = 'unit'; }" class="mt-1 rounded border-violet-300 text-violet-600 focus:ring-violet-500">
+                            <div>
+                                <label for="is_combo" class="text-sm font-bold text-slate-900">Vender como combo</label>
+                                <p class="mt-0.5 text-xs text-slate-600">Agrupa productos existentes. El stock disponible se calcula con el componente más limitado y al vender se descuentan sus lotes reales.</p>
+                            </div>
+                        </div>
+                        <div x-show="isCombo" x-cloak class="mt-4 space-y-3">
+                            <div class="flex items-center justify-between gap-3">
+                                <p class="text-xs font-bold uppercase tracking-wider text-violet-800">Productos incluidos</p>
+                                <button type="button" @click="comboRows.push({ product_id: '', quantity: 1 })" class="rounded-lg border border-violet-200 bg-white px-3 py-1.5 text-xs font-bold text-violet-700 hover:bg-violet-100">+ Agregar producto</button>
+                            </div>
+                            <template x-for="(row, index) in comboRows" :key="index">
+                                <div class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_100px_auto] sm:items-center">
+                                    <select :name="`combo_items[${index}][product_id]`" x-model="row.product_id" required class="w-full rounded-lg border border-violet-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100">
+                                        <option value="">Selecciona un producto</option>
+                                        <template x-for="option in comboOptions" :key="option.id">
+                                            <option :value="option.id" x-text="`${option.name} · stock ${option.stock}`"></option>
+                                        </template>
+                                    </select>
+                                    <input :name="`combo_items[${index}][quantity]`" x-model.number="row.quantity" type="number" min="1" max="1000" required inputmode="numeric" class="w-full rounded-lg border border-violet-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100" placeholder="Cantidad">
+                                    <button type="button" @click="comboRows.splice(index, 1)" class="rounded-lg p-2 text-slate-400 hover:bg-white hover:text-rose-600" title="Quitar producto">✕</button>
+                                </div>
+                            </template>
+                            <p x-show="comboRows.length === 0" class="rounded-lg border border-dashed border-violet-300 bg-white p-3 text-xs font-semibold text-violet-800">Agrega los productos que forman este combo.</p>
+                            @error('combo_items') <p class="text-xs font-semibold text-red-600">{{ $message }}</p> @enderror
+                        </div>
+                    </section>
 
                     <!-- Slug -->
                     <div>

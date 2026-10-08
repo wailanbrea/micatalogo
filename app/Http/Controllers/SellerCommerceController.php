@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\BusinessPartner;
 use App\Models\CommercialQuote;
 use App\Models\PartnerTransaction;
@@ -17,10 +18,30 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\View\View;
 use InvalidArgumentException;
 
 class SellerCommerceController extends Controller
 {
+    public function showQuote(Request $request, Shop $shop, CommercialQuote $quote): View
+    {
+        abort_unless($quote->shop_id === $shop->id, 404);
+
+        $quote->load(['items', 'customer', 'convertedInvoice']);
+
+        return view('seller.quotes.show', compact('shop', 'quote'));
+    }
+
+    public function quotePdf(Request $request, Shop $shop, CommercialQuote $quote)
+    {
+        abort_unless($quote->shop_id === $shop->id, 404);
+
+        $quote->load(['items', 'customer', 'shop']);
+
+        return Pdf::loadView('seller.quotes.pdf', compact('shop', 'quote'))
+            ->download($quote->quote_number.'.pdf');
+    }
+
     public function storeQuote(Request $request, Shop $shop): RedirectResponse
     {
         $data = $request->validate([
@@ -140,6 +161,7 @@ class SellerCommerceController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:160'],
+            'invoice_currency' => ['nullable', 'string', 'size:3'],
             'phone' => ['nullable', 'string', 'max:30'],
             'email' => ['nullable', 'email', 'max:255'],
             'address' => ['nullable', 'string', 'max:1000'],
@@ -148,6 +170,40 @@ class SellerCommerceController extends Controller
         $shop->suppliers()->create($data);
 
         return back()->with('status', 'Suplidor guardado.');
+    }
+
+    public function storeSupplierDebt(Request $request, Shop $shop): RedirectResponse
+    {
+        $data = $request->validate([
+            'supplier_id' => ['required', 'string'],
+            'amount' => ['required', 'numeric', 'gt:0'],
+            'currency' => ['required', 'string', 'size:3'],
+            'invoice_date' => ['required', 'date'],
+            'due_at' => ['nullable', 'date', 'after_or_equal:invoice_date'],
+            'document_number' => ['nullable', 'string', 'max:80'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $supplier = $shop->suppliers()->where('public_id', $data['supplier_id'])->firstOrFail();
+        $number = $data['document_number'] ?: 'DEUDA-'.now()->format('YmdHis');
+
+        $document = PurchaseDocument::create([
+            'shop_id' => $shop->id,
+            'supplier_id' => $supplier->id,
+            'user_id' => $request->user()->id,
+            'document_number' => $number,
+            'invoice_date' => $data['invoice_date'],
+            'due_at' => $data['due_at'] ?? null,
+            'type' => 'purchase_invoice',
+            'status' => 'debt',
+            'currency' => strtoupper($data['currency']),
+            'payment_status' => 'pending',
+            'subtotal' => $data['amount'],
+            'total' => $data['amount'],
+            'notes' => $data['notes'] ?? 'Deuda registrada sin recepción de inventario.',
+        ]);
+
+        return back()->with('status', "Deuda {$document->document_number} registrada sin modificar el inventario.");
     }
 
     public function previewPurchaseInvoice(Request $request, Shop $shop, PurchaseInvoiceReader $reader): JsonResponse
@@ -166,6 +222,15 @@ class SellerCommerceController extends Controller
             'document_number' => ['required', 'string', 'max:80'],
             'supplier_id' => ['nullable', 'string'],
             'currency' => ['nullable', 'string', 'size:3'],
+            'exchange_rate' => ['nullable', 'numeric', 'min:0'],
+            'carrier' => ['nullable', 'string', 'max:160'],
+            'tracking_number' => ['nullable', 'string', 'max:120'],
+            'expected_at' => ['nullable', 'date'],
+            'shipping_pounds' => ['nullable', 'numeric', 'min:0'],
+            'freight_amount' => ['nullable', 'numeric', 'min:0'],
+            'customs_amount' => ['nullable', 'numeric', 'min:0'],
+            'payment_status' => ['nullable', 'in:pending,partial,paid'],
+            'parent_document_id' => ['nullable', 'string'],
             'mode' => ['nullable', 'in:draft,received'],
             'items' => ['nullable', 'array', 'min:1'],
             'items.*.product_id' => ['required_with:items', 'string'],
@@ -186,7 +251,7 @@ class SellerCommerceController extends Controller
                 'unit_cost' => $data['unit_cost'],
             ]]);
         }
-        if ($items->isEmpty()) {
+        if ($items->isEmpty() && ($data['type'] ?? null) !== 'load') {
             return back()->withErrors(['items' => 'Agrega al menos un producto a la compra.'])->withInput();
         }
 
@@ -199,6 +264,12 @@ class SellerCommerceController extends Controller
             return back()->withErrors(['items' => 'Uno o más productos no pertenecen a esta tienda.'])->withInput();
         }
         $supplier = ! empty($data['supplier_id']) ? $shop->suppliers()->where('public_id', $data['supplier_id'])->firstOrFail() : null;
+        $parent = ! empty($data['parent_document_id'])
+            ? $shop->purchaseDocuments()->where('public_id', $data['parent_document_id'])->where('type', 'load')->first()
+            : null;
+        if (! empty($data['parent_document_id']) && ! $parent) {
+            return back()->withErrors(['parent_document_id' => 'La carga relacionada no pertenece a esta tienda o no es válida.'])->withInput();
+        }
         $lines = $items->map(function (array $item) use ($products): array {
             $product = $products->get($item['product_id']);
             $quantity = (int) $item['quantity'];
@@ -213,10 +284,10 @@ class SellerCommerceController extends Controller
             ];
         })->values();
         $subtotalCents = $lines->sum(fn (array $line): int => $line['unit_cost_cents'] * $line['quantity']);
-        $mode = $data['mode'] ?? 'received';
+        $mode = ($data['type'] ?? null) === 'load' ? 'draft' : ($data['mode'] ?? 'received');
 
         try {
-            $document = DB::transaction(function () use ($request, $shop, $data, $supplier, $inventory, $lines, $subtotalCents, $mode): PurchaseDocument {
+            $document = DB::transaction(function () use ($request, $shop, $data, $supplier, $parent, $inventory, $lines, $subtotalCents, $mode): PurchaseDocument {
                 $document = PurchaseDocument::create([
                     'shop_id' => $shop->id,
                     'supplier_id' => $supplier?->id,
@@ -225,6 +296,15 @@ class SellerCommerceController extends Controller
                     'type' => $data['type'],
                     'status' => $mode,
                     'currency' => strtoupper($data['currency'] ?? 'DOP'),
+                    'exchange_rate' => $data['exchange_rate'] ?? null,
+                    'carrier' => $data['carrier'] ?? null,
+                    'tracking_number' => $data['tracking_number'] ?? null,
+                    'expected_at' => $data['expected_at'] ?? null,
+                    'shipping_pounds' => $data['shipping_pounds'] ?? null,
+                    'freight_amount' => $data['freight_amount'] ?? 0,
+                    'customs_amount' => $data['customs_amount'] ?? 0,
+                    'payment_status' => $data['payment_status'] ?? 'pending',
+                    'parent_document_id' => $parent?->id,
                     'subtotal' => Money::toDecimal($subtotalCents),
                     'total' => Money::toDecimal($subtotalCents),
                     'received_at' => $mode === 'received' ? now() : null,
@@ -265,6 +345,10 @@ class SellerCommerceController extends Controller
             default => 'purchase_invoices',
         };
         $destination = route('seller.shops.feature', [$shop, 'feature' => $feature]);
+
+        if ($document->type === 'load') {
+            return redirect()->to($destination)->withErrors(['purchase' => 'Una carga se recibe a través de sus contenedores.']);
+        }
 
         if ($document->status !== 'draft') {
             return redirect()->to($destination)->withErrors(['purchase' => 'Esta compra ya fue recibida y no puede duplicar sus lotes.']);

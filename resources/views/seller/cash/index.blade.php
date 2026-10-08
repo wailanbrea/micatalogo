@@ -47,8 +47,8 @@
                             </svg>
                         </span>
                         <div>
-                            <h1 class="text-2xl font-black text-slate-900 tracking-tight">Control de caja y turnos</h1>
-                            <p class="mt-0.5 text-xs text-slate-500">Gestión de aperturas, cobros en efectivo, entradas/salidas y arqueo determinista.</p>
+                            <h1 class="text-2xl font-black text-slate-900 tracking-tight">Control avanzado de caja</h1>
+                            <p class="mt-0.5 text-xs text-slate-500">Sesiones opcionales para negocios que necesitan controlar turnos, entradas/salidas y arqueos.</p>
                         </div>
                     </div>
                 </div>
@@ -72,9 +72,9 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                         </svg>
                     </div>
-                    <h2 class="text-xl font-black text-slate-900 tracking-tight">Caja cerrada</h2>
+                    <h2 class="text-xl font-black text-slate-900 tracking-tight">No hay sesión avanzada activa</h2>
                     <p class="mx-auto mt-2 max-w-md text-xs text-slate-500">
-                        No hay una sesión de caja activa para tu usuario. Abre una sesión con tu fondo de sencillo para comenzar a recibir cobros en efectivo.
+                        Puedes seguir vendiendo y registrando gastos normalmente. Abre una sesión solo si necesitas controlar un turno o un fondo inicial.
                     </p>
 
                     <form method="POST" action="{{ route('seller.shops.cash.open', $shop) }}" class="mx-auto mt-6 max-w-md space-y-4 text-left">
@@ -113,7 +113,7 @@
                             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
                             </svg>
-                            <span>Abrir turno de caja</span>
+                            <span>Abrir sesión avanzada</span>
                         </button>
                     </form>
                 </div>
@@ -245,7 +245,8 @@
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
                                         <label class="block font-bold text-slate-700 mb-1">Monto contado en gaveta (RD$)</label>
-                                        <input type="number" name="counted_amount" step="0.01" min="0" required placeholder="0.00" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-900 tabular-nums focus:border-amber-600">
+                                        <input type="number" name="counted_amount" step="0.01" min="0" placeholder="Opcional" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-900 tabular-nums focus:border-amber-600">
+                                        <p class="mt-1 text-[10px] text-slate-500">Déjalo vacío para cerrar sin arqueo.</p>
                                     </div>
                                     <div>
                                         <label class="block font-bold text-slate-700 mb-1">Notas de cierre (opcional)</label>
@@ -307,8 +308,8 @@
 
             <!-- PAST SESSIONS HISTORIC -->
             <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
-                <h2 class="text-base font-black text-slate-900 mb-1">Historial de turnos y arqueos</h2>
-                <p class="text-xs text-slate-500 mb-4">Registro auditable de sesiones de caja cerradas con comparativa de esperado vs contado.</p>
+                <h2 class="text-base font-black text-slate-900 mb-1">Historial de sesiones avanzadas</h2>
+                <p class="text-xs text-slate-500 mb-4">Registro auditable de sesiones opcionales con comparativa de esperado vs contado.</p>
 
                 <div class="overflow-x-auto rounded-xl border border-slate-200">
                     <table class="min-w-full text-left text-xs divide-y divide-slate-200">

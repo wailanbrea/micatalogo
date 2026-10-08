@@ -19,13 +19,19 @@ class PurchaseDocumentService
     public function __construct(private InventoryService $inventory) {}
 
     /**
-     * @param  array{type: string, document_number: string, supplier_id?: string|null, currency?: string|null, mode?: string|null, items: array<int, array{product_id: string, quantity: int, unit_cost: string|float|int}>, notes?: string|null}  $data
+     * @param  array{type: string, document_number: string, supplier_id?: string|null, invoice_date?: string|null, due_at?: string|null, amount?: string|float|int|null, currency?: string|null, exchange_rate?: string|float|int|null, carrier?: string|null, tracking_number?: string|null, expected_at?: string|null, shipping_pounds?: string|float|int|null, freight_amount?: string|float|int|null, customs_amount?: string|float|int|null, payment_status?: string|null, parent_document_id?: string|null, mode?: string|null, items?: array<int, array{product_id: string, quantity: int, unit_cost: string|float|int}>, notes?: string|null}  $data
      */
     public function create(Shop $shop, User $user, array $data): PurchaseDocument
     {
         $items = collect($data['items'] ?? []);
-        if ($items->isEmpty()) {
+        if ($items->isEmpty() && ! in_array(($data['type'] ?? null), ['load', 'supplier_debt'], true)) {
             throw new InvalidArgumentException('Agrega al menos un producto a la compra.');
+        }
+
+        if (($data['type'] ?? null) === 'supplier_debt') {
+            if (empty($data['supplier_id']) || ! isset($data['amount']) || Money::toCents($data['amount']) <= 0) {
+                throw new InvalidArgumentException('Una deuda necesita suplidor y monto mayor que cero.');
+            }
         }
 
         $products = Product::query()
@@ -44,6 +50,13 @@ class PurchaseDocumentService
             throw new InvalidArgumentException('El suplidor no pertenece a esta tienda.');
         }
 
+        $parent = ! empty($data['parent_document_id'])
+            ? $shop->purchaseDocuments()->where('public_id', $data['parent_document_id'])->first()
+            : null;
+        if (! empty($data['parent_document_id']) && (! $parent || $parent->type !== 'load')) {
+            throw new InvalidArgumentException('La carga seleccionada no pertenece a esta tienda.');
+        }
+
         $lines = $items->map(function (array $item) use ($products): array {
             $product = $products->get($item['product_id']);
             $quantity = (int) $item['quantity'];
@@ -60,18 +73,29 @@ class PurchaseDocumentService
         $subtotalCents = $lines->sum(fn (array $line): int => $line['unit_cost_cents'] * $line['quantity']);
         $mode = $data['mode'] ?? 'received';
 
-        return DB::transaction(function () use ($shop, $user, $data, $supplier, $lines, $subtotalCents, $mode): PurchaseDocument {
+        return DB::transaction(function () use ($shop, $user, $data, $supplier, $parent, $lines, $subtotalCents, $mode): PurchaseDocument {
             $document = PurchaseDocument::create([
                 'shop_id' => $shop->id,
                 'supplier_id' => $supplier?->id,
                 'user_id' => $user->id,
                 'document_number' => $data['document_number'],
-                'type' => $data['type'],
-                'status' => $mode,
+                'invoice_date' => $data['invoice_date'] ?? null,
+                'due_at' => $data['due_at'] ?? null,
+                'type' => $data['type'] === 'supplier_debt' ? 'purchase_invoice' : $data['type'],
+                'status' => $data['type'] === 'supplier_debt' ? 'debt' : $mode,
                 'currency' => strtoupper($data['currency'] ?? 'DOP'),
-                'subtotal' => Money::toDecimal($subtotalCents),
-                'total' => Money::toDecimal($subtotalCents),
-                'received_at' => $mode === 'received' ? now() : null,
+                'exchange_rate' => $data['exchange_rate'] ?? null,
+                'carrier' => $data['carrier'] ?? null,
+                'tracking_number' => $data['tracking_number'] ?? null,
+                'expected_at' => $data['expected_at'] ?? null,
+                'shipping_pounds' => $data['shipping_pounds'] ?? null,
+                'freight_amount' => $data['freight_amount'] ?? 0,
+                'customs_amount' => $data['customs_amount'] ?? 0,
+                'payment_status' => $data['payment_status'] ?? 'pending',
+                'parent_document_id' => $parent?->id,
+                'subtotal' => $data['type'] === 'supplier_debt' ? Money::toDecimal(Money::toCents($data['amount'])) : Money::toDecimal($subtotalCents),
+                'total' => $data['type'] === 'supplier_debt' ? Money::toDecimal(Money::toCents($data['amount'])) : Money::toDecimal($subtotalCents),
+                'received_at' => $data['type'] === 'supplier_debt' ? null : ($mode === 'received' ? now() : null),
                 'notes' => $data['notes'] ?? null,
             ]);
 
@@ -101,6 +125,9 @@ class PurchaseDocumentService
         if ($document->status !== 'draft') {
             throw new InvalidArgumentException('Esta compra ya fue recibida y no puede duplicar sus lotes.');
         }
+        if ($document->type === 'load') {
+            throw new InvalidArgumentException('Una carga se recibe a través de sus contenedores.');
+        }
 
         return DB::transaction(function () use ($shop, $document, $user): PurchaseDocument {
             $locked = PurchaseDocument::query()
@@ -110,6 +137,9 @@ class PurchaseDocumentService
                 ->firstOrFail();
             if ($locked->status !== 'draft') {
                 throw new InvalidArgumentException('Esta compra ya fue recibida y no puede duplicar sus lotes.');
+            }
+            if ($locked->type === 'load') {
+                throw new InvalidArgumentException('Una carga se recibe a través de sus contenedores.');
             }
 
             $locked->load('items.product');
@@ -132,14 +162,29 @@ class PurchaseDocumentService
         return [
             'id' => $document->public_id,
             'document_number' => $document->document_number,
-            'type' => $document->type,
+            'type' => $document->status === 'debt' ? 'supplier_debt' : $document->type,
             'status' => $document->status,
             'currency' => $document->currency,
+            'exchange_rate' => $document->exchange_rate,
+            'carrier' => $document->carrier,
+            'tracking_number' => $document->tracking_number,
+            'expected_at' => $document->expected_at?->toDateString(),
+            'invoice_date' => $document->invoice_date?->toDateString(),
+            'due_at' => $document->due_at?->toDateString(),
+            'shipping_pounds' => $document->shipping_pounds,
+            'freight_amount' => $document->freight_amount,
+            'customs_amount' => $document->customs_amount,
+            'payment_status' => $document->payment_status,
+            'parent_document_id' => $document->parentDocument?->public_id,
             'subtotal' => $document->subtotal,
             'total' => $document->total,
             'notes' => $document->notes,
             'received_at' => $document->received_at?->toIso8601String(),
-            'supplier' => $document->supplier ? ['id' => $document->supplier->public_id, 'name' => $document->supplier->name] : null,
+            'supplier' => $document->supplier ? [
+                'id' => $document->supplier->public_id,
+                'name' => $document->supplier->name,
+                'invoice_currency' => $document->supplier->invoice_currency,
+            ] : null,
             'items' => $document->items->map(fn ($item): array => [
                 'id' => $item->id,
                 'product_id' => $item->product?->public_id,
@@ -159,6 +204,7 @@ class PurchaseDocumentService
             'suppliers' => $shop->suppliers()->orderBy('name')->get()->map(fn ($supplier): array => [
                 'id' => $supplier->public_id,
                 'name' => $supplier->name,
+                'invoice_currency' => $supplier->invoice_currency,
             ])->values()->all(),
             'products' => $shop->products()
                 ->whereHas('inventory', fn ($query) => $query->where('track_inventory', true))

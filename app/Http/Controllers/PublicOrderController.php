@@ -53,7 +53,8 @@ class PublicOrderController extends Controller
             foreach ($requestedItems as $publicId => $quantity) {
                 $product = $products->get($publicId);
                 $availableQuantity = $this->availableQuantity($product, $sourceInventories);
-                $available = $product->isInventoryTracked()
+                $controlsStock = $product->isCombo() || $product->isInventoryTracked();
+                $available = $controlsStock
                     ? $availableQuantity > 0 && ($product->isDecant() || $product->availability_status !== ProductAvailabilityStatus::OutOfStock)
                     : $product->availability_status === ProductAvailabilityStatus::Available;
 
@@ -61,7 +62,7 @@ class PublicOrderController extends Controller
                     abort(422, "El producto {$product->name} ya no está disponible.");
                 }
 
-                if ($product->isInventoryTracked() && $quantity > $availableQuantity) {
+                if ($controlsStock && $quantity > $availableQuantity) {
                     abort(422, "La cantidad solicitada de {$product->name} supera el stock disponible.");
                 }
 
@@ -79,6 +80,7 @@ class PublicOrderController extends Controller
                 'order_number' => $this->nextOrderNumber(),
                 'customer_name' => $validated['customer_name'] ?? null,
                 'delivery_type' => $validated['delivery_type'] ?? null,
+                'delivery_at' => $validated['delivery_at'] ?? null,
                 'notes' => $validated['notes'] ?? null,
                 'currency' => config('catalog.currency', 'DOP'),
                 'subtotal' => $subtotal,
@@ -125,6 +127,10 @@ class PublicOrderController extends Controller
 
     private function availableQuantity(Product $product, $sourceInventories): int
     {
+        if ($product->isCombo()) {
+            return $product->comboAvailableQuantity();
+        }
+
         if (! $product->isInventoryTracked()) {
             return 10000;
         }
@@ -176,6 +182,9 @@ class PublicOrderController extends Controller
         }
         if ($order->delivery_type) {
             $message .= "\nEntrega: ".($order->delivery_type === 'delivery' ? 'Envío a domicilio' : 'Retiro en tienda');
+        }
+        if ($order->delivery_at) {
+            $message .= "\nFecha solicitada: ".$order->delivery_at->format('d/m/Y');
         }
         if ($order->notes) {
             $message .= "\nNotas: {$order->notes}";

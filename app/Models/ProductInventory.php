@@ -17,6 +17,7 @@ class ProductInventory extends Model
         'cost_price',
         'stock_quantity',
         'available_ml',
+        'opened_bottles',
         'sold_quantity',
         'low_stock_threshold',
     ];
@@ -28,6 +29,7 @@ class ProductInventory extends Model
             'cost_price' => 'decimal:2',
             'stock_quantity' => 'integer',
             'available_ml' => 'integer',
+            'opened_bottles' => 'integer',
             'sold_quantity' => 'integer',
             'low_stock_threshold' => 'integer',
         ];

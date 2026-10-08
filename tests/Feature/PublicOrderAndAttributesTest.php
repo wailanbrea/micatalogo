@@ -38,6 +38,7 @@ class PublicOrderAndAttributesTest extends TestCase
             'items' => [['id' => $product->public_id, 'quantity' => 2]],
             'customer_name' => 'Ana Pérez',
             'delivery_type' => 'delivery',
+            'delivery_at' => today()->addDay()->startOfDay()->format('Y-m-d H:i:s'),
             'notes' => 'Av. Independencia #12',
         ]);
 
@@ -48,11 +49,13 @@ class PublicOrderAndAttributesTest extends TestCase
 
         $message = urldecode((string) parse_url($response->json('whatsapp_url'), PHP_URL_QUERY));
         expect($message)->toContain('Confirmar pedido y registrar pago:')
-            ->and($message)->toContain($response->json('order_number'));
+            ->and($message)->toContain($response->json('order_number'))
+            ->and($message)->toContain('Fecha solicitada: '.today()->addDay()->format('d/m/Y'));
 
         $this->assertDatabaseHas('orders', [
             'shop_id' => $shop->id,
             'customer_name' => 'Ana Pérez',
+            'delivery_at' => today()->addDay()->startOfDay()->format('Y-m-d H:i:s'),
             'total' => 5600,
             'status' => 'sent_to_whatsapp',
         ]);
@@ -230,6 +233,62 @@ class PublicOrderAndAttributesTest extends TestCase
             ->assertSee('Hawas Ice')
             ->assertDontSee('Lattafa Khamrah')
             ->assertDontSee('Rasasi de otra tienda');
+    }
+
+    public function test_attribute_management_renames_and_retires_without_deleting_product_values(): void
+    {
+        $owner = User::factory()->create(['plan' => UserPlan::Pro]);
+        $shop = Shop::factory()->for($owner)->create(['slug' => 'atributos-seguros']);
+        $definition = AttributeDefinition::create([
+            'shop_id' => $shop->id,
+            'name' => 'Marca',
+            'slug' => 'marca',
+            'filterable' => true,
+            'required' => false,
+        ]);
+        $product = Product::factory()->for($shop)->create();
+        $value = ProductAttributeValue::create([
+            'product_id' => $product->id,
+            'attribute_definition_id' => $definition->id,
+            'value' => 'Rasasi',
+        ]);
+
+        $this->actingAs($owner, 'sanctum')
+            ->putJson("/api/v1/shops/{$shop->public_id}/attributes/{$definition->id}", [
+                'name' => 'Marca comercial',
+                'filterable' => true,
+                'required' => true,
+                'is_active' => true,
+            ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Atributo actualizado.');
+
+        $this->assertDatabaseHas('attribute_definitions', [
+            'id' => $definition->id,
+            'name' => 'Marca comercial',
+            'slug' => 'marca-comercial',
+            'required' => 1,
+            'is_active' => 1,
+        ]);
+
+        $this->actingAs($owner, 'sanctum')
+            ->putJson("/api/v1/shops/{$shop->public_id}/attributes/{$definition->id}", [
+                'name' => 'Marca comercial',
+                'filterable' => true,
+                'required' => true,
+                'is_active' => false,
+            ])
+            ->assertOk();
+
+        $this->assertDatabaseHas('attribute_definitions', [
+            'id' => $definition->id,
+            'is_active' => 0,
+        ]);
+        $this->assertDatabaseHas('product_attribute_values', [
+            'id' => $value->id,
+            'attribute_definition_id' => $definition->id,
+            'value' => 'Rasasi',
+        ]);
     }
 
     public function test_csv_inventory_import_requires_preview_and_imports_valid_rows(): void

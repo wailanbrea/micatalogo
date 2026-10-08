@@ -62,7 +62,7 @@ test('unsupported business types and paid capabilities are enforced centrally', 
 
     expect(app(BusinessProfileService::class)->allows($shop, 'decants'))->toBeFalse()
         ->and(app(SellerMenuService::class)->visibleForUser($shop, $shop->user))->not->toContain('decants')
-        ->and(app(BusinessProfileService::class)->capabilities($shop)['services'])->toBe('unsupported');
+        ->and(app(BusinessProfileService::class)->capabilities($shop)['services'])->toBe('enabled');
 
     $perfumeShop = Shop::factory()->create([
         'business_type' => 'perfume_store',

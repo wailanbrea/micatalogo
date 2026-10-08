@@ -3,6 +3,7 @@
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Product;
+use App\Models\ProductComboItem;
 use App\Models\ProductInventory;
 use App\Models\Shop;
 use App\Models\User;
@@ -38,6 +39,7 @@ test('seller can open the web POS and register a paid sale', function () {
         ->assertSee('Recibido')
         ->assertSee('payment_note')
         ->assertSee('cashChange')
+        ->assertSee('Crear nuevo servicio')
         ->assertSee($product->name);
 
     $this->actingAs($user)
@@ -248,4 +250,45 @@ test('web POS sells a decant and reports when its source bottle is recovered', f
     expect($source->fresh()->inventory->available_ml)->toBe(70)
         ->and($decant->fresh()->inventory->stock_quantity)->toBe(14)
         ->and((float) Invoice::query()->sole()->total)->toBe(300.0);
+});
+
+test('web POS sells a combo by consuming each component and preserving the combined FIFO cost', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->create(['user_id' => $user->id]);
+    $coffee = Product::factory()->create(['shop_id' => $shop->id, 'name' => 'Café', 'price' => 180]);
+    $sandwich = Product::factory()->create(['shop_id' => $shop->id, 'name' => 'Sándwich', 'price' => 220]);
+    ProductInventory::create(['product_id' => $coffee->id, 'track_inventory' => true, 'stock_quantity' => 5, 'cost_price' => 60]);
+    ProductInventory::create(['product_id' => $sandwich->id, 'track_inventory' => true, 'stock_quantity' => 3, 'cost_price' => 90]);
+    $combo = Product::factory()->create([
+        'shop_id' => $shop->id,
+        'name' => 'Combo desayuno',
+        'price' => 330,
+        'is_combo' => true,
+        'sale_unit' => 'unit',
+    ]);
+    ProductInventory::create(['product_id' => $combo->id, 'track_inventory' => false, 'stock_quantity' => 0]);
+    ProductComboItem::create(['product_id' => $combo->id, 'component_product_id' => $coffee->id, 'quantity' => 1]);
+    ProductComboItem::create(['product_id' => $combo->id, 'component_product_id' => $sandwich->id, 'quantity' => 1]);
+
+    $this->actingAs($user)
+        ->get(route('seller.shops.pos', $shop))
+        ->assertOk()
+        ->assertSee('Combo desayuno');
+
+    $this->actingAs($user)
+        ->post(route('seller.shops.pos.store', $shop), [
+            'client_sale_uuid' => (string) Str::uuid(),
+            'payment_status' => 'paid',
+            'sale_mode' => 'retail',
+            'credit_amount' => '0.00',
+            'payments' => [['method' => 'cash', 'amount' => '660.00']],
+            'items' => [webPosProductPayload($combo, 2)],
+        ])
+        ->assertRedirect(route('seller.shops.pos', $shop));
+
+    $invoice = Invoice::query()->with('items')->sole();
+    expect($coffee->fresh()->inventory->stock_quantity)->toBe(3)
+        ->and($sandwich->fresh()->inventory->stock_quantity)->toBe(1)
+        ->and($combo->fresh()->comboAvailableQuantity())->toBe(1)
+        ->and((int) $invoice->items->sole()->total_cost_cents)->toBe(30000);
 });

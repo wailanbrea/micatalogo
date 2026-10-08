@@ -41,6 +41,7 @@ class StoreShopRequest extends FormRequest
             'business_hours.*.close' => ['nullable', 'date_format:H:i'],
             'business_hours.*.all_day' => ['nullable', 'boolean'],
             'business_hours.*.closed' => ['nullable', 'boolean'],
+            'operational_settings' => ['nullable', 'array'],
             'primary_color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'secondary_color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'logo' => ['nullable', 'image', 'mimes:jpeg,png,webp,avif', 'max:'.((int) config('catalog.uploads.max_file_size_mb', 10) * 1024)],

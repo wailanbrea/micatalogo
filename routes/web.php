@@ -5,6 +5,7 @@ use App\Http\Controllers\AdminGlobalCategoryController;
 use App\Http\Controllers\AdminModerationController;
 use App\Http\Controllers\AdminSupportController;
 use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\AccountantAccessController;
 use App\Http\Controllers\CatalogHomeController;
 use App\Http\Controllers\EmailVerificationCodeController;
 use App\Http\Controllers\ProductCatalogMediaController;
@@ -17,9 +18,11 @@ use App\Http\Controllers\PublicShopController;
 use App\Http\Controllers\PublicSupportController;
 use App\Http\Controllers\SellerBulkProductController;
 use App\Http\Controllers\SellerBusinessController;
+use App\Http\Controllers\SellerAuthorizationController;
 use App\Http\Controllers\SellerCashRegisterController;
 use App\Http\Controllers\SellerCommerceController;
 use App\Http\Controllers\SellerCustomerController;
+use App\Http\Controllers\SellerDailyCloseController;
 use App\Http\Controllers\SellerExpenseController;
 use App\Http\Controllers\SellerFeatureController;
 use App\Http\Controllers\SellerInventoryController;
@@ -30,6 +33,7 @@ use App\Http\Controllers\SellerPosController;
 use App\Http\Controllers\SellerProductController;
 use App\Http\Controllers\SellerShopController;
 use App\Http\Controllers\SellerShopMetricController;
+use App\Http\Controllers\ShopPaymentAccountController;
 use App\Http\Controllers\ShopCategoryController;
 use App\Http\Controllers\ShopMemberController;
 use App\Http\Controllers\SitemapController;
@@ -109,12 +113,17 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
         Route::post('/tiendas/{shop}/caja/{session}/movimientos', [SellerCashRegisterController::class, 'movement'])->name('shops.cash.movement');
     });
     Route::scopeBindings()->middleware(['can:sell,shop', 'menu:inventory'])->group(function () {
+        Route::get('/tiendas/{shop}/inventario/movimientos', [SellerInventoryController::class, 'movementsIndex'])->name('shops.inventory.movements.index');
         Route::get('/tiendas/{shop}/inventario/lotes', [SellerBusinessController::class, 'lots'])->name('shops.inventory.lots');
     });
     Route::scopeBindings()->middleware('can:update,shop')->group(function () {
         Route::get('/tiendas/{shop}/productos/reglas-precio', [SellerBusinessController::class, 'pricing'])->name('shops.pricing.index');
+        Route::post('/tiendas/{shop}/productos/reglas-precio', [SellerBusinessController::class, 'bulkRule'])->name('shops.pricing.bulk-rule');
         Route::post('/tiendas/{shop}/productos/{product}/regla-precio', [SellerBusinessController::class, 'rule'])->name('shops.pricing.rule');
         Route::post('/tiendas/{shop}/productos/{product}/aprobar-precio', [SellerBusinessController::class, 'approve'])->name('shops.pricing.approve');
+        Route::post('/tiendas/{shop}/atributos/{attribute}/actualizar', [SellerFeatureController::class, 'updateAttribute'])
+            ->withoutScopedBindings()
+            ->name('shops.attributes.update');
     });
     Route::scopeBindings()->middleware(['can:sell,shop', 'menu:products'])->group(function () {
         Route::get('/tiendas/{shop}/productos', [SellerProductController::class, 'index'])->name('shops.products.index');
@@ -132,7 +141,14 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
         Route::get('/tiendas/{shop}/qr/imprimir', [SellerShopMetricController::class, 'print'])->name('shops.qr.print');
     });
     Route::scopeBindings()->middleware('can:sell,shop')->group(function () {
+        Route::get('/tiendas/{shop}/cotizaciones/{quote}', [SellerCommerceController::class, 'showQuote'])->name('shops.quotes.show');
+        Route::get('/tiendas/{shop}/cotizaciones/{quote}/pdf', [SellerCommerceController::class, 'quotePdf'])->name('shops.quotes.pdf');
         Route::get('/tiendas/{shop}/modulo/{feature}', [SellerFeatureController::class, 'show'])->name('shops.feature');
+        Route::post('/tiendas/{shop}/cierre-diario', [SellerDailyCloseController::class, 'store'])->name('shops.daily-close.store');
+        Route::post('/tiendas/{shop}/autorizaciones/{authorizationRequest}/aprobar', [SellerAuthorizationController::class, 'approve'])
+            ->middleware('can:update,shop')->name('shops.authorizations.approve');
+        Route::post('/tiendas/{shop}/autorizaciones/{authorizationRequest}/rechazar', [SellerAuthorizationController::class, 'reject'])
+            ->middleware('can:update,shop')->name('shops.authorizations.reject');
         Route::get('/tiendas/{shop}/reportes/exportar', [SellerFeatureController::class, 'exportReports'])
             ->middleware('menu:reports')
             ->name('shops.reports.export');
@@ -141,6 +157,7 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
         Route::post('/tiendas/{shop}/cotizaciones', [SellerCommerceController::class, 'storeQuote'])->name('shops.quotes.store');
         Route::post('/tiendas/{shop}/cotizaciones/{quote}/convertir', [SellerCommerceController::class, 'convertQuote'])->name('shops.quotes.convert');
         Route::post('/tiendas/{shop}/suplidores', [SellerCommerceController::class, 'storeSupplier'])->name('shops.suppliers.store');
+        Route::post('/tiendas/{shop}/compras/deudas', [SellerCommerceController::class, 'storeSupplierDebt'])->name('shops.purchases.debts.store');
         Route::post('/tiendas/{shop}/compras/previsualizar', [SellerCommerceController::class, 'previewPurchaseInvoice'])->name('shops.purchases.preview');
         Route::post('/tiendas/{shop}/compras', [SellerCommerceController::class, 'storePurchaseDocument'])->name('shops.purchases.store');
         Route::post('/tiendas/{shop}/compras/{document}/recibir', [SellerCommerceController::class, 'receivePurchaseDocument'])->name('shops.purchases.receive');
@@ -152,10 +169,16 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
         Route::delete('/tiendas/{shop}/vendedores/{seller}', [SellerManagementController::class, 'destroy'])->name('shops.sellers.destroy');
         Route::post('/tiendas/{shop}/usuarios', [ShopMemberController::class, 'store'])->name('shops.members.store');
         Route::delete('/tiendas/{shop}/usuarios/{member}', [ShopMemberController::class, 'destroy'])->name('shops.members.destroy');
+        Route::post('/tiendas/{shop}/contador', [AccountantAccessController::class, 'store'])->name('shops.accountant.store');
+        Route::delete('/tiendas/{shop}/contador/{member}', [AccountantAccessController::class, 'destroy'])->name('shops.accountant.destroy');
+        Route::post('/tiendas/{shop}/cuentas-pago', [ShopPaymentAccountController::class, 'store'])->name('shops.payment-accounts.store');
+        Route::put('/tiendas/{shop}/cuentas-pago/{paymentAccount}', [ShopPaymentAccountController::class, 'update'])->name('shops.payment-accounts.update');
+        Route::delete('/tiendas/{shop}/cuentas-pago/{paymentAccount}', [ShopPaymentAccountController::class, 'destroy'])->name('shops.payment-accounts.destroy');
         Route::post('/tiendas/{shop}/categorias', [ShopCategoryController::class, 'store'])->name('shops.categories.store');
         Route::put('/tiendas/{shop}/categorias/{category}', [ShopCategoryController::class, 'update'])->middleware('can:update,category')->name('shops.categories.update');
         Route::delete('/tiendas/{shop}/categorias/{category}', [ShopCategoryController::class, 'destroy'])->middleware('can:delete,category')->name('shops.categories.destroy');
 
+        Route::get('/tiendas/{shop}/productos/combos/nuevo', [SellerProductController::class, 'create'])->defaults('combo', true)->name('shops.products.combos.create');
         Route::get('/tiendas/{shop}/productos/crear', [SellerProductController::class, 'create'])->name('shops.products.create');
         Route::post('/tiendas/{shop}/productos', [SellerProductController::class, 'store'])->name('shops.products.store');
         Route::get('/tiendas/{shop}/subida-masiva', [SellerBulkProductController::class, 'create'])->name('shops.products.bulk.create');
@@ -175,6 +198,7 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
         Route::post('/tiendas/{shop}/productos/{product}/catalog-media/{catalogImage}/use', [ProductCatalogMediaController::class, 'use'])->middleware('can:update,product')->name('shops.products.catalog-media.use');
 
         Route::post('/tiendas/{shop}/productos/{product}/inventario/reposicion', [SellerInventoryController::class, 'recordRestock'])->middleware('can:update,product')->name('shops.inventory.restock');
+        Route::post('/tiendas/{shop}/productos/{product}/inventario/abrir-botella', [SellerInventoryController::class, 'openBottle'])->middleware('can:update,product')->name('shops.inventory.open-bottle');
         Route::post('/tiendas/{shop}/productos/{product}/inventario/ajuste', [SellerInventoryController::class, 'adjustStock'])->middleware('can:update,product')->name('shops.inventory.adjustment');
         Route::get('/tiendas/{shop}/productos/{product}/inventario/movimientos', [SellerInventoryController::class, 'movements'])->middleware('can:update,product')->name('shops.inventory.movements');
     });

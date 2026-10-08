@@ -34,11 +34,17 @@ class SellerProductController extends Controller
     {
         $search = $request->string('q')->value();
         $status = $request->string('status')->value();
+        $view = $request->string('view')->value();
 
-        $products = $shop->products()
-            ->with(['globalCategory', 'shopCategory', 'images', 'inventory'])
+        $productsQuery = $view === 'archived'
+            ? $shop->products()->onlyTrashed()
+            : $shop->products();
+
+        $products = $productsQuery
+            ->with(['globalCategory', 'shopCategory', 'images', 'inventory', 'comboItems.component.inventory'])
             ->when($search, fn ($q) => $q->where('name', 'like', "%{$search}%"))
             ->when($status, fn ($q) => $q->where('availability_status', $status))
+            ->when($view === 'combos', fn ($q) => $q->where('is_combo', true))
             ->latest()
             ->paginate(15)
             ->withQueryString();
@@ -60,6 +66,7 @@ class SellerProductController extends Controller
             'products' => $products,
             'search' => $search,
             'status' => $status,
+            'view' => $view,
             'totalProducts' => $totalProducts,
             'maxProducts' => $maxProducts,
             'trashedCount' => $trashedCount,
@@ -77,17 +84,28 @@ class SellerProductController extends Controller
 
     public function create(Shop $shop): View
     {
-        $requestedUnit = request()->query('sale_unit') === 'service' ? 'service' : 'unit';
+        $requestedUnit = request()->query('sale_unit');
+        $requestedUnit = in_array($requestedUnit, ['unit', 'bottle', 'ml', 'decant', 'service'], true)
+            ? $requestedUnit
+            : 'unit';
+        $isCombo = request()->boolean('combo');
         if ($requestedUnit === 'service') {
             app(\App\Services\BusinessCapabilityService::class)->assert($shop, 'services');
+        }
+        if ($requestedUnit === 'decant') {
+            app(\App\Services\BusinessCapabilityService::class)->assert($shop, 'decants');
+        }
+        if ($isCombo) {
+            $requestedUnit = 'unit';
         }
 
         return view('seller.products.form', [
             'shop' => $shop,
-            'product' => new Product(['currency' => config('catalog.currency', 'DOP'), 'sale_unit' => $requestedUnit]),
+            'product' => new Product(['currency' => config('catalog.currency', 'DOP'), 'sale_unit' => $requestedUnit, 'is_combo' => $isCombo]),
             'globalCategories' => GlobalCategory::query()->where('status', 'active')->orderBy('sort_order')->orderBy('name')->get(),
             'shopCategories' => $shop->categories()->where('status', 'active')->orderBy('name')->get(),
             'sourceProducts' => $shop->products()->with('inventory')->whereIn('sale_unit', ['bottle', 'ml'])->orderBy('name')->get(),
+            'componentProducts' => $shop->products()->with('inventory')->where('is_combo', false)->where('sale_unit', '!=', 'service')->orderBy('name')->get(),
             'attributeDefinitions' => $shop->attributeDefinitions()->get(),
         ]);
     }
@@ -107,12 +125,16 @@ class SellerProductController extends Controller
             $validated = $request->validated();
             $validated['barcode'] = $catalogMedia->normalizeBarcode($validated['barcode'] ?? null);
             $validated['sale_unit'] ??= 'unit';
+            $isCombo = (bool) ($validated['is_combo'] ?? false);
+            if ($isCombo) {
+                $validated['sale_unit'] = 'unit';
+            }
             $this->validatePresentation($validated, $lockedShop);
             $isService = $validated['sale_unit'] === 'service';
             $inventoryData = [
-                'track_inventory' => $isService ? false : (bool) ($validated['track_inventory'] ?? false),
-                'cost_price' => isset($validated['cost_price']) && $validated['cost_price'] !== '' ? $validated['cost_price'] : null,
-                'stock_quantity' => (int) ($validated['stock_quantity'] ?? 0),
+                'track_inventory' => $isService || $isCombo ? false : (bool) ($validated['track_inventory'] ?? false),
+                'cost_price' => $isCombo ? null : (isset($validated['cost_price']) && $validated['cost_price'] !== '' ? $validated['cost_price'] : null),
+                'stock_quantity' => $isCombo ? 0 : (int) ($validated['stock_quantity'] ?? 0),
                 'low_stock_threshold' => (int) ($validated['low_stock_threshold'] ?? 3),
                 'available_ml' => null,
             ];
@@ -129,9 +151,10 @@ class SellerProductController extends Controller
 
             unset($attributes['track_inventory'], $attributes['cost_price'], $attributes['stock_quantity'], $attributes['low_stock_threshold']);
 
-            unset($attributes['attributes']);
+            unset($attributes['attributes'], $attributes['combo_items']);
             $product = $lockedShop->products()->create($attributes);
             $this->syncProductAttributes($product, $validated, $lockedShop);
+            $this->syncComboItems($product, $validated, $lockedShop);
 
             $inventoryData['stock_quantity'] = $this->presentationStock($product, $inventoryData['stock_quantity']);
             $inventoryData['available_ml'] = $this->availableMlForStock($product, $inventoryData['stock_quantity']);
@@ -150,6 +173,10 @@ class SellerProductController extends Controller
                     'notes' => 'Stock inicial al crear producto',
                     'created_at' => now(),
                 ]);
+            }
+
+            if ($isCombo) {
+                $this->syncComboAvailability($product);
             }
 
             return $product;
@@ -183,6 +210,7 @@ class SellerProductController extends Controller
             'globalCategories' => GlobalCategory::query()->where('status', 'active')->orderBy('sort_order')->orderBy('name')->get(),
             'shopCategories' => $shop->categories()->where('status', 'active')->orderBy('name')->get(),
             'sourceProducts' => $shop->products()->with('inventory')->whereKeyNot($product->id)->whereIn('sale_unit', ['bottle', 'ml'])->orderBy('name')->get(),
+            'componentProducts' => $shop->products()->with('inventory')->whereKeyNot($product->id)->where('is_combo', false)->where('sale_unit', '!=', 'service')->orderBy('name')->get(),
             'attributeDefinitions' => $shop->attributeDefinitions()->get(),
         ]);
     }
@@ -197,19 +225,28 @@ class SellerProductController extends Controller
             $validated = $request->validated();
             $validated['barcode'] = app(CatalogMediaService::class)->normalizeBarcode($validated['barcode'] ?? null);
             $validated['sale_unit'] ??= $product->sale_unit ?: 'unit';
+            $isCombo = (bool) ($validated['is_combo'] ?? false);
+            if ($isCombo) {
+                $validated['sale_unit'] = 'unit';
+            }
             $this->validatePresentation($validated, $shop, $product);
 
             $attributes = $this->attributes($validated, $shop, $product);
             if ($product->barcode !== $validated['barcode']) {
                 $attributes['catalog_product_id'] = null;
             }
-            unset($attributes['track_inventory'], $attributes['cost_price'], $attributes['stock_quantity'], $attributes['low_stock_threshold'], $attributes['attributes']);
+            unset($attributes['track_inventory'], $attributes['cost_price'], $attributes['stock_quantity'], $attributes['low_stock_threshold'], $attributes['attributes'], $attributes['combo_items']);
             $presentation = clone $product;
             $presentation->fill($attributes);
 
             $trackInventory = (bool) ($validated['track_inventory'] ?? false);
             $costPrice = isset($validated['cost_price']) && $validated['cost_price'] !== '' ? $validated['cost_price'] : null;
             $stockQuantity = $trackInventory && isset($validated['stock_quantity']) ? (int) $validated['stock_quantity'] : null;
+            if ($isCombo) {
+                $trackInventory = false;
+                $costPrice = null;
+                $stockQuantity = 0;
+            }
             $lowStockThreshold = (int) ($validated['low_stock_threshold'] ?? 3);
 
             $inventory = $product->inventory()->lockForUpdate()->first();
@@ -294,6 +331,10 @@ class SellerProductController extends Controller
 
             $product->update($attributes);
             $this->syncProductAttributes($product, $validated, $shop);
+            $this->syncComboItems($product, $validated, $shop);
+            if ($isCombo) {
+                $this->syncComboAvailability($product);
+            }
         });
 
         if ($barcode && ($barcode !== $product->barcode || ! $catalogProductId)) {
@@ -450,6 +491,40 @@ class SellerProductController extends Controller
         }
 
         $product->attributeValues()->when($definitionIds !== [], fn ($query) => $query->whereNotIn('attribute_definition_id', $definitionIds))->when($definitionIds === [], fn ($query) => $query)->delete();
+    }
+
+    private function syncComboItems(Product $product, array $input, Shop $shop): void
+    {
+        if (! (bool) ($input['is_combo'] ?? false)) {
+            $product->comboItems()->delete();
+            return;
+        }
+
+        $product->comboItems()->delete();
+        foreach ($input['combo_items'] ?? [] as $item) {
+            $componentId = (int) ($item['product_id'] ?? 0);
+            $quantity = (int) ($item['quantity'] ?? 0);
+            if ($componentId < 1 || $quantity < 1) {
+                continue;
+            }
+
+            abort_unless(
+                $shop->products()->whereKey($componentId)->where('is_combo', false)->where('sale_unit', '!=', 'service')->exists(),
+                422,
+                'Uno de los productos del combo ya no está disponible.'
+            );
+            $product->comboItems()->create(['component_product_id' => $componentId, 'quantity' => $quantity]);
+        }
+    }
+
+    private function syncComboAvailability(Product $product): void
+    {
+        $product->loadMissing(['comboItems.component.inventory']);
+        $product->forceFill([
+            'availability_status' => $product->comboAvailableQuantity() > 0
+                ? ProductAvailabilityStatus::Available->value
+                : ProductAvailabilityStatus::OutOfStock->value,
+        ])->saveQuietly();
     }
 
     private function validatePresentation(array $input, Shop $shop, ?Product $product = null): void

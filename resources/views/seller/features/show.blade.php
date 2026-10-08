@@ -22,7 +22,7 @@
 
                 @if ($module['kind'] !== 'prepared')
                     <div class="space-y-6 p-4 sm:p-6 lg:p-8">
-                        <div class="grid gap-4 sm:grid-cols-3">
+                        <div class="grid gap-4 {{ $featureKey === 'sales' ? 'sm:grid-cols-2 xl:grid-cols-4' : 'sm:grid-cols-3' }}">
                             @foreach ($module['kpis'] as $kpi)
                                 <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                                     <p class="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">{{ $kpi['label'] }}</p>
@@ -36,6 +36,40 @@
                         @endif
                         @if ($errors->any())
                             <div class="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-800"><ul class="list-disc space-y-1 pl-5">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
+                        @endif
+
+                        @if ($featureKey === 'accountant')
+                            <section class="rounded-2xl border border-blue-100 bg-blue-50/50 p-4 sm:p-5">
+                                <div class="flex flex-wrap items-start justify-between gap-4">
+                                    <div>
+                                        <h2 class="text-base font-black text-slate-900">Dar acceso</h2>
+                                        <p class="mt-1 max-w-2xl text-xs leading-5 text-slate-500">Escribe el correo del contable. Tendrá acceso gratuito de solo lectura a ventas, gastos, reportes y facturas, sin poder modificar la operación.</p>
+                                    </div>
+                                    <span class="rounded-full bg-white px-3 py-1.5 text-[11px] font-black text-blue-700 shadow-sm">No consume un usuario</span>
+                                </div>
+                                <form method="POST" action="{{ route('seller.shops.accountant.store', $shop) }}" class="mt-4 flex flex-col gap-3 sm:flex-row">
+                                    @csrf
+                                    <label class="sr-only" for="accountant-email">Correo del contable</label>
+                                    <input id="accountant-email" type="email" name="email" value="{{ old('email') }}" required placeholder="contable@ejemplo.do" class="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <button class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-black text-white hover:bg-blue-700">Dar acceso</button>
+                                </form>
+                                @if (($module['accountantMembers'] ?? []) !== [])
+                                    <div class="mt-5 space-y-2">
+                                        <p class="text-xs font-black uppercase tracking-wide text-slate-500">Con acceso</p>
+                                        @foreach ($module['accountantMembers'] as $member)
+                                            <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3">
+                                                <div><p class="text-sm font-black text-slate-900">{{ $member['name'] }}</p><p class="text-xs text-slate-500">{{ $member['email'] }}</p></div>
+                                                <form method="POST" action="{{ route('seller.shops.accountant.destroy', [$shop, $member['id']]) }}" onsubmit="return confirm('¿Desactivar el acceso de este contador?')">
+                                                    @csrf @method('DELETE')
+                                                    <button class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-black text-rose-700 hover:bg-rose-50">Desactivar</button>
+                                                </form>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <p class="mt-4 text-xs font-semibold text-slate-500">Todavía nadie tiene acceso.</p>
+                                @endif
+                            </section>
                         @endif
 
                         @if ($featureKey === 'quotes')
@@ -157,6 +191,118 @@
                                         <a href="{{ route('seller.shops.feature', [$shop, 'feature' => 'sales']) }}" class="rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-black text-slate-500 hover:text-blue-700">Limpiar</a>
                                     @endif
                                 </div>
+                            </section>
+                        @endif
+
+                        @if ($featureKey === 'services')
+                            @php($serviceFilters = $module['filters'] ?? ['search' => '', 'count' => 0])
+                            <section class="rounded-2xl border border-blue-100 bg-blue-50/50 p-4 sm:p-5" aria-labelledby="services-filters-title">
+                                <div class="flex flex-wrap items-start justify-between gap-3">
+                                    <div>
+                                        <h2 id="services-filters-title" class="text-base font-black text-slate-900">Catálogo de servicios</h2>
+                                        <p class="mt-1 text-xs leading-5 text-slate-500">Busca por nombre, código o descripción. Los servicios se cobran desde Terminal y no descuentan inventario.</p>
+                                    </div>
+                                    <a href="{{ route('seller.shops.products.create', $shop).'?sale_unit=service' }}" class="rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-black text-white hover:bg-blue-700">Nuevo servicio</a>
+                                </div>
+                                <form method="GET" action="{{ route('seller.shops.feature', [$shop, 'feature' => 'services']) }}" class="mt-4 flex flex-col gap-3 sm:flex-row">
+                                    <label class="sr-only" for="services-search">Buscar servicios</label>
+                                    <input id="services-search" name="q" value="{{ $serviceFilters['search'] }}" placeholder="Buscar servicio, código o descripción..." class="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <button class="rounded-xl bg-white px-4 py-2.5 text-sm font-black text-blue-700 shadow-sm ring-1 ring-blue-200 hover:bg-blue-50">Buscar</button>
+                                    @if ($serviceFilters['search'] !== '')
+                                        <a href="{{ route('seller.shops.feature', [$shop, 'feature' => 'services']) }}" class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-center text-sm font-black text-slate-600 hover:text-blue-700">Limpiar</a>
+                                    @endif
+                                </form>
+                                <p class="mt-3 text-[11px] font-bold text-slate-500">{{ number_format((int) $serviceFilters['count']) }} servicio(s) encontrados</p>
+                            </section>
+                        @endif
+
+                        @if ($featureKey === 'encargos')
+                            @php($encargoFilters = $module['filters'] ?? ['search' => '', 'status' => 'all', 'count' => 0])
+                            <section class="rounded-2xl border border-amber-100 bg-amber-50/50 p-4 sm:p-5" aria-labelledby="encargos-filters-title">
+                                <div class="flex flex-wrap items-start justify-between gap-3">
+                                    <div>
+                                        <h2 id="encargos-filters-title" class="text-base font-black text-slate-900">Agenda de encargos</h2>
+                                        <p class="mt-1 text-xs leading-5 text-slate-600">Filtra por fecha de entrega, revisa el pedido y confirma el método de pago antes de convertirlo en venta.</p>
+                                    </div>
+                                    <a href="{{ route('seller.shops.storefront', $shop) }}" class="rounded-xl border border-amber-200 bg-white px-3.5 py-2 text-xs font-black text-amber-800 hover:bg-amber-50">Ver tienda pública</a>
+                                </div>
+                                <form method="GET" action="{{ route('seller.shops.feature', [$shop, 'feature' => 'encargos']) }}" class="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px_auto]">
+                                    <label class="sr-only" for="encargos-search">Buscar encargos</label>
+                                    <input id="encargos-search" name="q" value="{{ $encargoFilters['search'] }}" placeholder="Buscar número de pedido o cliente..." class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <label class="sr-only" for="encargos-status">Filtrar encargos</label>
+                                    <select id="encargos-status" name="status" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                        @foreach (['all' => 'Todos', 'today' => 'Hoy', 'tomorrow' => 'Mañana', 'overdue' => 'Atrasados', 'no_date' => 'Sin fecha'] as $statusKey => $statusLabel)
+                                            <option value="{{ $statusKey }}" @selected($encargoFilters['status'] === $statusKey)>{{ $statusLabel }}</option>
+                                        @endforeach
+                                    </select>
+                                    <button class="rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-black text-white hover:bg-amber-700">Aplicar filtros</button>
+                                </form>
+                                <div class="mt-3 flex flex-wrap gap-2">
+                                    @foreach (['all' => 'Todos', 'today' => 'Hoy', 'tomorrow' => 'Mañana', 'overdue' => 'Atrasados', 'no_date' => 'Sin fecha'] as $statusKey => $statusLabel)
+                                        <a href="{{ request()->fullUrlWithQuery(['status' => $statusKey]) }}" class="rounded-full px-3.5 py-2 text-xs font-black transition {{ $encargoFilters['status'] === $statusKey ? 'bg-amber-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:border-amber-200 hover:text-amber-800' }}">{{ $statusLabel }}</a>
+                                    @endforeach
+                                    @if ($encargoFilters['search'] !== '' || $encargoFilters['status'] !== 'all')
+                                        <a href="{{ route('seller.shops.feature', [$shop, 'feature' => 'encargos']) }}" class="rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-black text-slate-500 hover:text-amber-800">Limpiar</a>
+                                    @endif
+                                </div>
+                                <p class="mt-3 text-[11px] font-bold text-slate-500">{{ number_format((int) $encargoFilters['count']) }} encargo(s) en esta vista</p>
+                            </section>
+                        @endif
+
+                        @if (in_array($featureKey, ['orders', 'shipments'], true))
+                            @php($orderFilters = $module['filters'] ?? ['search' => '', 'status' => 'all', 'count' => 0])
+                            <section class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5" aria-labelledby="orders-filters-title">
+                                <div class="flex flex-wrap items-start justify-between gap-3">
+                                    <div>
+                                        <h2 id="orders-filters-title" class="text-base font-black text-slate-900">{{ $featureKey === 'shipments' ? 'Seguimiento de envíos' : 'Pedidos recibidos' }}</h2>
+                                        <p class="mt-1 text-xs leading-5 text-slate-500">Busca por número o cliente y revisa el estado antes de confirmar la venta.</p>
+                                    </div>
+                                    <span class="rounded-full bg-white px-3 py-1.5 text-[11px] font-black text-slate-600 shadow-sm">{{ number_format((int) $orderFilters['count']) }} resultado(s)</span>
+                                </div>
+                                <form method="GET" action="{{ route('seller.shops.feature', [$shop, 'feature' => $featureKey]) }}" class="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px_auto]">
+                                    <label class="sr-only" for="orders-search">Buscar pedidos</label>
+                                    <input id="orders-search" name="q" value="{{ $orderFilters['search'] }}" placeholder="Buscar número de pedido o cliente..." class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <label class="sr-only" for="orders-status">Filtrar pedidos</label>
+                                    <select id="orders-status" name="status" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                        @foreach (['all' => 'Todos', 'pending' => 'Pendientes', 'sent_to_whatsapp' => 'En revisión', 'confirmed' => 'Confirmados', 'cancelled' => 'Cancelados'] as $statusKey => $statusLabel)
+                                            <option value="{{ $statusKey }}" @selected($orderFilters['status'] === $statusKey)>{{ $statusLabel }}</option>
+                                        @endforeach
+                                    </select>
+                                    <button class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-black text-white hover:bg-blue-700">Aplicar filtros</button>
+                                </form>
+                            </section>
+                        @endif
+
+                        @if ($featureKey === 'price_health')
+                            @php($priceHealthFilters = $module['filters'] ?? ['search' => '', 'status' => 'all', 'count' => 0])
+                            <section class="rounded-2xl border border-indigo-100 bg-indigo-50/50 p-4 sm:p-5" aria-labelledby="price-health-filters-title">
+                                <div class="flex flex-wrap items-start justify-between gap-3">
+                                    <div>
+                                        <h2 id="price-health-filters-title" class="text-base font-black text-slate-900">Revisión de precios</h2>
+                                        <p class="mt-1 text-xs leading-5 text-slate-600">Encuentra rápidamente costos, márgenes y sugerencias pendientes. Las reglas se editan en Precios automáticos.</p>
+                                    </div>
+                                    <a href="{{ route('seller.shops.pricing.index', $shop) }}" class="rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-black text-white hover:bg-indigo-700">Configurar reglas</a>
+                                </div>
+                                <form method="GET" action="{{ route('seller.shops.feature', [$shop, 'feature' => 'price_health']) }}" class="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_200px_auto]">
+                                    <label class="sr-only" for="price-health-search">Buscar productos</label>
+                                    <input id="price-health-search" name="q" value="{{ $priceHealthFilters['search'] }}" placeholder="Buscar producto, costo o estado..." class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    <label class="sr-only" for="price-health-status">Filtrar salud de precio</label>
+                                    <select id="price-health-status" name="status" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                        @foreach (['all' => 'Todos', 'low_cost' => 'Bajo costo', 'low_margin' => 'Margen bajo', 'no_price' => 'Sin precio', 'no_cost' => 'Sin costo', 'cost_doubtful' => 'Costo dudoso', 'suggestions' => 'Sugerencias'] as $statusKey => $statusLabel)
+                                            <option value="{{ $statusKey }}" @selected($priceHealthFilters['status'] === $statusKey)>{{ $statusLabel }}</option>
+                                        @endforeach
+                                    </select>
+                                    <button class="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-black text-white hover:bg-indigo-700">Aplicar filtros</button>
+                                </form>
+                                <div class="mt-3 flex flex-wrap gap-2">
+                                    @foreach (['all' => 'Todos', 'low_cost' => 'Bajo costo', 'low_margin' => 'Margen bajo', 'no_price' => 'Sin precio', 'no_cost' => 'Sin costo', 'cost_doubtful' => 'Costo dudoso', 'suggestions' => 'Sugerencias'] as $statusKey => $statusLabel)
+                                        <a href="{{ request()->fullUrlWithQuery(['status' => $statusKey]) }}" class="rounded-full px-3.5 py-2 text-xs font-black transition {{ $priceHealthFilters['status'] === $statusKey ? 'bg-indigo-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:text-indigo-700' }}">{{ $statusLabel }}</a>
+                                    @endforeach
+                                    @if ($priceHealthFilters['search'] !== '' || $priceHealthFilters['status'] !== 'all')
+                                        <a href="{{ route('seller.shops.feature', [$shop, 'feature' => 'price_health']) }}" class="rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-black text-slate-500 hover:text-indigo-700">Limpiar</a>
+                                    @endif
+                                </div>
+                                <p class="mt-3 text-[11px] font-bold text-slate-500">{{ number_format((int) $priceHealthFilters['count']) }} producto(s) en esta vista</p>
                             </section>
                         @endif
 
@@ -300,8 +446,13 @@
                             }">
                                 <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                     <div><h2 class="text-base font-black text-slate-900">Nueva compra</h2><p class="mt-1 text-xs leading-5 text-slate-500">Crea un borrador con varias líneas o recibe todo de una vez. Cada recepción crea sus propios lotes FIFO.</p></div>
-                                    <span class="rounded-full bg-white px-3 py-1.5 text-[11px] font-black text-amber-800 shadow-sm" x-text="`${items.length} producto(s)`"></span>
+                                    @if ($featureKey === 'loads')
+                                        <span class="rounded-full bg-white px-3 py-1.5 text-[11px] font-black text-amber-800 shadow-sm">Envío sin contenedores</span>
+                                    @else
+                                        <span class="rounded-full bg-white px-3 py-1.5 text-[11px] font-black text-amber-800 shadow-sm" x-text="`${items.length} producto(s)`"></span>
+                                    @endif
                                 </div>
+                                @if ($featureKey !== 'loads')
                                 <div class="mb-4 rounded-xl border border-blue-100 bg-blue-50/70 p-3 sm:p-4">
                                     <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                                         <div>
@@ -320,16 +471,29 @@
                                         <div class="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-[11px] text-amber-800"><p class="font-black">Revisa estas advertencias:</p><ul class="mt-1 list-disc space-y-1 pl-4"><template x-for="warning in invoiceWarnings" :key="warning"><li x-text="warning"></li></template></ul></div>
                                     </template>
                                 </div>
+                                @endif
                                 <form x-ref="purchaseForm" method="POST" action="{{ route('seller.shops.purchases.store', $shop) }}" class="space-y-4">
                                     @csrf
                                     <input type="hidden" name="type" value="{{ $featureKey === 'containers' ? 'container' : ($featureKey === 'loads' ? 'load' : 'purchase_invoice') }}">
                                     <input type="hidden" name="mode" x-model="mode">
                                     <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                                        <label class="text-xs font-bold text-slate-600">No. documento<input required name="document_number" placeholder="FAC-001 / CONT-001" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-normal"></label>
+                                        <label class="text-xs font-bold text-slate-600">{{ $featureKey === 'loads' ? 'Nombre de la carga' : 'No. documento' }}<input required name="document_number" placeholder="{{ $featureKey === 'loads' ? 'Miami septiembre / Pedido Dewan' : 'FAC-001 / CONT-001' }}" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-normal"></label>
                                         <label class="text-xs font-bold text-slate-600">Suplidor<select name="supplier_id" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-normal"><option value="">Sin suplidor</option>@foreach (($module['suppliers'] ?? []) as $supplier)<option value="{{ $supplier['id'] }}">{{ $supplier['name'] }}</option>@endforeach</select></label>
                                         <label class="text-xs font-bold text-slate-600">Moneda<input name="currency" value="DOP" maxlength="3" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-normal uppercase"></label>
                                         <label class="text-xs font-bold text-slate-600">Notas<textarea name="notes" rows="1" placeholder="Opcional" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-normal"></textarea></label>
                                     </div>
+                                    @if ($featureKey === 'loads')
+                                        <div class="grid gap-3 rounded-xl border border-blue-100 bg-blue-50/60 p-3 sm:grid-cols-2 lg:grid-cols-4">
+                                            <label class="text-xs font-bold text-slate-600">Tasa (USD → DOP)<input name="exchange_rate" type="number" min="0" step="0.000001" placeholder="Opcional" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-normal"><span class="mt-1 block text-[10px] font-normal text-slate-500">Una tasa para todo el envío.</span></label>
+                                            <label class="text-xs font-bold text-slate-600">Courier o naviera<input name="carrier" placeholder="Opcional" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-normal"></label>
+                                            <label class="text-xs font-bold text-slate-600">Guía o BL<input name="tracking_number" placeholder="Opcional" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-normal"></label>
+                                            <label class="text-xs font-bold text-slate-600">Llega aproximadamente<input name="expected_at" type="date" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-normal"></label>
+                                            <label class="text-xs font-bold text-slate-600">Libras del envío<input name="shipping_pounds" type="number" min="0" step="0.001" placeholder="Opcional" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-normal"></label>
+                                            <label class="text-xs font-bold text-slate-600">Flete<input name="freight_amount" type="number" min="0" step="0.01" placeholder="0.00" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-normal"></label>
+                                            <label class="text-xs font-bold text-slate-600">Aduana<input name="customs_amount" type="number" min="0" step="0.01" placeholder="0.00" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-normal"></label>
+                                        </div>
+                                    @endif
+                                    @if ($featureKey !== 'loads')
                                     <div class="overflow-hidden rounded-xl border border-slate-200 bg-white">
                                         <div class="grid gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2 text-[10px] font-black uppercase tracking-wide text-slate-500 sm:grid-cols-[minmax(0,1fr)_110px_140px_34px]"><span>Producto</span><span>Cantidad</span><span>Costo unitario</span><span></span></div>
                                         <div class="divide-y divide-slate-100">
@@ -345,10 +509,35 @@
                                         <div class="flex flex-col gap-3 border-t border-slate-100 px-3 py-3 sm:flex-row sm:items-center sm:justify-between"><button type="button" @click="addItem()" class="text-left text-xs font-black text-blue-700 hover:text-blue-900">+ Agregar otro producto</button><span class="text-sm font-black text-slate-900">Total: RD$ <span x-text="total().toLocaleString('es-DO', { minimumFractionDigits: 2 })"></span></span></div>
                                     </div>
                                     <div class="flex flex-col gap-2 sm:flex-row sm:justify-end"><button type="submit" @click="mode = 'draft'" class="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-black text-slate-700 hover:border-blue-300 hover:text-blue-700">Guardar borrador</button><button type="submit" @click="mode = 'received'" class="rounded-xl bg-amber-600 px-4 py-2.5 text-xs font-black text-white hover:bg-amber-700">Recibir inventario</button></div>
+                                    @else
+                                        <div class="flex justify-end"><button type="submit" @click="mode = 'draft'" class="rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-black text-white hover:bg-blue-700">Crear carga</button></div>
+                                    @endif
                                 </form>
                             </div>
+                            @if ($featureKey === 'purchase_invoices')
+                                <div class="mb-4 rounded-2xl border border-amber-200 bg-amber-50/70 p-4 sm:p-5">
+                                    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                        <div>
+                                            <p class="text-[11px] font-black uppercase tracking-[0.16em] text-amber-700">Cuenta por pagar</p>
+                                            <h2 class="mt-1 text-base font-black text-slate-900">Registrar deuda anterior</h2>
+                                            <p class="mt-1 max-w-2xl text-xs leading-5 text-slate-600">Para una factura que ya existía antes de usar MiCatalogo. Se registra la obligación, pero no crea productos ni modifica el inventario.</p>
+                                        </div>
+                                    </div>
+                                    <form method="POST" action="{{ route('seller.shops.purchases.debts.store', $shop) }}" class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                        @csrf
+                                        <label class="text-xs font-bold text-slate-600">Suplidor<select required name="supplier_id" class="mt-1 w-full rounded-xl border border-amber-200 bg-white px-3 py-2.5 text-sm font-normal"><option value="">Elegir…</option>@foreach (($module['suppliers'] ?? []) as $supplier)<option value="{{ $supplier['id'] }}">{{ $supplier['name'] }}</option>@endforeach</select></label>
+                                        <label class="text-xs font-bold text-slate-600">Monto que debes<input required name="amount" type="number" min="0.01" step="0.01" class="mt-1 w-full rounded-xl border border-amber-200 bg-white px-3 py-2.5 text-sm font-normal" placeholder="0.00"></label>
+                                        <label class="text-xs font-bold text-slate-600">Moneda<select required name="currency" class="mt-1 w-full rounded-xl border border-amber-200 bg-white px-3 py-2.5 text-sm font-normal"><option value="DOP">RD$ · Peso dominicano</option><option value="USD">$ · US Dollar</option><option value="EUR">€ · Euro</option><option value="MXN">MX$ · Peso mexicano</option><option value="COP">$ · Peso colombiano</option></select></label>
+                                        <label class="text-xs font-bold text-slate-600">Fecha de la factura<input required name="invoice_date" type="date" value="{{ now()->toDateString() }}" class="mt-1 w-full rounded-xl border border-amber-200 bg-white px-3 py-2.5 text-sm font-normal"></label>
+                                        <label class="text-xs font-bold text-slate-600">Vence<input name="due_at" type="date" class="mt-1 w-full rounded-xl border border-amber-200 bg-white px-3 py-2.5 text-sm font-normal"></label>
+                                        <label class="text-xs font-bold text-slate-600">No. de factura<input name="document_number" placeholder="Opcional" class="mt-1 w-full rounded-xl border border-amber-200 bg-white px-3 py-2.5 text-sm font-normal"></label>
+                                        <label class="text-xs font-bold text-slate-600 sm:col-span-2">Notas<textarea name="notes" rows="1" placeholder="Opcional" class="mt-1 w-full rounded-xl border border-amber-200 bg-white px-3 py-2.5 text-sm font-normal"></textarea></label>
+                                        <div class="flex items-end"><button class="w-full rounded-xl bg-amber-600 px-4 py-2.5 text-xs font-black text-white hover:bg-amber-700">Registrar deuda</button></div>
+                                    </form>
+                                </div>
+                            @endif
                         @elseif ($featureKey === 'suppliers')
-                            <div class="rounded-2xl border border-blue-100 bg-blue-50/50 p-4 sm:p-5"><div class="mb-4"><h2 class="text-base font-black text-slate-900">Nuevo suplidor</h2><p class="mt-1 text-xs text-slate-500">Guarda sus datos para asociarlos a futuras recepciones.</p></div><form method="POST" action="{{ route('seller.shops.suppliers.store', $shop) }}" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">@csrf<input required name="name" placeholder="Nombre del suplidor" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><input name="phone" placeholder="Teléfono" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><input name="email" type="email" placeholder="Correo" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><button class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-black text-white hover:bg-blue-700">Guardar suplidor</button></form></div>
+                            <div class="rounded-2xl border border-blue-100 bg-blue-50/50 p-4 sm:p-5"><div class="mb-4"><h2 class="text-base font-black text-slate-900">Nuevo suplidor</h2><p class="mt-1 text-xs text-slate-500">Guarda sus datos para asociarlos a futuras recepciones.</p></div><form method="POST" action="{{ route('seller.shops.suppliers.store', $shop) }}" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">@csrf<input required name="name" placeholder="Nombre del suplidor" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><select name="invoice_currency" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><option value="">Moneda de factura</option><option value="DOP">DOP · Peso dominicano</option><option value="USD">USD · US Dollar</option><option value="EUR">EUR · Euro</option><option value="MXN">MXN · Peso mexicano</option><option value="COP">COP · Peso colombiano</option></select><input name="phone" placeholder="Teléfono" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><input name="email" type="email" placeholder="Correo" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><button class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-black text-white hover:bg-blue-700">Guardar suplidor</button></form></div>
                         @endif
 
                         @if ($featureKey === 'partners')
@@ -359,22 +548,17 @@
                         @endif
 
                         @if ($featureKey === 'day_close')
-                            <div class="rounded-2xl border {{ $module['session'] ? 'border-emerald-200 bg-emerald-50/60' : 'border-slate-200 bg-slate-50' }} p-4 sm:p-5">
-                                @if ($module['session'])
-                                    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                                        <div>
-                                            <p class="text-[11px] font-black uppercase tracking-[0.14em] text-emerald-700">Sesión de caja activa</p>
-                                            <p class="mt-1 text-sm text-slate-600">Efectivo esperado: <strong class="text-lg text-emerald-800">RD$ {{ $module['session']['expected'] }}</strong></p>
-                                        </div>
-                                        <form method="POST" action="{{ route('seller.shops.cash.close', [$shop, $module['session']['id']]) }}" class="grid w-full gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-end">
-                                            @csrf
-                                            <div><label class="block text-[11px] font-bold text-slate-600" for="day-close-counted">Efectivo contado</label><input id="day-close-counted" name="counted_amount" required min="0" step="0.01" type="number" placeholder="0.00" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-black tabular-nums sm:w-40"></div>
-                                            <button class="w-full rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-black text-white hover:bg-emerald-800 sm:w-auto">Cerrar caja</button>
-                                        </form>
+                            <div class="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 sm:p-5">
+                                <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                                    <div>
+                                        <p class="text-[11px] font-black uppercase tracking-[0.14em] text-emerald-700">Cierre diario</p>
+                                        <p class="mt-1 text-sm text-slate-600">Revisa cualquier día sin abrir una sesión de caja.</p>
                                     </div>
-                                @else
-                                    <div class="flex flex-wrap items-center justify-between gap-3"><div><p class="text-sm font-black text-slate-800">No hay una sesión de caja abierta</p><p class="mt-1 text-xs text-slate-500">Abre la caja para que los cobros en efectivo queden conciliados.</p></div><a wire:navigate.hover href="{{ route('seller.shops.cash.index', $shop) }}" class="rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-black text-white hover:bg-blue-700">Abrir caja</a></div>
-                                @endif
+                                    <form method="GET" action="{{ route('seller.shops.feature', [$shop, 'feature' => 'day_close']) }}" class="flex flex-wrap items-end gap-2">
+                                        <label class="text-[11px] font-bold text-slate-600">Día<input name="period" type="date" value="{{ $module['date'] }}" class="mt-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-black tabular-nums"></label>
+                                        <button class="rounded-xl bg-white px-4 py-2.5 text-xs font-black text-emerald-800 ring-1 ring-emerald-200 hover:bg-emerald-50">Consultar día</button>
+                                    </form>
+                                </div>
                             </div>
                         @endif
 
@@ -416,25 +600,33 @@
                                 </section>
                             </div>
 
-                            <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                                    <div>
-                                        <p class="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Efectivo en caja</p>
-                                        <h2 class="mt-1 text-xl font-black text-slate-950">Concilia el efectivo antes de cerrar</h2>
+                                <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                                    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                        <div>
+                                            <p class="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Efectivo en caja</p>
+                                            <h2 class="mt-1 text-xl font-black text-slate-950">Efectivo esperado del día</h2>
+                                        </div>
+                                        <span class="rounded-full {{ $module['closure'] ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700' }} px-3 py-1.5 text-xs font-black">{{ $module['closure'] ? 'Cierre guardado' : 'Pendiente de cierre' }}</span>
                                     </div>
-                                    <span class="rounded-full {{ $module['day_close']['cash'] ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500' }} px-3 py-1.5 text-xs font-black">{{ $module['day_close']['cash'] ? 'Sesión activa' : 'Sin sesión abierta' }}</span>
-                                </div>
-                                @if ($module['day_close']['cash'])
                                     <div class="mt-5 grid gap-3 sm:grid-cols-3">
-                                        <div class="rounded-xl bg-emerald-50 p-4"><p class="text-[11px] font-bold uppercase tracking-wide text-emerald-700">Entró</p><p class="mt-1 text-xl font-black tabular-nums text-emerald-900">{{ $module['day_close']['cash']['in'] }}</p></div>
-                                        <div class="rounded-xl bg-rose-50 p-4"><p class="text-[11px] font-bold uppercase tracking-wide text-rose-700">Salió</p><p class="mt-1 text-xl font-black tabular-nums text-rose-900">{{ $module['day_close']['cash']['out'] }}</p></div>
-                                        <div class="rounded-xl bg-blue-50 p-4"><p class="text-[11px] font-bold uppercase tracking-wide text-blue-700">Deberías tener</p><p class="mt-1 text-xl font-black tabular-nums text-blue-900">{{ $module['day_close']['cash']['expected'] }}</p></div>
+                                        <div class="rounded-xl bg-emerald-50 p-4"><p class="text-[11px] font-bold uppercase tracking-wide text-emerald-700">Entró en efectivo</p><p class="mt-1 text-xl font-black tabular-nums text-emerald-900">{{ $module['day_close']['cash']['in'] }}</p></div>
+                                        <div class="rounded-xl bg-rose-50 p-4"><p class="text-[11px] font-bold uppercase tracking-wide text-rose-700">Salió en efectivo</p><p class="mt-1 text-xl font-black tabular-nums text-rose-900">{{ $module['day_close']['cash']['out'] }}</p></div>
+                                        <div class="rounded-xl bg-blue-50 p-4"><p class="text-[11px] font-bold uppercase tracking-wide text-blue-700">Esperado</p><p class="mt-1 text-xl font-black tabular-nums text-blue-900">{{ $module['day_close']['cash']['expected'] }}</p></div>
                                     </div>
                                     <p class="mt-4 text-xs leading-5 text-slate-500">Solo el efectivo se cuenta aquí. Transferencias y tarjetas se revisan contra el banco, no contra la gaveta.</p>
-                                @else
-                                    <p class="mt-4 text-sm text-slate-500">Abre una sesión desde Control de caja para registrar el arqueo y conciliar los cobros en efectivo.</p>
-                                @endif
-                            </section>
+                                    <form method="POST" action="{{ route('seller.shops.daily-close.store', $shop) }}" class="mt-5 grid gap-3 border-t border-slate-100 pt-5 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+                                        @csrf
+                                        <input type="hidden" name="date" value="{{ $module['date'] }}">
+                                        <label class="text-[11px] font-bold text-slate-600">Efectivo contado (opcional)<input name="counted_cash" min="0" step="0.01" type="number" placeholder="Vacío = sin arqueo" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-black tabular-nums"></label>
+                                        <label class="text-[11px] font-bold text-slate-600">Nota (opcional)<input name="notes" placeholder="Observación del día" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"></label>
+                                        <button class="rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-black text-white hover:bg-emerald-800">Guardar cierre</button>
+                                    </form>
+                                    @if ($module['closure'])
+                                        <p class="mt-3 text-sm font-semibold {{ $module['closure']['difference'] === null ? 'text-slate-600' : ($module['closure']['difference'] == 0 ? 'text-emerald-700' : 'text-amber-700') }}">
+                                            {{ $module['closure']['difference'] === null ? 'Cerrado sin arqueo.' : 'Contado: RD$ '.number_format((float) $module['closure']['counted_cash'], 2).' · Diferencia: RD$ '.number_format((float) $module['closure']['difference'], 2) }}
+                                        </p>
+                                    @endif
+                                </section>
                         @endif
 
                         @if ($featureKey === 'decants')
@@ -459,7 +651,7 @@
                                                     <span class="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black {{ $bottle['covered'] ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800' }}">{{ $bottle['covered'] ? 'Costo cubierto' : 'En recuperación' }}</span>
                                                 </div>
                                                 <div class="mt-4 grid grid-cols-2 gap-2 text-xs">
-                                                    <div class="rounded-xl bg-slate-50 p-3"><p class="font-bold text-slate-400">Disponible</p><p class="mt-1 font-black text-slate-900">{{ $bottle['available_ml'] === null ? 'Sin control' : number_format($bottle['available_ml']).' ml' }}</p></div>
+                                                    <div class="rounded-xl bg-slate-50 p-3"><p class="font-bold text-slate-400">Disponible</p><p class="mt-1 font-black text-slate-900">{{ $bottle['available_ml'] === null ? 'Sin control' : number_format($bottle['available_ml']).' ml' }}</p><p class="mt-1 text-[10px] text-slate-500">{{ number_format((int) ($bottle['stock_quantity'] ?? 0)) }} sellada(s) · {{ number_format((int) ($bottle['opened_bottles'] ?? 0)) }} abierta(s)</p></div>
                                                     <div class="rounded-xl bg-slate-50 p-3"><p class="font-bold text-slate-400">Ingresos decants</p><p class="mt-1 font-black text-slate-900">RD$ {{ number_format((float) $bottle['revenue'], 2) }}</p></div>
                                                 </div>
                                                 @if ($bottle['cost'] !== null)
@@ -479,6 +671,237 @@
                             </section>
                         @endif
 
+                        @if ($featureKey === 'credit' && ! empty($module['creditTabs']))
+                            <section x-data="{ active: 'receivable' }" class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                                <div class="flex gap-2 overflow-x-auto border-b border-slate-100 px-4 py-4 sm:px-5" role="tablist" aria-label="Filtrar crédito">
+                                    <button type="button" @click="active = 'receivable'" :class="active === 'receivable' ? 'bg-blue-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700'" class="shrink-0 rounded-full px-4 py-2 text-xs font-black" role="tab">Por cobrar</button>
+                                    <button type="button" @click="active = 'paid'" :class="active === 'paid' ? 'bg-blue-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700'" class="shrink-0 rounded-full px-4 py-2 text-xs font-black" role="tab">Pagados</button>
+                                </div>
+                                @foreach (['receivable' => 'Por cobrar', 'paid' => 'Pagados'] as $tabKey => $tabLabel)
+                                    <div x-show="active === '{{ $tabKey }}'" x-cloak class="divide-y divide-slate-100" role="tabpanel" aria-label="{{ $tabLabel }}">
+                                        @forelse ($module['creditTabs'][$tabKey] as $row)
+                                            <div class="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                                                <div class="min-w-0"><p class="truncate text-sm font-black text-slate-900">{{ $row['primary'] }}</p><p class="mt-1 text-xs text-slate-500">{{ $row['secondary'] }}</p></div>
+                                                <div class="flex items-center gap-3 sm:justify-end"><span class="text-sm font-black tabular-nums text-slate-900">{{ $row['value'] }}</span><span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">{{ $row['status'] }}</span></div>
+                                            </div>
+                                        @empty
+                                            <div class="px-5 py-12 text-center text-sm text-slate-500">{{ $tabKey === 'receivable' ? 'Nadie te debe todavía. Las ventas a crédito aparecerán aquí.' : 'Todavía no hay abonos registrados.' }}</div>
+                                        @endforelse
+                                    </div>
+                                @endforeach
+                            </section>
+                        @elseif ($featureKey === 'attributes')
+                            @php($attributeFilters = $module['filters'] ?? ['search' => '', 'count' => 0])
+                            <section x-data="{ query: @js($attributeFilters['search']), editing: null }" class="space-y-4">
+                                <div class="rounded-2xl border border-indigo-100 bg-indigo-50/50 p-4 sm:p-5">
+                                    <div class="flex flex-wrap items-start justify-between gap-3">
+                                        <div>
+                                            <h2 class="text-base font-black text-slate-900">Marcas y atributos</h2>
+                                            <p class="mt-1 text-xs leading-5 text-slate-600">Cambia nombres, define filtros y retira atributos sin borrar los valores históricos de tus productos.</p>
+                                        </div>
+                                        <a href="{{ route('seller.shops.products.create', $shop) }}" class="rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-black text-white hover:bg-indigo-700">Usar al crear producto</a>
+                                    </div>
+                                    <div class="mt-4 flex flex-col gap-3 sm:flex-row">
+                                        <label class="sr-only" for="attributes-search">Buscar atributos</label>
+                                        <input id="attributes-search" x-model="query" placeholder="Buscar marca, talla, color o concentración..." class="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                        <span class="rounded-xl bg-white px-4 py-2.5 text-center text-xs font-black text-indigo-700 shadow-sm" x-text="`${Array.from(document.querySelectorAll('[data-attribute-card]')).filter(card => !query.trim() || card.dataset.search.includes(query.trim().toLowerCase())).length} atributo(s)`"></span>
+                                    </div>
+                                </div>
+                                <div class="grid gap-3 lg:grid-cols-2">
+                                    @forelse ($module['rows'] as $row)
+                                        <article data-attribute-card data-search="{{ strtolower($row['primary'].' '.$row['secondary'].' '.$row['value']) }}" x-show="!query.trim() || $el.dataset.search.includes(query.trim().toLowerCase())" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                                <div class="min-w-0">
+                                                    <h3 class="truncate text-sm font-black text-slate-900">{{ $row['primary'] }}</h3>
+                                                    <p class="mt-1 text-xs text-slate-500">{{ $row['secondary'] }} · {{ $row['value'] }}</p>
+                                                </div>
+                                                <span class="rounded-full {{ $row['status'] === 'Obligatorio' ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-800' }} px-2.5 py-1 text-[10px] font-black">{{ $row['status'] }}</span>
+                                            </div>
+                                            <div class="mt-3 flex flex-wrap items-center gap-2">
+                                                <button type="button" @click="editing = editing === '{{ $row['id'] }}' ? null : '{{ $row['id'] }}'" class="rounded-xl border border-indigo-200 bg-white px-3 py-2 text-xs font-black text-indigo-700 hover:bg-indigo-50">Cambiar nombre</button>
+                                                <form method="POST" action="{{ $row['retire_url'] }}" onsubmit="return confirm('¿Retirar este atributo? Sus valores históricos se conservarán.')">
+                                                    @csrf
+                                                    <input type="hidden" name="name" value="{{ $row['primary'] }}">
+                                                    <input type="hidden" name="is_active" value="0">
+                                                    <button class="rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-black text-rose-700 hover:bg-rose-50">Retirar</button>
+                                                </form>
+                                            </div>
+                                            <form x-show="editing === '{{ $row['id'] }}'" x-cloak method="POST" action="{{ $row['edit_url'] }}" class="mt-3 grid gap-3 rounded-xl border border-indigo-100 bg-indigo-50/50 p-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+                                                @csrf
+                                                <div class="space-y-2">
+                                                    <label class="block text-[11px] font-black text-slate-600">Nombre<input required name="name" value="{{ $row['primary'] }}" maxlength="100" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal"></label>
+                                                    <div class="flex flex-wrap gap-4 text-xs font-semibold text-slate-600">
+                                                        <label><input type="hidden" name="filterable" value="0"><input type="checkbox" name="filterable" value="1" @checked($row['filterable']) class="mr-1 rounded border-slate-300 text-indigo-600"> Filtrable</label>
+                                                        <label><input type="hidden" name="required" value="0"><input type="checkbox" name="required" value="1" @checked($row['status'] === 'Obligatorio') class="mr-1 rounded border-slate-300 text-indigo-600"> Obligatorio</label>
+                                                    </div>
+                                                </div>
+                                                <div class="flex items-end gap-2"><button class="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-black text-white hover:bg-indigo-700">Guardar</button><button type="button" @click="editing = null" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-600">Cancelar</button></div>
+                                            </form>
+                                        </article>
+                                    @empty
+                                        <div class="lg:col-span-2 rounded-2xl border border-dashed border-slate-300 px-5 py-12 text-center text-sm text-slate-500">No hay atributos activos. Puedes crearlos al guardar un producto o importarlos desde tu catálogo.</div>
+                                    @endforelse
+                                </div>
+                            </section>
+                        @elseif ($featureKey === 'authorizations')
+                            <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                                <div class="border-b border-slate-100 px-4 py-5 sm:px-6">
+                                    <p class="text-[11px] font-black uppercase tracking-[0.18em] text-blue-600">Esperando tu respuesta</p>
+                                    <h2 class="mt-2 text-xl font-black text-slate-950">Las solicitudes de tu equipo aparecen aquí</h2>
+                                    <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Revisa el contexto antes de aprobar o rechazar una acción sensible. La decisión queda registrada con el usuario y la hora.</p>
+                                </div>
+                                @if (count($module['pendingRequests'] ?? []))
+                                    <div class="divide-y divide-slate-100">
+                                        @foreach ($module['pendingRequests'] as $authorization)
+                                            <article class="flex flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+                                                <div class="min-w-0">
+                                                    <div class="flex flex-wrap items-center gap-2">
+                                                        <h3 class="text-sm font-black text-slate-900">{{ $authorization['action'] }}</h3>
+                                                        <span class="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-amber-800">Pendiente</span>
+                                                    </div>
+                                                    <p class="mt-1 text-xs text-slate-500">Solicitado por {{ $authorization['requester'] }} · {{ $authorization['requester_email'] }} · {{ $authorization['created_at'] }}</p>
+                                                    @if (count($authorization['context'] ?? []))
+                                                        <dl class="mt-3 grid gap-2 text-xs text-slate-600 sm:grid-cols-2">
+                                                            @foreach ($authorization['context'] as $key => $value)
+                                                                <div class="rounded-lg bg-slate-50 px-3 py-2"><dt class="font-bold text-slate-400">{{ str_replace('_', ' ', ucfirst((string) $key)) }}</dt><dd class="mt-0.5 break-words font-semibold text-slate-700">{{ is_scalar($value) ? $value : json_encode($value, JSON_UNESCAPED_UNICODE) }}</dd></div>
+                                                            @endforeach
+                                                        </dl>
+                                                    @endif
+                                                </div>
+                                                <div class="flex shrink-0 flex-wrap gap-2">
+                                                    <form method="POST" action="{{ $authorization['reject_url'] }}">@csrf<button class="rounded-xl border border-rose-200 bg-white px-3.5 py-2.5 text-xs font-black text-rose-700 hover:bg-rose-50">Rechazar</button></form>
+                                                    <form method="POST" action="{{ $authorization['approve_url'] }}">@csrf<button class="rounded-xl bg-emerald-600 px-3.5 py-2.5 text-xs font-black text-white hover:bg-emerald-700">Aprobar</button></form>
+                                                </div>
+                                            </article>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <div class="px-5 py-14 text-center sm:px-8">
+                                        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-2xl text-emerald-600">✓</div>
+                                        <h3 class="mt-4 text-base font-black text-slate-900">Nada pendiente</h3>
+                                        <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">Cuando alguien pida permiso te llegará al teléfono y aparecerá aquí.</p>
+                                    </div>
+                                @endif
+                            </section>
+                            <section class="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+                                <div class="flex flex-wrap items-start justify-between gap-3"><div><h2 class="text-base font-black text-slate-900">Permisos del equipo</h2><p class="mt-1 text-xs text-slate-500">El acceso habitual se administra por vendedor y por tienda.</p></div><a wire:navigate.hover href="{{ route('seller.shops.sellers.index', $shop) }}" class="rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-black text-white hover:bg-blue-700">Administrar equipo</a></div>
+                                @if (count($module['rows'] ?? []))
+                                    <div class="mt-4 divide-y divide-slate-100 rounded-xl border border-slate-200">@foreach ($module['rows'] as $row)<div class="flex flex-wrap items-center justify-between gap-3 px-3 py-3"><div><p class="text-sm font-black text-slate-900">{{ $row['primary'] }}</p><p class="text-xs text-slate-500">{{ $row['secondary'] }}</p></div><span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">{{ $row['value'] }}</span></div>@endforeach</div>
+                                @else
+                                    <p class="mt-4 rounded-xl border border-dashed border-slate-300 px-4 py-8 text-center text-xs text-slate-500">Todavía no hay vendedores activos.</p>
+                                @endif
+                            </section>
+                        @elseif ($featureKey === 'commissions' && ! empty($module['commissionRows']))
+                            <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                                <div class="border-b border-slate-100 px-4 py-4 sm:px-5">
+                                    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                        <div><h2 class="text-base font-black text-slate-900">Resumen de comisiones</h2><p class="mt-1 text-xs text-slate-500">{{ $module['commissionDateLabel'] }}</p></div>
+                                        <span class="rounded-full bg-amber-50 px-3 py-1.5 text-xs font-black text-amber-800">A pagar {{ $module['commissionPayable'] }}</span>
+                                    </div>
+                                    <div class="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Período de comisiones">
+                                        @foreach (($module['commissionPeriods'] ?? []) as $periodKey => $periodLabel)
+                                            <a href="{{ request()->fullUrlWithQuery(['period' => $periodKey]) }}" class="rounded-full px-3.5 py-2 text-xs font-black transition {{ ($module['commissionPeriod'] ?? '') === $periodKey ? 'bg-blue-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700' }}">{{ $periodLabel }}</a>
+                                        @endforeach
+                                    </div>
+                                </div>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-[760px] w-full text-left text-xs">
+                                        <thead class="bg-slate-50 text-[10px] font-black uppercase tracking-wide text-slate-500"><tr><th class="px-4 py-3 sm:px-5">Vendedor</th><th class="px-4 py-3">%</th><th class="px-4 py-3">Ventas</th><th class="px-4 py-3">Devoluciones</th><th class="px-4 py-3">Base</th><th class="px-4 py-3 sm:px-5">Comisión</th></tr></thead>
+                                        <tbody class="divide-y divide-slate-100">
+                                            @foreach ($module['commissionRows'] as $row)
+                                                <tr><td class="px-4 py-3 sm:px-5"><p class="font-black text-slate-900">{{ $row['primary'] }}</p><p class="mt-0.5 text-[11px] text-slate-500">{{ $row['secondary'] }}</p></td><td class="px-4 py-3 text-slate-600">{{ $row['rate'] }}</td><td class="px-4 py-3 font-bold tabular-nums text-slate-900">{{ $row['sales'] }}</td><td class="px-4 py-3 text-slate-600">{{ $row['returns'] }}</td><td class="px-4 py-3 font-bold tabular-nums text-slate-900">{{ $row['base'] }}</td><td class="px-4 py-3 sm:px-5 font-black tabular-nums text-slate-900">{{ $row['commission'] }}</td></tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                                @if (count($module['rows'] ?? []))
+                                    <details class="border-t border-slate-100 px-4 py-4 sm:px-5">
+                                        <summary class="cursor-pointer text-xs font-black text-blue-700">Ver detalle de ventas del período</summary>
+                                        <div class="mt-3 divide-y divide-slate-100 rounded-xl border border-slate-200">
+                                            @foreach ($module['rows'] as $detail)
+                                                <div class="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 text-xs"><span class="font-black text-slate-900">{{ $detail['primary'] }}</span><span class="text-slate-500">{{ $detail['secondary'] }}</span><span class="font-bold text-slate-900">{{ $detail['value'] }}</span></div>
+                                            @endforeach
+                                        </div>
+                                    </details>
+                                @endif
+                                <p class="border-t border-slate-100 px-4 py-4 text-xs leading-5 text-slate-500 sm:px-5">La comisión usa la regla que tenía cada vendedor cuando se realizó la venta. Las ventas anuladas no cuentan y las devoluciones reducen la base.</p>
+                            </section>
+                        @elseif ($featureKey === 'decants')
+                            <section x-data="{ query: '', status: 'all', showOpenBottle: false, openUrl: @js($module['bottleSources'][0]['open_url'] ?? '') }" class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                                <div class="border-b border-slate-100 px-4 py-4 sm:px-5">
+                                    <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                                        <div>
+                                            <h2 class="text-base font-black text-slate-900">Presentaciones listas para vender</h2>
+                                            <p class="mt-1 text-xs leading-5 text-slate-500">Filtra por fragancia y estado. Cada venta descuenta los mililitros de la botella fuente.</p>
+                                        </div>
+                                        <div class="flex flex-wrap gap-2">
+                                            @foreach (($module['actions'] ?? []) as $action)
+                                                @if ($action['modal'] ?? false)
+                                                    <button type="button" @click="showOpenBottle = true" {{ empty($module['bottleSources']) ? 'disabled' : '' }} class="rounded-xl px-3 py-2 text-[11px] font-black {{ ($action['tone'] ?? 'secondary') === 'primary' ? 'bg-blue-600 text-white hover:bg-blue-700' : 'border border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700' }} disabled:cursor-not-allowed disabled:opacity-50">{{ $action['label'] }}</button>
+                                                @else
+                                                    <a wire:navigate.hover href="{{ $action['url'] }}" class="rounded-xl px-3 py-2 text-[11px] font-black {{ ($action['tone'] ?? 'secondary') === 'primary' ? 'bg-blue-600 text-white hover:bg-blue-700' : 'border border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700' }}">{{ $action['label'] }}</a>
+                                                @endif
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center">
+                                        <label class="sr-only" for="decants-search">Buscar decants</label>
+                                        <input id="decants-search" x-model="query" placeholder="Buscar fragancia o marca..." class="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                        <div class="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Filtrar decants por estado">
+                                            @foreach (['all' => 'Todos', 'ready' => 'Listos', 'on_demand' => 'A pedido', 'no_source' => 'Sin botella', 'depleting' => 'Se agota'] as $statusKey => $statusLabel)
+                                                <button type="button" @click="status = '{{ $statusKey }}'" :class="status === '{{ $statusKey }}' ? 'bg-blue-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700'" class="shrink-0 rounded-full px-3.5 py-2 text-xs font-black" role="tab">{{ $statusLabel }}</button>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="divide-y divide-slate-100">
+                                    @forelse ($module['rows'] as $row)
+                                        @php($rowStatus = match ($row['status']) { 'Listos' => 'ready', 'A pedido' => 'on_demand', 'Sin botella' => 'no_source', 'Se agota' => 'depleting', default => 'all' })
+                                        <article data-decant-row data-search="{{ strtolower($row['primary'].' '.$row['secondary'].' '.$row['value']) }}" data-status="{{ $rowStatus }}" x-show="(!query.trim() || $el.dataset.search.includes(query.trim().toLowerCase())) && (status === 'all' || status === $el.dataset.status)" class="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                                            <div class="min-w-0">
+                                                <p class="truncate text-sm font-black text-slate-900">{{ $row['primary'] }}</p>
+                                                <p class="mt-1 text-xs leading-5 text-slate-500">{{ $row['secondary'] }}</p>
+                                            </div>
+                                            <div class="flex flex-wrap items-center gap-3 sm:justify-end">
+                                                <span class="text-sm font-black tabular-nums text-slate-900">{{ $row['value'] }}</span>
+                                                <span class="rounded-full {{ $rowStatus === 'ready' ? 'bg-emerald-50 text-emerald-700' : ($rowStatus === 'depleting' ? 'bg-amber-50 text-amber-800' : 'bg-slate-100 text-slate-600') }} px-2.5 py-1 text-[11px] font-black">{{ $row['status'] }}</span>
+                                            </div>
+                                        </article>
+                                    @empty
+                                        <div class="px-5 py-12 text-center text-sm text-slate-500">Crea una presentación de decant para verla aquí.</div>
+                                    @endforelse
+                                    <p x-show="query.trim() || status !== 'all'" x-cloak class="px-5 py-8 text-center text-sm text-slate-500">No hay decants con ese filtro.</p>
+                                </div>
+                                <div x-show="showOpenBottle" x-cloak x-transition.opacity class="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/45 p-3 sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="open-bottle-title" @keydown.escape.window="showOpenBottle = false" @click.self="showOpenBottle = false">
+                                    <div x-transition class="w-full max-w-lg overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+                                        <div class="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4 sm:px-6">
+                                            <div><p class="text-[10px] font-black uppercase tracking-[0.16em] text-blue-600">Decants</p><h3 id="open-bottle-title" class="mt-1 text-lg font-black text-slate-950">Abrir botella</h3><p class="mt-1 text-xs leading-5 text-slate-500">Consume una botella sellada y registra sus ml para preparar decants. El costo FIFO se conserva en el lote.</p></div>
+                                            <button type="button" @click="showOpenBottle = false" class="rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Cerrar">✕</button>
+                                        </div>
+                                        @if (count($module['bottleSources'] ?? []))
+                                            <form method="POST" x-bind:action="openUrl" class="space-y-4 px-5 py-5 sm:px-6">
+                                                @csrf
+                                                <label class="block text-xs font-black text-slate-700">Perfume origen
+                                                    <select x-model="openUrl" class="mt-2 block w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold text-slate-900 focus:border-blue-600 focus:ring-blue-600">
+                                                        @foreach ($module['bottleSources'] as $bottle)
+                                                            <option value="{{ $bottle['open_url'] }}">{{ $bottle['name'] }} · {{ number_format((int) $bottle['volume_ml']) }} ml · {{ number_format((int) ($bottle['stock_quantity'] ?? 0)) }} sellada(s)</option>
+                                                        @endforeach
+                                                    </select>
+                                                </label>
+                                                <div class="grid gap-3 sm:grid-cols-2">
+                                                    <label class="block text-xs font-black text-slate-700">Botellas a abrir<input name="quantity" type="number" min="1" max="1000" value="1" inputmode="numeric" class="mt-2 block w-full rounded-xl border border-slate-200 px-3 py-3 text-sm font-bold text-slate-900 focus:border-blue-600 focus:ring-blue-600"></label>
+                                                    <div class="rounded-2xl bg-blue-50 p-3"><p class="text-[10px] font-black uppercase tracking-wide text-blue-700">Resultado</p><p class="mt-1 text-xs leading-5 text-blue-900">Los ml quedan disponibles para todas las presentaciones de decants vinculadas a la botella.</p></div>
+                                                </div>
+                                                <label class="block text-xs font-black text-slate-700">Nota (opcional)<input name="notes" maxlength="255" class="mt-2 block w-full rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-900 focus:border-blue-600 focus:ring-blue-600" placeholder="Ej. Botella abierta para muestras"></label>
+                                                <div class="flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end"><button type="button" @click="showOpenBottle = false" class="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-black text-slate-700 hover:bg-slate-50">Cancelar</button><button type="submit" class="rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-black text-white hover:bg-blue-700">Abrir botella</button></div>
+                                            </form>
+                                        @else
+                                            <div class="px-5 py-6 text-sm text-slate-600 sm:px-6">Crea primero una botella completa con volumen, costo e inventario activo.</div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </section>
+                        @else
                         <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
                             <div class="flex flex-col gap-3 border-b border-slate-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                                 <div>
@@ -538,17 +961,27 @@
                                     @foreach ($module['rows'] as $row)
                                         <div class="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                                             <div class="min-w-0">
-                                                <p class="truncate text-sm font-black text-slate-900">{{ $row['primary'] }}</p>
+                                                @if ($featureKey === 'quotes' && ! empty($row['id']))
+                                                    <a wire:navigate.hover href="{{ route('seller.shops.quotes.show', [$shop, 'quote' => $row['id']]) }}" class="truncate text-sm font-black text-blue-700 hover:underline">{{ $row['primary'] }}</a>
+                                                @elseif ($featureKey === 'services' && ! empty($row['edit_url']))
+                                                    <a wire:navigate.hover href="{{ $row['edit_url'] }}" class="truncate text-sm font-black text-blue-700 hover:underline">{{ $row['primary'] }}</a>
+                                                @else
+                                                    <p class="truncate text-sm font-black text-slate-900">{{ $row['primary'] }}</p>
+                                                @endif
                                                 <p class="mt-1 text-xs text-slate-500">{{ $row['secondary'] }}</p>
                                             </div>
                                             <div class="flex flex-wrap items-center gap-3 sm:justify-end">
                                                 <span class="text-sm font-black tabular-nums text-slate-900">{{ $row['value'] }}</span>
                                                 <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">{{ $row['status'] }}</span>
                                                 @if (($row['can_confirm'] ?? false) && in_array($featureKey, ['orders', 'encargos', 'shipments'], true))
-                                                    <form method="POST" action="{{ route('seller.shops.orders.confirm', [$shop, $row['id']]) }}">
-                                                        @csrf
-                                                        <button class="rounded-xl bg-emerald-600 px-3 py-2 text-[11px] font-black text-white hover:bg-emerald-700">Confirmar venta</button>
-                                                    </form>
+                                                    @if (! empty($row['confirm_url']))
+                                                        <a href="{{ $row['confirm_url'] }}" class="rounded-xl bg-emerald-600 px-3 py-2 text-[11px] font-black text-white hover:bg-emerald-700">Confirmar venta</a>
+                                                    @else
+                                                        <form method="POST" action="{{ route('seller.shops.orders.confirm', [$shop, $row['id']]) }}">
+                                                            @csrf
+                                                            <button class="rounded-xl bg-emerald-600 px-3 py-2 text-[11px] font-black text-white hover:bg-emerald-700">Confirmar venta</button>
+                                                        </form>
+                                                    @endif
                                                 @endif
                                                 @if (($row['can_convert'] ?? false) && $featureKey === 'quotes')
                                                     <form method="POST" action="{{ route('seller.shops.quotes.convert', [$shop, 'quote' => $row['id']]) }}">
@@ -570,6 +1003,7 @@
                                 <div class="px-5 py-12 text-center text-sm text-slate-500">No hay registros para mostrar todavía.</div>
                             @endif
                         </div>
+                        @endif
 
                         @if ($module['note'])
                             <div class="rounded-2xl border border-blue-100 bg-blue-50/60 px-5 py-4 text-sm leading-6 text-blue-900">

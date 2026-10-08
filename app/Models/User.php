@@ -111,6 +111,24 @@ class User extends Authenticatable implements MustVerifyEmail
             ->exists();
     }
 
+    public function isActiveShopManager(Shop $shop): bool
+    {
+        return $this->shopMemberships()
+            ->where('shop_id', $shop->id)
+            ->where('role', 'manager')
+            ->where('is_active', true)
+            ->exists();
+    }
+
+    public function isActiveShopAccountant(Shop $shop): bool
+    {
+        return $this->shopMemberships()
+            ->where('shop_id', $shop->id)
+            ->where('role', 'accountant')
+            ->where('is_active', true)
+            ->exists();
+    }
+
     public function ownsAnyShop(): bool
     {
         return $this->shops()->exists();
@@ -137,7 +155,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function canSellAtShop(Shop $shop): bool
     {
-        return $this->ownsShop($shop) || $this->isActiveShopMember($shop) || $this->shopSellerAssignments()
+        return $this->ownsShop($shop) || $this->isActiveShopManager($shop) || $this->shopSellerAssignments()
             ->where('shop_id', $shop->id)
             ->where('is_active', true)
             ->exists();

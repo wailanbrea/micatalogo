@@ -12,13 +12,13 @@ class Order extends Model
     use HasFactory;
 
     protected $fillable = [
-        'shop_id', 'order_number', 'customer_name', 'delivery_type', 'notes',
+        'shop_id', 'order_number', 'customer_name', 'delivery_type', 'delivery_at', 'notes',
         'currency', 'subtotal', 'total', 'status', 'invoice_id',
     ];
 
     protected function casts(): array
     {
-        return ['subtotal' => 'decimal:2', 'total' => 'decimal:2'];
+        return ['subtotal' => 'decimal:2', 'total' => 'decimal:2', 'delivery_at' => 'datetime'];
     }
 
     public function shop(): BelongsTo

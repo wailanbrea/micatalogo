@@ -115,7 +115,7 @@ class CashRegisterService
     public function closeSession(
         CashRegisterSession $session,
         User $user,
-        mixed $countedAmount,
+        mixed $countedAmount = null,
         ?string $notes = null,
         ?string $clientOperationUuid = null,
         ?string $payloadHash = null
@@ -124,8 +124,10 @@ class CashRegisterService
             throw new AuthorizationException('No tienes permiso para cerrar la sesión de caja de otro usuario.', 403);
         }
 
-        $countedCents = Money::toCents($countedAmount);
-        if ($countedCents < 0) {
+        $countedCents = $countedAmount === null || trim((string) $countedAmount) === ''
+            ? null
+            : Money::toCents($countedAmount);
+        if ($countedCents !== null && $countedCents < 0) {
             throw new InvalidArgumentException('El monto contado no puede ser negativo.', 422);
         }
 
@@ -134,7 +136,7 @@ class CashRegisterService
             if ($payloadHash && $session->payload_sha256 && ! hash_equals((string) $session->payload_sha256, $payloadHash)) {
                 throw new InvalidArgumentException('Conflicto de idempotencia: la sesión de caja ya fue cerrada con datos distintos.', 409);
             }
-            if ($session->counted_closing_amount_cents !== null && (int) $session->counted_closing_amount_cents !== $countedCents) {
+            if ($countedCents !== null && $session->counted_closing_amount_cents !== null && (int) $session->counted_closing_amount_cents !== $countedCents) {
                 throw new InvalidArgumentException('Conflicto: la sesión de caja ya se encuentra cerrada con un monto de arqueo distinto.', 409);
             }
 
@@ -156,14 +158,14 @@ class CashRegisterService
             }
 
             $expectedCents = $session->calculateExpectedBalance();
-            $differenceCents = $countedCents - $expectedCents;
+            $differenceCents = $countedCents === null ? null : $countedCents - $expectedCents;
 
             $session->closed_at = now();
             $session->expected_closing_amount = Money::toDecimal($expectedCents);
             $session->expected_closing_amount_cents = $expectedCents;
-            $session->counted_closing_amount = Money::toDecimal($countedCents);
+            $session->counted_closing_amount = $countedCents === null ? null : Money::toDecimal($countedCents);
             $session->counted_closing_amount_cents = $countedCents;
-            $session->difference = Money::toDecimal($differenceCents);
+            $session->difference = $differenceCents === null ? null : Money::toDecimal($differenceCents);
             $session->difference_cents = $differenceCents;
             $session->status = 'closed';
             $session->is_open_flag = null; // Release concurrency lock
