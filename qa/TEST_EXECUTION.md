@@ -1,5 +1,15 @@
 # Ejecución QA
 
+## Addendum de release vigente — 2026-10-08
+
+La release posterior al baseline fue compilada y publicada con el flujo oficial:
+`1.0.77`, `versionCode 78`, paquete `com.bsolutions.micatalogo`, APK no depurable,
+certificado oficial, SHA-256 `654531f8d6e238217e72f17a8a72ec3b15652109cbf1d4b3a2d5cbad01527b8f`
+y `40,387,777` bytes. El manifiesto y la descarga pública respondieron HTTP 200 y
+coincidieron byte a byte. El backend se desplegó en `efa56cf`; `migrate:status` quedó
+sin pendientes y los conteos/identificadores registrados antes del despliegue no
+cambiaron.
+
 Fecha de baseline: 2026-10-08. Entorno local aislado con SQLite en memoria para Pest y tests unitarios Android. No se ejecutaron escrituras en producción.
 
 El plan maestro contiene 196 casos discretos en sus listas. Las filas de esta tabla son evidencia

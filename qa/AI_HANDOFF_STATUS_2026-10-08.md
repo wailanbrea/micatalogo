@@ -1,5 +1,23 @@
 # Traspaso QA de MiCatalogo — estado para otra IA
 
+## Addendum vigente después de la publicación autorizada — 2026-10-08
+
+El estado de publicación ya no es el descrito en los párrafos históricos de abajo:
+
+- Web/API desplegado en VPS: `efa56cf`.
+- Android publicado en GitHub: `5fdb57e`.
+- Release vigente: `1.0.77`, `versionCode 78`,
+  `https://micatalogo.bsolutions.dev/downloads/bspos-1.0.77-release.apk`.
+- SHA-256: `654531f8d6e238217e72f17a8a72ec3b15652109cbf1d4b3a2d5cbad01527b8f`;
+  tamaño `40,387,777` bytes; firma oficial y `debuggable=false` verificados.
+- Endpoint de actualización, descarga y página pública respondieron HTTP 200.
+- Producción mantuvo los conteos e identificadores registrados antes y después del
+  despliegue; no quedaron migraciones pendientes.
+
+El Samsung físico continúa sin conexión en la sesión actual. La publicación no
+equivale a instalación física ni resuelve por sí sola los casos QA aún marcados como
+`NOT_RUN`, `BLOCKED_ENV` o `REQUIERE_DECISION`.
+
 Fecha del corte: 2026-10-08. Este documento es una fotografía operativa del checkout
 actual y no reemplaza `AGENTS.md` ni las skills obligatorias.
 
@@ -7,15 +25,13 @@ actual y no reemplaza `AGENTS.md` ni las skills obligatorias.
 
 El release gate continúa **NOT_READY**. El baseline local Web/API y Android está
 verde en los escenarios ejecutados, y la revocación remota de sesión ya quedó
-corregida y probada localmente. Todavía hay bloqueos reales: la release no puede
-instalarse sobre el Samsung porque conserva una APK debug con otro certificado, los
-cambios locales aún no están publicados en VPS ni en una nueva APK, y permanecen
-casos de negocio, visuales, hardware, offline físico y cobertura positiva completa
-sin cerrar.
+corregida y probada localmente. La publicación controlada ya está completada; siguen
+abiertos la instalación sobre el Samsung por certificado incompatible, casos de
+negocio, visuales, hardware, offline físico y cobertura positiva completa.
 
 ### Continuación local — resumen administrativo de vendedores
 
-Se incorporó al checkout local, sin push ni despliegue, el resumen administrativo
+Se incorporó al checkout y a la publicación el resumen administrativo
 agrupado por vendedor. La pantalla `seller.shops.summary` ahora muestra cada
 vendedor asignado (incluidos los desactivados), ventas válidas del período, total
 vendido, comisión registrada y estado; debajo conserva el detalle de cada factura
@@ -26,28 +42,26 @@ colección vacía y continúa viendo únicamente sus propias ventas.
 La regresión nueva está cubierta por la prueba dirigida completa, que pasó **2 tests /
 40 assertions** en SQLite y MariaDB QA. Las suites completas SQLite y MariaDB QA del
 checkout actual pasaron **513 tests / 5.207 assertions**; SQLite terminó en 32,55 s y
-MariaDB QA en 49,00 s. Este cambio sigue
-sin estar publicado y no escribió datos de producción.
+MariaDB QA en 49,00 s. El cambio quedó publicado en el commit Web/API `efa56cf` y no
+escribió datos comerciales de producción.
 
-**Corte autoritativo:** el commit funcional actual es `1f40ed8`; antes de esta
-actualización documental la rama estaba 68 commits adelantada frente a
-`origin/master`; el baseline actual es **513 tests / 5.207 assertions PASS** tanto
+**Corte autoritativo:** el commit publicado actual es `efa56cf`; el baseline actual
+es **513 tests / 5.207 assertions PASS** tanto
 en SQLite como en MariaDB QA aislada. La auditoría monetaria de este corte no
 encontró `float/double` en las mutaciones financieras cubiertas; los casts restantes
 son adaptadores de salida, filtros de consulta o normalización de identificadores y
 `NFR-003` conserva estado **PASS parcial**.
 
-No se hizo publicación, push, instalación ni desinstalación en el Samsung durante
-este corte. No se escribieron datos de producción.
+No se instaló ni desinstaló la aplicación en el Samsung durante este corte porque no
+está conectado. La publicación Web/API y Android sí se verificó; no se escribieron
+datos comerciales de producción.
 
 ## Repositorios y estado Git
 
 ### Backend/Web/API
 
 - Ruta: `C:\xampp\php\www\MiCatalogo`
-- Rama: `master`, con commits locales no publicados frente a `origin/master`; el
-  HEAD y el conteo exactos deben obtenerse con los comandos de verificación de abajo
-  antes de cualquier push.
+- Rama: `master`, sincronizada con `origin/master` en el commit publicado `efa56cf`.
 - El conteo debe verificarse justo antes de cualquier push con
   `git rev-list --left-right --count origin/master...HEAD` porque la documentación
   de este archivo también modifica el conteo.
@@ -65,8 +79,8 @@ este corte. No se escribieron datos de producción.
 - Ruta real activa: `C:\Users\waila\AndroidStudioProjects\micatalogowebApp`.
 - La skill histórica menciona `BSPOS-MiCatalogo`; en esta máquina el checkout vigente
   es `micatalogowebApp`. No crear ni cambiar de proyecto sin comprobar Git.
-- Rama: `main`, **4 commits adelantados de `origin/main`**.
-- Último commit local: `e50e5ff test: cover finance unavailable states`.
+- Rama: `main`, sincronizada con `origin/main` en el commit publicado `5fdb57e`.
+- Último commit publicado: `5fdb57e chore: bump Android release to 1.0.77`.
 - Cambios funcionales clave: `7ea2916` updater pendiente persistente, `c4aea97`
   bloqueo del updater de producción para builds debug, `7c32766` prueba de PDF,
   `5d57421` cierre de sesión con revocación remota y `de03913` regresión de replay
@@ -80,11 +94,11 @@ commits locales; no hacer push sin autorización explícita para esa publicació
 ## Release Android publicado y firma
 
 - Paquete: `com.bsolutions.micatalogo`.
-- Release pública actual: `1.0.76`, `versionCode 77`.
+- Release pública actual: `1.0.77`, `versionCode 78`.
 - Manifiesto: `https://micatalogo.bsolutions.dev/api/v1/app-updates/android`.
-- APK pública: `https://micatalogo.bsolutions.dev/downloads/bspos-1.0.76-release.apk`.
-- SHA-256 APK: `24846233f98bfd099976d0965142b8aabca71a378659b74b5a8b14aa27334f6b`.
-- Tamaño: `40,387,781` bytes.
+- APK pública: `https://micatalogo.bsolutions.dev/downloads/bspos-1.0.77-release.apk`.
+- SHA-256 APK: `654531f8d6e238217e72f17a8a72ec3b15652109cbf1d4b3a2d5cbad01527b8f`.
+- Tamaño: `40,387,777` bytes.
 - Certificado oficial SHA-256: `5a5670decdac3ee1e2fc95503ae65343c3a1f075f62dec835d26125a578d490f`.
 - No hay un artefacto local actual `app-release.apk` 1.0.76 en el checkout
   `micatalogowebApp`; no se debe inferir una compilación local a partir del nombre

@@ -1,5 +1,25 @@
 # Informe QA — corte 2026-10-08
 
+## Addendum de publicación autorizada — 2026-10-08
+
+Después del corte histórico se autorizó y completó la publicación controlada:
+
+- Web/API: `efa56cf` en `C:\xampp\htdocs\micatalogo`; PHP, cachés Laravel y
+  `npm run build` finalizaron correctamente.
+- Android: `5fdb57e` en GitHub; release `1.0.77`, `versionCode 78`, paquete
+  `com.bsolutions.micatalogo`, `debuggable=false` y certificado oficial.
+- APK pública: `https://micatalogo.bsolutions.dev/downloads/bspos-1.0.77-release.apk`;
+  HTTP 200, `40,387,777` bytes y SHA-256
+  `654531f8d6e238217e72f17a8a72ec3b15652109cbf1d4b3a2d5cbad01527b8f`.
+- El manifiesto público devuelve exactamente `versionCode 78` y esos mismos datos.
+- Los conteos e identificadores de usuarios/tiendas/productos/facturas/pedidos/caja
+  registrados antes del despliegue se conservaron después; no hubo migraciones
+  pendientes ni escrituras comerciales adicionales.
+
+Las referencias posteriores del informe a `1.0.76` describen el corte histórico y no
+el artefacto vigente. El gate funcional permanece **NOT_READY** por las brechas que
+siguen explícitamente marcadas como `NOT_RUN`, `BLOCKED_ENV` o `REQUIERE_DECISION`.
+
 ## Gate
 
 **NOT_READY**. El baseline local está verde y ya hay un flujo live de venta POS offline/reconexión/ACK aprobado en QA aislado, pero faltan pruebas P0/P1: cobertura completa verbo × ruta, decisiones y regresiones financieras de devoluciones pagadas y compras internacionales, escenarios offline adicionales, E2E Web↔Android amplio, hardware y recorrido visual completo.

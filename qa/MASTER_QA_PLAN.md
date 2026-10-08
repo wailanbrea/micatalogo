@@ -3,13 +3,30 @@
 Fuente de alcance: `C:\Users\waila\Downloads\MICATALOGO_MASTER_QA_OPERACIONAL_WEB_ANDROID.md`.
 Este documento es la ejecución controlada del plan contra los HEAD reales, no una copia histórica.
 
+## Addendum posterior a la publicación autorizada — 2026-10-08
+
+La verificación vigente debe usar estos estados, que sustituyen cualquier referencia
+histórica de este documento a una release 1.0.76 no publicada:
+
+- Web/API: `master` en `efa56cf`, publicado en `C:\xampp\htdocs\micatalogo`.
+- Android: `main` en `5fdb57e`, publicado en GitHub.
+- Release pública: MiCatalogo `1.0.77`, `versionCode 78`, APK `bspos-1.0.77-release.apk`.
+- El manifiesto y la descarga pública respondieron HTTP 200; tamaño y SHA-256
+  coincidieron con el artefacto firmado y `debuggable=false`.
+- Producción conserva sus conteos e identificadores registrados antes del despliegue;
+  `migrate:status` mostró 0 migraciones pendientes. No se ejecutaron seeders ni
+  operaciones destructivas.
+- El gate QA sigue siendo `NOT_READY` por los casos parciales, bloqueos de hardware/
+  servicios externos y decisiones de producto enumerados en la trazabilidad; publicar
+  la release no convierte esos casos en PASS.
+
 ## Estado de arranque
 
-- Backend/Web/API: consultar siempre `git log -1 --oneline` y `git status --short --branch` en `C:\xampp\php\www\MiCatalogo`; la documentación de QA también genera commits, por lo que no se fija un SHA histórico aquí. Los commits locales no están publicados.
-- Android: consultar `git log -1 --oneline` en `C:\Users\waila\AndroidStudioProjects\micatalogowebApp`; en este corte el HEAD es `e50e5ff` (`main`). La versión pública sigue siendo `1.0.76`, versionCode `77`; las correcciones del updater para builds debug, persistencia del aviso pendiente, PDF, logout y los tests de Finanzas están en el checkout local y requieren una nueva release autorizada.
-- VPS: no se ejecutó despliegue en este corte; no inferir su estado desde este documento. Cualquier consulta o migración remota exige leer `bsolutions-infra/SKILL.md`, verificar el destino y mantener la prohibición de escribir producción sin autorización.
-- Baseline actual: **512 pruebas backend, 5.184 assertions** en SQLite y MariaDB QA; 95 pruebas unitarias Android. La variante normal tiene 119 instrumentadas (`116 PASS`, 3 assumptions) y `offlinecheck` 116 (`113 PASS`, 3 assumptions) en el emulador QA. Los fixtures live aislados del importador pasan 1/1 y los del POS 2/2 en ambas variantes debug. `CatalogSyncIntegrationTest` terminó 16/16, `FinancialContractTest` 5/5, `FinanceContentTest` 2/2 y `InvoicePdfGeneratorTest` 2/2. El corte incluye las regresiones F-046 a F-058, AUTH-007 y AUTH-008 parciales para recuperación/invitaciones y tokens de cuentas suspendidas o eliminadas, la validación monetaria de productos, las rutas financieras Web, el rechazo Web de autorizaciones y la cobertura positiva de categorías/medios de catálogo documentados en `qa/FINDINGS.md`.
-- APK 1.0.76 firmada y publicada; SHA-256 `24846233f98bfd099976d0965142b8aabca71a378659b74b5a8b14aa27334f6b`. La release anterior permanece disponible.
+- Backend/Web/API: `master` está publicado en `efa56cf` y Android `main` en `5fdb57e`; mantener la verificación de Git antes de futuras publicaciones.
+- Android: la versión pública es `1.0.77`, versionCode `78`; contiene las correcciones del updater, PDF, logout y Finanzas verificadas por el helper de release.
+- VPS: el checkout `C:\xampp\htdocs\micatalogo` fue actualizado con `git pull --ff-only`; cachés y assets se reconstruyeron, sin migraciones pendientes ni cambios de datos.
+- Baseline actual: **513 pruebas backend, 5.207 assertions** en SQLite y MariaDB QA; 95 pruebas unitarias Android. La variante normal y `offlinecheck` tienen 119 instrumentadas (`116 PASS`, 3 assumptions) en el emulador QA. Los fixtures live aislados del importador pasan 1/1 y los del POS 2/2. El corte incluye las regresiones F-046 a F-059 y la publicación controlada documentada en el addendum.
+- APK 1.0.77 firmada y publicada; SHA-256 `654531f8d6e238217e72f17a8a72ec3b15652109cbf1d4b3a2d5cbad01527b8f`. La release anterior permanece disponible.
 - Alcance reconciliado: las listas de casos de la fuente contienen 196 identificadores únicos, no 140; la matriz individual y sus estados están en `qa/TRACEABILITY.md`.
 - Automatización local añadida: `.github/workflows/qa.yml` ejecuta pruebas SQLite, build frontend, Pint sobre PHP modificados e inventario de rutas; el workflow Android ejecuta unitarias, assembleDebug, lint y compilación de fixtures instrumentados.
 

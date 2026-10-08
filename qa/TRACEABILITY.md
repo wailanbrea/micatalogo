@@ -1,5 +1,13 @@
 # Trazabilidad del plan maestro
 
+## Addendum de release vigente — 2026-10-08
+
+El manifiesto actual es `versionCode 78` / MiCatalogo `1.0.77`, publicado y verificado
+por HTTP 200, tamaño, SHA-256 y certificado. Las filas que todavía citan `77` o
+`1.0.76` documentan la evidencia del corte anterior; los casos de instalación física,
+cancelación/reanudación y hardware permanecen parciales hasta obtener evidencia
+específica.
+
 Los estados son conservadores: `PASS parcial` significa que existe cobertura
 reproducible para una parte del grupo, pero no para todos sus casos, canales o
 estados; no se transforma en PASS total por inferencia.
@@ -39,7 +47,7 @@ Reejecuciones dirigidas del corte 2026-10-08: el bloque catálogo/importación/c
 | `AUTH-007` | recuperación de contraseña / invitación: token usado/expirado/repetido, cuentas ya existentes, verificación antes del primer acceso. | `PASS parcial` | `AuthenticationTest` valida token vencido y reutilización con **2 tests/9 assertions**; `SellerInvitationTest` valida invitación, creación de contraseña, verificación y asignación de una cuenta existente con **3 tests/20 assertions**, en SQLite y MariaDB QA. Falta el recorrido físico Android |
 | `AUTH-008` | cuenta suspendida, borrada o usuario eliminado: sesiones antiguas y tokens no siguen operando. | `PASS parcial` | `ApiAuthenticationTest` confirma en SQLite y MariaDB QA que los tokens BSPOS dejan de operar al suspender la cuenta y que un usuario con soft-delete no puede reutilizar su token existente (**1 test / 1 assertion** para este caso); falta el flujo físico de reinstalación |
 | `AUTH-009` | sesiones y tokens de dos dispositivos, cambio de contraseña/cierre de sesión/reinstalación según política real. | `PASS parcial` | Logout Web/API y revocación del token actual están probados en la reejecución de **32 tests/137 assertions**; no se han probado dos dispositivos, cambio de contraseña con sesiones antiguas ni reinstalación release |
-| `AUTH-010` | actualización Android: manifest, versión opcional, obligatoria, 426, SHA256/certificado APK, instalación cancelada, sin internet y reanudación. | `PASS parcial` | Manifiesto público, versionCode 77, SHA de APK/certificado y endpoint verificados; F-056 reproduce incompatibilidad de certificado al actualizar la APK debug del Samsung; F-057 corrige localmente el chequeo de updater en debug. Cancelación/reanudación, 426 y actualización física aún no están probados |
+| `AUTH-010` | actualización Android: manifest, versión opcional, obligatoria, 426, SHA256/certificado APK, instalación cancelada, sin internet y reanudación. | `PASS parcial` | Manifiesto público `versionCode 78`, APK 1.0.77, SHA/certificado y endpoint verificados; F-057/F-058 están incluidos en la release. F-056 mantiene bloqueada la instalación física por certificado debug previo y siguen sin probarse cancelación/reanudación, 426 y pérdida de red |
 | `AUTH-011` | bloqueo de sesión biométrico/PIN si existe, permisos de dispositivo, cambio de usuario; no expone información anterior. | `NOT_RUN` | Sin evidencia individual suficiente en este corte; no se infiere PASS por pertenecer a una suite |
 | `SHOP-001` | dueño Free crea primera tienda y respeta límite de tienda/productos/usuarios/vendedores; los cupos muestran mismo resultado Web/API/Android. | `NOT_RUN` | Sin evidencia individual suficiente en este corte; no se infiere PASS por pertenecer a una suite |
 | `SHOP-002` | Básico/Pro/Custom o planes realmente existentes: upgrades/downgrades/expiración; funciones y cuotas efectivas, no duplicación de facturación de plan. | `NOT_RUN` | Sin evidencia individual suficiente en este corte; no se infiere PASS por pertenecer a una suite |

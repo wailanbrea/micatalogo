@@ -1,10 +1,19 @@
 # Registro de riesgos — corte 2026-10-08
 
+## Addendum de release vigente — 2026-10-08
+
+La release `1.0.77` / `versionCode 78` ya está publicada y verificada por HTTP,
+SHA-256 y certificado. El backend está desplegado en `efa56cf`, sin migraciones
+pendientes y sin cambios en los conteos/identificadores de producción. Las filas que
+mencionan 1.0.76 conservan el contexto histórico del riesgo; no describen el artefacto
+actual. La instalación física en Samsung sigue sin verificarse porque el equipo no
+está conectado.
+
 | ID | Prioridad | Riesgo | Evidencia | Estado |
 |---|---|---|---|---|
 | R-001 | P1 | MariaDB QA ya está aislada, pero aún faltan fixtures independientes para archivos, colas, WhatsApp y hardware; no se deben probar escrituras en VPS productivo. | `micatalogo_qa_20261008`; servicios externos no preparados | ABIERTO |
-| R-002 | P1 | El Samsung físico conserva `com.bsolutions.micatalogo` 1.0.27/code 28 firmado con Android Debug; Android rechaza la actualización 1.0.76/code 77 porque el certificado no coincide. | F-056; `adb dumpsys package`, `apksigner --print-certs` sobre el APK instalado y `release.ps1 -Mode VerifyApk`; no se desinstaló ni modificó el dispositivo | BLOCKED_ENV |
-| R-017 | P1 | La release publicada 1.0.76 aún contiene el flujo anterior del updater; la protección para que debug no consulte producción y la recuperación del aviso pendiente están corregidas en Android pero requieren una nueva release autorizada. | F-057/F-058; Android `7ea2916`, `testDebugUnitTest` 95/95, instrumented normal 117 / offlinecheck 116 casos | ABIERTO |
+| R-002 | P1 | El Samsung físico conserva `com.bsolutions.micatalogo` 1.0.27/code 28 firmado con Android Debug; Android rechaza la actualización 1.0.77/code 78 porque el certificado no coincide. | F-056; `adb dumpsys package`, `apksigner --print-certs` sobre el APK instalado y `release.ps1 -Mode VerifyApk`; no se desinstaló ni modificó el dispositivo | BLOCKED_ENV |
+| R-017 | P1 | La release 1.0.77 ya contiene la protección para que debug no consulte producción y la recuperación persistente del aviso pendiente; queda separada la instalación física del Samsung (R-002). | F-057/F-058; Android `5fdb57e`, `testDebugUnitTest` 95/95, release verificada por HTTP/SHA/certificado | RESUELTO |
 | R-003 | P1 | Room migrations, outbox y replay tienen PASS instrumentado; ventas contado/crédito, un abono y una venta de decant sobrevivieron el flujo aislado y el ACK único. El outbox conserva la tienda original al cambiar de tienda activa. Siguen pendientes caída física de red y escenarios de conflicto adicionales. | `PosSaleLiveIntegrationTest` `2/2` PASS (`4` facturas remotas sin duplicados; pago pendiente `0`; botella decant reducida a 90 ml y presentación a 9); smoke modo avión PASS en `emulator-5554`; reejecución principal `OK (113 tests)`; venta bloqueada por 403 no se reenvía al restaurar 200; ventas de shop-a/shop-b se envían a su tienda original | ABIERTO |
 | R-004 | P1 | La consistencia concurrente de mutaciones sensibles debe mantenerse cubierta en MariaDB, incluyendo venta, recepción, cobros, caja, importación y cierre. | `qa/concurrency_probe.php` + `qa/financial_concurrency_probe.php`: venta 1/2, recepción 1/6, cobro 8/8 replay, caja 8/8 replay, importación 8/8, cierre 8/8; baseline vigente 512/5.184 PASS por motor | FIXED_PASS |
 | R-005 | P2 | Hardware BT, cámara/ML Kit, R2 y compartir PDF/WhatsApp no validados con fixtures QA. | entorno disponible no preparado | BLOCKED_ENV |

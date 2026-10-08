@@ -1,5 +1,16 @@
 # Hallazgos QA — corte 2026-10-08
 
+## Addendum de estado posterior a la publicación — 2026-10-08
+
+La publicación autorizada posterior al corte cerró el bloqueo de distribución de
+F-057/F-058: la APK `1.0.77` (`versionCode 78`) contiene las correcciones del updater,
+está firmada con el certificado oficial, fue publicada como
+`bspos-1.0.77-release.apk` y pasó verificación pública de HTTP, tamaño y SHA-256.
+F-056 continúa `BLOCKED_ENV` únicamente para la instalación física porque el Samsung
+no está conectado y conserva una instalación debug con certificado incompatible.
+Los hallazgos históricos de abajo mantienen sus versiones para conservar trazabilidad;
+este addendum es la fuente vigente para la release.
+
 Fecha: 2026-10-08  
 HEAD Web/API y Android: verificar con `git log -1 --oneline` en cada checkout antes
 de usar este registro para una publicación; los hallazgos individuales conservan
@@ -455,7 +466,7 @@ su SHA histórico cuando corresponde.
 ## F-056 — El Samsung conserva una APK debug incompatible con la release firmada
 
 - **Prioridad:** P1 de actualización Android y QA de dispositivo físico.
-- **Síntoma reproducido:** el Samsung `SM-S948U1` tiene `com.bsolutions.micatalogo` en versión `1.0.27`, `versionCode 28`; la APK release publicada es `1.0.76`, `versionCode 77`, pero Android no permite actualizar el paquete.
+- **Síntoma reproducido:** el Samsung `SM-S948U1` tiene `com.bsolutions.micatalogo` en versión `1.0.27`, `versionCode 28`; la APK release publicada es `1.0.77`, `versionCode 78`, pero Android no permite actualizar el paquete.
 - **Causa raíz:** la instalación existente está firmada por `Android Debug`, certificado SHA-256 `e266fd48b028dc66dc4e530c0bc8af06b9be820545600c6c4b19c81b4b1ff775`; la release válida usa el certificado oficial SHA-256 `5a5670decdac3ee1e2fc95503ae65343c3a1f075f62dec835d26125a578d490f`.
 - **Evidencia:** `release.ps1 -Mode VerifyApk` confirmó paquete, versión, firma no debug y APK SHA-256 `24846233f98bfd099976d0965142b8aabca71a378659b74b5a8b14aa27334f6b`; `apksigner --print-certs` sobre el `base.apk` extraído del Samsung confirmó el certificado debug. El actualizador sí descargó `cache/updates/bspos-77.apk`, exactamente 40.387.781 bytes y el mismo SHA de la release, pero no pudo instalarlo por el certificado. WorkManager no tiene `WorkSpec` pendientes y no se encontraron registros de outbox en la instalación inspeccionada. No se desinstaló ni modificó la aplicación del teléfono.
 - **Resolución pendiente:** desinstalar la instalación debug y luego instalar la release, o autorizar un intento controlado de `adb uninstall -k` tras comprobar que no existe outbox local sin sincronizar. Android no puede resolver un cambio de certificado mediante `-r` ni aumentando el `versionCode`.
@@ -468,7 +479,7 @@ su SHA histórico cuando corresponde.
 - **Síntoma:** una instalación debug podía consultar el manifiesto público, descargar una APK release firmada y terminar en el instalador de Android, donde el certificado debug no podía actualizarse a la firma oficial.
 - **Corrección aplicada:** `AppUpdatePolicy` y `AppUpdateViewModel` ahora omiten el updater de producción cuando `BuildConfig.DEBUG` es verdadero. El guard `qa/verify_android_release_target.ps1` sigue protegiendo cualquier instalación física autorizada.
 - **Regresión:** Android commit `c4aea97` ejecutó `testDebugUnitTest`: **95 tests, 0 fallos, 0 errores**; `compileReleaseKotlin` terminó correctamente; la build debug se instaló únicamente en `emulator-5554`, inició sin crash, no mostró el diálogo de actualización y el paquete instrumentado del updater terminó **4/4**. Los casos verifican que debug no consulte releases de producción y que release sí pueda hacerlo.
-- **Estado:** `FIXED_LOCAL_NOT_RELEASED`: la corrección está en GitHub, pero todavía no forma parte de una nueva APK publicada. La 1.0.76 vigente conserva el comportamiento anterior y no debe instalarse sobre debug.
+- **Estado:** `FIXED_PASS`: la corrección está incluida en la release pública 1.0.77; las builds debug no consultan el updater de producción. La instalación física continúa separada en F-056 por el certificado incompatible.
 
 ## F-058 — El aviso de actualización se perdía al recrear la app sin red
 
@@ -476,7 +487,7 @@ su SHA histórico cuando corresponde.
 - **Síntoma:** si la app detectaba una versión nueva y luego el proceso se recreaba, el manifiesto pendiente solo vivía en el `ViewModel`; una caída de red podía dejar únicamente el diálogo genérico de error y no reabrir el aviso bloqueante.
 - **Corrección aplicada:** `AppUpdatePendingStore` guarda localmente únicamente los datos del manifiesto validado (versión, URL HTTPS, SHA-256, mínimo y notas). `AppUpdateViewModel` lo recupera ante errores de red/HTTP/respuesta inválida, lo conserva mientras la descarga o el instalador no terminan y lo limpia cuando la versión instalada ya lo supera o se descarta una actualización opcional.
 - **Regresión:** Android `7ea2916`: `testDebugUnitTest` 95/95, `compileReleaseKotlin` exitoso, `PendingAppUpdateTest` 3/3 y batería instrumentada principal `OK (114 tests; 111 PASS y 3 omitidos por assumption)`. No se publicó APK ni se modificó el Samsung.
-- **Estado:** `FIXED_LOCAL_NOT_RELEASED`; requiere una nueva APK release autorizada para llegar a dispositivos.
+- **Estado:** `FIXED_PASS`: la release pública 1.0.77 conserva el manifiesto pendiente ante recreación y fallos de red hasta completar la instalación.
 
 ## F-059 — Auditoría de conversiones financieras restantes
 

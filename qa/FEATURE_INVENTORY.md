@@ -1,6 +1,14 @@
 # Inventario funcional inicial
 
-Inventario derivado del código vivo de `routes/web.php`, `routes/api.php`, controladores, servicios, tests y las pantallas Android. El corte vigente debe identificarse con `git log -1 --oneline` en cada repositorio; ambos árboles contienen cambios locales aún no publicados.
+## Estado de publicación vigente — 2026-10-08
+
+Este inventario corresponde al código publicado en Web/API `efa56cf` y Android
+`5fdb57e`; la release Android vigente es `1.0.77` / `versionCode 78`. Las notas de
+cobertura parcial o pendiente siguen siendo intencionales y se detallan en la
+trazabilidad; no se debe interpretar la publicación como aprobación de módulos aún
+no ejecutados.
+
+Inventario derivado del código vivo de `routes/web.php`, `routes/api.php`, controladores, servicios, tests y las pantallas Android. El corte vigente debe identificarse con `git log -1 --oneline` en cada repositorio; el código rastreado de ambos repositorios está publicado en los commits indicados arriba.
 
 | Módulo | Web/API | Android | Persistencia/offline | Permisos/plan | Estado inicial |
 |---|---|---|---|---|---|
