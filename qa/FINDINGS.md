@@ -1,8 +1,13 @@
 # Hallazgos QA — corte 2026-10-08
 
 Fecha: 2026-10-08  
-HEAD Web/API: `32450ffc19380e1bea0ddc132c553835bdf9df1c`  
-HEAD Android: `7ea2916`
+HEAD Web/API del corte documentado: `9bef264c7fc6f260297455c6ff4c88224c3dca74`  
+HEAD Android del corte documentado: `de03913b197300c7954f7f4229a57a802326cb59`
+
+> Nota de continuidad: los hallazgos individuales debajo conservan la evidencia del
+> momento en que cada uno fue descubierto. Para el estado vigente, la reejecución del
+> baseline, la separación entre cambios locales/publicados y el release gate debe
+> consultarse primero `qa/AI_HANDOFF_STATUS_2026-10-08.md`.
 
 ## F-001 — Lint Android bloqueaba la validación estática
 

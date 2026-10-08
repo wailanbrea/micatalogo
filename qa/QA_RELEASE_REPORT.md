@@ -4,6 +4,11 @@
 
 **NOT_READY**. El baseline local está verde y ya hay un flujo live de venta POS offline/reconexión/ACK aprobado en QA aislado, pero faltan pruebas P0/P1: cobertura completa verbo × ruta, decisiones y regresiones financieras de devoluciones pagadas y compras internacionales, escenarios offline adicionales, E2E Web↔Android amplio, hardware y recorrido visual completo.
 
+El estado canónico de este corte está en `qa/AI_HANDOFF_STATUS_2026-10-08.md`.
+No se hizo un nuevo push, despliegue VPS, publicación de APK ni instalación física
+durante esta revalidación; la evidencia de despliegues anteriores se conserva solo
+como historial y no autoriza una nueva publicación.
+
 El documento maestro contiene **196 identificadores de caso** (AUTH, SHOP, ACL,
 DAY, SELLER, CAT, DEC, IMP, PUR, INV, SALE, QUOTE, ORDER, CRM, AR, CASH, EXP,
 CLOSE, FIN, OFF, UI, HW, ADMIN, NFR y E2E). Este
@@ -19,10 +24,11 @@ bloqueos siguientes.
 - Inventario de rutas: `qa/ROUTE_ACCESS_MATRIX.md` contiene las 216 rutas individuales del checkout, con verbo, URI, nombre, clasificación estática y tipo de operación; permanece pendiente la ejecución positiva exhaustiva por actor/recurso.
 - CI: workflows locales añadidos para Web y Android; se validó su estructura y se ejecutaron localmente el build Vite y las tareas Android equivalentes, pero no se marcó una corrida GitHub Actions porque no hay ejecución remota disponible en este corte.
 - F-045 `NOT_RUN`: Pint completo del checkout reportó 37 archivos con deuda de formato; no se reformatearon cambios ajenos masivamente. Queda como riesgo P2 de calidad CI, separado de los gates funcionales P1.
-- Backend/Web/API: `7348869` publicado en `master` y desplegado en VPS.
+- Backend/Web/API: existe evidencia histórica de un despliegue anterior (`7348869`);
+  el checkout actual contiene commits locales posteriores y este corte no los publicó.
 - Despliegue del 2026-10-08: backup lógico `C:\xampp\htdocs\_backups\micatalogo-pre-deploy-20261008-134507.sql`, 1.975.961 bytes, SHA-256 `a63aa6d6aa2bdfbf9e96277b54bfa45f4ea36653b0286ba2641b204a82b73b3b`; después del pull, build y cachés, usuarios/tiendas/productos/pedidos/facturas conservaron `14/12/756/2/22` y sus hashes de identificadores, con 0 migraciones pendientes.
 - Android: `7ea2916` + prueba QA local `7c32766`, 1.0.76/versionCode 77 (el cambio de updater debug, la persistencia del aviso pendiente y la prueba PDF están en código pero aún no publicados).
-- 495 tests backend PASS en SQLite y MariaDB QA aislada (5.073 assertions en cada corrida; reejecución completa 54.85 s / 51.19 s) después de F-055; incluye reportes financieros, aging, valor de inventario, pagos y rentabilidad calculados en centavos, importación decimal, autorización financiera del catálogo, recuperación exacta de decants y revocación remota de sesión; 95 unit tests Android PASS.
+- 495 tests backend PASS en SQLite y MariaDB QA aislada (5.073 assertions en cada corrida; reejecución completa 50.11 s / 48.57 s) después de F-055; incluye reportes financieros, aging, valor de inventario, pagos y rentabilidad calculados en centavos, importación decimal, autorización financiera del catálogo, recuperación exacta de decants y revocación remota de sesión; 95 unit tests Android PASS.
 - Subconjunto dirigido adicional PASS en ambos motores: 110 tests y 732 assertions sobre importación adaptativa/segura, duplicados e idempotencia, POS web, combos, decants, devoluciones, FIFO, impuestos/descuentos, imágenes y atributos; SQLite 10.69 s, MariaDB QA 16.66 s. No eleva por sí solo los casos que exigen cobertura interplataforma, hardware o reglas de negocio aún no definidas.
 - Subconjunto dirigido adicional PASS en ambos motores: 137 tests y 795 assertions sobre autenticación/verificación, planes y cupos, invitaciones, soporte, administración, categorías, finanzas, cartera, compras, catálogo, tiendas y métricas; SQLite 13.69 s, MariaDB QA 20.13 s. Los casos que requieren concurrencia específica, hardware o recorrido interplataforma siguen separados en la trazabilidad.
 - Auth/registro/verificación dirigida PASS en ambos motores: 27 tests y 112 assertions; cubre alta atómica del negocio, tipo/plan, límites de registro y recuperación, login, suspensión, verificación y separación de navegación administrador/vendedor.
