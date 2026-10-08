@@ -21,10 +21,10 @@ este corte. No se escribieron datos de producción.
 ### Backend/Web/API
 
 - Ruta: `C:\xampp\php\www\MiCatalogo`
-- Rama: `master`, con commits locales de QA aún no publicados frente a `origin/master`
-  (el conteo debe verificarse antes de cualquier push).
-- Al cierre de este documento el checkout tiene commits locales adelantados de
-  `origin/master`; confirmar el conteo justo antes de cualquier push con
+- Rama: `master`, HEAD actual `3c67930 docs: align current QA head and metrics`, con
+  **37 commits locales adelantados** frente a `origin/master`; ningún commit fue
+  publicado desde este corte.
+- El conteo debe verificarse justo antes de cualquier push con
   `git rev-list --left-right --count origin/master...HEAD` porque la documentación
   de este archivo también modifica el conteo.
 - Correcciones funcionales locales relevantes: `734b169 fix: revoke API token on mobile
@@ -443,9 +443,10 @@ por inferencia a partir de tests parciales:
 ## Commits locales de este corte
 
 - Backend: `734b169` (`fix: revoke API token on mobile logout`), `41c3819` (`fix:
-  validate product money in cents`) y documentación QA posterior. El checkout está
-  adelantado frente a `origin/master`; revisar la lista completa con `git log` y el
-  `HEAD` actual antes de elegir qué publicar.
+  validate product money in cents`), `3c67930` (alineación documental de HEAD y
+  métricas) y documentación QA posterior. El checkout está 37 commits adelantado
+  frente a `origin/master`; revisar la lista completa con `git log` antes de elegir
+  qué publicar.
 - Android: `7ea2916` (updater pendiente persistente), `c4aea97` (debug fuera del
   updater de producción), `7c32766` (PDF), `5d57421` (logout con revocación),
   `de03913` (replay ACK/interrupción) y `e50e5ff` (estados financieros sin datos).
