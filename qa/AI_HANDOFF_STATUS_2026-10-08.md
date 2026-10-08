@@ -140,6 +140,20 @@ Resultados actuales:
 - Permanece un reverse preexistente `host-15 tcp:8000 tcp:8000`; no retirarlo sin
   identificar qué proceso lo usa.
 
+### Revalidación Android después de este traspaso
+
+- `:app:testDebugUnitTest :app:lintDebug` terminó **BUILD SUCCESSFUL**; el XML de la
+  batería JVM contabiliza **95 tests, 0 failures, 0 errors, 0 skipped** y lint no
+  reportó errores bloqueantes.
+- Se recompiló e instaló únicamente `app-debug-androidTest.apk` en `emulator-5554`.
+  `CatalogSyncIntegrationTest` terminó **16/16 PASS**.
+- `FinancialContractTest` terminó correctamente como prueba JVM con
+  `:app:testDebugUnitTest --tests ...FinancialContractTest`: **5/5 PASS**. Un intento
+  de invocarlo con el runner instrumentado falló solo por clasificación de test
+  (`ClassNotFoundException`); se corrigió el procedimiento y no se modificó código ni
+  datos de negocio.
+- El Samsung no fue seleccionado por ninguna de estas pruebas.
+
 Comandos de prueba seguros:
 
 ```powershell
