@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
@@ -49,6 +50,19 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         return response()->json($this->userPayload($request->user()));
+    }
+
+    public function logout(Request $request): JsonResponse
+    {
+        $accessToken = $request->user()->currentAccessToken();
+
+        if ($accessToken instanceof PersonalAccessToken) {
+            $accessToken->delete();
+        } elseif ($request->bearerToken()) {
+            PersonalAccessToken::findToken($request->bearerToken())?->delete();
+        }
+
+        return response()->json(null, 204);
     }
 
     public function update(Request $request): JsonResponse

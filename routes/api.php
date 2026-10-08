@@ -33,6 +33,7 @@ Route::prefix('v1')->group(function (): void {
 
     Route::middleware(['auth:sanctum', EnsureApiAccountIsActive::class, 'app.version'])->group(function (): void {
         Route::get('/me', [AuthController::class, 'me']);
+        Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::put('/me', [AuthController::class, 'update']);
         Route::get('/shops', [ShopController::class, 'index']);
         Route::get('/shops/{shop}/seller-summary', [SellerSummaryController::class, 'api'])->middleware('menu:sales');

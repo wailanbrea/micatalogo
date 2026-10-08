@@ -421,6 +421,23 @@ test('BSPOS tokens stop working when the account becomes suspended', function ()
         ->assertJsonPath('message', 'Esta cuenta no está activa.');
 });
 
+test('BSPOS can revoke the current API token when logging out', function () {
+    $user = User::factory()->create();
+    $token = $user->createToken('Caja principal', ['catalog:read'])->plainTextToken;
+
+    $this->withToken($token)
+        ->postJson('/api/v1/auth/logout')
+        ->assertNoContent();
+
+    $this->app['auth']->forgetGuards();
+
+    $this->withToken($token)
+        ->getJson('/api/v1/me')
+        ->assertUnauthorized();
+
+    expect($user->tokens()->count())->toBe(0);
+});
+
 test('unauthenticated API requests return JSON without requiring an accept header', function () {
     $this->get('/api/v1/me')
         ->assertUnauthorized()

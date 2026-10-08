@@ -244,6 +244,22 @@ ser eliminado por administración. Esto queda como hallazgo AUTH-006 para decidi
 contrato requiere una revocación remota; no se agregó una ruta improvisada porque
 implicaría cambiar el contrato backend y la política de sesiones.
 
+### Corrección aplicada después de ese hallazgo
+
+Se implementó la revocación explícita del token actual:
+
+- `POST /api/v1/auth/logout` elimina el token Sanctum usado por la solicitud y responde
+  `204 No Content`.
+- Android llama esa ruta al cerrar sesión y siempre limpia el almacenamiento local,
+  incluso si la red falla o el token ya fue invalidado (`401`).
+- La prueba backend confirma que el mismo token ya no puede acceder a `/api/v1/me`.
+- Regresión backend: `ApiAuthenticationTest`, **17/17 tests y 79 assertions PASS**.
+- Regresión Android: `testDebugUnitTest` y `compileDebugAndroidTestKotlin`, **BUILD
+  SUCCESSFUL**.
+
+Esta corrección está únicamente en los checkouts locales; todavía no se ha desplegado ni
+publicado en VPS o en la APK pública.
+
 ## Secuencia recomendada para la siguiente IA
 
 1. Leer `AGENTS.md`, `bsolutions-infra/SKILL.md` y
