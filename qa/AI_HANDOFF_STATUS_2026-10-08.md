@@ -27,10 +27,12 @@ este corte. No se escribieron datos de producción.
   `origin/master`; confirmar el conteo justo antes de cualquier push con
   `git rev-list --left-right --count origin/master...HEAD` porque la documentación
   de este archivo también modifica el conteo.
-- Última corrección funcional local: `734b169 fix: revoke API token on mobile logout`.
-- Los commits posteriores a `734b169` son documentación y evidencia QA; no deben
-  confundirse con un despliegue publicado. El SHA exacto de `HEAD` debe obtenerse
-  con `git log -1 --oneline` porque este documento también evoluciona.
+- Correcciones funcionales locales relevantes: `734b169 fix: revoke API token on mobile
+  logout` y `41c3819 fix: validate product money in cents`.
+- Los commits posteriores a `734b169` incluyen documentación/evidencia QA y la corrección
+  funcional `41c3819`; no deben confundirse con un despliegue publicado. El SHA exacto
+  de `HEAD` debe obtenerse con `git log -1 --oneline` porque este documento también
+  evoluciona.
 - Cambios rastreados: limpios; quedan únicamente los no rastreados intencionales.
 - No tocar ni borrar los no rastreados existentes: `.github/`, `.playwright-cli/`, `output/`.
 
@@ -440,9 +442,10 @@ por inferencia a partir de tests parciales:
 
 ## Commits locales de este corte
 
-- Backend: `734b169` (`fix: revoke API token on mobile logout`) y documentación QA
-  posterior. El checkout está adelantado frente a `origin/master`; revisar la lista
-  completa con `git log` y el `HEAD` actual antes de elegir qué publicar.
+- Backend: `734b169` (`fix: revoke API token on mobile logout`), `41c3819` (`fix:
+  validate product money in cents`) y documentación QA posterior. El checkout está
+  adelantado frente a `origin/master`; revisar la lista completa con `git log` y el
+  `HEAD` actual antes de elegir qué publicar.
 - Android: `7ea2916` (updater pendiente persistente), `c4aea97` (debug fuera del
   updater de producción), `7c32766` (PDF), `5d57421` (logout con revocación),
   `de03913` (replay ACK/interrupción) y `e50e5ff` (estados financieros sin datos).
