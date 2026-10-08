@@ -422,6 +422,13 @@ publicado en VPS o en la APK pública.
   mostró `emulator-5554`). No se desinstaló, instaló ni modificó ningún teléfono real.
 - La API pública sigue manifestando **1.0.76 / versionCode 77** con el SHA documentado;
   no se generó ni publicó una release nueva en esta verificación.
+- Verificación actual de instalación: `adb devices -l` mostró únicamente
+  `emulator-5554`; no hay Samsung físico disponible por ADB ni dispositivo Android
+  Samsung presente en el inventario Plug-and-Play de Windows. No se intentó
+  desinstalar ni instalar nada por esta ausencia.
+- La APK pública descargada en modo lectura fue verificada nuevamente: versión
+  `1.0.76 / versionCode 77`, `debuggable=false`, certificado oficial, HTTP 200 y
+  SHA-256 `24846233f98bfd099976d0965142b8aabca71a378659b74b5a8b14aa27334f6b`.
 - Después de reinstalar únicamente los APK debug en el emulador, se reejecutaron los
   fixtures live omitidos por la batería general: `InventoryImportLiveIntegrationTest`
   **1/1 PASS** y `PosSaleLiveIntegrationTest` **2/2 PASS**, con base SQLite temporal,
@@ -435,8 +442,10 @@ publicado en VPS o en la APK pública.
   reemplaza la validación de la release firmada.
 - Se añadió la regresión Web `AUTH-007` para tokens de recuperación vencidos/de un solo
   uso y para asignar una cuenta existente ya verificada sin resetear sus credenciales.
-  Pasa en SQLite y MariaDB QA; la suite completa queda en **507 tests / 5.151 assertions
-  PASS** por motor. Solo permanece pendiente el recorrido físico Android de este caso.
+  Se añadió además `AUTH-008` para impedir que un usuario con soft-delete reutilice un
+  token BSPOS existente. Ambas regresiones pasan en SQLite y MariaDB QA; la suite
+  completa queda en **508 tests / 5.152 assertions PASS** por motor. Solo permanece
+  pendiente el recorrido físico Android de estos casos.
 
 Lo siguiente es el backlog real, en orden operativo. No debe marcarse como terminado
 por inferencia a partir de tests parciales:
