@@ -456,4 +456,12 @@ HEAD Android: `1a8ba7fb0d2b50f743a2c07fec3877ef79a0c6ca`
 - **Prevención añadida:** `qa/verify_android_release_target.ps1` compara el certificado instalado antes de cualquier instalación, rechaza el emulador como destino físico y devuelve un estado JSON reproducible sin modificar el dispositivo.
 - **Estado:** `BLOCKED_ENV` para la instalación física; publicación y verificación criptográfica de la release quedan `PASS`.
 
+## F-057 — Las builds debug consultaban el updater de producción
+
+- **Prioridad:** P1 preventiva de release Android.
+- **Síntoma:** una instalación debug podía consultar el manifiesto público, descargar una APK release firmada y terminar en el instalador de Android, donde el certificado debug no podía actualizarse a la firma oficial.
+- **Corrección aplicada:** `AppUpdatePolicy` y `AppUpdateViewModel` ahora omiten el updater de producción cuando `BuildConfig.DEBUG` es verdadero. El guard `qa/verify_android_release_target.ps1` sigue protegiendo cualquier instalación física autorizada.
+- **Regresión:** Android commit `c4aea97` ejecutó `testDebugUnitTest`: **95 tests, 0 fallos, 0 errores**; el caso nuevo verifica que debug no consulte releases de producción y que release sí pueda hacerlo.
+- **Estado:** `FIXED_LOCAL_NOT_RELEASED`: la corrección está en GitHub, pero todavía no forma parte de una nueva APK publicada. La 1.0.76 vigente conserva el comportamiento anterior y no debe instalarse sobre debug.
+
 El baseline local es verde después de F-001, F-002, F-003, F-006, F-007, F-008, F-010, F-011, F-012, F-014, F-015, F-016, F-017, F-018, F-019, F-021, F-022, F-023, F-024, F-025, F-026, F-027, F-028, F-029, F-030, F-031, F-032, F-033, F-034, F-035, F-037, F-039, F-040, F-041, F-042, F-043, F-044, F-046, F-047, F-048, F-049, F-050, F-051, F-052, F-053, F-054 y F-055. F-045 queda como riesgo P2 de CI y F-056 como bloqueo de instalación física. El release gate permanece **NOT_READY** por F-004, F-005, F-036, F-038 y F-056, además de las pruebas de estrés, visuales, escenarios offline adicionales y servicios externos pendientes. No se hicieron escrituras en producción durante este corte.

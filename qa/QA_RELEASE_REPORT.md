@@ -93,6 +93,7 @@ bloqueos siguientes.
 - Revalidación de 1.0.75 en dispositivos que todavía tienen 1.0.74: `NOT_RUN`.
 - F-056: la validación criptográfica de la release es PASS y el updater descargó `bspos-77.apk` con SHA correcto, pero la instalación física queda `BLOCKED_ENV` hasta autorizar la retirada de la APK debug; WorkManager no reporta trabajos pendientes y un cambio de certificado no se resuelve con `-r` ni con un `versionCode` mayor.
 - Guard preventivo PASS: `qa/verify_android_release_target.ps1` compara el certificado de la APK instalada con el de la release y se detiene antes de `adb install` ante una discrepancia; también rechaza el emulador como destino de una release física.
+- F-057 `FIXED_LOCAL_NOT_RELEASED`: Android `c4aea97` evita que builds debug consulten o descarguen releases de producción; `testDebugUnitTest` quedó en 95/95. Requiere una próxima APK release autorizada para llegar a dispositivos.
 
 ## Evidencia adicional de esta continuación
 
