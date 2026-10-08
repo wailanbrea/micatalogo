@@ -62,7 +62,10 @@ commits locales; no hacer push sin autorización explícita para esa publicació
 - SHA-256 APK: `24846233f98bfd099976d0965142b8aabca71a378659b74b5a8b14aa27334f6b`.
 - Tamaño: `40,387,781` bytes.
 - Certificado oficial SHA-256: `5a5670decdac3ee1e2fc95503ae65343c3a1f075f62dec835d26125a578d490f`.
-- APK local verificada: `C:\Users\waila\AndroidStudioProjects\micatalogowebApp\app\build\outputs\apk\release\app-release.apk`.
+- No hay un artefacto local actual `app-release.apk` 1.0.76 en el checkout
+  `micatalogowebApp`; no se debe inferir una compilación local a partir del nombre
+  de una ruta histórica. La APK pública 1.0.76 fue descargada a un temporal y
+  verificada en modo lectura contra el paquete, certificado, tamaño y SHA anteriores.
 - Keystore existente: `C:\Users\waila\.android\micatalogo-release-20261004-v2.jks`.
   Nunca imprimir, copiar, subir o regenerar credenciales o contraseñas.
 - Archivo privado de configuración de firma: `C:\Users\waila\AndroidStudioProjects\BSPOS-MiCatalogo\FIRMA_RELEASE_PRIVADA.txt`.
@@ -71,12 +74,17 @@ commits locales; no hacer push sin autorización explícita para esa publicació
   explícita, el diagnóstico actual devolvió `signing_ready`, abrió la keystore, validó
   la clave privada y restauró el entorno sin imprimir secretos.
 
-La release local pasó verificación independiente: paquete correcto, código 77,
+La release pública pasó verificación independiente: paquete correcto, código 77,
 `debuggable=false`, firma oficial y SHA coincidente. La release 1.0.76 publicada no
 contiene todavía los cambios locales del updater persistente (`7ea2916`) ni la prueba
-QA de PDF; eso exige una nueva release con `versionCode` mayor antes de publicar.
+QA de PDF; eso exige una nueva compilación release con `versionCode` mayor antes de
+publicar.
 
 ## Samsung físico: bloqueo reproducido
+
+El siguiente bloqueo fue reproducido en una sesión física anterior. En la
+comprobación actual el Samsung no está conectado; `adb devices -l` solo muestra el
+emulador `emulator-5554`.
 
 Destino: serial
 `adb-R3GL40GB6CE-io558r._adb-tls-connect._tcp`, modelo `SM-S948U1`.
@@ -269,17 +277,18 @@ Los detalles y límites están en:
    revisar el diff. El conjunto modificado por este checkout (6 archivos PHP entre
    `origin/master...HEAD`) pasó `vendor/bin/pint --test`.
 10. **Documentación/branches:** decidir qué commits locales se integran y hacer push
-    solamente después de revisar los 38 commits backend y los cuatro commits Android
-    adelantados.
+    solamente después de revisar el conteo actual de commits backend y los cuatro
+    commits Android adelantados.
 
-## Verificación adicional de cierre de sesión y Samsung (2026-10-08)
+## Verificación histórica de cierre de sesión y Samsung (2026-10-08)
 
-Se repitió el verificador de instalación en modo estrictamente de solo lectura con los
-dos dispositivos ADB conectados. El resultado volvió a ser `blocked_signature_mismatch`:
+En una sesión física anterior se repitió el verificador de instalación en modo
+estrictamente de solo lectura con dos dispositivos ADB conectados. El resultado fue
+`blocked_signature_mismatch`. En la comprobación actual el Samsung no está conectado.
 
 - Samsung `SM-S948U1`: paquete instalado `1.0.27`, código 28, certificado debug
   `e266fd48...1ff775`.
-- APK release local: `1.0.76`, código 77, certificado oficial
+- APK pública descargada a un temporal: `1.0.76`, código 77, certificado oficial
   `5a5670de...578d490f`.
 - `install_requested: false`; no se desinstaló, no se limpió almacenamiento y no se
   modificó ningún dispositivo.
@@ -392,7 +401,7 @@ publicado en VPS o en la APK pública.
   **113 PASS + 3 assumptions**.
 - Se ejecutaron `testDebugUnitTest` (**95/95 PASS**), compilación de pruebas Android,
   `lintDebug` y `git diff --check`; los warnings de lint restantes son no bloqueantes.
-- Se verificó la firma de la release local: paquete correcto, `versionCode 77`,
+- Se verificó la firma de la APK pública descargada: paquete correcto, `versionCode 77`,
   `debuggable=false`, certificado oficial y SHA consistente.
 - Se reprodujo el bloqueo del Samsung de forma no destructiva: la instalación local
   es debug con otro certificado, por lo que Android rechaza la actualización release.
