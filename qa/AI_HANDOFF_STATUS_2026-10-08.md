@@ -53,6 +53,11 @@ commits locales; no hacer push sin autorización explícita para esa publicació
 - APK local verificada: `C:\Users\waila\AndroidStudioProjects\micatalogowebApp\app\build\outputs\apk\release\app-release.apk`.
 - Keystore existente: `C:\Users\waila\.android\micatalogo-release-20261004-v2.jks`.
   Nunca imprimir, copiar, subir o regenerar credenciales o contraseñas.
+- Archivo privado de configuración de firma: `C:\Users\waila\AndroidStudioProjects\BSPOS-MiCatalogo\FIRMA_RELEASE_PRIVADA.txt`.
+  Está fuera del checkout Android activo `micatalogowebApp`; por eso el diagnóstico
+  por defecto puede devolver `PRIVATE_FILE_MISSING`. Pasando `-PrivateFile` de forma
+  explícita, el diagnóstico actual devolvió `signing_ready`, abrió la keystore, validó
+  la clave privada y restauró el entorno sin imprimir secretos.
 
 La release local pasó verificación independiente: paquete correcto, código 77,
 `debuggable=false`, firma oficial y SHA coincidente. La release 1.0.76 publicada no
@@ -83,6 +88,15 @@ Verificador de solo lectura:
 & 'C:\xampp\php\www\MiCatalogo\qa\verify_android_release_target.ps1' `
   -Serial 'adb-R3GL40GB6CE-io558r._adb-tls-connect._tcp' `
   -ApkPath 'C:\Users\waila\AndroidStudioProjects\micatalogowebApp\app\build\outputs\apk\release\app-release.apk'
+```
+
+Diagnóstico de firma local (solo lectura; no compila ni publica):
+
+```powershell
+& 'C:\Users\waila\.config\opencode\skills\micatalogo-android-release\scripts\release.ps1' `
+  -Mode Diagnose `
+  -ProjectRoot 'C:\Users\waila\AndroidStudioProjects\micatalogowebApp' `
+  -PrivateFile 'C:\Users\waila\AndroidStudioProjects\BSPOS-MiCatalogo\FIRMA_RELEASE_PRIVADA.txt'
 ```
 
 Para resolverlo en el futuro se necesita autorización explícita para desinstalar
