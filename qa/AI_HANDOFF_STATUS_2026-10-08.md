@@ -495,6 +495,15 @@ publicado en VPS o en la APK pública.
   una nueva mutación insegura. `NFR-003` sigue **PASS parcial** hasta cerrar la
   matriz verbo×ruta.
 
+- Se reejecutó `qa/international_purchase_audit.php` sobre `micatalogo_qa_20261008`.
+  La compra sintética en USD (tasa 60, flete 120, aduana 80, 10 unidades a USD
+  10) conservó el lote a **1.000 centavos por unidad** y stock 10; moneda, tasa y
+  logística se guardaron, pero no se convirtieron ni prorratearon. La evidencia
+  confirma F-038 y no decide la política contable. El fixture exacto (usuario 44,
+  tienda 37, producto 543, documentos 1–2, lote 21 y movimiento 23) fue retirado
+  dentro de una transacción; la verificación posterior encontró cero residuos y
+  `migrate:status` mantuvo 61 `Ran`/0 `Pending`.
+
 Lo siguiente es el backlog real, en orden operativo. No debe marcarse como terminado
 por inferencia a partir de tests parciales:
 
