@@ -433,6 +433,10 @@ publicado en VPS o en la APK pública.
   y POS **2/2**, usando los paquetes debug aislados `com.bsolutions.micatalogo.offlinecheck`
   y su runner de pruebas. Esto no autoriza instalar una build debug en el Samsung ni
   reemplaza la validación de la release firmada.
+- Se añadió la regresión Web `AUTH-007` para tokens de recuperación vencidos y de un
+  solo uso. Pasa en SQLite y MariaDB QA; la suite completa queda en **506 tests / 5.146
+  assertions PASS** por motor. El caso de invitación a una cuenta ya existente y la
+  validación física Android siguen pendientes.
 
 Lo siguiente es el backlog real, en orden operativo. No debe marcarse como terminado
 por inferencia a partir de tests parciales:

@@ -5,9 +5,11 @@ use App\Models\User;
 use App\Services\Turnstile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Password;
 
 uses(RefreshDatabase::class);
 
@@ -103,6 +105,49 @@ test('password reset requests are limited by IP address', function () {
 
     $this->post(route('password.email'), ['email' => $user->email])
         ->assertStatus(429);
+});
+
+test('an expired password reset token cannot change the password', function () {
+    $user = User::factory()->create([
+        'password' => Hash::make('old-password'),
+    ]);
+    $token = Password::broker()->createToken($user);
+    $expiredAt = now()->subMinutes((int) config('auth.passwords.users.expire', 60) + 1);
+
+    DB::table('password_reset_tokens')
+        ->where('email', $user->email)
+        ->update(['created_at' => $expiredAt]);
+
+    $this->post(route('password.update'), [
+        'token' => $token,
+        'email' => $user->email,
+        'password' => 'new-secure-password',
+        'password_confirmation' => 'new-secure-password',
+    ])
+        ->assertRedirect()
+        ->assertSessionHasErrors('email');
+
+    expect(Hash::check('old-password', $user->fresh()->password))->toBeTrue();
+});
+
+test('a password reset token is single use', function () {
+    $user = User::factory()->create([
+        'password' => Hash::make('old-password'),
+    ]);
+    $token = Password::broker()->createToken($user);
+    $payload = [
+        'token' => $token,
+        'email' => $user->email,
+        'password' => 'new-secure-password',
+        'password_confirmation' => 'new-secure-password',
+    ];
+
+    $this->post(route('password.update'), $payload)->assertRedirect();
+    expect(Hash::check('new-secure-password', $user->fresh()->password))->toBeTrue();
+
+    $this->post(route('password.update'), $payload)
+        ->assertRedirect()
+        ->assertSessionHasErrors('email');
 });
 
 test('a suspended account cannot sign in', function () {
