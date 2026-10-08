@@ -406,6 +406,23 @@ publicado en VPS o en la APK pública.
 
 ## Trabajo que aún falta
 
+### Verificación Android adicional del 2026-10-08
+
+- En `C:\Users\waila\AndroidStudioProjects\micatalogowebApp`, el checkout sigue en
+  `e50e5ff` (`main...origin/main [ahead 4]`), sin cambios rastreados; `.github/` es
+  no rastreado intencional.
+- `:app:testDebugUnitTest :app:lintDebug --no-daemon` terminó **BUILD SUCCESSFUL**;
+  las unitarias permanecen en **95/95 PASS**.
+- `:app:connectedDebugAndroidTest --no-daemon` terminó **BUILD SUCCESSFUL** en el
+  único emulador disponible (`emulator-5554`, `Pixel_10_Pro_XL_2`): **119 casos**,
+  **116 PASS** y **3 assumptions**. Los tres omitidos son los fixtures live que
+  requieren servidor Laravel aislado y `adb reverse` (`InventoryImportLiveIntegrationTest`
+  y dos casos de `PosSaleLiveIntegrationTest`); no son fallos de producto.
+- El Samsung físico no está conectado por ADB en esta sesión (`adb devices -l` solo
+  mostró `emulator-5554`). No se desinstaló, instaló ni modificó ningún teléfono real.
+- La API pública sigue manifestando **1.0.76 / versionCode 77** con el SHA documentado;
+  no se generó ni publicó una release nueva en esta verificación.
+
 Lo siguiente es el backlog real, en orden operativo. No debe marcarse como terminado
 por inferencia a partir de tests parciales:
 
