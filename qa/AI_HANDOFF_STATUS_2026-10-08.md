@@ -145,10 +145,10 @@ sintéticos y no deben copiarse a reportes.
 
 Evidencia QA más reciente:
 
-- Suite completa: **494 tests / 5.069 assertions PASS** en SQLite y MariaDB QA
+- Suite completa: **495 tests / 5.073 assertions PASS** en SQLite y MariaDB QA
   aislada.
 - Benchmark de catálogo de 1.500 productos: máximo 17 consultas; p50/p95 más
-  reciente SQLite `343.59/350.94 ms`, MariaDB QA `332.64/355.36 ms`, memoria
+  reciente SQLite `334.61/345.77 ms`, MariaDB QA `323.90/339.09 ms`, memoria
   `148/148 MB`. Sigue siendo benchmark local, no latencia real de red/dispositivo.
 - Matriz dirigida RBAC/tenant: **24 tests / 369 assertions PASS** en ambos motores.
 - MariaDB QA: `61 Ran, 0 Pending`; tablas operativas quedaron en cero después de
@@ -235,14 +235,9 @@ explícita, desinstalar únicamente `com.bsolutions.micatalogo` del Samsung e in
 la release oficial. Esa operación borra los datos locales de la app, no los datos del
 servidor.
 
-También se inspeccionó el flujo de cierre de sesión Android. `SettingsViewModel.logout()`
-llama a `MiCatalogoConnectionRepository.clearConnection()`, que elimina el token y el
-estado local (sesión, tienda activa y caché). No existe actualmente una ruta API
-`/logout` o revocación individual en `routes/api.php`; por tanto, el cierre Android es
-local y el token Sanctum emitido puede continuar válido en el servidor hasta expirar o
-ser eliminado por administración. Esto queda como hallazgo AUTH-006 para decidir si el
-contrato requiere una revocación remota; no se agregó una ruta improvisada porque
-implicaría cambiar el contrato backend y la política de sesiones.
+La inspección inicial del flujo de cierre de sesión Android encontró que
+`SettingsViewModel.logout()` solo limpiaba `MiCatalogoConnectionRepository.clearConnection()`;
+sin una ruta remota el token Sanctum podía seguir válido en el servidor.
 
 ### Corrección aplicada después de ese hallazgo
 
@@ -256,6 +251,8 @@ Se implementó la revocación explícita del token actual:
 - Regresión backend: `ApiAuthenticationTest`, **17/17 tests y 79 assertions PASS**.
 - Regresión Android: `testDebugUnitTest` y `compileDebugAndroidTestKotlin`, **BUILD
   SUCCESSFUL**.
+- `lintDebug` Android terminó **BUILD SUCCESSFUL**; conserva únicamente los warnings
+  no bloqueantes ya conocidos.
 
 Esta corrección está únicamente en los checkouts locales; todavía no se ha desplegado ni
 publicado en VPS o en la APK pública.
@@ -280,10 +277,10 @@ publicado en VPS o en la APK pública.
    autorización, hardware o decisión de negocio, dejar `NOT_READY` y documentar el
    bloqueo; no disfrazarlo como PASS.
 
-## Commit que contiene este traspaso
+## Commits locales de este corte
 
-Este archivo se añadirá junto con la corrección de métricas obsoletas en los reportes
-QA. La documentación de la reejecución live anterior está en el commit local
-`8e64f63`; el siguiente commit de documentación debe revisarse antes de cualquier
-push. Ninguna clave, contraseña, token real ni archivo privado forma parte de este
-traspaso.
+- Backend: `734b169` (`fix: revoke API token on mobile logout`) más el commit documental
+  posterior que actualiza este baseline.
+- Android: `5d57421` (`fix: revoke MiCatalogo session on logout`).
+- La documentación de la reejecución live anterior permanece en `8e64f63`.
+- Ninguna clave, contraseña, token real ni archivo privado forma parte de este traspaso.

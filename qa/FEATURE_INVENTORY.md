@@ -19,7 +19,7 @@ Inventario derivado del código vivo de `routes/web.php`, `routes/api.php`, cont
 
 ## Cobertura cuantitativa inicial
 
-- Laravel route list: 215 rutas; 180 con autenticación; 124 mutaciones totales, 114 mutaciones autenticadas.
+- Laravel route list: 216 rutas; 181 con autenticación; 125 mutaciones totales, 115 mutaciones autenticadas.
 - El análisis estático encontró 10 mutaciones públicas/framework/auth sin middleware de dominio adicional; están clasificadas en `ROUTE_ACCESS_MATRIX.md`. No se encontró una mutación comercial privada autenticada sin protección de autorización o alcance de tienda.
 - Graphify actualizado en modo `--code-only`: 2.013 nodos, 6.005 relaciones, 216 comunidades. Los documentos e imágenes no se incorporaron por falta de una clave de extracción semántica; se registra como limitación, no como PASS.
 
