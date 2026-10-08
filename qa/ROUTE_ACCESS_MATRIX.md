@@ -1,6 +1,6 @@
 # Matriz inicial de rutas y acceso
 
-La fuente reproducible es `php artisan route:list --json` ejecutado contra el checkout actual. El inventario contiene 216 rutas: 181 con middleware de autenticación y 125 mutaciones, de las cuales 115 son mutaciones autenticadas. La suite completa del checkout queda en 496 pruebas y 5.076 assertions en SQLite y MariaDB QA.
+La fuente reproducible es `php artisan route:list --json` ejecutado contra el checkout actual. El inventario contiene 216 rutas: 181 con middleware de autenticación y 125 mutaciones, de las cuales 115 son mutaciones autenticadas. La suite completa del checkout queda en 499 pruebas y 5.099 assertions en SQLite y MariaDB QA.
 
 ## Clasificación automática inicial
 
