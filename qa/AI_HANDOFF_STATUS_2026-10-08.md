@@ -216,6 +216,34 @@ Los detalles y límites están en:
 10. **Documentación/branches:** decidir qué commits locales se integran y hacer push
     solamente después de revisar los siete commits backend y uno Android adelantados.
 
+## Verificación adicional de cierre de sesión y Samsung (2026-10-08)
+
+Se repitió el verificador de instalación en modo estrictamente de solo lectura con los
+dos dispositivos ADB conectados. El resultado volvió a ser `blocked_signature_mismatch`:
+
+- Samsung `SM-S948U1`: paquete instalado `1.0.27`, código 28, certificado debug
+  `e266fd48...1ff775`.
+- APK release local: `1.0.76`, código 77, certificado oficial
+  `5a5670de...578d490f`.
+- `install_requested: false`; no se desinstaló, no se limpió almacenamiento y no se
+  modificó ningún dispositivo.
+
+Conclusión: no es un problema de versión, tamaño ni corrupción de la APK. Android
+rechaza la actualización porque la instalación existente fue firmada con otra clave.
+La transición segura requiere verificar primero el outbox local y, con autorización
+explícita, desinstalar únicamente `com.bsolutions.micatalogo` del Samsung e instalar
+la release oficial. Esa operación borra los datos locales de la app, no los datos del
+servidor.
+
+También se inspeccionó el flujo de cierre de sesión Android. `SettingsViewModel.logout()`
+llama a `MiCatalogoConnectionRepository.clearConnection()`, que elimina el token y el
+estado local (sesión, tienda activa y caché). No existe actualmente una ruta API
+`/logout` o revocación individual en `routes/api.php`; por tanto, el cierre Android es
+local y el token Sanctum emitido puede continuar válido en el servidor hasta expirar o
+ser eliminado por administración. Esto queda como hallazgo AUTH-006 para decidir si el
+contrato requiere una revocación remota; no se agregó una ruta improvisada porque
+implicaría cambiar el contrato backend y la política de sesiones.
+
 ## Secuencia recomendada para la siguiente IA
 
 1. Leer `AGENTS.md`, `bsolutions-infra/SKILL.md` y
