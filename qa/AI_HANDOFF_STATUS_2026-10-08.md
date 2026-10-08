@@ -422,6 +422,13 @@ publicado en VPS o en la APK pública.
   mostró `emulator-5554`). No se desinstaló, instaló ni modificó ningún teléfono real.
 - La API pública sigue manifestando **1.0.76 / versionCode 77** con el SHA documentado;
   no se generó ni publicó una release nueva en esta verificación.
+- Después de reinstalar únicamente los APK debug en el emulador, se reejecutaron los
+  fixtures live omitidos por la batería general: `InventoryImportLiveIntegrationTest`
+  **1/1 PASS** y `PosSaleLiveIntegrationTest` **2/2 PASS**, con base SQLite temporal,
+  servidor local en `127.0.0.1:8893` y `adb reverse`. Se verificaron importación por
+  sesión/idempotencia, ventas contado y crédito con abono, consumo de ml de decants,
+  reinicio de Room y replay sin duplicados. Los temporales fueron retirados y no se
+  usó producción.
 
 Lo siguiente es el backlog real, en orden operativo. No debe marcarse como terminado
 por inferencia a partir de tests parciales:
