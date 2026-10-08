@@ -17,8 +17,8 @@ Comandos reproducibles del corte: SQLite con `vendor/bin/pest --configuration ph
 
 | Suite | Resultado | Evidencia |
 |---|---|---|
-| Pest completo Laravel / SQLite | PASS | 494 tests, 5.069 assertions, 38.56 s; incluye F-046/F-047/F-048/F-049/F-050/F-051/F-052/F-053/F-054/F-055 y la regresión de permisos financieros del catálogo |
-| Pest completo Laravel / MariaDB QA | PASS | 494 tests, 5.069 assertions, 55.48 s; `micatalogo_qa_20261008`, sin registros persistentes al terminar y sin tocar producción |
+| Pest completo Laravel / SQLite | PASS | 494 tests, 5.069 assertions, 36.08 s en la reejecución más reciente; incluye F-046/F-047/F-048/F-049/F-050/F-051/F-052/F-053/F-054/F-055 y la regresión de permisos financieros del catálogo |
+| Pest completo Laravel / MariaDB QA | PASS | 494 tests, 5.069 assertions, 51.62 s en la reejecución más reciente; `micatalogo_qa_20261008`, sin registros persistentes al terminar y sin tocar producción |
 | Subconjunto dirigido catálogo/importación/comercio | PASS | `AdaptiveInventoryImportTest`, `InventoryImportRobustnessTest`, `SellerPosTest`, `MobileOperationTest`, `FifoPricingTest`, `BusinessRemediationTest`, `OperationalDecantReturnJourneyTest`, `PublicOrderAndAttributesTest`, `SellerProductTest`, `CatalogMediaTest` y `ProductImageSelectionTest`: 110 tests, 732 assertions; SQLite 10.69 s y MariaDB QA 16.66 s |
 | Subconjunto dirigido auth/planes/equipo/admin/finanzas/compras | PASS | `AuthenticationTest`, `BusinessProfileRegistrationTest`, `EmailVerificationFlowTest`, `ApiAuthenticationTest`, `PlanQuotaTest`, `PlanSeatLimitTest`, `SellerInvitationTest`, `SupportRequestTest`, `AdminUserManagementTest`, `AdminModerationTest`, `CategoryManagementTest`, `FinancialModuleTest`, `FinancialApiContractTest`, `CustomerPaymentAllocationTest`, `ApiPurchaseTest`, `ApiCatalogTest`, `SellerShopTest` y `SellerShopMetricsTest`: 137 tests, 795 assertions; SQLite 13.69 s y MariaDB QA 20.13 s |
 | Regresión de cotizaciones vencidas/canceladas | PASS | `SellerCommerceWorkspaceTest`: 12 tests, 113 assertions en SQLite y MariaDB QA; Web/API rechazan conversión no vigente y el detalle no ofrece convertir una cotización cancelada |
@@ -52,7 +52,7 @@ Comandos reproducibles del corte: SQLite con `vendor/bin/pest --configuration ph
 | Revalidación de inventario de rutas y migraciones QA | PASS | `php artisan route:list --json` en el checkout actual coincide con `qa/ROUTE_ACCESS_MATRIX.md`: **215/215 rutas**; `migrate:status` explícito sobre `micatalogo_qa_20261008`: **61 Ran, 0 Pending**. No se ejecutó ninguna migración ni se modificó producción |
 | Smoke de entradas públicas y límites web/API | PASS | Servidor local QA `127.0.0.1:8894`: `/`, `/login`, `/register`, `/terminos` y `/privacidad` HTTP 200; `/panel` y `/admin` redirigen a login (302); `/api/v1/shops` anónimo responde 401; tienda inexistente responde 404; descarga Android devuelve el redirect oficial sin escribir datos |
 | Smoke de arranque APK debug | PASS | `adb -s emulator-5554` inició `com.bsolutions.micatalogo/com.example.bspos.MainActivity`; actividad en foreground y sin `FATAL EXCEPTION` del paquete en los últimos 300 eventos |
-| NFR-006 benchmark de catálogo | PASS | 1 test, 12 assertions; 1.500 productos, 5 ejecuciones; medición puntual de esta reejecución SQLite p50 406.12 ms/p95 418.42 ms y MariaDB QA p50 373.10 ms/p95 444.57 ms; máximo 17 consultas; pico 148/148 MB. La variación se debe al entorno local y no cambia el límite de consultas |
+| NFR-006 benchmark de catálogo | PASS | 1 test, 12 assertions; 1.500 productos, 5 ejecuciones; medición más reciente SQLite p50 343.59 ms/p95 350.94 ms y MariaDB QA p50 332.64 ms/p95 355.36 ms; máximo 17 consultas; pico 148/148 MB. La variación se debe al entorno local y no cambia el límite de consultas |
 | Regresión de roles owner/seller/manager/accountant | PASS | 29 tests, 257 assertions en SQLite y MariaDB QA; guard de identidad reiniciado entre requests |
 | Android `testDebugUnitTest` | PASS | 95 tests, 0 failures, 0 errors |
 | Android `compileDebugKotlin` después de correcciones QA | PASS | compilación exitosa |
@@ -69,12 +69,12 @@ Comandos reproducibles del corte: SQLite con `vendor/bin/pest --configuration ph
 | Pint completo del checkout | NOT_RUN como corrección | `vendor/bin/pint --test` detectó 37 archivos con formato pendiente. No se reformatearon masivamente cambios locales de otras tareas; el workflow CI verifica el conjunto modificado de cada push/PR |
 | Migraciones MariaDB QA | PASS de lectura | `micatalogo_qa_20261008`: 61 migraciones `[1] Ran`, 0 `Pending` bajo `APP_ENV=testing`, `QA_ALLOW_MYSQL=1` y `DB_DATABASE` explícito |
 | Conexión local por defecto | NO EJECUTADA / RIESGO | el `.env` local resuelve `DB_DATABASE=micatalogo` y muestra 15 migraciones `Pending`; no se ejecutaron porque no está demostrada como esquema QA y el plan prohíbe alterar una base no aislada durante estas pruebas |
-| Pest completo Laravel / MariaDB QA | PASS | 494 tests, 5.069 assertions, 49.05 s en la reejecución posterior a F-054; `micatalogo_qa_20261008` sin registros persistentes al terminar |
+| Pest completo Laravel / MariaDB QA | PASS | 494 tests, 5.069 assertions, 51.62 s en la reejecución más reciente; `micatalogo_qa_20261008` sin registros persistentes al terminar |
 | Preparación MariaDB QA aislada | PASS | `micatalogo_qa_20261008` creada localmente y migraciones aplicadas; no se usó producción |
 | Fixtures contractuales documentados | PASS | `qa/CONTRACT_FIXTURES/` contiene actores/tiendas sintéticos, contrato financiero y encabezados de importación; no contiene secretos ni datos reales |
 | Backup y restauración MariaDB QA | PASS | Dump local restaurado en `micatalogo_qa_restore_20261008`; 61 tablas en ambas bases y conteos conservados: users/shops/products = 0/0/0 |
 | SALE-008 rollback POS después de crear factura | PASS | `OperationalSaleSafetyTest`: 1 test, 9 assertions en SQLite y MariaDB QA; fallo inyectado después de factura/inventario, sin upload, factura, movimiento ni caja persistidos |
-| Suite Laravel sobre MariaDB QA | PASS | 494 tests, 5.069 assertions, 49.05 s; base `micatalogo_qa_20261008`, sin producción |
+| Suite Laravel sobre MariaDB QA | PASS | 494 tests, 5.069 assertions, 51.62 s en la reejecución más reciente; base `micatalogo_qa_20261008`, sin producción |
 | Higiene post-suite QA | PASS | Tablas críticas en 0 registros; todas las migraciones QA `[1] Ran`; `adb reverse --list` vacío; no hubo escrituras de producción |
 | Probe de concurrencia de venta/stock en MariaDB QA | PASS | 2 procesos independientes: 1 venta, 1 rechazo 409, stock final 0, 1 movimiento y 1 factura; fixture eliminado por la suite posterior |
 | Probe de concurrencia de recepción en MariaDB QA | PASS | 6 procesos: 1 recepción, 5 rechazos controlados, 1 lote/movimiento y stock correcto |
