@@ -429,6 +429,10 @@ publicado en VPS o en la APK pública.
   sesión/idempotencia, ventas contado y crédito con abono, consumo de ml de decants,
   reinicio de Room y replay sin duplicados. Los temporales fueron retirados y no se
   usó producción.
+- La misma revalidación pasó también en la variante `offlinecheck`: importador **1/1**
+  y POS **2/2**, usando los paquetes debug aislados `com.bsolutions.micatalogo.offlinecheck`
+  y su runner de pruebas. Esto no autoriza instalar una build debug en el Samsung ni
+  reemplaza la validación de la release firmada.
 
 Lo siguiente es el backlog real, en orden operativo. No debe marcarse como terminado
 por inferencia a partir de tests parciales:
