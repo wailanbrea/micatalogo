@@ -57,7 +57,10 @@ class SellerMenuService
 
     public function canManageMenuVisibility(Shop $shop, User $user): bool
     {
-        return $user->isAdmin() || $user->ownsShop($shop);
+        return $this->rememberForRequest(
+            'menu-visibility:'.$shop->getKey().':'.$user->getKey(),
+            fn (): bool => $user->isAdmin() || $user->ownsShop($shop),
+        );
     }
 
     /** @return array<int, array{key: string, label: string, group: string, protected: bool}> */
@@ -109,50 +112,63 @@ class SellerMenuService
 
     public function canManage(Shop $shop, User $user): bool
     {
-        return $user->isAdmin() || $user->ownsShop($shop) || $shop->members()
-            ->where('user_id', $user->id)
-            ->where('role', 'manager')
-            ->where('is_active', true)
-            ->exists();
+        return $this->rememberForRequest(
+            'manage:'.$shop->getKey().':'.$user->getKey(),
+            fn (): bool => $user->isAdmin() || $user->ownsShop($shop) || $shop->members()
+                ->where('user_id', $user->id)
+                ->where('role', 'manager')
+                ->where('is_active', true)
+                ->exists(),
+        );
     }
 
     /** @return list<string> */
     public function forUser(Shop $shop, User $user): array
     {
-        if ($this->canManage($shop, $user)) {
-            return $this->keys();
-        }
+        return $this->rememberForRequest(
+            'for-user:'.$shop->getKey().':'.$user->getKey(),
+            function () use ($shop, $user): array {
+                if ($this->canManage($shop, $user)) {
+                    return $this->keys();
+                }
 
-        if ($shop->members()->where('user_id', $user->id)->where('role', 'accountant')->where('is_active', true)->exists()) {
-            // An accountant is a read-only financial collaborator. The
-            // accountant module contains owner/manager controls to grant or
-            // revoke other accountant access, so it must never be exposed to
-            // the accountant themselves.
-            return ['finance', 'reports'];
-        }
+                if ($shop->members()->where('user_id', $user->id)->where('role', 'accountant')->where('is_active', true)->exists()) {
+                    // An accountant is a read-only financial collaborator. The
+                    // accountant module contains owner/manager controls to grant or
+                    // revoke other accountant access, so it must never be exposed to
+                    // the accountant themselves.
+                    return ['finance', 'reports'];
+                }
 
-        $assignment = $shop->sellers()
-            ->where('user_id', $user->id)
-            ->where('is_active', true)
-            ->first();
+                $assignment = $shop->sellers()
+                    ->where('user_id', $user->id)
+                    ->where('is_active', true)
+                    ->first();
 
-        return $this->forAssignment($assignment);
+                return $this->forAssignment($assignment);
+            },
+        );
     }
 
     /** @return list<string> */
     public function visibleForUser(Shop $shop, User $user): array
     {
-        $menus = $this->forUser($shop, $user);
-        $capabilities = $this->profiles->capabilities($shop);
-        $enabled = array_flip($this->enabledKeys($shop));
-        $ownerControls = $this->canManageMenuVisibility($shop, $user)
-            ? array_flip($this->ownerControlKeys())
-            : [];
+        return $this->rememberForRequest(
+            'visible:'.$shop->getKey().':'.$user->getKey(),
+            function () use ($shop, $user): array {
+                $menus = $this->forUser($shop, $user);
+                $capabilities = $this->profiles->capabilities($shop);
+                $enabled = array_flip($this->enabledKeys($shop));
+                $ownerControls = $this->canManageMenuVisibility($shop, $user)
+                    ? array_flip($this->ownerControlKeys())
+                    : [];
 
-        return array_values(array_filter($menus, fn (string $menu): bool =>
-            isset($ownerControls[$menu]) ||
-            (isset($enabled[$menu]) && $this->menuIsAvailable($menu, $capabilities))
-        ));
+                return array_values(array_filter($menus, fn (string $menu): bool =>
+                    isset($ownerControls[$menu]) ||
+                    (isset($enabled[$menu]) && $this->menuIsAvailable($menu, $capabilities))
+                ));
+            },
+        );
     }
 
     private function groupFor(string $key): string
@@ -200,5 +216,24 @@ class SellerMenuService
         return $assignment->menu_permissions === null
             ? $this->defaultPermissions()
             : $this->normalize($assignment->menu_permissions);
+    }
+
+    private function rememberForRequest(string $key, callable $resolver): mixed
+    {
+        if (! app()->bound('request')) {
+            return $resolver();
+        }
+
+        $request = request();
+        $cache = $request->attributes->get('seller_menu_cache', []);
+        if (array_key_exists($key, $cache)) {
+            return $cache[$key];
+        }
+
+        $value = $resolver();
+        $cache[$key] = $value;
+        $request->attributes->set('seller_menu_cache', $cache);
+
+        return $value;
     }
 }

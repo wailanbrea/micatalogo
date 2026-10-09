@@ -24,7 +24,7 @@ class SellerPosController extends Controller
                     ->orWhere('sale_unit', 'service')
                     ->orWhere('is_combo', true);
             })
-            ->with(['inventory', 'images', 'primaryImage', 'sourceProduct.inventory', 'shopCategory', 'globalCategory', 'attributeValues.attributeDefinition', 'comboItems.component.inventory'])
+            ->with(['inventory', 'primaryImage', 'sourceProduct.inventory', 'shopCategory', 'globalCategory', 'attributeValues', 'comboItems.component.inventory'])
             ->orderBy('name')
             ->get()
             ->map(function ($product): array {

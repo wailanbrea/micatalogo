@@ -84,8 +84,10 @@ class SellerFeatureController extends Controller
         ?BusinessDashboardService $dashboard = null
     ): View {
         abort_unless(isset(self::FEATURES[$feature]), 404);
-        abort_unless(in_array($feature, $menus->visibleForUser($shop, $request->user()), true), 403);
-        $showSensitiveFinance = $this->canViewSensitiveFinance($shop, $request->user(), $menus);
+        $visibleMenus = $menus->visibleForUser($shop, $request->user());
+        abort_unless(in_array($feature, $visibleMenus, true), 403);
+        $showSensitiveFinance = $menus->canManage($shop, $request->user())
+            || in_array('finance', $visibleMenus, true);
 
         $related = match ($feature) {
             'sales', 'quotes', 'orders', 'encargos', 'shipments', 'day_close' => [
@@ -122,7 +124,7 @@ class SellerFeatureController extends Controller
             ],
         };
 
-        $related = array_values(array_filter($related, function ($item) use ($request, $shop, $menus): bool {
+        $related = array_values(array_filter($related, function ($item) use ($shop, $visibleMenus): bool {
             $path = parse_url($item['url'], PHP_URL_PATH);
             $route = app('router')->getRoutes()->match(Request::create($path));
             $menu = match ($route->getName()) {
@@ -138,7 +140,7 @@ class SellerFeatureController extends Controller
                 default => null,
             };
 
-            return $menu === null || in_array($menu, $menus->visibleForUser($shop, $request->user()), true);
+            return $menu === null || in_array($menu, $visibleMenus, true);
         }));
 
         return view('seller.features.show', [
@@ -181,8 +183,10 @@ class SellerFeatureController extends Controller
             404
         );
         abort_unless(isset(self::FEATURES[$feature]), 404);
-        abort_unless(in_array($feature, $menus->visibleForUser($shop, $request->user()), true), 403);
-        $showSensitiveFinance = $this->canViewSensitiveFinance($shop, $request->user(), $menus);
+        $visibleMenus = $menus->visibleForUser($shop, $request->user());
+        abort_unless(in_array($feature, $visibleMenus, true), 403);
+        $showSensitiveFinance = $menus->canManage($shop, $request->user())
+            || in_array('finance', $visibleMenus, true);
 
         return response()->json([
             'feature_key' => $feature,
@@ -197,12 +201,6 @@ class SellerFeatureController extends Controller
                 $showSensitiveFinance
             ),
         ]);
-    }
-
-    private function canViewSensitiveFinance(Shop $shop, \App\Models\User $user, SellerMenuService $menus): bool
-    {
-        return $menus->canManage($shop, $user)
-            || in_array('finance', $menus->visibleForUser($shop, $user), true);
     }
 
     public function updateAttribute(
@@ -646,7 +644,7 @@ class SellerFeatureController extends Controller
                     && ! ($quote->valid_until && $quote->valid_until->isBefore(today())),
                 'id' => $quote->public_id,
             ])->all(),
-            'quoteProducts' => $shop->products()->with(['shopCategory', 'globalCategory', 'inventory', 'images', 'primaryImage'])->whereIn('availability_status', ['available', 'out_of_stock'])->orderBy('name')->limit(1000)->get()->map(fn (Product $product) => [
+            'quoteProducts' => $shop->products()->with(['shopCategory', 'globalCategory', 'inventory', 'primaryImage'])->whereIn('availability_status', ['available', 'out_of_stock'])->orderBy('name')->limit(1000)->get()->map(fn (Product $product) => [
                 'id' => $product->public_id,
                 'name' => $product->name,
                 'price' => number_format($product->currentPrice(), 2, '.', ''),
@@ -1083,16 +1081,24 @@ class SellerFeatureController extends Controller
             });
         }
         $orders = $query->limit(30)->get();
-        $pendingTotal = $shop->orders()
-            ->whereIn('status', ['pending', 'sent_to_whatsapp'])
-            ->sum('total');
+        // Keep the three order KPIs in one aggregate query. The mobile client
+        // already requests the same read model for the list and should not
+        // pay for one full query per KPI on every navigation.
+        $kpis = $shop->orders()
+            ->selectRaw(
+                'COALESCE(SUM(CASE WHEN status IN (?, ?) THEN 1 ELSE 0 END), 0) AS pending_count,
+                 COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) AS confirmed_count,
+                 COALESCE(SUM(CASE WHEN status IN (?, ?) THEN total ELSE 0 END), 0) AS pending_total',
+                ['pending', 'sent_to_whatsapp', 'confirmed', 'pending', 'sent_to_whatsapp']
+            )
+            ->first();
 
         return [
             'kind' => 'orders',
             'kpis' => [
-                ['label' => 'Pendientes', 'value' => number_format($shop->orders()->whereIn('status', ['pending', 'sent_to_whatsapp'])->count()), 'tone' => 'amber'],
-                ['label' => 'Confirmados', 'value' => number_format($shop->orders()->where('status', 'confirmed')->count()), 'tone' => 'emerald'],
-                ['label' => 'Total por confirmar', 'value' => $this->money($pendingTotal), 'tone' => 'blue'],
+                ['label' => 'Pendientes', 'value' => number_format((int) ($kpis?->pending_count ?? 0)), 'tone' => 'amber'],
+                ['label' => 'Confirmados', 'value' => number_format((int) ($kpis?->confirmed_count ?? 0)), 'tone' => 'emerald'],
+                ['label' => 'Total por confirmar', 'value' => $this->money($kpis?->pending_total ?? 0), 'tone' => 'blue'],
             ],
             'rows' => $orders->map(fn (Order $order) => [
                 'id' => (string) $order->id,

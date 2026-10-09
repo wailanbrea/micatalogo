@@ -1,5 +1,11 @@
 import './bootstrap';
-import Chart from 'chart.js/auto';
+
+let chartModulePromise;
+
+const loadChart = () => {
+    chartModulePromise ??= import('chart.js/auto').then((module) => module.default ?? module);
+    return chartModulePromise;
+};
 
 const initializeLiquidLevels = () => {
     document.querySelectorAll('[data-liquid-level]').forEach((level) => {
@@ -28,8 +34,17 @@ const initializeLiquidLevels = () => {
     });
 };
 
-const initializeSalesCharts = () => {
-    document.querySelectorAll('[data-sales-chart]').forEach((canvas) => {
+const initializeSalesCharts = async () => {
+    const canvases = [...document.querySelectorAll('[data-sales-chart]')]
+        .filter((canvas) => canvas.dataset.chartReady !== 'true');
+
+    if (!canvases.length) {
+        return;
+    }
+
+    const Chart = await loadChart();
+
+    canvases.forEach((canvas) => {
         if (canvas.dataset.chartReady === 'true') {
             return;
         }
