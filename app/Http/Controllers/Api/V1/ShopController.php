@@ -37,7 +37,7 @@ class ShopController extends Controller
                     ->where('is_active', true));
         });
 
-        $shops = $query->get(['id', 'user_id', 'public_id', 'name', 'slug'])
+        $shops = $query->get(['id', 'user_id', 'public_id', 'name', 'slug', 'enabled_menu_keys'])
             ->map(function ($shop) use ($limits, $menus, $request, $capabilities, $presentation): array {
                 $canManage = $menus->canManage($shop, $request->user());
 
@@ -50,6 +50,13 @@ class ShopController extends Controller
                     'quota' => $limits->shopQuota($shop, $shop->products_count),
                     'menu_permissions' => $menus->visibleForUser($shop, $request->user()),
                     'can_manage_sellers' => $canManage,
+                    'can_manage_menu_visibility' => $menus->canManageMenuVisibility($shop, $request->user()),
+                    // This is not sensitive and must reach sellers too so
+                    // Android can hide the same modules for every role.
+                    'enabled_menu_keys' => $menus->enabledKeys($shop),
+                    'menu_options' => $menus->canManageMenuVisibility($shop, $request->user())
+                        ? $menus->ownerMenuOptions()
+                        : [],
                     'sellers' => $canManage ? $shop->sellers->map(fn ($seller): array => [
                         'id' => (string) $seller->id,
                         'user_id' => (string) $seller->user_id,
@@ -78,6 +85,28 @@ class ShopController extends Controller
 
         return response()->json([
             'menu_permissions' => $menus->forAssignment($seller->fresh()),
+        ]);
+    }
+
+    public function updateMenuVisibility(Request $request, Shop $shop, SellerMenuService $menus): JsonResponse
+    {
+        abort_unless($menus->canManageMenuVisibility($shop, $request->user()), 403);
+
+        $validated = $request->validate([
+            'enabled_menu_keys' => ['present', 'array'],
+            'enabled_menu_keys.*' => [Rule::in($menus->keys())],
+        ]);
+        $enabled = $menus->normalizeEnabled(array_merge(
+            $validated['enabled_menu_keys'],
+            $menus->ownerControlKeys()
+        ));
+        $shop->update(['enabled_menu_keys' => $enabled]);
+        $fresh = $shop->fresh();
+
+        return response()->json([
+            'message' => 'Menús de la tienda actualizados.',
+            'enabled_menu_keys' => $menus->enabledKeys($fresh),
+            'menu_permissions' => $menus->visibleForUser($fresh, $request->user()),
         ]);
     }
 

@@ -43,6 +43,8 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/shops/{shop}/sellers', [ShopController::class, 'storeSeller']);
         Route::post('/shops/{shop}/accountant-access', [AccountantAccessController::class, 'store']);
         Route::put('/shops/{shop}/sellers/{seller}/menus', [ShopController::class, 'updateSellerMenus']);
+        Route::put('/shops/{shop}/menu-visibility', [ShopController::class, 'updateMenuVisibility'])
+            ->middleware('menu:shop_settings');
         Route::get('/shops/{shop}/catalog', [CatalogController::class, 'show']);
         Route::get('/shops/{shop}/settings', [ShopSettingsController::class, 'show'])->middleware('menu:shop_settings');
         Route::put('/shops/{shop}/settings', [ShopSettingsController::class, 'update'])->middleware('menu:shop_settings');
@@ -53,6 +55,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/support/conversations/{conversation}', [SupportChatController::class, 'show']);
         Route::post('/support/conversations/{conversation}/messages', [SupportChatController::class, 'storeMessage']);
         Route::post('/support/conversations/{conversation}/read', [SupportChatController::class, 'markRead']);
+        Route::post('/support/conversations/{conversation}/close', [SupportChatController::class, 'close']);
         Route::post('/shops/{shop}/support/conversations', [SupportChatController::class, 'store']);
         Route::post('/shops/{shop}/authorization-requests', [SellerAuthorizationController::class, 'storeApi']);
         Route::post('/shops/{shop}/authorization-requests/{authorizationRequest}/approve', [SellerAuthorizationController::class, 'approveApi']);

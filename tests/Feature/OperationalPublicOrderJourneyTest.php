@@ -61,6 +61,7 @@ test('E2E-01 registro tienda vitrina pedido whatsapp confirmacion factura stock 
     $created = $this->postJson(route('orders.store', $shop), [
         'items' => [['id' => $product->public_id, 'quantity' => 2]],
         'customer_name' => 'Cliente E2E-01',
+        'customer_phone' => '8295550102',
         'delivery_type' => 'pickup',
         'notes' => 'Pedido de prueba aislado',
     ])->assertCreated()
@@ -70,6 +71,7 @@ test('E2E-01 registro tienda vitrina pedido whatsapp confirmacion factura stock 
 
     $order = Order::query()->where('order_number', $created->json('order_number'))->sole();
     expect($order->status)->toBe('sent_to_whatsapp')
+        ->and($order->customer_phone)->toBe('8295550102')
         ->and($order->total)->toBe('600.00')
         ->and($order->items()->count())->toBe(1);
 

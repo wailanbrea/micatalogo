@@ -285,6 +285,7 @@ test('mobile product creation supports validated decant presentations linked to 
         'track_inventory' => true,
         'stock_quantity' => 4,
         'available_ml' => 400,
+        'reserved_decant_ml' => 0,
         'cost_price' => 1200,
     ]);
     $token = $user->createToken('test', ['pos:write'])->plainTextToken;
@@ -363,6 +364,7 @@ test('mobile opening a bottle is idempotent and preserves total source ml', func
         'track_inventory' => true,
         'stock_quantity' => 4,
         'available_ml' => 400,
+        'reserved_decant_ml' => 0,
         'cost_price' => 1200,
     ]);
     $token = $user->createToken('test', ['pos:write'])->plainTextToken;
@@ -381,17 +383,63 @@ test('mobile opening a bottle is idempotent and preserves total source ml', func
         ->assertCreated()
         ->assertJsonPath('stock', 3)
         ->assertJsonPath('opened_bottles', 1)
-        ->assertJsonPath('available_ml', 400);
+        ->assertJsonPath('available_ml', 400)
+        ->assertJsonPath('reserved_decant_ml', 100);
     $this->withToken($token)->postJson($url, $payload)->assertCreated();
     expect($product->fresh()->inventory->stock_quantity)->toBe(3)
         ->and($product->fresh()->inventory->opened_bottles)->toBe(1)
         ->and($product->fresh()->inventory->available_ml)->toBe(400)
+        ->and($product->fresh()->inventory->reserved_decant_ml)->toBe(100)
         ->and(DB::table('inventory_movements')->where('type', 'opening')->count())->toBe(1);
 
     $stale = $payload;
     $stale['client_operation_uuid'] = (string) Str::uuid();
     $this->withToken($token)->postJson($url, $stale)->assertStatus(409);
     expect($product->fresh()->inventory->stock_quantity)->toBe(3);
+});
+
+test('explicit reserved decant pool is separate from physical source ml', function () {
+    $user = User::factory()->create(['plan' => UserPlan::Pro]);
+    $shop = Shop::factory()->create(['user_id' => $user->id, 'business_type' => 'perfume_store']);
+    $source = Product::factory()->create([
+        'shop_id' => $shop->id,
+        'name' => 'Fuente 2x100',
+        'sale_unit' => 'bottle',
+        'volume_ml' => 100,
+        'price' => 2800,
+    ]);
+    ProductInventory::create([
+        'product_id' => $source->id,
+        'track_inventory' => true,
+        'stock_quantity' => 2,
+        'available_ml' => 200,
+        'reserved_decant_ml' => 0,
+        'cost_price' => 1200,
+    ]);
+    $decant = Product::factory()->create([
+        'shop_id' => $shop->id,
+        'name' => 'Presentación 10 ml',
+        'sale_unit' => 'decant',
+        'volume_ml' => 10,
+        'inventory_source_product_id' => $source->id,
+        'price' => 350,
+    ]);
+    ProductInventory::create(['product_id' => $decant->id, 'track_inventory' => true, 'stock_quantity' => 0]);
+
+    app(InventoryService::class)->openBottle($source, 1, null, $user->id);
+    app(InventoryService::class)->synchronizeDecantStock($decant);
+
+    expect($source->fresh()->inventory->stock_quantity)->toBe(1)
+        ->and($source->fresh()->inventory->available_ml)->toBe(200)
+        ->and($source->fresh()->inventory->reserved_decant_ml)->toBe(100)
+        ->and($decant->fresh()->inventory->stock_quantity)->toBe(10);
+
+    app(InventoryService::class)->recordSale($decant, 1, null, $user->id, false);
+
+    expect($source->fresh()->inventory->stock_quantity)->toBe(1)
+        ->and($source->fresh()->inventory->available_ml)->toBe(190)
+        ->and($source->fresh()->inventory->reserved_decant_ml)->toBe(90)
+        ->and($decant->fresh()->inventory->stock_quantity)->toBe(9);
 });
 
 test('mobile returns restore original sold cost not the latest receipt cost and cannot duplicate', function () {

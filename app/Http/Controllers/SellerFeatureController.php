@@ -39,7 +39,7 @@ class SellerFeatureController extends Controller
 {
     /** @var array<string, array{group: string, title: string, description: string, status: string}> */
     private const FEATURES = [
-        'sales' => ['group' => 'Operación', 'title' => 'Ventas', 'description' => 'Consulta y administra las ventas registradas desde el Punto de venta.', 'status' => 'En preparación'],
+        'sales' => ['group' => 'Operación', 'title' => 'Ventas', 'description' => '', 'status' => 'En preparación'],
         'quotes' => ['group' => 'Operación', 'title' => 'Cotizaciones', 'description' => 'Prepara cotizaciones, compártelas con tus clientes y conviértelas en ventas.', 'status' => 'En preparación'],
         'orders' => ['group' => 'Operación', 'title' => 'Pedidos', 'description' => 'Centraliza los pedidos recibidos desde tu catálogo público y su estado de atención.', 'status' => 'En preparación'],
         'encargos' => ['group' => 'Operación', 'title' => 'Encargos', 'description' => 'Organiza encargos pendientes, fechas de entrega y seguimiento al cliente.', 'status' => 'En preparación'],
@@ -1010,6 +1010,10 @@ class SellerFeatureController extends Controller
         $filtered = $shop->invoices()->with(['customer', 'user', 'items']);
         if ($status === 'all') {
             $filtered->where('status', '!=', 'void');
+        } elseif ($status === 'credit') {
+            // POS uses `pending` for a sale whose full balance remains on credit;
+            // `credit` is kept for invoices created by older/web flows.
+            $filtered->whereIn('status', ['credit', 'pending']);
         } else {
             $filtered->where('status', $status);
         }
@@ -1032,7 +1036,7 @@ class SellerFeatureController extends Controller
         $rows = (clone $filtered)->latest('issued_at')->limit(100)->get();
         $operationCount = (clone $filtered)->count();
         $totalSold = (float) (clone $filtered)->sum('total');
-        $creditCount = (clone $filtered)->whereIn('status', ['credit', 'partial'])->count();
+        $creditCount = (clone $filtered)->whereIn('status', ['credit', 'pending', 'partial'])->count();
 
         return [
             'kind' => 'table',
@@ -1054,7 +1058,7 @@ class SellerFeatureController extends Controller
                 'value' => $this->money($invoice->total),
                 'status' => $this->invoiceStatus($invoice),
             ])->all(),
-            'note' => 'Las ventas se registran desde Terminal y alimentan inventario, caja, crédito y ganancias. Las anuladas se mantienen fuera del resumen general, pero pueden consultarse desde el filtro de estado.',
+            'note' => 'Las ventas confirmadas alimentan inventario, caja, crédito y ganancias. Las anuladas se mantienen fuera del resumen general, pero pueden consultarse desde el filtro de estado.',
         ];
     }
 
@@ -1063,7 +1067,11 @@ class SellerFeatureController extends Controller
         $search = trim((string) $search);
         $query = $shop->orders()->with('items')->latest();
         if ($status !== null && $status !== 'all') {
-            $query->where('status', $status);
+            if ($status === 'pending') {
+                $query->whereIn('status', ['pending', 'sent_to_whatsapp']);
+            } else {
+                $query->where('status', $status);
+            }
         }
         if ($shipping) {
             $query->whereIn('delivery_type', ['delivery', 'shipping', 'envio']);
@@ -1075,20 +1083,40 @@ class SellerFeatureController extends Controller
             });
         }
         $orders = $query->limit(30)->get();
+        $pendingTotal = $shop->orders()
+            ->whereIn('status', ['pending', 'sent_to_whatsapp'])
+            ->sum('total');
 
         return [
             'kind' => 'orders',
             'kpis' => [
-                ['label' => 'Pendientes', 'value' => number_format($shop->orders()->where('status', 'pending')->count()), 'tone' => 'amber'],
+                ['label' => 'Pendientes', 'value' => number_format($shop->orders()->whereIn('status', ['pending', 'sent_to_whatsapp'])->count()), 'tone' => 'amber'],
                 ['label' => 'Confirmados', 'value' => number_format($shop->orders()->where('status', 'confirmed')->count()), 'tone' => 'emerald'],
-                ['label' => 'Valor recibido', 'value' => $this->money($shop->orders()->sum('total')), 'tone' => 'blue'],
+                ['label' => 'Total por confirmar', 'value' => $this->money($pendingTotal), 'tone' => 'blue'],
             ],
             'rows' => $orders->map(fn (Order $order) => [
                 'id' => (string) $order->id,
                 'primary' => $order->order_number,
-                'secondary' => ($order->customer_name ?: 'Cliente sin nombre').' · '.($order->delivery_type ?: 'Retiro'),
+                'secondary' => collect([
+                    $order->customer_name ?: 'Cliente sin nombre',
+                    $order->customer_phone,
+                    $order->delivery_type ?: 'Retiro',
+                    'ARTÍCULOS '.(int) $order->items->sum('quantity'),
+                ])->filter(fn ($value): bool => filled($value))->implode(' · '),
                 'value' => $this->money($order->total),
                 'status' => $this->orderStatus($order),
+                'customer_name' => $order->customer_name,
+                'customer_phone' => $order->customer_phone,
+                'delivery_type' => $order->delivery_type,
+                'origin' => 'Tienda',
+                'item_count' => (int) $order->items->sum('quantity'),
+                'created_at' => $order->created_at?->toIso8601String(),
+                'items' => $order->items->map(fn ($item) => [
+                    'name' => $item->product_name,
+                    'quantity' => (int) $item->quantity,
+                    'unit_price' => $this->money($item->unit_price),
+                    'line_total' => $this->money($item->line_total),
+                ])->values()->all(),
                 'can_confirm' => $order->invoice_id === null && $order->status !== 'cancelled',
                 'confirm_url' => $order->invoice_id === null && $order->status !== 'cancelled'
                     ? URL::temporarySignedRoute('seller.shops.orders.confirm.show', now()->addDays(7), [$shop, $order])
@@ -1099,6 +1127,7 @@ class SellerFeatureController extends Controller
                 'status' => $status ?: 'all',
                 'count' => $orders->count(),
             ],
+            'page_total' => $this->money($orders->sum('total')),
             'actions' => [
                 ['label' => 'Compartir mi tienda', 'url' => 'https://wa.me/?text='.rawurlencode('Mira mi catálogo: '.route('shops.show', $shop)), 'tone' => 'primary'],
                 ['label' => 'Abrir mi tienda', 'url' => route('seller.shops.storefront', $shop), 'tone' => 'secondary'],
@@ -1370,7 +1399,7 @@ class SellerFeatureController extends Controller
         $recovery = app(InventoryService::class)->getCostRecoveryForBottles($bottles);
         $bottleSources = $bottles->map(function (Product $bottle) use ($recovery, $shop, $showSensitiveFinance): array {
             $inventory = $bottle->inventory;
-            $availableMl = $inventory?->available_ml;
+            $availableMl = $inventory?->reserved_decant_ml ?? $inventory?->available_ml;
             if ($availableMl === null && $inventory?->track_inventory) {
                 $availableMl = $bottle->sale_unit === 'bottle'
                     ? (int) $inventory->stock_quantity * (int) $bottle->volume_ml
@@ -1415,7 +1444,7 @@ class SellerFeatureController extends Controller
             'rows' => $products->map(function (Product $product) use ($showSensitiveFinance): array {
                 $source = $product->sourceProduct;
                 $sourceInventory = $source?->inventory;
-                $availableMl = $sourceInventory?->available_ml;
+                $availableMl = $sourceInventory?->reserved_decant_ml ?? $sourceInventory?->available_ml;
                 if ($availableMl === null && $sourceInventory?->track_inventory) {
                     $availableMl = $source->sale_unit === 'bottle'
                         ? (int) $sourceInventory->stock_quantity * (int) $source->volume_ml
@@ -1444,11 +1473,15 @@ class SellerFeatureController extends Controller
                         : 'Volumen pendiente',
                     'status' => !$source
                         ? 'Sin botella'
-                        : (($sourceInventory?->available_ml !== null
-                            && $product->volume_ml
-                            && (int) $sourceInventory->available_ml <= (int) $product->volume_ml)
-                            ? 'Se agota'
-                            : ((int) ($product->inventory?->stock_quantity ?? 0) > 0 ? 'Listos' : 'A pedido')),
+                        : (
+                            (
+                                ($sourceInventory?->reserved_decant_ml ?? $sourceInventory?->available_ml) !== null
+                                && $product->volume_ml
+                                && (int) ($sourceInventory->reserved_decant_ml ?? $sourceInventory->available_ml) <= (int) $product->volume_ml
+                            )
+                                ? 'Se agota'
+                                : ((int) ($product->inventory?->stock_quantity ?? 0) > 0 ? 'Listos' : 'A pedido')
+                        ),
                 ];
             })->all(),
             'note' => $showSensitiveFinance
@@ -1728,7 +1761,7 @@ class SellerFeatureController extends Controller
     {
         return match ($invoice->status) {
             'paid' => 'Pagada',
-            'credit' => 'A crédito',
+            'credit', 'pending' => 'A crédito',
             'partial' => 'Parcial',
             'void' => 'Anulada',
             default => ucfirst((string) $invoice->status),

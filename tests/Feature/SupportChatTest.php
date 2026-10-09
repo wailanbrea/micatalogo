@@ -80,3 +80,39 @@ test('support chat keeps conversations private to the requester and owner', func
         ->getJson('/api/v1/support/conversations/'.$conversation->public_id)
         ->assertNotFound();
 });
+
+test('requester and owner can conclude a chat and closed chats reject new messages', function () {
+    $owner = User::factory()->create(['email' => 'wailandkey@gmail.com']);
+    $requester = User::factory()->create();
+    $shop = Shop::factory()->for($requester)->create();
+    $requesterToken = $requester->createToken('android-support-requester')->plainTextToken;
+    $ownerToken = $owner->createToken('android-support-owner')->plainTextToken;
+
+    $created = $this->withToken($requesterToken)
+        ->postJson('/api/v1/shops/'.$shop->public_id.'/support/conversations', [
+            'message' => 'Necesito ayuda.',
+        ])
+        ->assertCreated();
+    $conversationId = $created->json('conversation.id');
+
+    app('auth')->forgetGuards();
+    $this->withToken($ownerToken)
+        ->postJson('/api/v1/support/conversations/'.$conversationId.'/close')
+        ->assertOk()
+        ->assertJsonPath('conversation.status', 'closed')
+        ->assertJsonPath('conversation.closed_by.email', $owner->email)
+        ->assertJsonPath('message', 'Chat concluido.');
+
+    app('auth')->forgetGuards();
+    $this->withToken($requesterToken)
+        ->getJson('/api/v1/support/conversations/'.$conversationId)
+        ->assertOk()
+        ->assertJsonPath('conversation.status', 'closed')
+        ->assertJsonPath('conversation.closed_by.email', $owner->email);
+
+    app('auth')->forgetGuards();
+    $this->withToken($requesterToken)
+        ->postJson('/api/v1/support/conversations/'.$conversationId.'/messages', ['message' => '¿Sigues ahí?'])
+        ->assertStatus(422)
+        ->assertJsonPath('message', 'Este chat ya fue concluido. Inicia una nueva conversación para continuar.');
+});

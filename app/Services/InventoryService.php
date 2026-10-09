@@ -106,14 +106,17 @@ class InventoryService
             }
 
             $before = $product->isDecant()
-                ? intdiv((int) $this->availableMl($source, $sourceInventory), (int) $product->volume_ml)
+                ? intdiv((int) $this->decantAvailableMl($source, $sourceInventory), (int) $product->volume_ml)
                 : $inventory->stock_quantity;
             $consumedMl = $product->isDecant()
                 ? $quantity * (int) $product->volume_ml
                 : $this->consumedMl($product, $quantity);
             $availableMl = $product->isDecant()
-                ? $this->availableMl($source, $sourceInventory)
+                ? $this->decantAvailableMl($source, $sourceInventory)
                 : $this->availableMl($product, $inventory);
+            $physicalAvailableMl = $product->isDecant()
+                ? $this->availableMl($source, $sourceInventory)
+                : $availableMl;
 
             if ($before < $quantity || ($consumedMl !== null && ($availableMl === null || $availableMl < $consumedMl))) {
                 $availableLabel = $consumedMl !== null && $availableMl !== null
@@ -131,13 +134,25 @@ class InventoryService
 
             if ($product->isDecant()) {
                 $sourceAvailableAfter = $availableMl - $consumedMl;
-                $sourceInventory->available_ml = $sourceAvailableAfter;
+                if ($sourceInventory->reserved_decant_ml !== null) {
+                    $sourceInventory->reserved_decant_ml = $sourceAvailableAfter;
+                    if ($physicalAvailableMl !== null) {
+                        $sourceInventory->available_ml = $physicalAvailableMl - $consumedMl;
+                    }
+                } else {
+                    // Legacy sources still use available_ml until explicitly
+                    // reconciled into the reserved pool.
+                    $sourceInventory->available_ml = $sourceAvailableAfter;
+                }
                 // Once a bottle is opened, its remaining milliliters are not
                 // another sealed bottle. Keep unopened bottle stock separate
                 // so a decant sale cannot silently make an opened bottle
                 // sellable as a full bottle again.
                 if ($source->sale_unit !== 'bottle' || (int) $sourceInventory->opened_bottles === 0) {
-                    $sourceInventory->stock_quantity = $this->stockUnitsFromMl($source, $sourceAvailableAfter);
+                    $sourceInventory->stock_quantity = $this->stockUnitsFromMl(
+                        $source,
+                        $physicalAvailableMl === null ? $sourceAvailableAfter : $physicalAvailableMl - $consumedMl
+                    );
                 }
                 $sourceInventory->save();
             } else {
@@ -380,15 +395,30 @@ class InventoryService
             $fifo = app(FifoCostService::class);
             $fifo->initialize($source, $sourceInventory);
             $canonical = $this->consumedMl($product, $quantity) ?? $quantity;
-            $available = $this->availableMl($source, $sourceInventory);
+            $available = $product->isDecant()
+                ? $this->decantAvailableMl($source, $sourceInventory)
+                : $this->availableMl($source, $sourceInventory);
+            $physicalAvailable = $this->availableMl($source, $sourceInventory);
             $before = $product->isDecant() ? intdiv((int) $available, $product->volume_ml) : $inventory->stock_quantity;
             $fifo->receive($source, $canonical, $costCents, 'sale_return');
             if ($available !== null) {
-                $sourceInventory->available_ml = $available + $canonical;
+                if ($product->isDecant() && $sourceInventory->reserved_decant_ml !== null) {
+                    $sourceInventory->reserved_decant_ml = $available + $canonical;
+                    if ($physicalAvailable !== null) {
+                        $sourceInventory->available_ml = $physicalAvailable + $canonical;
+                    }
+                } else {
+                    $sourceInventory->available_ml = $available + $canonical;
+                }
                 if ($source->sale_unit === 'bottle' && ! $product->isDecant()) {
                     $sourceInventory->stock_quantity += $quantity;
                 } elseif ($source->sale_unit !== 'bottle' || (int) $sourceInventory->opened_bottles === 0) {
-                    $sourceInventory->stock_quantity = $this->stockUnitsFromMl($source, $available + $canonical);
+                    $sourceInventory->stock_quantity = $this->stockUnitsFromMl(
+                        $source,
+                        $product->isDecant() && $physicalAvailable !== null
+                            ? $physicalAvailable + $canonical
+                            : $available + $canonical
+                    );
                 }
             } else {
                 $sourceInventory->stock_quantity += $quantity;
@@ -398,7 +428,9 @@ class InventoryService
             $inventory->save();
             $this->syncAvailability($source, $sourceInventory->stock_quantity);
             $this->syncDependentDecants($source);
-            $after = $product->isDecant() ? intdiv((int) $sourceInventory->available_ml, $product->volume_ml) : $sourceInventory->stock_quantity;
+            $after = $product->isDecant()
+                ? intdiv((int) $this->decantAvailableMl($source, $sourceInventory), $product->volume_ml)
+                : $sourceInventory->stock_quantity;
 
             return InventoryMovement::create(['product_id' => $product->id, 'type' => 'return', 'quantity' => $quantity,
                 'stock_before' => $before, 'stock_after' => $after, 'unit_price' => null,
@@ -434,11 +466,13 @@ class InventoryService
             if ($inventory->stock_quantity < $quantity) {
                 throw new InvalidArgumentException("Solo quedan {$inventory->stock_quantity} botella(s) sellada(s) de {$product->name}.");
             }
-
             $before = $inventory->stock_quantity;
             $availableBefore = $inventory->available_ml ?? ($before * (int) $product->volume_ml);
             $inventory->stock_quantity -= $quantity;
             $inventory->opened_bottles = (int) $inventory->opened_bottles + $quantity;
+            if ($inventory->reserved_decant_ml !== null) {
+                $inventory->reserved_decant_ml += $quantity * (int) $product->volume_ml;
+            }
             // Opening a bottle changes its sealed state, not the total liquid
             // represented by the source inventory.
             $inventory->available_ml = $availableBefore;
@@ -824,6 +858,25 @@ class InventoryService
         };
     }
 
+    /**
+     * Decants use an explicit reserved pool when it has been initialized.
+     * Legacy rows fall back to available_ml until they are reconciled.
+     */
+    private function decantAvailableMl(Product $source, ProductInventory $inventory): ?int
+    {
+        // A zero reserved pool on a legacy/sealed source means that the pool
+        // has not been initialized yet. Until a bottle is opened, the liquid
+        // represented by the source inventory can still seed a decant
+        // presentation. Once an opened bottle exists, zero is authoritative:
+        // all of that prepared pool has been consumed.
+        if ($inventory->reserved_decant_ml !== null
+            && ((int) $inventory->reserved_decant_ml > 0 || (int) $inventory->opened_bottles > 0)) {
+            return (int) $inventory->reserved_decant_ml;
+        }
+
+        return $this->availableMl($source, $inventory);
+    }
+
     private function stockUnitsFromMl(Product $product, int $availableMl): int
     {
         return match ($product->sale_unit) {
@@ -848,7 +901,7 @@ class InventoryService
             return;
         }
 
-        $availableMl = $this->availableMl($source, $sourceInventory);
+        $availableMl = $this->decantAvailableMl($source, $sourceInventory);
         if ($availableMl === null) {
             return;
         }
@@ -864,7 +917,7 @@ class InventoryService
             return;
         }
 
-        $availableMl = $this->availableMl($source, $source->inventory);
+        $availableMl = $this->decantAvailableMl($source, $source->inventory);
         if ($availableMl === null) {
             return;
         }

@@ -31,6 +31,7 @@
     $visibleMenus = $contextShop ? app(\App\Services\SellerMenuService::class)->visibleForUser($contextShop, $user) : [];
     $canSeeMenu = fn (string $key): bool => ! $contextShop || in_array($key, $visibleMenus, true);
     $canManageContext = $contextShop && app(\App\Services\SellerMenuService::class)->canManage($contextShop, $user);
+    $canManageMenuVisibility = $contextShop && app(\App\Services\SellerMenuService::class)->canManageMenuVisibility($contextShop, $user);
     $isAccountantContext = (bool) ($contextShop && $user?->isActiveShopAccountant($contextShop));
     $contextRoleLabel = $isAdmin ? 'Administrador' : ($contextShop && $user->ownsShop($contextShop) ? 'Propietario' : ($canManageContext ? 'Administrador de tienda' : ($isAccountantContext ? 'Contador' : 'Vendedor')));
     $isAssignedSellerOnly = $user?->isAssignedSellerOnly() ?? false;
@@ -87,6 +88,7 @@
         ]],
         ['label' => 'Ajustes', 'items' => [
             ['key' => 'shop_settings', 'label' => 'Configuración', 'url' => route('seller.shops.edit', $contextShop), 'active' => $isSettings],
+            ['key' => 'shop_settings', 'label' => 'Menús de la tienda', 'url' => route('seller.shops.menus.edit', $contextShop), 'active' => request()->routeIs('seller.shops.menus.*'), 'owner_only' => true],
             ['key' => 'sellers', 'label' => 'Equipo', 'aria' => 'Vendedores', 'url' => route('seller.shops.sellers.index', $contextShop), 'active' => $isSellers],
             ['key' => 'accountant', 'label' => 'Contador', 'url' => $featureUrl('accountant'), 'active' => $featureActive('accountant')],
             ['key' => 'account', 'label' => 'Mi cuenta', 'url' => $featureUrl('account'), 'active' => $featureActive('account')],
@@ -105,10 +107,11 @@
             ['key' => 'inventory', 'label' => 'Lotes y costos FIFO', 'url' => route('seller.shops.inventory.lots', $contextShop), 'active' => $isLots],
         ]],
     ] : [];
-    $menuSections = array_values(array_filter(array_map(function ($section) use ($canSeeMenu, $canManageContext) {
+    $menuSections = array_values(array_filter(array_map(function ($section) use ($canSeeMenu, $canManageContext, $canManageMenuVisibility) {
         $section['items'] = array_values(array_filter($section['items'], fn ($item) =>
             (in_array($item['key'], ['summary', 'downloads'], true) || $canSeeMenu($item['key']))
-            && (! ($item['manage_only'] ?? false) || $canManageContext)));
+            && (! ($item['manage_only'] ?? false) || $canManageContext)
+            && (! ($item['owner_only'] ?? false) || $canManageMenuVisibility)));
         return $section;
     }, $menuSections), fn ($section) => count($section['items']) > 0));
 @endphp

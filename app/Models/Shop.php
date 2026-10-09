@@ -22,6 +22,7 @@ class Shop extends Model
         'offers_shipping', 'instagram', 'address', 'maps_url', 'status', 'discovery_enabled',
         'business_hours', 'operational_settings', 'product_limit', 'inventory_import_mapping',
         'business_type', 'business_capability_overrides', 'business_profile_version', 'onboarding_completed_at',
+        'enabled_menu_keys',
     ];
 
     protected $attributes = [
@@ -40,6 +41,7 @@ class Shop extends Model
             'business_capability_overrides' => 'array',
             'business_profile_version' => 'integer',
             'onboarding_completed_at' => 'datetime',
+            'enabled_menu_keys' => 'array',
         ];
     }
 

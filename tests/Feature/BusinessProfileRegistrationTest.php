@@ -78,6 +78,16 @@ test('legacy general shops with decants keep their existing capability', functio
     expect(app(BusinessProfileService::class)->allows($shop, 'decants'))->toBeTrue();
 });
 
+test('general shops expose decants without requiring a hidden menu toggle', function () {
+    $shop = Shop::factory()->create([
+        'business_type' => 'general_retail',
+        'user_id' => User::factory()->create(['plan' => UserPlan::Pro])->id,
+    ]);
+
+    expect(app(BusinessProfileService::class)->allows($shop, 'decants'))->toBeTrue()
+        ->and(app(SellerMenuService::class)->visibleForUser($shop, $shop->user))->toContain('decants');
+});
+
 test('appliance profile exposes the fields and capabilities needed for retail sales', function () {
     $shop = Shop::factory()->create([
         'business_type' => 'appliance_store',

@@ -42,6 +42,7 @@
             openCartDrawer: false,
             openFilterDrawer: false,
             customerName: '',
+            customerPhone: '',
             deliveryType: 'delivery',
             deliveryAt: '',
             customerNotes: '',
@@ -126,6 +127,11 @@
             async sendWhatsAppOrder() {
                 if (this.cart.length === 0 || this.sendingOrder) return;
 
+                if (!this.customerName.trim() || !this.customerPhone.trim()) {
+                    this.orderError = 'Escribe tu nombre y tu número de WhatsApp para que la tienda pueda confirmarte el pedido.';
+                    return;
+                }
+
                 this.sendingOrder = true;
                 this.orderError = '';
                 const popup = window.open('about:blank', '_blank');
@@ -142,6 +148,7 @@
                         body: JSON.stringify({
                             items: this.cart.map(item => ({ id: item.id, quantity: item.quantity })),
                             customer_name: this.customerName.trim() || null,
+                            customer_phone: this.customerPhone.trim() || null,
                             delivery_type: this.deliveryType,
                             delivery_at: this.deliveryAt || null,
                             notes: this.customerNotes.trim() || null,
@@ -155,9 +162,9 @@
 
                     this.clearCart();
                     if (popup) {
-                        popup.location = payload.whatsapp_url;
+                        popup.location = payload.public_confirmation_url || payload.whatsapp_url;
                     } else {
-                        window.location.href = payload.whatsapp_url;
+                        window.location.href = payload.public_confirmation_url || payload.whatsapp_url;
                     }
                 } catch (error) {
                     if (popup) popup.close();
@@ -956,15 +963,29 @@
                                 <!-- Customer details for WhatsApp prefill -->
                                 <template x-if="cart.length > 0">
                                     <div class="rounded-2xl border border-slate-200 bg-white p-4 space-y-3">
-                                        <p class="text-xs font-extrabold uppercase tracking-wider text-slate-500">Datos para la entrega</p>
+                                        <p class="text-xs font-extrabold uppercase tracking-wider text-slate-500">Datos para confirmar el pedido</p>
                                         
                                         <div>
-                                            <label class="block text-[11px] font-bold text-slate-700 mb-1" for="cart-customer-name">Tu nombre (opcional)</label>
+                                            <label class="block text-[11px] font-bold text-slate-700 mb-1" for="cart-customer-name">Tu nombre</label>
                                             <input 
                                                 id="cart-customer-name" 
                                                 type="text" 
+                                                required
                                                 x-model="customerName" 
                                                 placeholder="Ej. Juan Pérez" 
+                                                class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none"
+                                            >
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-[11px] font-bold text-slate-700 mb-1" for="cart-customer-phone">Tu número de WhatsApp</label>
+                                            <input
+                                                id="cart-customer-phone"
+                                                type="tel"
+                                                required
+                                                inputmode="tel"
+                                                x-model="customerPhone"
+                                                placeholder="Ej. 829 814 4525"
                                                 class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none"
                                             >
                                         </div>

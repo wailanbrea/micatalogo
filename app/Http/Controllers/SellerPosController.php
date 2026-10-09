@@ -30,7 +30,9 @@ class SellerPosController extends Controller
             ->map(function ($product): array {
                 $sourceInventory = $product->sourceProduct?->inventory;
                 $sourceAvailableMl = $product->isDecant() && $sourceInventory
-                    ? ($sourceInventory->available_ml ?? (($sourceInventory->stock_quantity ?? 0) * (int) ($product->sourceProduct?->volume_ml ?? 0)))
+                    ? ($sourceInventory->reserved_decant_ml
+                        ?? $sourceInventory->available_ml
+                        ?? (($sourceInventory->stock_quantity ?? 0) * (int) ($product->sourceProduct?->volume_ml ?? 0)))
                     : null;
                 $stock = $product->isService()
                     ? null

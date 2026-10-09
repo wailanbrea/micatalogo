@@ -50,28 +50,30 @@ class BusinessProfileService
         $configured['services'] ??= true;
         $overrides = is_array($shop->business_capability_overrides) ? $shop->business_capability_overrides : [];
         $legacyDecants = $shop->exists && $shop->products()->where('sale_unit', 'decant')->exists();
+        $legacyDecantsException = $legacyDecants && $type === 'general_retail';
+        $decantsAvailableForProfile = $legacyDecants
+            || in_array($type, ['general_retail', 'other'], true);
         $result = [];
 
         foreach ($configured as $key => $state) {
             if (array_key_exists($key, $overrides)) {
                 $state = $overrides[$key];
             }
-            if ($key === 'decants' && $legacyDecants && $type === 'general_retail') {
+            if ($key === 'decants' && $decantsAvailableForProfile) {
                 $state = true;
             }
-            // Existing general-retail shops that already sell decants keep that
-            // capability even if their plan predates the new capability matrix.
-            // This is a compatibility exception, not a way to grant new stores
-            // access to a paid feature.
-            $result[$key] = $key === 'decants' && $legacyDecants && $type === 'general_retail'
+            // Plan limits are still enforced by effectiveState. The operational
+            // setting controls public storefront visibility, not module access.
+            $result[$key] = $key === 'decants' && $legacyDecantsException
                 ? 'enabled'
                 : $this->effectiveState($shop->user, $key, $state);
         }
 
         foreach (config('business-types.implemented', []) as $key) {
-            $result[$key] ??= $key === 'decants' && $legacyDecants && $type === 'general_retail'
+            $state = $key === 'decants' && $decantsAvailableForProfile ? true : false;
+            $result[$key] ??= $key === 'decants' && $legacyDecantsException
                 ? 'enabled'
-                : $this->effectiveState($shop->user, $key, false);
+                : $this->effectiveState($shop->user, $key, $state);
         }
 
         return $this->capabilitiesCache[$cacheKey] = $result;

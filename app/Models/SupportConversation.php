@@ -18,12 +18,17 @@ class SupportConversation extends Model
         'assigned_to_id',
         'subject',
         'status',
+        'closed_by_id',
+        'closed_at',
         'last_message_at',
     ];
 
     protected function casts(): array
     {
-        return ['last_message_at' => 'datetime'];
+        return [
+            'last_message_at' => 'datetime',
+            'closed_at' => 'datetime',
+        ];
     }
 
     public function shop(): BelongsTo
@@ -39,6 +44,11 @@ class SupportConversation extends Model
     public function assignedTo(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_to_id');
+    }
+
+    public function closedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'closed_by_id');
     }
 
     public function messages(): HasMany

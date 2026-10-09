@@ -22,6 +22,57 @@ class SellerMenuService
         return array_keys($this->options());
     }
 
+    /**
+     * Return the menu keys enabled for a shop. A null column is intentional:
+     * it preserves the legacy behavior for every existing shop until its
+     * owner explicitly saves a restriction.
+     *
+     * @return list<string>
+     */
+    public function enabledKeys(Shop $shop): array
+    {
+        if (! is_array($shop->enabled_menu_keys)) {
+            return $this->keys();
+        }
+
+        return $this->normalizeEnabled($shop->enabled_menu_keys);
+    }
+
+    /** @return list<string> */
+    public function normalizeEnabled(?array $keys): array
+    {
+        return array_values(array_unique(array_intersect($this->keys(), $keys ?? [])));
+    }
+
+    /**
+     * The owner/admin can always reach the control entries so a disabled
+     * operational module can be re-enabled later.
+     *
+     * @return list<string>
+     */
+    public function ownerControlKeys(): array
+    {
+        return array_values(array_intersect(['settings', 'shop_settings', 'sellers'], $this->keys()));
+    }
+
+    public function canManageMenuVisibility(Shop $shop, User $user): bool
+    {
+        return $user->isAdmin() || $user->ownsShop($shop);
+    }
+
+    /** @return array<int, array{key: string, label: string, group: string, protected: bool}> */
+    public function ownerMenuOptions(): array
+    {
+        return collect($this->options())->map(function (string $label, string $key): array {
+            return [
+                'key' => $key,
+                'label' => $label,
+                'group' => $this->groupFor($key),
+                'protected' => in_array($key, $this->ownerControlKeys(), true),
+            ];
+        })->values()->all();
+    }
+
     /** @return array<string, string> */
     public function assignableOptions(): array
     {
@@ -93,8 +144,29 @@ class SellerMenuService
     {
         $menus = $this->forUser($shop, $user);
         $capabilities = $this->profiles->capabilities($shop);
+        $enabled = array_flip($this->enabledKeys($shop));
+        $ownerControls = $this->canManageMenuVisibility($shop, $user)
+            ? array_flip($this->ownerControlKeys())
+            : [];
 
-        return array_values(array_filter($menus, fn (string $menu): bool => $this->menuIsAvailable($menu, $capabilities)));
+        return array_values(array_filter($menus, fn (string $menu): bool =>
+            isset($ownerControls[$menu]) ||
+            (isset($enabled[$menu]) && $this->menuIsAvailable($menu, $capabilities))
+        ));
+    }
+
+    private function groupFor(string $key): string
+    {
+        return match ($key) {
+            'sales', 'quotes', 'orders', 'encargos', 'shipments', 'day_close' => 'Operación',
+            'containers', 'loads', 'suppliers', 'purchase_invoices' => 'Compras',
+            'products', 'photos', 'storefront', 'services', 'price_health', 'pricing', 'decants', 'attributes', 'import' => 'Catálogo',
+            'customers', 'credit', 'collections' => 'Cobros',
+            'cash', 'finance', 'inventory_adjustments', 'partners', 'expenses' => 'Finanzas',
+            'reports', 'metrics' => 'Análisis',
+            'commissions', 'authorizations', 'sellers' => 'Equipo',
+            default => 'Ajustes',
+        };
     }
 
     /** @param array<string, string> $capabilities */

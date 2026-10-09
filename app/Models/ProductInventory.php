@@ -18,6 +18,7 @@ class ProductInventory extends Model
         'cost_price',
         'stock_quantity',
         'available_ml',
+        'reserved_decant_ml',
         'opened_bottles',
         'sold_quantity',
         'low_stock_threshold',
@@ -30,6 +31,7 @@ class ProductInventory extends Model
             'cost_price' => 'decimal:2',
             'stock_quantity' => 'integer',
             'available_ml' => 'integer',
+            'reserved_decant_ml' => 'integer',
             'opened_bottles' => 'integer',
             'sold_quantity' => 'integer',
             'low_stock_threshold' => 'integer',
@@ -68,7 +70,9 @@ class ProductInventory extends Model
             return $lowByUnits;
         }
 
-        $availableMl = $sourceInventory->available_ml;
+        $availableMl = $product->isDecant()
+            ? ($sourceInventory->reserved_decant_ml ?? $sourceInventory->available_ml)
+            : $sourceInventory->available_ml;
         if ($availableMl === null && $sourceInventory->product) {
             $sourceProduct = $sourceInventory->product;
             $availableMl = match ($sourceProduct->sale_unit) {

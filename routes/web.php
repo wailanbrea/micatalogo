@@ -32,6 +32,7 @@ use App\Http\Controllers\SellerManagementController;
 use App\Http\Controllers\SellerPosController;
 use App\Http\Controllers\SellerProductController;
 use App\Http\Controllers\SellerShopController;
+use App\Http\Controllers\SellerShopMenuController;
 use App\Http\Controllers\SellerShopMetricController;
 use App\Http\Controllers\SellerSummaryController;
 use App\Http\Controllers\ShopPaymentAccountController;
@@ -49,6 +50,9 @@ Route::scopeBindings()->group(function () {
     Route::get('/tienda/{shop:slug}', [PublicShopController::class, 'show'])->name('shops.show');
     Route::get('/tienda/{shop:slug}/producto/{product:slug}', [PublicProductController::class, 'show'])->name('products.show');
     Route::post('/tienda/{shop:slug}/pedido', [PublicOrderController::class, 'store'])->name('orders.store');
+    Route::get('/tienda/{shop:slug}/pedido/{order}/recibido', [PublicOrderController::class, 'received'])
+        ->middleware('signed')
+        ->name('orders.received');
 
     Route::get('/r/wa/tienda/{shop:slug}', [WhatsAppRedirectController::class, 'shop'])->name('track.wa.shop');
     Route::get('/r/wa/tienda/{shop:slug}/producto/{product:slug}', [WhatsAppRedirectController::class, 'product'])->name('track.wa.product');
@@ -168,6 +172,8 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
         Route::post('/tiendas/{shop}/socios', [SellerCommerceController::class, 'storePartner'])->name('shops.partners.store');
         Route::post('/tiendas/{shop}/socios/{partner}/movimientos', [SellerCommerceController::class, 'storePartnerTransaction'])->name('shops.partners.transactions.store');
         Route::get('/tiendas/{shop}/vendedores', [SellerManagementController::class, 'index'])->name('shops.sellers.index');
+        Route::get('/tiendas/{shop}/menus', [SellerShopMenuController::class, 'edit'])->name('shops.menus.edit');
+        Route::put('/tiendas/{shop}/menus', [SellerShopMenuController::class, 'update'])->name('shops.menus.update');
         Route::post('/tiendas/{shop}/vendedores', [SellerManagementController::class, 'store'])->name('shops.sellers.store');
         Route::patch('/tiendas/{shop}/vendedores/{seller}', [SellerManagementController::class, 'update'])->name('shops.sellers.update');
         Route::delete('/tiendas/{shop}/vendedores/{seller}', [SellerManagementController::class, 'destroy'])->name('shops.sellers.destroy');

@@ -106,6 +106,7 @@ class CatalogController extends Controller
                 'track_inventory' => $product->isCombo() || ($inventory?->track_inventory ?? false),
                 'stock_quantity' => $stockQuantity,
                 'available_ml' => $inventory?->available_ml,
+                'reserved_decant_ml' => $inventory?->reserved_decant_ml,
                 'opened_bottles' => $inventory?->opened_bottles,
                 'cost_price' => $canViewSensitiveFinance ? $inventory?->cost_price : null,
                 'low_stock_threshold' => $inventory?->low_stock_threshold,

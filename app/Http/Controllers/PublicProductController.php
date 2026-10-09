@@ -77,7 +77,7 @@ class PublicProductController extends Controller
         $sourceInventory = $source?->inventory;
 
         if ($source && $sourceInventory?->track_inventory && (int) $decant->volume_ml > 0) {
-            $availableMl = $sourceInventory->available_ml;
+            $availableMl = $sourceInventory->reserved_decant_ml ?? $sourceInventory->available_ml;
             if ($availableMl === null) {
                 $availableMl = match ($source->sale_unit) {
                     'bottle' => (int) $source->volume_ml * (int) $sourceInventory->stock_quantity,

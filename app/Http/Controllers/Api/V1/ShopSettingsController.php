@@ -107,7 +107,10 @@ class ShopSettingsController extends Controller
             'offers_shipping' => (bool) $shop->offers_shipping,
             'primary_color' => $shop->primary_color ?: '#1d4ed8',
             'secondary_color' => $shop->secondary_color ?: '#0f172a',
-            'business_hours' => $shop->business_hours ?? [],
+            // Keep the API contract stable for clients that deserialize the
+            // value as a day-keyed object. Older shops may still have NULL
+            // here, which used to become [] and break the Android screen.
+            'business_hours' => app(ShopHoursService::class)->forForm($shop->business_hours),
             'business_types' => $types,
             'google' => $this->googlePayload($shop),
             'operational_settings' => $operational->forShop($shop),

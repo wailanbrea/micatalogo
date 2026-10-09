@@ -22,6 +22,7 @@ class SupportChatController extends Controller
                 'shop:id,public_id,name',
                 'requester:id,name,email',
                 'assignedTo:id,name,email',
+                'closedBy:id,name,email',
             ])
             ->withCount(['messages as unread_count' => fn ($messages) => $messages
                 ->whereNull('read_at')
@@ -79,6 +80,7 @@ class SupportChatController extends Controller
             'shop:id,public_id,name',
             'requester:id,name,email',
             'assignedTo:id,name,email',
+            'closedBy:id,name,email',
             'messages.sender:id,name,email',
         ]);
 
@@ -93,6 +95,7 @@ class SupportChatController extends Controller
             'shop:id,public_id,name',
             'requester:id,name,email',
             'assignedTo:id,name,email',
+            'closedBy:id,name,email',
             'messages.sender:id,name,email',
         ]);
         $this->markUnreadAsRead($conversation, $user);
@@ -105,6 +108,7 @@ class SupportChatController extends Controller
     {
         $user = $request->user();
         $this->authorizeConversation($conversation, $user);
+        abort_if($conversation->status === 'closed', 422, 'Este chat ya fue concluido. Inicia una nueva conversación para continuar.');
         $data = $request->validate(['message' => ['required', 'string', 'min:1', 'max:4000']]);
 
         $message = DB::transaction(function () use ($conversation, $user, $data): SupportMessage {
@@ -132,6 +136,33 @@ class SupportChatController extends Controller
         $this->markUnreadAsRead($conversation, $user);
 
         return response()->json(['message' => 'Mensajes marcados como leídos.']);
+    }
+
+    public function close(Request $request, SupportConversation $conversation): JsonResponse
+    {
+        $user = $request->user();
+        $this->authorizeConversation($conversation, $user);
+
+        if ($conversation->status !== 'closed') {
+            $conversation->update([
+                'status' => 'closed',
+                'closed_at' => now(),
+                'closed_by_id' => $user->id,
+            ]);
+        }
+
+        $conversation->load([
+            'shop:id,public_id,name',
+            'requester:id,name,email',
+            'assignedTo:id,name,email',
+            'closedBy:id,name,email',
+            'messages.sender:id,name,email',
+        ]);
+
+        return response()->json([
+            'message' => 'Chat concluido.',
+            ...$this->conversationDetailPayload($conversation),
+        ]);
     }
 
     private function supportOwner(): User
@@ -174,6 +205,7 @@ class SupportChatController extends Controller
             'status' => $conversation->status,
             'created_at' => $conversation->created_at?->toIso8601String(),
             'last_message_at' => ($conversation->last_message_at ?: $conversation->created_at)?->toIso8601String(),
+            'closed_at' => $conversation->closed_at?->toIso8601String(),
             'unread_count' => (int) ($conversation->unread_count ?? 0),
             'shop' => $conversation->shop ? [
                 'id' => $conversation->shop->public_id,
@@ -188,6 +220,11 @@ class SupportChatController extends Controller
                 'id' => (string) $conversation->assignedTo->id,
                 'name' => $conversation->assignedTo->name,
                 'email' => $conversation->assignedTo->email,
+            ] : null,
+            'closed_by' => $conversation->closedBy ? [
+                'id' => (string) $conversation->closedBy->id,
+                'name' => $conversation->closedBy->name,
+                'email' => $conversation->closedBy->email,
             ] : null,
         ];
     }

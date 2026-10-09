@@ -37,6 +37,7 @@ class PublicOrderAndAttributesTest extends TestCase
         $response = $this->postJson(route('orders.store', $shop), [
             'items' => [['id' => $product->public_id, 'quantity' => 2]],
             'customer_name' => 'Ana Pérez',
+            'customer_phone' => '8298144525',
             'delivery_type' => 'delivery',
             'delivery_at' => today()->addDay()->startOfDay()->format('Y-m-d H:i:s'),
             'notes' => 'Av. Independencia #12',
@@ -45,7 +46,15 @@ class PublicOrderAndAttributesTest extends TestCase
         $response->assertCreated()
             ->assertJsonPath('order_number', fn (string $value) => str_starts_with($value, 'MC-'))
             ->assertJsonPath('confirmation_url', fn (string $value) => str_contains($value, 'signature='))
+            ->assertJsonPath('public_confirmation_url', fn (string $value) => str_contains($value, 'signature='))
             ->assertJsonPath('whatsapp_url', fn (string $value) => str_contains($value, 'wa.me/'));
+
+        $this->get($response->json('public_confirmation_url'))
+            ->assertOk()
+            ->assertSee('¡Pedido recibido!')
+            ->assertSee('Ana Pérez')
+            ->assertSee('8298144525')
+            ->assertSee($response->json('order_number'));
 
         $message = urldecode((string) parse_url($response->json('whatsapp_url'), PHP_URL_QUERY));
         expect($message)->toContain('Confirmar pedido y registrar pago:')
@@ -55,6 +64,7 @@ class PublicOrderAndAttributesTest extends TestCase
         $this->assertDatabaseHas('orders', [
             'shop_id' => $shop->id,
             'customer_name' => 'Ana Pérez',
+            'customer_phone' => '8298144525',
             'delivery_at' => today()->addDay()->startOfDay()->format('Y-m-d H:i:s'),
             'total' => 5600,
             'status' => 'sent_to_whatsapp',

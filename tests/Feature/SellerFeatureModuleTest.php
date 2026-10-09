@@ -233,6 +233,17 @@ test('sales module supports Puntto-style period, search and status filters', fun
         'total' => 400,
         'issued_at' => now()->subDays(35),
     ]);
+    Invoice::create([
+        'shop_id' => $shop->id,
+        'user_id' => $user->id,
+        'invoice_number' => 'FAC-FILTER-PENDING',
+        'status' => 'pending',
+        'channel' => 'pos',
+        'currency' => 'DOP',
+        'subtotal' => 500,
+        'total' => 500,
+        'issued_at' => now(),
+    ]);
 
     $this->actingAs($user)
         ->get(route('seller.shops.feature', [$shop, 'feature' => 'sales']).'?period=month')
@@ -240,6 +251,7 @@ test('sales module supports Puntto-style period, search and status filters', fun
         ->assertSee('Historial de ventas')
         ->assertSee('Este mes')
         ->assertSee('FAC-FILTER-TODAY')
+        ->assertDontSee('Consulta y administra')
         ->assertDontSee('FAC-FILTER-OLD');
 
     $this->actingAs($user)
@@ -247,6 +259,12 @@ test('sales module supports Puntto-style period, search and status filters', fun
         ->assertOk()
         ->assertSee('FAC-FILTER-OLD')
         ->assertDontSee('FAC-FILTER-TODAY');
+
+    $this->actingAs($user)
+        ->get(route('seller.shops.feature', [$shop, 'feature' => 'sales']).'?period=all&status=credit&q=FAC-FILTER-PENDING')
+        ->assertOk()
+        ->assertSee('FAC-FILTER-PENDING')
+        ->assertSee('A crédito');
 });
 
 test('reports expose current inventory value and navigation actions', function () {

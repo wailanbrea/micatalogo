@@ -205,7 +205,8 @@ class MobileOperationService
         return ['product_id' => $fresh->public_id, 'price' => number_format($fresh->currentPrice(), 2, '.', ''),
             'stock' => $fresh->isCombo() ? $fresh->comboAvailableQuantity() : $fresh->inventory?->stock_quantity,
             'opened_bottles' => $fresh->inventory?->opened_bottles,
-            'available_ml' => $fresh->inventory?->available_ml];
+            'available_ml' => $fresh->inventory?->available_ml,
+            'reserved_decant_ml' => $fresh->inventory?->reserved_decant_ml];
     }
 
     /**

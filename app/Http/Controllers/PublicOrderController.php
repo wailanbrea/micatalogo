@@ -19,6 +19,17 @@ use Illuminate\Support\Str;
 
 class PublicOrderController extends Controller
 {
+    public function received(Shop $shop, Order $order): \Illuminate\Contracts\View\View
+    {
+        abort_unless($shop->status === 'active' && $order->shop_id === $shop->id, 404);
+
+        return view('shops.order-received', [
+            'shop' => $shop,
+            'order' => $order->load('items'),
+            'whatsappUrl' => $this->whatsappUrl($shop, $order),
+        ]);
+    }
+
     public function store(StoreOrderRequest $request, Shop $shop, MetricRecordingService $metricService): JsonResponse|RedirectResponse
     {
         abort_unless($shop->status === 'active', 404);
@@ -80,6 +91,7 @@ class PublicOrderController extends Controller
             $order = $shop->orders()->create([
                 'order_number' => $this->nextOrderNumber(),
                 'customer_name' => $validated['customer_name'] ?? null,
+                'customer_phone' => $validated['customer_phone'] ?? null,
                 'delivery_type' => $validated['delivery_type'] ?? null,
                 'delivery_at' => $validated['delivery_at'] ?? null,
                 'notes' => $validated['notes'] ?? null,
@@ -112,18 +124,23 @@ class PublicOrderController extends Controller
             now()->addDays(7),
             [$shop, $order]
         );
-        $message = $this->whatsappMessage($shop, $order, $confirmationUrl);
-        $whatsappUrl = 'https://wa.me/'.$shop->whatsapp_country_code.$shop->whatsapp_number.'?text='.rawurlencode($message);
+        $whatsappUrl = $this->whatsappUrl($shop, $order, $confirmationUrl);
+        $publicConfirmationUrl = URL::temporarySignedRoute(
+            'orders.received',
+            now()->addDays(7),
+            [$shop, $order]
+        );
 
         if ($request->expectsJson()) {
             return response()->json([
                 'order_number' => $order->order_number,
                 'confirmation_url' => $confirmationUrl,
+                'public_confirmation_url' => $publicConfirmationUrl,
                 'whatsapp_url' => $whatsappUrl,
             ], 201);
         }
 
-        return redirect()->away($whatsappUrl);
+        return redirect()->away($publicConfirmationUrl);
     }
 
     private function availableQuantity(Product $product, $sourceInventories): int
@@ -141,7 +158,7 @@ class PublicOrderController extends Controller
             $sourceInventory = $source ? ($sourceInventories->get($source->id) ?? $source->inventory) : null;
 
             if ($source && $sourceInventory?->track_inventory) {
-                $availableMl = $sourceInventory->available_ml;
+                $availableMl = $sourceInventory->reserved_decant_ml ?? $sourceInventory->available_ml;
                 if ($availableMl === null) {
                     $availableMl = match ($source->sale_unit) {
                         'bottle' => (int) $source->volume_ml * (int) $sourceInventory->stock_quantity,
@@ -166,6 +183,17 @@ class PublicOrderController extends Controller
         return $number;
     }
 
+    private function whatsappUrl(Shop $shop, Order $order, ?string $confirmationUrl = null): string
+    {
+        $confirmationUrl ??= URL::temporarySignedRoute(
+            'seller.shops.orders.confirm.show',
+            now()->addDays(7),
+            [$shop, $order]
+        );
+
+        return 'https://wa.me/'.$shop->whatsapp_country_code.$shop->whatsapp_number.'?text='.rawurlencode($this->whatsappMessage($shop, $order, $confirmationUrl));
+    }
+
     private function whatsappMessage(Shop $shop, Order $order, string $confirmationUrl): string
     {
         $message = "Hola {$shop->name}, quiero realizar este pedido desde MiCatalogo:\n\n";
@@ -180,6 +208,9 @@ class PublicOrderController extends Controller
 
         if ($order->customer_name) {
             $message .= "\nCliente: {$order->customer_name}";
+        }
+        if ($order->customer_phone) {
+            $message .= "\nWhatsApp del cliente: {$order->customer_phone}";
         }
         if ($order->delivery_type) {
             $message .= "\nEntrega: ".($order->delivery_type === 'delivery' ? 'Envío a domicilio' : 'Retiro en tienda');

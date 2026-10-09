@@ -80,7 +80,7 @@ test('SHOP-004/005/010 every configured business type stays coherent across free
                 ->and($presentation['pos']['show_wholesale'])->toBe(($profile['capabilities']['wholesale'] ?? 'disabled') === 'enabled')
                 ->and($presentation['inventory']['enabled'])->toBe(($profile['capabilities']['inventory'] ?? 'disabled') === 'enabled');
 
-            if ($type === 'perfume_store') {
+            if (in_array($type, ['perfume_store', 'general_retail', 'other'], true)) {
                 expect($profile['capabilities']['decants'])
                     ->toBe($plan === UserPlan::Pro ? 'enabled' : 'disabled');
             } else {
