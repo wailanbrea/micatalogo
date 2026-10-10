@@ -11,6 +11,7 @@ use App\Support\Money;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use InvalidArgumentException;
 
 class QuoteController extends Controller
@@ -110,7 +111,7 @@ class QuoteController extends Controller
         }
 
         try {
-            $invoiceNumber = DB::transaction(function () use ($request, $shop, $quote, $inventory): ?string {
+            $invoice = DB::transaction(function () use ($request, $shop, $quote, $inventory) {
                 $quote->load('items');
                 $products = $shop->products()->whereIn('id', $quote->items->pluck('product_id'))->get()->keyBy('id');
                 if ($products->count() !== $quote->items->pluck('product_id')->unique()->count()) {
@@ -131,10 +132,16 @@ class QuoteController extends Controller
                 }
                 $quote->update(['status' => 'converted', 'converted_invoice_id' => $invoice?->id]);
 
-                return $invoice?->invoice_number;
+                return $invoice;
             });
 
-            return response()->json(['message' => 'Cotización convertida en venta.', 'invoice_number' => $invoiceNumber]);
+            return response()->json([
+                'message' => 'Cotización convertida en venta.',
+                'invoice_number' => $invoice?->invoice_number,
+                'invoice_url' => $invoice
+                    ? URL::temporarySignedRoute('track.wa.shop', now()->addDays(7), [$shop, 'invoice' => $invoice->id])
+                    : null,
+            ]);
         } catch (InvalidArgumentException $exception) {
             return response()->json(['message' => $exception->getMessage()], 422);
         }
