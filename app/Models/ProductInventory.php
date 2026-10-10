@@ -126,10 +126,14 @@ class ProductInventory extends Model
     public function getInventoryValueAttribute(): float
     {
         if ($this->product?->isDecant()) {
-            return 0.0; // Presentations share the source stock; do not count it twice.
+            $cost = app(\App\Services\DecantInventoryService::class)->available()
+                ? (int) DB::table('decant_batches')->where('product_id', $this->product_id)->sum('remaining_cost_cents') : 0;
+            return (float) Money::toDecimal($cost); // Physical prepared stock owns transferred cost, capacity owns none.
         }
         if (InventoryLot::where('product_id', $this->product_id)->exists()) {
-            return (float) Money::toDecimal((int) InventoryLot::where('product_id', $this->product_id)->sum('remaining_cost_cents'));
+            $opened = app(\App\Services\DecantInventoryService::class)->available()
+                ? (int) DB::table('decant_openings')->where('product_id', $this->product_id)->where('status', 'open')->sum('remaining_cost_cents') : 0;
+            return (float) Money::toDecimal((int) InventoryLot::where('product_id', $this->product_id)->sum('remaining_cost_cents') + $opened);
         }
         if (! $this->cost_price || $this->stock_quantity <= 0) {
             return 0.0;

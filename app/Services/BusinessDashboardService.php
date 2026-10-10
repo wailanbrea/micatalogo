@@ -366,6 +366,7 @@ class BusinessDashboardService
             ->leftJoin('inventory_lots', 'inventory_lots.product_id', '=', 'products.id')
             ->where('products.shop_id', $shop->id)
             ->whereNull('inventory_lots.id')
+            ->where(fn ($query) => $query->whereNull('products.sale_unit')->orWhere('products.sale_unit', '!=', 'decant'))
             ->where('product_inventories.track_inventory', 1)
             ->where('product_inventories.stock_quantity', '>', 0)
             ->whereNotNull('product_inventories.cost_price')
@@ -373,6 +374,12 @@ class BusinessDashboardService
             ->value('cost_cents');
 
         $totalInventoryCostCents = $inventoryCostCents + $directInventoryCostCents;
+        if (app(DecantInventoryService::class)->available()) {
+            $productIds = $shop->products()->withTrashed()->select('id');
+            $totalInventoryCostCents += (int) DB::table('decant_openings')->whereIn('product_id', $productIds)->where('status', 'open')->sum('remaining_cost_cents');
+            $totalInventoryCostCents += (int) DB::table('decant_batches')->whereIn('product_id', $productIds)->sum('remaining_cost_cents');
+            $totalInventoryCostCents += (int) DB::table('decant_vial_lots')->whereIn('vial_id', DB::table('decant_vials')->where('shop_id', $shop->id)->select('id'))->sum('remaining_cost_cents');
+        }
 
         // 3. Stock counts
         $stockStats = DB::table('product_inventories')

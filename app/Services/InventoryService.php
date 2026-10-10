@@ -97,6 +97,20 @@ class InventoryService
 
             $source = null;
             $sourceInventory = null;
+            $decants = app(DecantInventoryService::class);
+            if ($product->sale_unit === 'bottle' && $decants->managed($product) && $decants->untrackedMl($product) > 0) {
+                throw new InvalidArgumentException('Concilia primero los ml abiertos de esta fuente para conservar el costo FIFO de cada botella.', 409);
+            }
+            if ($product->isDecant() && $product->sourceProduct && $decants->managed($product->sourceProduct)) {
+                $source = Product::query()->lockForUpdate()->findOrFail($product->inventory_source_product_id);
+                $movement = $decants->sale($product, $quantity, $userId, $unitPrice, $notes);
+                if ($createInvoice) {
+                    $this->createInvoiceForSales($product->shop_id, [['product' => $product, 'quantity' => $quantity, 'unit_price' => $unitPrice]],
+                        [$movement], $userId, 'web', 'paid', 0, 0, $paymentMethod ?? 'cash');
+                }
+
+                return $movement;
+            }
             if ($product->isDecant()) {
                 $source = Product::query()->lockForUpdate()->findOrFail($product->inventory_source_product_id);
                 $sourceInventory = ProductInventory::where('product_id', $source->id)->lockForUpdate()->first();
@@ -389,6 +403,9 @@ class InventoryService
             $inventory = $product->inventory()->lockForUpdate()->firstOrFail();
             $source = $product->isDecant() ? Product::withTrashed()->whereKey($product->inventory_source_product_id)->lockForUpdate()->firstOrFail() : $product;
             $sourceInventory = $source->id === $product->id ? $inventory : $source->inventory()->lockForUpdate()->firstOrFail();
+            if ($product->isDecant() && app(DecantInventoryService::class)->managed($source)) {
+                return app(DecantInventoryService::class)->returned($product, $quantity, $costCents, $userId, $notes);
+            }
             if (! $sourceInventory->track_inventory) {
                 throw new InvalidArgumentException('El inventario fuente no está controlado.');
             }
@@ -444,13 +461,14 @@ class InventoryService
      * This does not consume FIFO cost or change total milliliters: the cost
      * remains attached to the source lot until a bottle/decant is sold.
      */
-    public function openBottle(Product $product, int $quantity, ?string $notes = null, ?int $userId = null): InventoryMovement
+    public function openBottle(Product $product, int $quantity, ?string $notes = null, ?int $userId = null, bool $trackDecants = false): InventoryMovement
     {
+        if ($trackDecants && ! app(DecantInventoryService::class)->available()) throw new InvalidArgumentException('El esquema de aperturas trazables aún no está disponible.', 409);
         if ($quantity <= 0) {
             throw new InvalidArgumentException('La cantidad de botellas debe ser mayor que 0.');
         }
 
-        return DB::transaction(function () use ($product, $quantity, $notes, $userId) {
+        return DB::transaction(function () use ($product, $quantity, $notes, $userId, $trackDecants) {
             $product = Product::query()->lockForUpdate()->findOrFail($product->id);
             $inventory = ProductInventory::where('product_id', $product->id)->lockForUpdate()->first();
 
@@ -468,6 +486,8 @@ class InventoryService
             }
             $before = $inventory->stock_quantity;
             $availableBefore = $inventory->available_ml ?? ($before * (int) $product->volume_ml);
+            $tracked = $trackDecants || app(DecantInventoryService::class)->managed($product);
+            if ($tracked) app(FifoCostService::class)->initialize($product, $inventory);
             $inventory->stock_quantity -= $quantity;
             $inventory->opened_bottles = (int) $inventory->opened_bottles + $quantity;
             if ($inventory->reserved_decant_ml !== null) {
@@ -479,6 +499,7 @@ class InventoryService
             $inventory->save();
 
             $this->syncAvailability($product, $inventory->stock_quantity);
+            if ($tracked) app(DecantInventoryService::class)->registerOpening($product, $inventory, $quantity, $userId);
             $this->syncDependentDecants($product);
 
             return InventoryMovement::create([
@@ -503,6 +524,10 @@ class InventoryService
      */
     public function adjustStock(Product $product, int $newStock, ?string $notes = null, ?int $userId = null): InventoryMovement
     {
+        if (app(DecantInventoryService::class)->managed($product)
+            && DB::table('decant_openings')->where('product_id', $product->id)->where('status', 'open')->where('remaining_ml', '>', 0)->exists()) {
+            throw new InvalidArgumentException('Esta fuente tiene botellas abiertas trazables. Registra entradas o merma en Decants antes de conciliar el conteo de selladas.', 409);
+        }
         if ($newStock < 0) {
             throw new InvalidArgumentException('El stock real no puede ser negativo.');
         }
@@ -806,6 +831,19 @@ class InventoryService
         return $invoice;
     }
 
+    public function invoiceForRemainder(Product $source, int $volumeMl, string $price, InventoryMovement $movement, int $userId, string $paymentMethod): Invoice
+    {
+        // Snapshot only: the catalog bottle's presentation is never changed.
+        $snapshot = clone $source;
+        $snapshot->sale_unit = 'ml';
+        $snapshot->volume_ml = $volumeMl;
+        $snapshot->inventory_source_product_id = $source->id;
+        $snapshot->name = $source->name.' · resto '.$volumeMl.' ml';
+
+        return $this->createInvoiceForSales($source->shop_id, [['product' => $snapshot, 'quantity' => 1, 'unit_price' => $price]],
+            [$movement], $userId, 'web', 'paid', 0, 0, $paymentMethod);
+    }
+
     private function applySalespersonCommission(Invoice $invoice, int $shopId, ?int $userId, int $totalCents): void
     {
         if (! $userId) {
@@ -895,6 +933,10 @@ class InventoryService
 
         $decant->load(['inventory', 'sourceProduct.inventory']);
         $source = $decant->sourceProduct;
+        if ($source && app(DecantInventoryService::class)->managed($source)) {
+            app(DecantInventoryService::class)->sync($source);
+            return;
+        }
         $sourceInventory = $source?->inventory;
 
         if (! $source || ! $sourceInventory?->track_inventory || ! $decant->inventory || ! $decant->volume_ml) {
@@ -913,6 +955,10 @@ class InventoryService
 
     private function syncDependentDecants(Product $source): void
     {
+        if (app(DecantInventoryService::class)->managed($source)) {
+            app(DecantInventoryService::class)->sync($source);
+            return;
+        }
         if (! in_array($source->sale_unit, ['bottle', 'ml'], true)) {
             return;
         }

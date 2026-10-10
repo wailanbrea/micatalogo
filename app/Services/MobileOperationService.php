@@ -26,6 +26,9 @@ class MobileOperationService
     public function apply(Shop $shop, User $user, array $data): array
     {
         abort_unless($user->canSellAtShop($shop), 404);
+        if (str_starts_with($data['type'], 'decant_') || ($data['type'] === 'open_bottle' && ($data['track_decants'] ?? false))) {
+            abort_unless(in_array('decants', app(SellerMenuService::class)->visibleForUser($shop, $user), true), 403);
+        }
         if ($data['type'] === 'customer_upsert') {
             abort_unless(in_array('customers', app(SellerMenuService::class)->visibleForUser($shop, $user), true), 403);
         } elseif ($data['type'] !== 'return') {
@@ -51,6 +54,7 @@ class MobileOperationService
             $result = match ($data['type']) {
                 'return' => $this->refund($shop, $user, $data, $operation),
                 'customer_upsert' => $this->customerOperation($shop, $data),
+                'decant_vial_receive', 'decant_vial_update', 'decant_prepare', 'decant_presentation_update', 'decant_discard', 'decant_undo_open', 'decant_sell_remainder', 'decant_reconcile_opening' => app(DecantInventoryService::class)->command($shop, $data, $user->id),
                 default => $this->productOperation($shop, $user, $data),
             };
             $result['client_operation_uuid'] = $data['client_operation_uuid'];
@@ -187,7 +191,8 @@ class MobileOperationService
                     throw new InvalidArgumentException('El precio remoto cambió; revisa el conflicto antes de editar.', 409);
                 }
                 if ($hasPresentationInput) {
-                    $hadLots = InventoryLot::where('product_id', $product->id)->exists();
+                    $hadLots = InventoryLot::where('product_id', $product->id)->exists()
+                        || (app(DecantInventoryService::class)->available() && DB::table('decant_batches')->where('product_id', $product->id)->exists());
                     if ($hadLots && ($presentation['sale_unit'] !== $product->sale_unit
                         || $presentation['volume_ml'] !== $product->volume_ml
                         || $presentation['inventory_source_product_id'] !== $product->inventory_source_product_id)) {
@@ -257,7 +262,7 @@ class MobileOperationService
                 if (array_key_exists('expected_available_ml', $data) && $inventory->available_ml !== $data['expected_available_ml']) {
                     throw new InvalidArgumentException('Los mililitros disponibles cambiaron; vuelve a sincronizar antes de abrirla.', 409);
                 }
-                app(InventoryService::class)->openBottle($product, $data['quantity'], $data['notes'] ?? null, $user->id);
+                app(InventoryService::class)->openBottle($product, $data['quantity'], $data['notes'] ?? null, $user->id, (bool) ($data['track_decants'] ?? false));
             } elseif ($data['type'] === 'adjustment') {
                 $inventory = $product->inventory()->lockForUpdate()->firstOrFail();
                 if ($inventory->stock_quantity !== $data['expected_stock']) {
@@ -457,7 +462,11 @@ class MobileOperationService
             if (! $item) {
                 throw new InvalidArgumentException('La línea no pertenece a la venta.', 422);
             }
-            if ($line['restock'] && ($item->sale_unit !== $product->sale_unit ||
+            $remainder = app(DecantInventoryService::class)->available()
+                ? DB::table('decant_remainder_sales')->join('inventory_movements', 'inventory_movements.id', '=', 'decant_remainder_sales.movement_id')
+                    ->where('inventory_movements.invoice_id', $invoice->id)->where('inventory_movements.product_id', $product->id)->select('decant_remainder_sales.*')->first()
+                : null;
+            if ($line['restock'] && ! $remainder && ($item->sale_unit !== $product->sale_unit ||
                 in_array($item->sale_unit, ['bottle', 'ml', 'decant'], true) && (
                     $item->volume_ml !== $product->volume_ml ||
                     (string) $item->inventory_source_product_id !== (string) $product->inventory_source_product_id ||
@@ -485,7 +494,8 @@ class MobileOperationService
                 'quantity' => $qty, 'refund' => Money::toDecimal($refundCents), 'tax_refund' => Money::toDecimal($taxCents),
                 'total_cost_cents' => $cost, 'restock' => $line['restock'], 'created_at' => now(), 'updated_at' => now()]);
             if ($line['restock']) {
-                app(InventoryService::class)->recordReturn($product, $qty, $cost, $user->id, $data['notes'] ?? null);
+                if ($remainder) app(DecantInventoryService::class)->returnRemainder($product, $remainder, $cost, $user->id);
+                else app(InventoryService::class)->recordReturn($product, $qty, $cost, $user->id, $data['notes'] ?? null);
             }
             $totalCents += $refundCents;
         }

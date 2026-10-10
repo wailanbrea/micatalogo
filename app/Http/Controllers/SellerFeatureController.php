@@ -619,7 +619,7 @@ class SellerFeatureController extends Controller
         $expiredQuotes = fn () => $openQuotes()
             ->whereNotNull('valid_until')
             ->whereDate('valid_until', '<', $today);
-        $quotes = $shop->quotes()->with('items')->latest()->limit(30)->get();
+        $quotes = $shop->quotes()->with(['items', 'convertedInvoice'])->latest()->limit(30)->get();
 
         return [
             'kind' => 'table',
@@ -643,6 +643,14 @@ class SellerFeatureController extends Controller
                     && $quote->status !== 'cancelled'
                     && ! ($quote->valid_until && $quote->valid_until->isBefore(today())),
                 'id' => $quote->public_id,
+                'customer_name' => $quote->customer_name ?: 'Cliente general',
+                'customer_phone' => $quote->customer_phone,
+                'valid_until' => $quote->valid_until?->toDateString(),
+                'item_count' => (int) $quote->items->sum('quantity'),
+                'pdf_available' => true,
+                'invoice_url' => $quote->convertedInvoice ? \Illuminate\Support\Facades\URL::temporarySignedRoute('track.wa.shop', now()->addDays(7), [$shop, 'invoice' => $quote->convertedInvoice->id]) : null,
+                'items' => $quote->items->map(fn ($item) => ['name' => $item->product_name, 'quantity' => $item->quantity,
+                    'unit_price' => $this->money($item->unit_price), 'line_total' => $this->money($item->line_total)])->values()->all(),
             ])->all(),
             'quoteProducts' => $shop->products()->with(['shopCategory', 'globalCategory', 'inventory', 'primaryImage'])->whereIn('availability_status', ['available', 'out_of_stock'])->orderBy('name')->limit(1000)->get()->map(fn (Product $product) => [
                 'id' => $product->public_id,

@@ -41,6 +41,9 @@ class SellerPosController extends Controller
                     : ($product->isDecant() && $product->volume_ml
                     ? intdiv(max(0, (int) $sourceAvailableMl), (int) $product->volume_ml)
                     : (int) ($product->inventory?->stock_quantity ?? 0)));
+                if ($product->isDecant() && $product->sourceProduct && app(\App\Services\DecantInventoryService::class)->managed($product->sourceProduct)) {
+                    $stock = app(\App\Services\DecantInventoryService::class)->sellable($product);
+                }
 
                 return [
                 'id' => $product->public_id,

@@ -75,6 +75,7 @@ class PublicProductController extends Controller
 
         $source = $decant->sourceProduct;
         $sourceInventory = $source?->inventory;
+        if ($source && app(\App\Services\DecantInventoryService::class)->managed($source)) return app(\App\Services\DecantInventoryService::class)->sellable($decant);
 
         if ($source && $sourceInventory?->track_inventory && (int) $decant->volume_ml > 0) {
             $availableMl = $sourceInventory->reserved_decant_ml ?? $sourceInventory->available_ml;

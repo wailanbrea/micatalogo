@@ -156,6 +156,7 @@ class PublicOrderController extends Controller
         if ($product->isDecant() && (int) $product->volume_ml > 0) {
             $source = $product->sourceProduct;
             $sourceInventory = $source ? ($sourceInventories->get($source->id) ?? $source->inventory) : null;
+            if ($source && app(\App\Services\DecantInventoryService::class)->managed($source)) return app(\App\Services\DecantInventoryService::class)->sellable($product);
 
             if ($source && $sourceInventory?->track_inventory) {
                 $availableMl = $sourceInventory->reserved_decant_ml ?? $sourceInventory->available_ml;

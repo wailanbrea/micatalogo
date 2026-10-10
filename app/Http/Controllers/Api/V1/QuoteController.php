@@ -16,6 +16,13 @@ use InvalidArgumentException;
 
 class QuoteController extends Controller
 {
+    public function pdf(Request $request, Shop $shop, CommercialQuote $quote)
+    {
+        abort_unless($request->user()->canSellAtShop($shop) && $quote->shop_id === $shop->id, 404);
+
+        return app(\App\Http\Controllers\SellerCommerceController::class)->quotePdf($request, $shop, $quote);
+    }
+
     public function store(Request $request, Shop $shop): JsonResponse
     {
         abort_unless($request->user()->canSellAtShop($shop), 404);

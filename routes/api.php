@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\CashRegisterController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\CatalogMediaController;
 use App\Http\Controllers\Api\V1\CustomerController;
+use App\Http\Controllers\Api\V1\DecantController;
 use App\Http\Controllers\Api\V1\ExpenseController;
 use App\Http\Controllers\Api\V1\FinanceReportController;
 use App\Http\Controllers\Api\V1\InventoryImportController;
@@ -46,6 +47,8 @@ Route::prefix('v1')->group(function (): void {
         Route::put('/shops/{shop}/menu-visibility', [ShopController::class, 'updateMenuVisibility'])
             ->middleware('menu:shop_settings');
         Route::get('/shops/{shop}/catalog', [CatalogController::class, 'show']);
+        Route::get('/shops/{shop}/decants', [DecantController::class, 'index'])->middleware('menu:decants');
+        Route::get('/shops/{shop}/inventory-value', [DecantController::class, 'inventoryValue'])->middleware('menu:inventory');
         Route::get('/shops/{shop}/settings', [ShopSettingsController::class, 'show'])->middleware('menu:shop_settings');
         Route::put('/shops/{shop}/settings', [ShopSettingsController::class, 'update'])->middleware('menu:shop_settings');
         Route::post('/shops/{shop}/media/logo', [ShopSettingsController::class, 'uploadLogo'])->middleware('menu:shop_settings');
@@ -89,6 +92,7 @@ Route::prefix('v1')->group(function (): void {
             ->where('barcode', '[0-9 -]{8,32}');
         Route::post('/shops/{shop}/pos-sales', [PosSaleController::class, 'store'])->middleware(['abilities:pos:write', 'menu:sales']);
         Route::post('/shops/{shop}/quotes', [QuoteController::class, 'store'])->middleware(['abilities:pos:write', 'menu:quotes']);
+        Route::get('/shops/{shop}/quotes/{quote}/pdf', [QuoteController::class, 'pdf'])->middleware('menu:quotes');
         Route::post('/shops/{shop}/quotes/{quote}/convert', [QuoteController::class, 'convert'])->middleware(['abilities:pos:write', 'menu:quotes']);
         Route::post('/shops/{shop}/orders/{order}/confirm', [OrderController::class, 'confirm'])->middleware(['abilities:pos:write', 'menu:orders']);
         Route::post('/shops/{shop}/mobile-operations', [MobileOperationController::class, 'store'])->middleware(['abilities:pos:write', 'throttle:60,1']);
