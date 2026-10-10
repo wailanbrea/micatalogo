@@ -16,13 +16,30 @@ class MobileOperationController extends Controller
         // Otherwise an external actor could probe validation details for a shop
         // they cannot access, even though no mutation would be committed.
         abort_unless($request->user()->canSellAtShop($shop), 404);
-        $type = $request->validate(['type' => ['required', 'in:product_upsert,product_archive,restock,adjustment,open_bottle,return']])['type'];
+        $type = $request->validate(['type' => ['required', 'in:product_upsert,product_archive,restock,adjustment,open_bottle,customer_upsert,return']])['type'];
         $rules = ['type' => ['required'], 'client_operation_uuid' => ['required', 'uuid'], 'notes' => ['nullable', 'string', 'max:1000']];
         if ($type === 'return') {
             $rules += ['client_sale_uuid' => ['required', 'uuid'], 'items' => ['required', 'array', 'min:1', 'max:100'],
                 'items.*.product_id' => ['required', 'ulid', 'distinct'], 'items.*.quantity' => ['required', 'integer', 'min:1', 'max:10000'],
                 'items.*.refund_price' => ['required', 'decimal:0,2', 'min:0', 'max:1000000000'],
                 'items.*.refund_total' => ['sometimes', 'decimal:0,2', 'min:0', 'max:10000000000000'], 'items.*.restock' => ['required', 'boolean']];
+        } elseif ($type === 'customer_upsert') {
+            $rules['notes'] = ['nullable', 'string', 'max:2000'];
+            $rules += [
+                'client_customer_uuid' => ['required', 'uuid'],
+                'name' => ['nullable', 'string', 'max:120'],
+                'first_name' => ['required_without:name', 'string', 'max:80'],
+                'last_name' => ['required_without:name', 'string', 'max:80'],
+                'document_type' => ['required_without:name', 'in:cedula,pasaporte'],
+                'document_number' => ['required_without:name', 'string', 'max:40'],
+                'phone' => ['required_without:name', 'string', 'max:30'],
+                'email' => ['nullable', 'email:rfc', 'max:255'],
+                'address' => ['required_without:name', 'string', 'max:2000'],
+                'whatsapp' => ['nullable', 'string', 'max:30'],
+                'reference' => ['nullable', 'string', 'max:255'],
+                'credit_limit' => ['required', 'decimal:0,2', 'min:0'],
+                'is_active' => ['sometimes', 'boolean'],
+            ];
         } else {
             $rules['product_id'] = ['required', 'ulid'];
             if ($type === 'product_upsert') {

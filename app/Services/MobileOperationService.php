@@ -6,6 +6,7 @@ use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductImageProcessingStatus;
 use App\Enums\ProductModerationStatus;
 use App\Models\CustomerAccountEntry;
+use App\Models\Customer;
 use App\Models\InventoryLot;
 use App\Models\Invoice;
 use App\Models\MobileOperation;
@@ -25,7 +26,9 @@ class MobileOperationService
     public function apply(Shop $shop, User $user, array $data): array
     {
         abort_unless($user->canSellAtShop($shop), 404);
-        if ($data['type'] !== 'return') {
+        if ($data['type'] === 'customer_upsert') {
+            abort_unless(in_array('customers', app(SellerMenuService::class)->visibleForUser($shop, $user), true), 403);
+        } elseif ($data['type'] !== 'return') {
             Gate::forUser($user)->authorize('update', $shop);
         } else {
             abort_unless(in_array('returns', app(SellerMenuService::class)->visibleForUser($shop, $user), true), 403);
@@ -45,13 +48,80 @@ class MobileOperationService
             }
             $operation = MobileOperation::create(['shop_id' => $shop->id, 'client_operation_uuid' => $data['client_operation_uuid'],
                 'type' => $data['type'], 'payload_sha256' => $hash, 'result' => []]);
-            $result = $data['type'] === 'return' ? $this->refund($shop, $user, $data, $operation)
-                : $this->productOperation($shop, $user, $data);
+            $result = match ($data['type']) {
+                'return' => $this->refund($shop, $user, $data, $operation),
+                'customer_upsert' => $this->customerOperation($shop, $data),
+                default => $this->productOperation($shop, $user, $data),
+            };
             $result['client_operation_uuid'] = $data['client_operation_uuid'];
             $operation->update(['result' => $result]);
 
             return $result;
         });
+    }
+
+    private function customerOperation(Shop $shop, array $data): array
+    {
+        $name = trim((string) ($data['name'] ?? ''));
+        if ($name === '') {
+            $name = trim(($data['first_name'] ?? '').' '.($data['last_name'] ?? ''));
+        }
+        if ($name === '') {
+            throw ValidationException::withMessages(['name' => 'El nombre del cliente es obligatorio.']);
+        }
+
+        $customer = $shop->customers()->withTrashed()
+            ->where('client_customer_uuid', $data['client_customer_uuid'])
+            ->lockForUpdate()
+            ->first();
+        $identity = null;
+        if (! empty($data['document_type']) && ! empty($data['document_number'])) {
+            $identity = $shop->customers()->withTrashed()
+                ->where('document_type', $data['document_type'])
+                ->where('document_number', $data['document_number'])
+                ->when($customer, fn ($query) => $query->where('id', '!=', $customer->id))
+                ->exists();
+        }
+        if ($identity) {
+            throw ValidationException::withMessages(['document_number' => 'Ya existe un cliente con ese documento.']);
+        }
+
+        $values = [
+            'name' => $name,
+            'first_name' => $data['first_name'] ?? null,
+            'last_name' => $data['last_name'] ?? null,
+            'document_type' => $data['document_type'] ?? null,
+            'document_number' => $data['document_number'] ?? null,
+            'phone' => $data['phone'] ?? null,
+            'email' => $data['email'] ?? null,
+            'address' => $data['address'] ?? null,
+            'whatsapp' => $data['whatsapp'] ?? null,
+            'reference' => $data['reference'] ?? null,
+            'notes' => $data['notes'] ?? null,
+            'credit_limit' => $data['credit_limit'],
+            'is_active' => (bool) ($data['is_active'] ?? true),
+        ];
+        if ($customer) {
+            $customer->fill($values);
+            if ($customer->is_active) {
+                $customer->restore();
+                $customer->save();
+            } else {
+                $customer->save();
+                $customer->delete();
+            }
+        } else {
+            $customer = $shop->customers()->create(array_merge($values, [
+                'client_customer_uuid' => $data['client_customer_uuid'],
+            ]));
+        }
+
+        return [
+            'customer_id' => $customer->public_id,
+            'client_customer_uuid' => $customer->client_customer_uuid,
+            'is_active' => $customer->is_active,
+            'balance' => $customer->balance,
+        ];
     }
 
     private function productOperation(Shop $shop, User $user, array $data): array

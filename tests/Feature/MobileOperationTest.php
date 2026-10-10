@@ -236,6 +236,40 @@ test('mobile receipts are idempotent and preserve old FIFO lots', function () {
     expect($product->fresh()->inventory->stock_quantity)->toBe(7);
 });
 
+test('mobile customer mutations are durable, idempotent and update one customer', function () {
+    [$user, $shop, $product, $token] = mobileFixture();
+    $url = '/api/v1/shops/'.$shop->public_id.'/mobile-operations';
+    $clientUuid = (string) Str::uuid();
+    $payload = [
+        'client_operation_uuid' => (string) Str::uuid(),
+        'type' => 'customer_upsert',
+        'client_customer_uuid' => $clientUuid,
+        'name' => 'Cliente móvil',
+        'phone' => '8295550101',
+        'credit_limit' => '1500.00',
+    ];
+
+    $first = $this->withToken($token)->postJson($url, $payload)
+        ->assertCreated()
+        ->assertJsonPath('client_customer_uuid', $clientUuid);
+    $this->withToken($token)->postJson($url, $payload)
+        ->assertCreated()
+        ->assertExactJson($first->json());
+    expect($shop->customers()->count())->toBe(1)
+        ->and($shop->customers()->first()->name)->toBe('Cliente móvil');
+
+    $payload['client_operation_uuid'] = (string) Str::uuid();
+    $payload['name'] = 'Cliente móvil actualizado';
+    $payload['credit_limit'] = '2000.00';
+    $this->withToken($token)->postJson($url, $payload)
+        ->assertCreated()
+        ->assertJsonPath('customer_id', $shop->customers()->first()->public_id);
+
+    expect($shop->customers()->count())->toBe(1)
+        ->and($shop->customers()->first()->fresh()->name)->toBe('Cliente móvil actualizado')
+        ->and($shop->customers()->first()->fresh()->credit_limit)->toBe('2000.00');
+});
+
 test('mobile product creation and edits are scoped and keep offers meaningful', function () {
     [$user, $shop, $product, $token] = mobileFixture();
     $url = '/api/v1/shops/'.$shop->public_id.'/mobile-operations';
