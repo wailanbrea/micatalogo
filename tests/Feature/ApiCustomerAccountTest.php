@@ -61,6 +61,23 @@ test('a customer created with credit profile keeps identity and contact fields',
         ->assertJsonPath('address', 'Calle Principal 10');
 });
 
+test('a POS token can create the customer required by a credit sale', function () {
+    $user = User::factory()->create();
+    $shop = Shop::factory()->for($user)->create();
+    $token = $user->createToken('BSPOS', ['pos:write'])->plainTextToken;
+
+    $this->withToken($token)
+        ->postJson("/api/v1/shops/{$shop->public_id}/customers", [
+            'client_customer_uuid' => (string) Str::uuid(),
+            'name' => 'Cliente del POS',
+            'phone' => '',
+            'credit_limit' => '3000.00',
+        ])
+        ->assertCreated()
+        ->assertJsonPath('name', 'Cliente del POS')
+        ->assertJsonPath('credit_limit', '3000.00');
+});
+
 test('customer APIs require the customer read ability', function () {
     $owner = User::factory()->create();
     $shop = Shop::factory()->create(['user_id' => $owner->id]);

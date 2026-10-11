@@ -61,7 +61,7 @@ test('SHOP-004/005/010 every configured business type stays coherent across free
     expect($types)->toHaveCount(23);
 
     foreach ($types as $type => $definition) {
-        foreach ([UserPlan::Free, UserPlan::Premium, UserPlan::Pro] as $plan) {
+        foreach ([UserPlan::Free, UserPlan::Premium, UserPlan::Pro, UserPlan::Custom] as $plan) {
             $user = User::factory()->create([
                 'plan' => $plan,
                 'email' => "matrix-{$type}-{$plan->value}@example.com",
@@ -82,7 +82,7 @@ test('SHOP-004/005/010 every configured business type stays coherent across free
 
             if (in_array($type, ['perfume_store', 'general_retail', 'other'], true)) {
                 expect($profile['capabilities']['decants'])
-                    ->toBe($plan === UserPlan::Pro ? 'enabled' : 'disabled');
+                    ->toBe('enabled');
             } else {
                 expect($profile['capabilities']['decants'])->not->toBe('enabled');
             }

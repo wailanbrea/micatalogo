@@ -12,7 +12,7 @@ return [
             'max_images_per_product' => 1,
             'max_users' => 1,
             'max_sellers' => 1,
-            'features' => ['catalog', 'whatsapp_orders', 'basic_inventory', 'bulk_import', 'expenses'],
+            'features' => ['catalog', 'whatsapp_orders', 'basic_inventory', 'bulk_import', 'expenses', 'decants'],
         ],
         'premium' => [
             'display_name' => 'Básico',
@@ -22,7 +22,7 @@ return [
             'max_images_per_product' => 3,
             'max_users' => 3,
             'max_sellers' => 3,
-            'features' => ['catalog', 'whatsapp_orders', 'inventory', 'sales', 'invoicing', 'reports', 'quotes', 'customers', 'android', 'bulk_import', 'cash_registers', 'expenses'],
+            'features' => ['catalog', 'whatsapp_orders', 'inventory', 'sales', 'invoicing', 'reports', 'quotes', 'customers', 'android', 'bulk_import', 'cash_registers', 'expenses', 'decants'],
         ],
         'pro' => [
             'display_name' => 'Pro',
@@ -42,7 +42,7 @@ return [
             'max_images_per_product' => 3,
             'max_users' => 100,
             'max_sellers' => 100,
-            'features' => ['custom_domain', 'multiple_shops', 'priority_support'],
+            'features' => ['custom_domain', 'multiple_shops', 'priority_support', 'decants'],
         ],
     ],
 

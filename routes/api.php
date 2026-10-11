@@ -97,7 +97,9 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/shops/{shop}/orders/{order}/confirm', [OrderController::class, 'confirm'])->middleware(['abilities:pos:write', 'menu:orders']);
         Route::post('/shops/{shop}/mobile-operations', [MobileOperationController::class, 'store'])->middleware(['abilities:pos:write', 'throttle:60,1']);
         Route::get('/shops/{shop}/customers', [CustomerController::class, 'index'])->middleware(['abilities:customers:read', 'menu:customers']);
-        Route::post('/shops/{shop}/customers', [CustomerController::class, 'store'])->middleware(['abilities:customers:write', 'menu:customers']);
+        // A POS seller may create the customer needed for the current sale,
+        // while payments and account adjustments remain customers:write-only.
+        Route::post('/shops/{shop}/customers', [CustomerController::class, 'store'])->middleware(['abilities.any:customers:write,pos:write', 'menu:customers']);
         Route::get('/shops/{shop}/customers/{customer}', [CustomerController::class, 'show'])->middleware(['abilities:customers:read', 'menu:customers']);
         Route::post('/shops/{shop}/customers/{customer}/payments', [CustomerController::class, 'payment'])->middleware(['abilities:customers:write', 'menu:customers']);
         Route::post('/shops/{shop}/customers/{customer}/adjustments', [CustomerController::class, 'adjustment'])->middleware(['abilities:customers:write', 'menu:customers']);
