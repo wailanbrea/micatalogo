@@ -1,0 +1,58 @@
+name: MiCatalogo Web QA
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: bcmath, gd, mbstring, pdo_sqlite, sqlite3, zip
+          coverage: none
+          tools: composer:v2
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Run Laravel tests in isolated SQLite
+        run: vendor/bin/pest --configuration phpunit.xml
+
+      - name: Check PHP formatting on changed files
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+          else
+            base="${{ github.event.before }}"
+          fi
+          if [ "$base" = "0000000000000000000000000000000000000000" ]; then
+            files=$(git ls-files '*.php')
+          else
+            files=$(git diff --name-only "$base" "${{ github.sha }}" -- '*.php')
+          fi
+          if [ -n "$files" ]; then
+            vendor/bin/pint --test $files
+          else
+            echo 'No PHP files changed.'
+          fi
+
+      - name: Export route inventory
+        run: php artisan route:list --json > "$RUNNER_TEMP/micatalogo-route-list.json"
+
