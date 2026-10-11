@@ -74,10 +74,15 @@ class MobileOperationService
             throw ValidationException::withMessages(['name' => 'El nombre del cliente es obligatorio.']);
         }
 
-        $customer = $shop->customers()->withTrashed()
-            ->where('client_customer_uuid', $data['client_customer_uuid'])
-            ->lockForUpdate()
-            ->first();
+        $customer = ! empty($data['customer_id'])
+            ? $shop->customers()->withTrashed()->where('public_id', $data['customer_id'])->lockForUpdate()->firstOrFail()
+            : $shop->customers()->withTrashed()->where('client_customer_uuid', $data['client_customer_uuid'])->lockForUpdate()->first();
+        // Older mobile clients used is_active=false as their delete command.
+        // The explicit flag separates deactivation from deletion for current clients.
+        $deleted = (bool) ($data['is_deleted'] ?? ! ($data['is_active'] ?? true));
+        if ($deleted && $customer && Money::toCents($customer->balance) > 0) {
+            throw ValidationException::withMessages(['customer_id' => 'No se puede eliminar un cliente con saldo pendiente.']);
+        }
         $identity = null;
         if (! empty($data['document_type']) && ! empty($data['document_number'])) {
             $identity = $shop->customers()->withTrashed()
@@ -107,10 +112,11 @@ class MobileOperationService
         ];
         if ($customer) {
             $customer->fill($values);
-            if ($customer->is_active) {
+            if (! $deleted) {
                 $customer->restore();
                 $customer->save();
             } else {
+                $customer->is_active = false;
                 $customer->save();
                 $customer->delete();
             }

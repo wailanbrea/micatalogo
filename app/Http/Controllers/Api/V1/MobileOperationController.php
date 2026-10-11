@@ -46,6 +46,7 @@ class MobileOperationController extends Controller
             $rules['notes'] = ['nullable', 'string', 'max:2000'];
             $rules += [
                 'client_customer_uuid' => ['required', 'uuid'],
+                'customer_id' => ['sometimes', 'nullable', 'ulid'],
                 'name' => ['nullable', 'string', 'max:120'],
                 'first_name' => ['required_without:name', 'string', 'max:80'],
                 'last_name' => ['required_without:name', 'string', 'max:80'],
@@ -58,6 +59,7 @@ class MobileOperationController extends Controller
                 'reference' => ['nullable', 'string', 'max:255'],
                 'credit_limit' => ['required', 'decimal:0,2', 'min:0'],
                 'is_active' => ['sometimes', 'boolean'],
+                'is_deleted' => ['sometimes', 'boolean'],
             ];
         } else {
             $rules['product_id'] = ['required', 'ulid'];
