@@ -62,7 +62,8 @@ test('E2E-02 team permissions seller sale commission and accountant read-only ac
     $as($manager)
         ->getJson('/api/v1/shops')
         ->assertOk()
-        ->assertJsonPath('0.can_manage_sellers', true);
+        ->assertJsonPath('0.can_manage_sellers', false)
+        ->assertJsonPath('0.can_manage_menu_visibility', false);
 
     $as($seller, ['pos:write'])
         ->getJson('/api/v1/shops')

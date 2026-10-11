@@ -39,7 +39,7 @@ class ShopController extends Controller
 
         $shops = $query->get(['id', 'user_id', 'public_id', 'name', 'slug', 'enabled_menu_keys'])
             ->map(function ($shop) use ($limits, $menus, $request, $capabilities, $presentation): array {
-                $canManage = $menus->canManage($shop, $request->user());
+                $canManageMenuVisibility = $menus->canManageMenuVisibility($shop, $request->user());
 
                 return [
                     'id' => $shop->public_id,
@@ -49,15 +49,18 @@ class ShopController extends Controller
                     'presentation' => $presentation->resolve($shop),
                     'quota' => $limits->shopQuota($shop, $shop->products_count),
                     'menu_permissions' => $menus->visibleForUser($shop, $request->user()),
-                    'can_manage_sellers' => $canManage,
-                    'can_manage_menu_visibility' => $menus->canManageMenuVisibility($shop, $request->user()),
+                    // Seller/team administration is an owner-only control
+                    // surface. Managers retain operational access but must
+                    // not receive a misleading write capability here.
+                    'can_manage_sellers' => $canManageMenuVisibility,
+                    'can_manage_menu_visibility' => $canManageMenuVisibility,
                     // This is not sensitive and must reach sellers too so
                     // Android can hide the same modules for every role.
                     'enabled_menu_keys' => $menus->enabledKeys($shop),
-                    'menu_options' => $menus->canManageMenuVisibility($shop, $request->user())
+                    'menu_options' => $canManageMenuVisibility
                         ? $menus->ownerMenuOptions()
                         : [],
-                    'sellers' => $canManage ? $shop->sellers->map(fn ($seller): array => [
+                    'sellers' => $canManageMenuVisibility ? $shop->sellers->map(fn ($seller): array => [
                         'id' => (string) $seller->id,
                         'user_id' => (string) $seller->user_id,
                         'name' => $seller->user->name,
@@ -74,7 +77,7 @@ class ShopController extends Controller
 
     public function updateSellerMenus(Request $request, Shop $shop, ShopSeller $seller, SellerMenuService $menus): JsonResponse
     {
-        abort_unless($menus->canManage($shop, $request->user()), 403);
+        abort_unless($menus->canManageMenuVisibility($shop, $request->user()), 403);
         abort_unless($seller->shop_id === $shop->id, 404);
 
         $validated = $request->validate([
@@ -112,7 +115,7 @@ class ShopController extends Controller
 
     public function storeSeller(Request $request, Shop $shop, SellerMenuService $menus, PlanLimitsService $limits): JsonResponse
     {
-        abort_unless($menus->canManage($shop, $request->user()), 403);
+        abort_unless($menus->canManageMenuVisibility($shop, $request->user()), 403);
 
         $validated = $request->validate([
             'email' => ['required', 'email:rfc', 'max:255'],

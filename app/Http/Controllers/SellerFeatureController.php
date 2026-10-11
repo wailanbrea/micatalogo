@@ -143,21 +143,43 @@ class SellerFeatureController extends Controller
             return $menu === null || in_array($menu, $visibleMenus, true);
         }));
 
+        $module = $this->moduleData(
+            $feature,
+            $shop,
+            $dashboard ?: app(BusinessDashboardService::class),
+            $request->query('period'),
+            $request->query('q'),
+            $request->query('status'),
+            $showSensitiveFinance
+        );
+        $module['actions'] = array_values(array_filter($module['actions'] ?? [], function (array $action) use ($visibleMenus): bool {
+            $url = $action['url'] ?? null;
+            if (! is_string($url) || $url === '' || str_starts_with($url, '#')) {
+                return true;
+            }
+
+            $path = parse_url($url, PHP_URL_PATH);
+            if (! is_string($path) || $path === '') {
+                return true;
+            }
+            $route = app('router')->getRoutes()->match(Request::create($path));
+            $menu = match ($route->getName()) {
+                'seller.shops.sellers.index' => 'sellers',
+                'seller.shops.edit' => 'shop_settings',
+                default => null,
+            };
+
+            return $menu === null || in_array($menu, $visibleMenus, true);
+        }));
+
         return view('seller.features.show', [
             'shop' => $shop,
             'featureKey' => $feature,
             'feature' => self::FEATURES[$feature],
             'related' => $related,
-            'module' => $this->moduleData(
-                $feature,
-                $shop,
-                $dashboard ?: app(BusinessDashboardService::class),
-                $request->query('period'),
-                $request->query('q'),
-                $request->query('status'),
-                $showSensitiveFinance
-            ),
+            'module' => $module,
             'showSensitiveFinance' => $showSensitiveFinance,
+            'canManageMenuVisibility' => $menus->canManageMenuVisibility($shop, $request->user()),
         ]);
     }
 
@@ -1407,7 +1429,7 @@ class SellerFeatureController extends Controller
         $products = $shop->products()->with(['inventory', 'sourceProduct.inventory'])->where('sale_unit', 'decant')->get();
         $bottles = $shop->products()
             ->with(['inventory', 'decantProducts'])
-            ->whereIn('sale_unit', ['bottle', 'ml'])
+            ->where('sale_unit', 'bottle')
             ->orderBy('name')
             ->get();
         $recovery = app(InventoryService::class)->getCostRecoveryForBottles($bottles);

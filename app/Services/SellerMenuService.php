@@ -59,7 +59,10 @@ class SellerMenuService
     {
         return $this->rememberForRequest(
             'menu-visibility:'.$shop->getKey().':'.$user->getKey(),
-            fn (): bool => $user->isAdmin() || $user->ownsShop($shop),
+            // Store administration is an owner-only control surface. Platform
+            // admins can still use the platform administration area, but they
+            // must not inherit a shop owner's settings, team, or menu editor.
+            fn (): bool => $user->ownsShop($shop),
         );
     }
 
@@ -159,13 +162,13 @@ class SellerMenuService
                 $menus = $this->forUser($shop, $user);
                 $capabilities = $this->profiles->capabilities($shop);
                 $enabled = array_flip($this->enabledKeys($shop));
-                $ownerControls = $this->canManageMenuVisibility($shop, $user)
-                    ? array_flip($this->ownerControlKeys())
-                    : [];
+                $ownerControls = array_flip($this->ownerControlKeys());
+                $canSeeOwnerControls = $this->canManageMenuVisibility($shop, $user);
 
                 return array_values(array_filter($menus, fn (string $menu): bool =>
-                    isset($ownerControls[$menu]) ||
-                    (isset($enabled[$menu]) && $this->menuIsAvailable($menu, $capabilities))
+                    (isset($ownerControls[$menu])
+                        ? $canSeeOwnerControls
+                        : (isset($enabled[$menu]) && $this->menuIsAvailable($menu, $capabilities)))
                 ));
             },
         );

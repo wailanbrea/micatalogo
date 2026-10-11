@@ -7,6 +7,8 @@ use App\Models\Customer;
 use App\Models\CustomerAccountEntry;
 use App\Models\Shop;
 use App\Services\CustomerAccountService;
+use App\Services\CustomerDebtReadService;
+use App\Support\Money;
 use App\Services\PaymentService;
 use App\Services\SellerMenuService;
 use Illuminate\Http\JsonResponse;
@@ -76,16 +78,22 @@ class CustomerController extends Controller
     public function show(Request $request, Shop $shop, Customer $customer): JsonResponse
     {
         $this->ensureCustomerOwner($request, $shop, $customer);
-
-        return response()->json([
+        $entries = $customer->accountEntries()
+            ->where('shop_id', $shop->id)
+            ->with([
+                'invoice' => fn ($query) => $query->where('shop_id', $shop->id)->where('customer_id', $customer->id)->select('id', 'invoice_number'),
+                'invoicePayments' => fn ($query) => $query->where('shop_id', $shop->id)
+                    ->whereHas('invoice', fn ($invoiceQuery) => $invoiceQuery->where('shop_id', $shop->id)->where('customer_id', $customer->id))
+                    ->with('invoice:id,invoice_number'),
+            ])
+            ->limit(101)->get();
+        return response()->json(array_merge([
             'customer' => $this->customerPayload($customer),
-            'entries' => $customer->accountEntries()
-                ->with('invoice:id,invoice_number')
-                ->limit(100)
-                ->get()
+            'entries' => $entries->take(100)
                 ->map(fn (CustomerAccountEntry $entry) => $this->entryPayload($entry))
                 ->values(),
-        ]);
+            'entries_has_more' => $entries->count() > 100,
+        ], app(CustomerDebtReadService::class)->read($shop, $customer)));
     }
 
     public function payment(
@@ -244,6 +252,11 @@ class CustomerController extends Controller
             'amount' => $entry->amount,
             'balance_after' => $entry->balance_after,
             'invoice_number' => $entry->invoice?->invoice_number,
+            'allocations' => $entry->relationLoaded('invoicePayments')
+                ? $entry->invoicePayments->map(fn ($payment) => [
+                    'invoice_number' => $payment->invoice?->invoice_number,
+                    'amount' => Money::toDecimal((int) $payment->amount_cents),
+                ])->values()->all() : [],
             'notes' => $entry->notes,
             'created_at' => $entry->created_at->toISOString(),
         ];

@@ -400,6 +400,22 @@ test('bottle sources require their purchase cost and identify the source when cr
         'inventory_source_product_id' => $source->id,
         'volume_ml' => 5,
     ]);
+
+    $source->update(['sale_unit' => 'ml']);
+    $this->actingAs($seller)
+        ->post(route('seller.shops.products.store', $shop), [
+            'name' => 'Decant desde ml no permitido',
+            'price' => 300,
+            'sale_unit' => 'decant',
+            'volume_ml' => 5,
+            'inventory_source_product_id' => $source->id,
+            'track_inventory' => 1,
+            'availability_status' => ProductAvailabilityStatus::Available->value,
+            'moderation_status' => ProductModerationStatus::Active->value,
+        ])
+        ->assertSessionHasErrors('inventory_source_product_id');
+
+    expect($shop->products()->where('name', 'Decant desde ml no permitido')->exists())->toBeFalse();
 });
 
 test('product monetary validation rejects sub-cent costs before persistence', function () {

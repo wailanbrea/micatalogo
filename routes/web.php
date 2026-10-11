@@ -80,13 +80,13 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
     Route::get('/tiendas/crear', [SellerShopController::class, 'create'])->middleware('can:create,App\\Models\\Shop')->name('shops.create');
     Route::post('/tiendas', [SellerShopController::class, 'store'])->middleware('can:create,App\\Models\\Shop')->name('shops.store');
     Route::get('/tiendas/{shop}/editar', [SellerShopController::class, 'edit'])
-        ->middleware('can:update,shop')
+        ->middleware(['can:update,shop', 'menu:shop_settings'])
         ->name('shops.edit');
     Route::get('/tiendas/{shop}/mi-tienda', [SellerShopController::class, 'storefront'])
         ->middleware(['can:sell,shop', 'menu:storefront'])
         ->name('shops.storefront');
     Route::put('/tiendas/{shop}', [SellerShopController::class, 'update'])
-        ->middleware('can:update,shop')
+        ->middleware(['can:update,shop', 'menu:shop_settings'])
         ->name('shops.update');
     Route::delete('/tiendas/{shop}', [SellerShopController::class, 'destroy'])
         ->middleware('can:delete,shop')
@@ -171,12 +171,18 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
         Route::post('/tiendas/{shop}/compras/{document}/recibir', [SellerCommerceController::class, 'receivePurchaseDocument'])->name('shops.purchases.receive');
         Route::post('/tiendas/{shop}/socios', [SellerCommerceController::class, 'storePartner'])->name('shops.partners.store');
         Route::post('/tiendas/{shop}/socios/{partner}/movimientos', [SellerCommerceController::class, 'storePartnerTransaction'])->name('shops.partners.transactions.store');
-        Route::get('/tiendas/{shop}/vendedores', [SellerManagementController::class, 'index'])->name('shops.sellers.index');
-        Route::get('/tiendas/{shop}/menus', [SellerShopMenuController::class, 'edit'])->name('shops.menus.edit');
-        Route::put('/tiendas/{shop}/menus', [SellerShopMenuController::class, 'update'])->name('shops.menus.update');
-        Route::post('/tiendas/{shop}/vendedores', [SellerManagementController::class, 'store'])->name('shops.sellers.store');
-        Route::patch('/tiendas/{shop}/vendedores/{seller}', [SellerManagementController::class, 'update'])->name('shops.sellers.update');
-        Route::delete('/tiendas/{shop}/vendedores/{seller}', [SellerManagementController::class, 'destroy'])->name('shops.sellers.destroy');
+        Route::get('/tiendas/{shop}/vendedores', [SellerManagementController::class, 'index'])
+            ->middleware('menu:sellers')->name('shops.sellers.index');
+        Route::get('/tiendas/{shop}/menus', [SellerShopMenuController::class, 'edit'])
+            ->middleware('menu:shop_settings')->name('shops.menus.edit');
+        Route::put('/tiendas/{shop}/menus', [SellerShopMenuController::class, 'update'])
+            ->middleware('menu:shop_settings')->name('shops.menus.update');
+        Route::post('/tiendas/{shop}/vendedores', [SellerManagementController::class, 'store'])
+            ->middleware('menu:sellers')->name('shops.sellers.store');
+        Route::patch('/tiendas/{shop}/vendedores/{seller}', [SellerManagementController::class, 'update'])
+            ->middleware('menu:sellers')->name('shops.sellers.update');
+        Route::delete('/tiendas/{shop}/vendedores/{seller}', [SellerManagementController::class, 'destroy'])
+            ->middleware('menu:sellers')->name('shops.sellers.destroy');
         Route::post('/tiendas/{shop}/usuarios', [ShopMemberController::class, 'store'])->name('shops.members.store');
         Route::delete('/tiendas/{shop}/usuarios/{member}', [ShopMemberController::class, 'destroy'])->name('shops.members.destroy');
         Route::post('/tiendas/{shop}/contador', [AccountantAccessController::class, 'store'])->name('shops.accountant.store');

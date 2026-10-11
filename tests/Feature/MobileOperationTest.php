@@ -304,7 +304,7 @@ test('mobile product creation and edits are scoped and keep offers meaningful', 
     $this->withToken($token)->postJson('/api/v1/shops/'.$other->public_id.'/mobile-operations', $create)->assertNotFound();
 });
 
-test('mobile product creation supports validated decant presentations linked to source ml', function () {
+test('mobile product creation supports validated decant presentations linked to a complete bottle', function () {
     $user = User::factory()->create(['plan' => UserPlan::Pro]);
     $shop = Shop::factory()->create(['user_id' => $user->id, 'business_type' => 'perfume_store']);
     $source = Product::factory()->create([
@@ -353,6 +353,28 @@ test('mobile product creation supports validated decant presentations linked to 
     $invalid['volume_ml'] = 101;
     $this->withToken($token)->postJson($url, $invalid)->assertUnprocessable();
     expect(Product::where('public_id', $invalid['product_id'])->exists())->toBeFalse();
+
+    $mlSource = Product::factory()->create([
+        'shop_id' => $shop->id,
+        'name' => 'Fuente medida histórica',
+        'price' => 2800,
+        'sale_unit' => 'ml',
+        'volume_ml' => 100,
+    ]);
+    ProductInventory::create([
+        'product_id' => $mlSource->id,
+        'track_inventory' => true,
+        'stock_quantity' => 4,
+        'available_ml' => 400,
+        'reserved_decant_ml' => 0,
+        'cost_price' => 1200,
+    ]);
+    $mlPayload = $payload;
+    $mlPayload['client_operation_uuid'] = (string) Str::uuid();
+    $mlPayload['product_id'] = (string) Str::ulid();
+    $mlPayload['inventory_source_product_id'] = $mlSource->public_id;
+    $this->withToken($token)->postJson($url, $mlPayload)->assertUnprocessable();
+    expect(Product::where('public_id', $mlPayload['product_id'])->exists())->toBeFalse();
 });
 
 test('mobile archive is reversible and adjustment rejects stale inventory', function () {

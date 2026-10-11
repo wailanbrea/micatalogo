@@ -166,8 +166,15 @@ class DecantInventoryService
             if (! empty($data['opening_id'])) {
                 $opening = $this->opening($shop, $data['opening_id']);
                 $this->checkOpening($opening, $data);
+                $openingSource = $shop->products()->whereKey($opening->product_id)->lockForUpdate()->firstOrFail();
+                if ($openingSource->sale_unit !== 'bottle') {
+                    throw new InvalidArgumentException('Los decants nuevos solo pueden prepararse desde perfumes completos configurados como botella.', 422);
+                }
             } else {
                 $source = $shop->products()->where('public_id', $data['source_product_id'])->lockForUpdate()->firstOrFail();
+                if ($source->sale_unit !== 'bottle') {
+                    throw new InvalidArgumentException('Los decants nuevos solo pueden prepararse desde perfumes completos configurados como botella.', 422);
+                }
                 if ((int) $source->inventory()->lockForUpdate()->value('stock_quantity') !== (int) $data['expected_stock']) {
                     throw new InvalidArgumentException('Cambió la existencia de botellas selladas.', 409);
                 }

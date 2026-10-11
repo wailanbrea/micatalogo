@@ -7,6 +7,11 @@
 
 @php
     $product = $product ?? request()->route('product');
+    $user = auth()->user();
+    $visibleMenus = $user
+        ? app(\App\Services\SellerMenuService::class)->visibleForUser($shop, $user)
+        : [];
+    $canSeeMenu = fn (string $key): bool => in_array($key, $visibleMenus, true);
 @endphp
 
 <!-- Store Workspace Context Header & Local Navigation Tabs -->
@@ -93,14 +98,16 @@
             @endif
         </a>
 
-        <a
-            href="{{ route('seller.shops.sellers.index', $shop) }}"
-            wire:navigate.hover
-            class="flex items-center gap-1.5 py-3 px-3 border-b-2 transition {{ $activeTab === 'sellers' ? 'border-blue-600 text-blue-700 font-bold' : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300' }}"
-        >
-            <svg class="h-4 w-4 shrink-0 {{ $activeTab === 'sellers' ? 'text-blue-600' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-4-4h-1m-4 6H3v-2a4 4 0 014-4h6a4 4 0 014 4v2zM10 10a4 4 0 100-8 4 4 0 000 8z"/></svg>
-            <span>Vendedores</span>
-        </a>
+        @if ($canSeeMenu('sellers'))
+            <a
+                href="{{ route('seller.shops.sellers.index', $shop) }}"
+                wire:navigate.hover
+                class="flex items-center gap-1.5 py-3 px-3 border-b-2 transition {{ $activeTab === 'sellers' ? 'border-blue-600 text-blue-700 font-bold' : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300' }}"
+            >
+                <svg class="h-4 w-4 shrink-0 {{ $activeTab === 'sellers' ? 'text-blue-600' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-4-4h-1m-4 6H3v-2a4 4 0 014-4h6a4 4 0 014 4v2zM10 10a4 4 0 100-8 4 4 0 000 8z"/></svg>
+                <span>Vendedores</span>
+            </a>
+        @endif
 
         <!-- Categorías -->
         <a 
@@ -133,6 +140,7 @@
         </a>
 
         <!-- Configuración -->
+        @if ($canSeeMenu('shop_settings'))
         <a 
             href="{{ route('seller.shops.edit', $shop) }}" 
             wire:navigate.hover
@@ -141,6 +149,7 @@
             <svg class="h-4 w-4 shrink-0 {{ $activeTab === 'settings' ? 'text-blue-600' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             <span>Configuración</span>
         </a>
+        @endif
     </nav>
 
     <div class="relative border-t border-slate-100 bg-slate-50 md:hidden" x-data="{ open: false }">
@@ -167,7 +176,7 @@
                 <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Operacion</p>
                 <a wire:navigate href="{{ route('seller.shops.inventory.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'inventory' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Inventario</a>
                 <a wire:navigate href="{{ route('seller.shops.customers.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'customers' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Clientes y cobros</a>
-                <a wire:navigate href="{{ route('seller.shops.sellers.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'sellers' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Vendedores</a>
+                @if ($canSeeMenu('sellers'))<a wire:navigate href="{{ route('seller.shops.sellers.index', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'sellers' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Vendedores</a>@endif
             </div>
             <div class="border-t border-slate-100 pt-2">
                 <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Catalogo</p>
@@ -181,7 +190,7 @@
             </div>
             <div class="border-t border-slate-100 pt-2">
                 <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Configuracion</p>
-                <a wire:navigate href="{{ route('seller.shops.edit', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'settings' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Configuración de tienda</a>
+                @if ($canSeeMenu('shop_settings'))<a wire:navigate href="{{ route('seller.shops.edit', $shop) }}" class="block rounded-lg px-3 py-2 transition {{ $activeTab === 'settings' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">Configuración de tienda</a>@endif
             </div>
         </nav>
     </div>

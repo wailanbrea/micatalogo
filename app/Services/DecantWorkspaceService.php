@@ -78,7 +78,8 @@ class DecantWorkspaceService
             })->all();
 
             return ['id' => $source->public_id, 'name' => $source->name, 'brand' => $source->brand, 'image_url' => $source->image_url,
-                'volume_ml' => $source->volume_ml, 'sealed' => $source->sale_unit === 'bottle' ? (int) ($source->inventory?->stock_quantity ?? 0) : 0, 'tracked' => $tracked,
+                'volume_ml' => $source->volume_ml, 'source_sale_unit' => $source->sale_unit,
+                'sealed' => $source->sale_unit === 'bottle' ? (int) ($source->inventory?->stock_quantity ?? 0) : 0, 'tracked' => $tracked,
                 'legacy_ml' => $tracked ? 0 : ($source->inventory?->reserved_decant_ml ?? $source->inventory?->available_ml),
                 'untracked_open_ml' => max(0, (int) $source->inventory?->available_ml - (int) $source->inventory?->stock_quantity * (int) $source->volume_ml - (int) $openings->sum('remaining_ml')),
                 'source_cost_cents' => $finance ? $this->nextBottleCost($source) : null,

@@ -147,7 +147,9 @@ test('legacy pool reconciliation transfers existing FIFO cost and never fabricat
 test('workspace read model is tenant scoped and preserves full inventory valuation across preparation', function () {
     [$owner, $shop, $source, $product, $opening] = physicalDecantFixture();
     decantCommand($this, $owner, $shop, ['type' => 'decant_vial_receive', 'volume_ml' => 5, 'quantity' => 2, 'unit_cost' => '50.00'])->assertCreated();
-    $this->actingAs($owner)->getJson('/api/v1/shops/'.$shop->public_id.'/decants')->assertOk()->assertJsonPath('prepared', 0)->assertJsonPath('empty_vials', 2);
+    $this->actingAs($owner)->getJson('/api/v1/shops/'.$shop->public_id.'/decants')
+        ->assertOk()->assertJsonPath('prepared', 0)->assertJsonPath('empty_vials', 2)
+        ->assertJsonPath('groups.0.source_sale_unit', 'bottle');
     decantCommand($this, $owner, $shop, ['type' => 'decant_prepare', 'opening_id' => $opening->public_id,
         'product_id' => $product->public_id, 'quantity' => 2, 'expected_ml' => 100, 'price' => '300.00'])->assertCreated();
     $source = $source->fresh('inventory'); $product = $product->fresh('inventory');

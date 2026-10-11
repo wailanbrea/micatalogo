@@ -24,6 +24,9 @@
     $isAdminUsers = request()->routeIs('admin.users.*');
     $activeShop = request()->route('shop');
     $activeShop = $activeShop instanceof \App\Models\Shop ? $activeShop : null;
+    $canManageMenuVisibility = $activeShop && $user
+        ? app(\App\Services\SellerMenuService::class)->canManageMenuVisibility($activeShop, $user)
+        : false;
     $dashboardUrl = $isAdmin ? route('admin.dashboard') : route('seller.dashboard');
     $isDashboard = $isAdmin ? $isAdminDashboard : request()->routeIs('seller.dashboard') && request('view') !== 'all';
 @endphp
@@ -67,7 +70,9 @@
                 </div>
                 <div class="mt-4 border-t border-slate-100 pt-4">
                     <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Configuracion</p>
-                    <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.edit') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.edit', $activeShop) }}">Configuración de tienda</a>
+                    @if ($canManageMenuVisibility)
+                        <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.edit') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.edit', $activeShop) }}">Configuración de tienda</a>
+                    @endif
                 </div>
             @endif
 
@@ -206,7 +211,9 @@
                     </div>
                     <div class="mt-2 border-t border-slate-100 pt-2">
                         <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Configuracion</p>
-                        <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.edit') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.edit', $activeShop) }}">Configuración de tienda</a>
+                        @if ($canManageMenuVisibility)
+                            <a class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.edit') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.edit', $activeShop) }}">Configuración de tienda</a>
+                        @endif
                     </div>
                 @endif
                 @if ($isAdmin)

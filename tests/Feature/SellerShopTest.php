@@ -455,7 +455,7 @@ test('admin sees exact product image storage for every shop in all shops view', 
         ->assertSee('1 imágenes');
 });
 
-test('admin can edit owner-only shop fields', function () {
+test('platform administrator cannot edit owner-only shop fields through a shop route', function () {
     $admin = User::factory()->admin()->create();
     $shop = Shop::factory()->create([
         'status' => 'active',
@@ -471,16 +471,16 @@ test('admin can edit owner-only shop fields', function () {
             'discovery_enabled' => 1,
             'product_limit' => 500,
         ]))
-        ->assertRedirect(route('seller.shops.edit', $shop));
+        ->assertForbidden();
 
     $this->assertDatabaseHas('shops', [
         'id' => $shop->id,
-        'status' => 'suspended',
-        'discovery_enabled' => 1,
-        'product_limit' => 500,
+        'status' => 'active',
+        'discovery_enabled' => 0,
+        'product_limit' => null,
     ]);
 
-    expect(app(PlanLimitsService::class)->productLimit($shop->fresh()))->toBe(500);
+    expect(app(PlanLimitsService::class)->productLimit($shop->fresh()))->not->toBe(500);
 });
 
 test('seller dashboard renders unified persistent navigation and account dropdown', function () {

@@ -337,6 +337,7 @@
                             $visibleMenus = app(\App\Services\SellerMenuService::class)->visibleForUser($shop, auth()->user());
                             $canSeeMenu = fn (string $key): bool => in_array($key, $visibleMenus, true);
                             $canManageShop = app(\App\Services\SellerMenuService::class)->canManage($shop, auth()->user());
+                            $canManageMenuVisibility = app(\App\Services\SellerMenuService::class)->canManageMenuVisibility($shop, auth()->user());
                         ?>
                         <article class="grid gap-5 rounded-xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:shadow-xs xl:grid-cols-2 xl:items-start">
                             <div class="flex min-w-0 items-start gap-3.5">
@@ -469,7 +470,7 @@
                                 </a>
                                 @endif
 
-                                @if ($canSeeMenu('shop_settings') && $canManageShop)
+                                @if ($canSeeMenu('shop_settings') && $canManageMenuVisibility)
                                 <a 
                                     class="whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 shadow-2xs transition hover:bg-slate-50"
                                     href="{{ route('seller.shops.edit', $shop) }}"

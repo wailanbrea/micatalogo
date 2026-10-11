@@ -2,6 +2,9 @@
 
 @php
     $feature = request()->route('feature');
+    $canManageMenuVisibility = $shop && auth()->user()
+        ? app(\App\Services\SellerMenuService::class)->canManageMenuVisibility($shop, auth()->user())
+        : false;
     $guideKey = match (true) {
         request()->routeIs('seller.shops.storefront') => 'storefront',
         request()->routeIs('seller.shops.pos') => 'terminal',
@@ -24,7 +27,7 @@
 
     $guides = [
         'storefront' => ['eyebrow' => 'Catálogo', 'title' => 'Tu tienda se prepara aquí', 'description' => 'Completa lo esencial, compártela y revisa cómo la verá tu cliente.', 'steps' => [
-            ['title' => 'Completa tu información', 'text' => 'Logo, WhatsApp, descripción y dirección hacen confiable tu vitrina.', 'action' => 'Configurar tienda', 'url' => $shop ? route('seller.shops.edit', $shop).'#basic-information' : null],
+            ['title' => 'Completa tu información', 'text' => 'Logo, WhatsApp, descripción y dirección hacen confiable tu vitrina.', 'action' => 'Configurar tienda', 'url' => $canManageMenuVisibility && $shop ? route('seller.shops.edit', $shop).'#basic-information' : null],
             ['title' => 'Revisa tu catálogo', 'text' => 'Publica productos con precio, existencia y una buena foto.', 'action' => 'Gestionar productos', 'url' => $shop ? route('seller.shops.products.index', $shop) : null],
             ['title' => 'Compártela', 'text' => 'Copia el enlace, envíalo por WhatsApp o imprime tu código QR.', 'action' => 'Ver enlace y QR', 'url' => $shop ? route('seller.shops.storefront', $shop).'#vitrinas' : null],
         ]],

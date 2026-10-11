@@ -153,21 +153,41 @@ test('seller operational modules redact financial details across web and feature
     expect($owner->fresh()->id)->toBe($shop->user_id);
 });
 
-test('owner and administrator can grant and revoke individual seller menus', function (bool $admin) {
+test('owner can grant and revoke individual seller menus', function () {
     [$owner, $shop, $seller, $assignment] = navigationSellerFixture();
-    $manager = $admin ? User::factory()->admin()->create() : $owner;
-    $this->actingAs($manager)->get(route('seller.shops.sellers.index', $shop))->assertOk()
+    $this->actingAs($owner)->get(route('seller.shops.sellers.index', $shop))->assertOk()
         ->assertSee('Menús visibles para este vendedor');
     $update = ['commission_type' => 'percentage', 'commission_value' => 5, 'menu_permissions_configured' => 1];
     $this->patch(route('seller.shops.sellers.update', [$shop, $assignment]), $update + ['menu_permissions' => ['customers']])
         ->assertRedirect()->assertSessionHasNoErrors();
     $this->actingAs($seller)->get(route('seller.shops.customers.index', $shop))->assertOk();
     $this->get(route('seller.shops.pos', $shop))->assertForbidden();
-    $this->actingAs($manager)->patch(route('seller.shops.sellers.update', [$shop, $assignment]), $update + ['menu_permissions' => []])
+    $this->actingAs($owner)->patch(route('seller.shops.sellers.update', [$shop, $assignment]), $update + ['menu_permissions' => []])
         ->assertRedirect()->assertSessionHasNoErrors();
     $this->actingAs($seller)->get(route('seller.shops.customers.index', $shop))->assertForbidden();
     expect($assignment->fresh()->menu_permissions)->toBe([]);
-})->with([false, true]);
+});
+
+test('platform administrator cannot see or manage owner-only shop controls', function () {
+    [$owner, $shop, $seller, $assignment] = navigationSellerFixture();
+    $admin = User::factory()->admin()->create();
+
+    $this->actingAs($admin)->get(route('seller.shops.sellers.index', $shop))->assertForbidden();
+    $this->get(route('seller.shops.edit', $shop))->assertForbidden();
+    $this->get(route('seller.shops.menus.edit', $shop))->assertForbidden();
+
+    $token = $admin->createToken('owner-controls-admin', ['*'])->plainTextToken;
+    $this->withToken($token)
+        ->getJson('/api/v1/shops')
+        ->assertOk()
+        ->assertJsonCount(0);
+
+    $this->withToken($token)
+        ->putJson('/api/v1/shops/'.$shop->public_id.'/sellers/'.$assignment->id.'/menus', [
+            'menu_permissions' => ['customers'],
+        ])
+        ->assertForbidden();
+});
 
 test('summary and profits are distinct destinations with exactly one selected sidebar link', function () {
     [$owner, $shop] = navigationSellerFixture();
@@ -325,17 +345,16 @@ test('administrator summary shows seller totals and sale date commission details
         ->assertJsonCount(0, 'seller_summary');
 });
 
-test('owner and admin select menus when creating a seller and can revoke them later', function (bool $api, bool $admin) {
+test('owner selects menus when creating a seller and can revoke them later', function (bool $api) {
     [$owner, $shop] = navigationSellerFixture();
-    $manager = $admin ? User::factory()->admin()->create() : $owner;
     $newSeller = User::factory()->create(['email' => 'selected-menus@example.com']);
     $payload = ['email' => $newSeller->email, 'commission_type' => 'percentage', 'commission_value' => 5,
         'menu_permissions_configured' => 1, 'menu_permissions' => ['customers']];
     if ($api) {
-        $this->actingAs($manager, 'sanctum')->postJson('/api/v1/shops/'.$shop->public_id.'/sellers', $payload)
+        $this->actingAs($owner, 'sanctum')->postJson('/api/v1/shops/'.$shop->public_id.'/sellers', $payload)
             ->assertOk()->assertJsonPath('seller.menu_permissions', ['customers']);
     } else {
-        $this->actingAs($manager)->post(route('seller.shops.sellers.store', $shop), $payload)
+        $this->actingAs($owner)->post(route('seller.shops.sellers.store', $shop), $payload)
             ->assertRedirect()->assertSessionHasNoErrors();
     }
     $assignment = ShopSeller::where('shop_id', $shop->id)->where('user_id', $newSeller->id)->sole();
@@ -343,16 +362,16 @@ test('owner and admin select menus when creating a seller and can revoke them la
     $this->actingAs($newSeller)->get(route('seller.shops.customers.index', $shop))->assertOk();
     $this->get(route('seller.shops.pos', $shop))->assertForbidden();
     if ($api) {
-        $this->actingAs($manager, 'sanctum')->putJson('/api/v1/shops/'.$shop->public_id.'/sellers/'.$assignment->id.'/menus', ['menu_permissions' => []])
+        $this->actingAs($owner, 'sanctum')->putJson('/api/v1/shops/'.$shop->public_id.'/sellers/'.$assignment->id.'/menus', ['menu_permissions' => []])
             ->assertOk()->assertJsonPath('menu_permissions', []);
     } else {
-        $this->actingAs($manager)->patch(route('seller.shops.sellers.update', [$shop, $assignment]), [
+        $this->actingAs($owner)->patch(route('seller.shops.sellers.update', [$shop, $assignment]), [
             'commission_type' => 'percentage', 'commission_value' => 5, 'menu_permissions_configured' => 1,
         ])->assertRedirect()->assertSessionHasNoErrors();
     }
     $this->actingAs($newSeller)->get(route('seller.shops.customers.index', $shop))->assertForbidden();
     expect($assignment->fresh()->menu_permissions)->toBe([]);
-})->with([[false, false], [false, true], [true, false], [true, true]]);
+})->with([false, true]);
 
 test('owner can deactivate a seller and revoke accountant access without deleting history', function () {
     [$owner, $shop, $seller, $assignment] = navigationSellerFixture();

@@ -108,7 +108,7 @@ class SellerProductController extends Controller
             'product' => new Product(['currency' => config('catalog.currency', 'DOP'), 'sale_unit' => $requestedUnit, 'is_combo' => $isCombo]),
             'globalCategories' => GlobalCategory::query()->where('status', 'active')->orderBy('sort_order')->orderBy('name')->get(),
             'shopCategories' => $shop->categories()->where('status', 'active')->orderBy('name')->get(),
-            'sourceProducts' => $shop->products()->with('inventory')->whereIn('sale_unit', ['bottle', 'ml'])->orderBy('name')->get(),
+            'sourceProducts' => $shop->products()->with('inventory')->where('sale_unit', 'bottle')->orderBy('name')->get(),
             'componentProducts' => $shop->products()->with('inventory')->where('is_combo', false)->where('sale_unit', '!=', 'service')->orderBy('name')->get(),
             'attributeDefinitions' => $shop->attributeDefinitions()->get(),
         ]);
@@ -214,7 +214,7 @@ class SellerProductController extends Controller
             'product' => $product,
             'globalCategories' => GlobalCategory::query()->where('status', 'active')->orderBy('sort_order')->orderBy('name')->get(),
             'shopCategories' => $shop->categories()->where('status', 'active')->orderBy('name')->get(),
-            'sourceProducts' => $shop->products()->with('inventory')->whereKeyNot($product->id)->whereIn('sale_unit', ['bottle', 'ml'])->orderBy('name')->get(),
+            'sourceProducts' => $shop->products()->with('inventory')->whereKeyNot($product->id)->where('sale_unit', 'bottle')->orderBy('name')->get(),
             'componentProducts' => $shop->products()->with('inventory')->whereKeyNot($product->id)->where('is_combo', false)->where('sale_unit', '!=', 'service')->orderBy('name')->get(),
             'attributeDefinitions' => $shop->attributeDefinitions()->get(),
         ]);
@@ -547,8 +547,8 @@ class SellerProductController extends Controller
         }
 
         $source = $shop->products()->with('inventory')->find($sourceId);
-        if (! $source || ! in_array($source->sale_unit, ['bottle', 'ml'], true)) {
-            throw ValidationException::withMessages(['inventory_source_product_id' => 'Elige una botella o un producto medido en ml como fuente del decant.']);
+        if (! $source || $source->sale_unit !== 'bottle') {
+            throw ValidationException::withMessages(['inventory_source_product_id' => 'Elige un perfume completo configurado como botella en el inventario.']);
         }
 
         if (! $source->volume_ml || ! $source->inventory?->track_inventory) {

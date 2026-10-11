@@ -340,14 +340,14 @@ class MobileOperationService
 
         app(BusinessCapabilityService::class)->assert($shop, 'decants');
         if (! $sourcePublicId) {
-            throw ValidationException::withMessages(['inventory_source_product_id' => 'Elige la botella o producto medido en ml que abastece el decant.']);
+            throw ValidationException::withMessages(['inventory_source_product_id' => 'Elige una botella completa del inventario que abastece el decant.']);
         }
         $source = $shop->products()->with('inventory')->where('public_id', $sourcePublicId)->lockForUpdate()->first();
         if (! $source || ($product && $source->id === $product->id)) {
             throw ValidationException::withMessages(['inventory_source_product_id' => 'La fuente debe ser un producto de esta tienda distinto al decant.']);
         }
-        if (! in_array($source->sale_unit, ['bottle', 'ml'], true) || ! $source->volume_ml || ! $source->inventory?->track_inventory) {
-            throw ValidationException::withMessages(['inventory_source_product_id' => 'La fuente debe ser una botella o producto medido en ml con volumen y control de inventario.']);
+        if ($source->sale_unit !== 'bottle' || ! $source->volume_ml || ! $source->inventory?->track_inventory) {
+            throw ValidationException::withMessages(['inventory_source_product_id' => 'La fuente debe ser un perfume completo configurado como botella, con volumen y control de inventario.']);
         }
         if ($source->inventory->cost_price === null
             || Money::toCents($source->inventory->getRawOriginal('cost_price') ?? $source->inventory->cost_price) <= 0) {
