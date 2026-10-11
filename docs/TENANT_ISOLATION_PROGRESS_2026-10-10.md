@@ -4,19 +4,20 @@ Actualización 11/10: verificación de la actividad real en dos tiendas QA local
 59 pruebas instrumentadas aprobadas y correcciones adicionales de confirmación
 de pedidos y resumen financiero. Detalle y límites de esta ejecución en
 [`EMULATOR_VERIFICATION_2026-10-11.md`](EMULATOR_VERIFICATION_2026-10-11.md).
-La suite histórica completa y la aprobación de release siguen pendientes.
+La release firmada 1.0.94 (versionCode 95) quedó publicada y validada contra
+el manifiesto público. La suite histórica completa aún requiere adaptar sus
+fixtures antiguos al contexto obligatorio de tienda.
 
 ## Estado
 
-Implementación local en curso. **No hay aprobación de release ni de despliegue.**
-La suite instrumentada histórica Android requiere adaptar sus fixtures al nuevo
-contexto obligatorio de tienda antes de ejecutar el recorrido completo.
+Implementación de aislamiento verificada y desplegada. La suite instrumentada
+histórica Android requiere adaptar sus fixtures al nuevo contexto obligatorio de
+tienda antes de ejecutar el recorrido completo.
 
-Bases Git de este trabajo (no son commits de los cambios nuevos):
+Commits publicados de este trabajo:
 
-- Backend: `b18a226553c4db99f993913fd4b95fb587c4066a`.
-- Android: `4c9199dacfff817ee049c728a0ea69783574a59f`.
-- Cambios actuales conservados sin commit en ambos árboles de trabajo.
+- Backend: `949428c05ffdbb875c524b11796bc1d6f9a3dee9`.
+- Android: `da99c9ca84c189778a0c030dada1cbeede7cae74`.
 
 ## Cambios implementados
 
@@ -76,8 +77,10 @@ de uso de ventas/abonos/devoluciones/caja y pantallas de Clientes/Pedidos.
 | `TenantSyncTest` | 6/6 |
 | `TenantCashTest` | 2/2 |
 | `OrderConfirmDialogTest` | 5/5 |
+| Instrumentación tenant + pedidos | 17/17 |
 | Backend `php artisan test` | 541/541, 6081 assertions |
 | Suite instrumentada histórica Android completa | Bloqueada en compilación de fixtures antiguas |
+| APK release 1.0.94 | Firmada, no debug, publicada y hash verificado |
 
 Los tests de migración abren los esquemas publicados 1, 15 y 26 con SQLite real
 y validación completa de Room 27. Comparan todas las columnas originales de las
@@ -99,8 +102,10 @@ contabilidad también pasaron en la suite completa.
   `e266fd48b028dc66dc4e530c0bc8af06b9be820545600c6c4b19c81b4b1ff775`.
 - API de esa compilación: `http://127.0.0.1:9/`; las pruebas usan servicios fake.
 - Room de pruebas: memoria o archivos nuevos `tenant-migration-test-*`.
-- No se instaló esta migración en el paquete operativo ni en el teléfono.
-- No hubo despliegue, publicación, limpieza de datos ni operación de BD en VPS.
+- La ejecución QA descrita no instaló esta migración en el paquete operativo ni
+  en el teléfono; la release firmada posterior sí fue publicada como 1.0.94.
+- La ejecución QA no hizo limpieza ni operaciones de BD; el despliegue posterior
+  fue código/configuración y APK, sin migraciones ni cambios de datos.
 
 ## Pendientes para cerrar la auditoría
 
