@@ -21,6 +21,7 @@ use App\Models\Supplier;
 use App\Models\SupportRequest;
 use App\Services\BusinessDashboardService;
 use App\Services\DailyCloseService;
+use App\Services\DecantInventoryService;
 use App\Services\InventoryService;
 use App\Services\SellerMenuService;
 use App\Services\ShopAnalyticsService;
@@ -1426,6 +1427,7 @@ class SellerFeatureController extends Controller
 
     private function decantsData(Shop $shop, bool $showSensitiveFinance = true): array
     {
+        $decantInventory = app(DecantInventoryService::class);
         $products = $shop->products()->with(['inventory', 'sourceProduct.inventory'])->where('sale_unit', 'decant')->get();
         $bottles = $shop->products()
             ->with(['inventory', 'decantProducts'])
@@ -1477,9 +1479,15 @@ class SellerFeatureController extends Controller
         }
 
         $kpis += [
-            'rows' => $products->map(function (Product $product) use ($showSensitiveFinance): array {
+            'rows' => $products->map(function (Product $product) use ($showSensitiveFinance, $decantInventory): array {
                 $source = $product->sourceProduct;
                 $sourceInventory = $source?->inventory;
+                // Decant stock is the prepared batch quantity. The inventory
+                // row may also include on-demand capacity backed by empty
+                // vials, which must not be displayed as already prepared.
+                $prepared = $decantInventory->available()
+                    ? $decantInventory->prepared($product)
+                    : (int) ($product->inventory?->stock_quantity ?? 0);
                 $availableMl = $sourceInventory?->reserved_decant_ml ?? $sourceInventory?->available_ml;
                 if ($availableMl === null && $sourceInventory?->track_inventory) {
                     $availableMl = $source->sale_unit === 'bottle'
@@ -1505,7 +1513,7 @@ class SellerFeatureController extends Controller
                     'primary' => $product->name,
                     'secondary' => $sourceDescription,
                     'value' => $product->volume_ml
-                        ? $product->volume_ml.' ml · '.number_format((int) ($product->inventory?->stock_quantity ?? 0)).' listos'
+                        ? $product->volume_ml.' ml · '.number_format($prepared).' listos'
                         : 'Volumen pendiente',
                     'status' => !$source
                         ? 'Sin botella'
@@ -1516,7 +1524,7 @@ class SellerFeatureController extends Controller
                                 && (int) ($sourceInventory->reserved_decant_ml ?? $sourceInventory->available_ml) <= (int) $product->volume_ml
                             )
                                 ? 'Se agota'
-                                : ((int) ($product->inventory?->stock_quantity ?? 0) > 0 ? 'Listos' : 'A pedido')
+                                : ($prepared > 0 ? 'Listos' : 'A pedido')
                         ),
                 ];
             })->all(),
