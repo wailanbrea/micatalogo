@@ -140,6 +140,7 @@ test('legacy pool reconciliation transfers existing FIFO cost and never fabricat
     expect($opening->remaining_ml)->toBe(40)->and($opening->initial_cost_cents)->toBeNull()
         ->and($opening->remaining_cost_cents)->toBe(40000)
         ->and($legacy->fresh()->inventory->available_ml)->toBe(140)
+        ->and(DB::table('inventory_movements')->where('product_id', $legacy->id)->latest('id')->value('type'))->toBe('decant_reconcile')
         ->and(DB::table('decant_batches')->count())->toBe(0);
     decantCommand($this, $owner, $shop, ['type' => 'decant_undo_open', 'opening_id' => $opening->public_id, 'expected_ml' => 40])->assertStatus(409);
 });

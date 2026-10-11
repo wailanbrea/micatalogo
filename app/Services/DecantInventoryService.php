@@ -88,7 +88,10 @@ class DecantInventoryService
         }
         $fifo = app(FifoCostService::class);
         for ($i = 0; $i < $quantity; $i++) {
-            $movement = $this->movement($source, 'decant_opening_transfer', 0, 0, $userId, 'Transferencia de costo a botella abierta');
+            // inventory_movements.type is limited to 20 characters. Keep the
+            // internal movement code compact so opening a bottle also works on
+            // the production schema without requiring a destructive migration.
+            $movement = $this->movement($source, 'decant_open_transfer', 0, 0, $userId, 'Transferencia de costo a botella abierta');
             $cost = $fifo->consume($source, (int) $source->volume_ml, $movement);
             $movement->update(['total_cost_cents' => $cost]);
             DB::table('decant_openings')->insert([
@@ -118,7 +121,7 @@ class DecantInventoryService
             }
             $fifo = app(FifoCostService::class);
             $fifo->initialize($source, $inventory);
-            $movement = $this->movement($source, 'decant_reconciliation_transfer', 0, 0, $userId, 'Conciliación explícita de perfume abierto histórico');
+            $movement = $this->movement($source, 'decant_reconcile', 0, 0, $userId, 'Conciliación explícita de perfume abierto histórico');
             $cost = $fifo->consume($source, $data['quantity'], $movement);
             $movement->update(['total_cost_cents' => $cost]);
             DB::table('decant_openings')->insert(['public_id' => (string) Str::ulid(), 'product_id' => $source->id, 'movement_id' => $movement->id,
@@ -269,7 +272,7 @@ class DecantInventoryService
                 'remaining_cost_cents' => 0, 'updated_at' => now()]);
             $inventory->stock_quantity++;
             $inventory->save();
-            $this->movement($source, 'decant_opening_reversal', 1, $inventory->stock_quantity - 1, $userId, $data['notes'] ?? 'Reversión de apertura no utilizada');
+            $this->movement($source, 'decant_open_reverse', 1, $inventory->stock_quantity - 1, $userId, $data['notes'] ?? 'Reversión de apertura no utilizada');
         } else {
             throw new InvalidArgumentException('Operación de Decants no válida.', 422);
         }
