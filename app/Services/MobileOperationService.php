@@ -427,11 +427,13 @@ class MobileOperationService
 
     private function refund(Shop $shop, User $user, array $data, MobileOperation $operation): array
     {
-        $upload = PosSaleUpload::where('shop_id', $shop->id)->where('client_sale_uuid', $data['client_sale_uuid'])->first();
-        if (! $upload?->invoice_id) {
+        $invoice = ! empty($data['invoice_id'])
+            ? $shop->invoices()->whereKey((int) $data['invoice_id'])->lockForUpdate()->firstOrFail()
+            : optional(PosSaleUpload::where('shop_id', $shop->id)->where('client_sale_uuid', $data['client_sale_uuid'])->first())->invoice;
+        if (! $invoice) {
             throw new InvalidArgumentException('Sincroniza primero la venta original.', 409);
         }
-        $invoice = Invoice::whereKey($upload->invoice_id)->lockForUpdate()->firstOrFail();
+        $invoice = Invoice::whereKey($invoice->id)->lockForUpdate()->firstOrFail();
         if ($invoice->status !== 'paid' || CustomerAccountEntry::where('invoice_id', $invoice->id)->exists()) {
             throw new InvalidArgumentException('Solo se devuelven ventas de contado pagadas, sin deuda.', 422);
         }

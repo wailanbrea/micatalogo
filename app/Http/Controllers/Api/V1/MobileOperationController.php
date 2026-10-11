@@ -38,7 +38,10 @@ class MobileOperationController extends Controller
                     'expected_ml' => ['required', 'integer', 'min:1']],
             };
         } elseif ($type === 'return') {
-            $rules += ['client_sale_uuid' => ['required', 'uuid'], 'items' => ['required', 'array', 'min:1', 'max:100'],
+            // A return may reference a sale uploaded from the mobile outbox or
+            // any server invoice (web/POS/quote conversion). Both identities
+            // use the same idempotent mobile operation envelope.
+            $rules += ['client_sale_uuid' => ['required_without:invoice_id', 'nullable', 'uuid'], 'invoice_id' => ['required_without:client_sale_uuid', 'nullable', 'integer'], 'items' => ['required', 'array', 'min:1', 'max:100'],
                 'items.*.product_id' => ['required', 'ulid', 'distinct'], 'items.*.quantity' => ['required', 'integer', 'min:1', 'max:10000'],
                 'items.*.refund_price' => ['required', 'decimal:0,2', 'min:0', 'max:1000000000'],
                 'items.*.refund_total' => ['sometimes', 'decimal:0,2', 'min:0', 'max:10000000000000'], 'items.*.restock' => ['required', 'boolean']];

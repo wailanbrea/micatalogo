@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\V1\PosSaleController;
 use App\Http\Controllers\Api\V1\PricingController;
 use App\Http\Controllers\Api\V1\PurchaseController;
 use App\Http\Controllers\Api\V1\QuoteController;
+use App\Http\Controllers\Api\V1\ReturnController;
 use App\Http\Controllers\Api\V1\ShopController;
 use App\Http\Controllers\Api\V1\ShopSettingsController;
 use App\Http\Controllers\Api\V1\SupportChatController;
@@ -94,6 +95,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/shops/{shop}/quotes', [QuoteController::class, 'store'])->middleware(['abilities:pos:write', 'menu:quotes']);
         Route::get('/shops/{shop}/quotes/{quote}/pdf', [QuoteController::class, 'pdf'])->middleware('menu:quotes');
         Route::post('/shops/{shop}/quotes/{quote}/convert', [QuoteController::class, 'convert'])->middleware(['abilities:pos:write', 'menu:quotes']);
+        Route::get('/shops/{shop}/returns/eligible', [ReturnController::class, 'eligible'])->middleware('menu:returns');
         Route::post('/shops/{shop}/orders/{order}/confirm', [OrderController::class, 'confirm'])->middleware(['abilities:pos:write', 'menu:orders']);
         Route::post('/shops/{shop}/mobile-operations', [MobileOperationController::class, 'store'])->middleware(['abilities:pos:write', 'throttle:60,1']);
         Route::get('/shops/{shop}/customers', [CustomerController::class, 'index'])->middleware(['abilities:customers:read', 'menu:customers']);
