@@ -32,13 +32,14 @@ class ReturnController extends Controller
             ->limit(100)
             ->get()
             ->map(function (Invoice $invoice): ?array {
+                $charged = app(\App\Services\InvoiceRefundAmounts::class)->chargedLines($invoice);
                 $returned = DB::table('invoice_return_items')
                     ->whereIn('invoice_item_id', $invoice->items->pluck('id'))
                     ->selectRaw('invoice_item_id, COALESCE(SUM(quantity), 0) AS quantity')
                     ->groupBy('invoice_item_id')
                     ->pluck('quantity', 'invoice_item_id');
 
-                $items = $invoice->items->map(function ($item) use ($returned): ?array {
+                $items = $invoice->items->map(function ($item) use ($returned, $charged): ?array {
                     $returnedQuantity = (int) ($returned->get($item->id) ?? 0);
                     $remaining = (int) $item->quantity - $returnedQuantity;
                     if ($remaining <= 0) {
@@ -54,6 +55,8 @@ class ReturnController extends Controller
                         'remaining_quantity' => $remaining,
                         'unit_price' => (string) $item->unit_price,
                         'line_total' => (string) $item->line_total,
+                        'charged_line_cents' => $charged[$item->id],
+                        'remaining_refund_cents' => $charged[$item->id] - intdiv($charged[$item->id] * $returnedQuantity, (int) $item->quantity),
                         'sale_unit' => $item->sale_unit,
                         'volume_ml' => $item->volume_ml,
                     ];

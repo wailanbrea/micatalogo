@@ -36,6 +36,8 @@ Route::prefix('v1')->group(function (): void {
 
     Route::middleware(['auth:sanctum', EnsureApiAccountIsActive::class, 'app.version'])->group(function (): void {
         Route::get('/me', [AuthController::class, 'me']);
+        Route::post('/me/mobile-operations', [\App\Http\Controllers\Api\V1\AccountMobileOperationController::class, 'store']);
+        Route::get('/me/mobile-operations/{uuid}', [\App\Http\Controllers\Api\V1\AccountMobileOperationController::class, 'show']);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::put('/me', [AuthController::class, 'update']);
         Route::get('/shops', [ShopController::class, 'index']);
@@ -96,6 +98,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/shops/{shop}/quotes/{quote}/pdf', [QuoteController::class, 'pdf'])->middleware('menu:quotes');
         Route::post('/shops/{shop}/quotes/{quote}/convert', [QuoteController::class, 'convert'])->middleware(['abilities:pos:write', 'menu:quotes']);
         Route::get('/shops/{shop}/returns/eligible', [ReturnController::class, 'eligible'])->middleware('menu:returns');
+        Route::get('/shops/{shop}/sales/export', [\App\Http\Controllers\Api\V1\SalesExportController::class, 'show'])->middleware('menu:sales');
         Route::post('/shops/{shop}/orders/{order}/confirm', [OrderController::class, 'confirm'])->middleware(['abilities:pos:write', 'menu:orders']);
         Route::post('/shops/{shop}/mobile-operations', [MobileOperationController::class, 'store'])->middleware(['abilities:pos:write', 'throttle:60,1']);
         Route::get('/shops/{shop}/customers', [CustomerController::class, 'index'])->middleware(['abilities:customers:read', 'menu:customers']);

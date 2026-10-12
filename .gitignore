@@ -23,6 +23,9 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 /.playwright-mcp
+/.playwright-cli
+/output
+*.apk
 /.tools/composer/composer.phar
 /graphify-out
 /.ofb-deploy

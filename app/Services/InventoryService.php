@@ -30,6 +30,7 @@ class InventoryService
         }
 
         return DB::transaction(function () use ($product, $quantity, $notes, $userId, $createInvoice, $unitPrice, $paymentMethod) {
+            Shop::whereKey($product->shop_id)->lockForUpdate()->firstOrFail();
             $product = Product::query()->lockForUpdate()->findOrFail($product->id);
             if ($product->isCombo()) {
                 return $this->recordComboSale($product, $quantity, $notes, $userId, $createInvoice, $unitPrice, $paymentMethod);
@@ -93,6 +94,9 @@ class InventoryService
 
             if (! $inventory?->track_inventory) {
                 throw new InvalidArgumentException('Activa el control de inventario para registrar movimientos de este producto.');
+            }
+            if (($product->sale_unit ?: 'unit') === 'unit' && app(ShopRouteSyncService::class)->mainQuantity($product) < $quantity) {
+                throw new InvalidArgumentException('Stock insuficiente en almacén principal; hay unidades asignadas a rutas.', 409);
             }
 
             $source = null;
@@ -533,7 +537,11 @@ class InventoryService
         }
 
         return DB::transaction(function () use ($product, $newStock, $notes, $userId) {
+            Shop::whereKey($product->shop_id)->lockForUpdate()->firstOrFail();
             $product = Product::query()->lockForUpdate()->findOrFail($product->id);
+            if ($newStock < app(ShopRouteSyncService::class)->reserved($product)) {
+                throw new InvalidArgumentException('El conteo físico no puede retirar unidades asignadas a rutas abiertas.', 409);
+            }
             $inventory = ProductInventory::where('product_id', $product->id)
                 ->lockForUpdate()
                 ->first();

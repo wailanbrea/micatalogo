@@ -9,6 +9,7 @@ use App\Services\PlanLimitsService;
 use App\Services\BusinessCapabilityService;
 use App\Services\BusinessPresentationService;
 use App\Services\SellerMenuService;
+use App\Services\ShopRecordSyncService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -32,6 +33,8 @@ class CatalogController extends Controller
             || $request->user()->ownsShop($shop)
             || in_array('finance', $menus->visibleForUser($shop, $request->user()), true);
 
+        $recordSync = app(ShopRecordSyncService::class);
+        $categoryMetadata = $recordSync->categoryMetadata($shop);
         $categories = $shop->categories()
             ->orderBy('sort_order')
             ->orderBy('name')
@@ -43,14 +46,26 @@ class CatalogController extends Controller
                 'sort_order' => $category->sort_order,
                 'status' => $category->status->value,
                 'updated_at' => $category->updated_at->toISOString(),
+                'client_record_uuid' => ($categoryMetadata[$category->id] ?? null)?->record_uuid,
+                'description' => ($categoryMetadata[$category->id] ?? null)?->payload['description'] ?? null,
+                'icon' => ($categoryMetadata[$category->id] ?? null)?->payload['icon'] ?? 'category_default',
+                'is_deleted' => ($categoryMetadata[$category->id] ?? null)?->payload['is_deleted'] ?? false,
             ])
             ->values();
 
+        $productUnits = $recordSync->productUnits($shop);
+        $routeSync = app(\App\Services\ShopRouteSyncService::class);
+        $routeStock = $routeSync->stock($shop);
         $products = $shop->products()
             ->with(['inventory', 'sourceProduct', 'primaryImage', 'comboItems.component.inventory'])
             ->orderBy('name')
             ->get()
-            ->map(fn (Product $product) => $this->productPayload($product, $canViewSensitiveFinance))
+            ->map(function (Product $product) use ($canViewSensitiveFinance, $productUnits, $routeStock) {
+                $payload = $this->productPayload($product, $canViewSensitiveFinance);
+                $reserved = $routeStock->where('product_id', $product->public_id)->sum('quantity');
+                if ($reserved > 0) $payload['inventory']['stock_quantity'] = max(0, $payload['inventory']['stock_quantity'] - $reserved);
+                return [...$payload, 'unit_uuid' => $productUnits[$product->public_id] ?? null];
+            })
             ->values();
 
         return response()->json([
@@ -64,6 +79,8 @@ class CatalogController extends Controller
             ],
             'categories' => $categories,
             'products' => $products,
+            'store_records' => array_merge($recordSync->snapshot($shop), $routeSync->snapshot($shop, $canViewSensitiveFinance)),
+            'route_stock' => $routeStock->map(fn ($row) => $canViewSensitiveFinance ? $row : array_replace($row, ['unit_cost_cents' => 0]))->all(),
             'generated_at' => now()->toISOString(),
         ]);
     }

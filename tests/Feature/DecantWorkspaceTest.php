@@ -170,6 +170,31 @@ test('opening and preparing a sealed bottle is atomic even when envases are insu
         ->and($source->fresh()->inventory->available_ml)->toBe(190)->and(DB::table('decant_batches')->value('quantity'))->toBe(2);
 });
 
+test('quick setup creates multiple presentations, receives envases and is idempotent', function () {
+    [$owner, $shop, $source, $existing] = physicalDecantFixture();
+    $uuid = (string) Str::uuid();
+    $payload = [
+        'type' => 'decant_setup',
+        'source_product_id' => $source->public_id,
+        'expected_stock' => 1,
+        'mode' => 'ready',
+        'presentations' => [
+            ['volume_ml' => 5, 'price' => '320.00', 'quantity' => 1, 'vial_quantity' => 2, 'vial_unit_cost' => '50.00'],
+            ['volume_ml' => 10, 'price' => '550.00', 'quantity' => 0, 'vial_quantity' => 1, 'vial_unit_cost' => '60.00'],
+        ],
+        'client_operation_uuid' => $uuid,
+    ];
+
+    decantCommand($this, $owner, $shop, $payload)->assertCreated()->assertJsonPath('mode', 'ready');
+    decantCommand($this, $owner, $shop, $payload)->assertCreated();
+
+    expect($shop->products()->where('sale_unit', 'decant')->count())->toBe(2)
+        ->and($shop->products()->where('volume_ml', 10)->where('sale_unit', 'decant')->count())->toBe(1)
+        ->and(DB::table('decant_batches')->sum('remaining_quantity'))->toBe(1)
+        ->and(DB::table('decant_vial_lots')->sum('remaining_quantity'))->toBe(2)
+        ->and(DB::table('mobile_operations')->where('client_operation_uuid', $uuid)->count())->toBe(1);
+});
+
 test('on demand opens a sealed source only when the existing openings cannot fill the requested size', function () {
     [$owner, $shop, $source, $product, $opening] = physicalDecantFixture();
     decantCommand($this, $owner, $shop, ['type' => 'decant_discard', 'opening_id' => $opening->public_id,

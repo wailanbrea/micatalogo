@@ -50,7 +50,7 @@ class PartnerController extends Controller
         abort_unless($session, 422, 'Abre la caja antes de registrar un movimiento de socio.');
 
         try {
-            DB::transaction(function () use ($request, $shop, $partner, $data, $session, $cash): void {
+            $transaction = DB::transaction(function () use ($request, $shop, $partner, $data, $session, $cash): PartnerTransaction {
                 $cashMovement = $cash->recordManualMovement(
                     $session,
                     $request->user(),
@@ -58,7 +58,7 @@ class PartnerController extends Controller
                     $data['amount'],
                     $data['notes'] ?? 'Movimiento de socio'
                 );
-                PartnerTransaction::create([
+                return PartnerTransaction::create([
                     'shop_id' => $shop->id,
                     'partner_id' => $partner->id,
                     'user_id' => $request->user()->id,
@@ -73,7 +73,9 @@ class PartnerController extends Controller
             abort(422, $exception->getMessage());
         }
 
-        return response()->json(['message' => 'Movimiento de socio registrado en caja.']);
+        return response()->json(['message' => 'Movimiento de socio registrado en caja.',
+            'transaction' => ['id' => (string) $transaction->id, 'type' => $transaction->type, 'amount' => (string) $transaction->amount,
+                'cash_movement_id' => (string) $transaction->cash_movement_id], 'partner' => ['id' => $partner->public_id]]);
     }
 
     private function authorizeShop(Request $request, Shop $shop, SellerMenuService $menus): void

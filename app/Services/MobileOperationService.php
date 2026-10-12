@@ -31,6 +31,8 @@ class MobileOperationService
         }
         if ($data['type'] === 'customer_upsert') {
             abort_unless(in_array('customers', app(SellerMenuService::class)->visibleForUser($shop, $user), true), 403);
+        } elseif (in_array($data['type'], array_merge(FinancialMobileOperationService::TYPES, OnlineMobileOperationService::TYPES), true)) {
+            // The financial controllers enforce their own menu/plan/session boundaries.
         } elseif ($data['type'] !== 'return') {
             Gate::forUser($user)->authorize('update', $shop);
         } else {
@@ -52,9 +54,14 @@ class MobileOperationService
             $operation = MobileOperation::create(['shop_id' => $shop->id, 'client_operation_uuid' => $data['client_operation_uuid'],
                 'type' => $data['type'], 'payload_sha256' => $hash, 'result' => []]);
             $result = match ($data['type']) {
+                'quote_create', 'quote_convert', 'order_confirm', 'purchase_create', 'purchase_receive', 'supplier_create', 'inventory_import_confirm', 'day_close', 'partner_create', 'partner_transaction' => app(OnlineMobileOperationService::class)->apply($shop, $user, $data),
+                'shop_settings_update', 'seller_menu_permissions_update', 'shop_menu_visibility_update', 'seller_create', 'authorization_approve', 'authorization_reject' => app(ShopAdministrationMobileOperationService::class)->apply($shop, $user, $data),
+                'cash_open', 'cash_close', 'cash_movement', 'expense_create', 'expense_payment' => app(FinancialMobileOperationService::class)->apply($shop, $user, $data),
+                'route_upsert', 'route_assign', 'route_unassign', 'route_reorder', 'route_load_create', 'route_load_status' => app(ShopRouteSyncService::class)->apply($shop, $data),
+                'category_upsert', 'unit_upsert', 'adjustment_reason_upsert' => app(ShopRecordSyncService::class)->apply($shop, $data),
                 'return' => $this->refund($shop, $user, $data, $operation),
                 'customer_upsert' => $this->customerOperation($shop, $data),
-                'decant_vial_receive', 'decant_vial_update', 'decant_prepare', 'decant_presentation_update', 'decant_discard', 'decant_undo_open', 'decant_sell_remainder', 'decant_reconcile_opening' => app(DecantInventoryService::class)->command($shop, $data, $user->id),
+                'decant_setup', 'decant_vial_receive', 'decant_vial_update', 'decant_prepare', 'decant_presentation_update', 'decant_discard', 'decant_undo_open', 'decant_sell_remainder', 'decant_reconcile_opening' => app(DecantInventoryService::class)->command($shop, $data, $user->id),
                 default => $this->productOperation($shop, $user, $data),
             };
             $result['client_operation_uuid'] = $data['client_operation_uuid'];
@@ -196,7 +203,11 @@ class MobileOperationService
                     && Money::toCents($currentPrice) !== Money::toCents($data['expected_price'])) {
                     throw new InvalidArgumentException('El precio remoto cambió; revisa el conflicto antes de editar.', 409);
                 }
-                if ($hasPresentationInput) {
+            if ($hasPresentationInput) {
+                    if (app(ShopRouteSyncService::class)->reserved($product) > 0 &&
+                        ($presentation['sale_unit'] !== ($product->sale_unit ?: 'unit') || $isCombo !== $product->isCombo())) {
+                        throw new InvalidArgumentException('Cierra las cargas de ruta antes de cambiar la presentación del producto.', 409);
+                    }
                     $hadLots = InventoryLot::where('product_id', $product->id)->exists()
                         || (app(DecantInventoryService::class)->available() && DB::table('decant_batches')->where('product_id', $product->id)->exists());
                     if ($hadLots && ($presentation['sale_unit'] !== $product->sale_unit
@@ -229,10 +240,19 @@ class MobileOperationService
             if (array_key_exists('price', $data)) {
                 $product->{$product->isOnSale() ? 'sale_price' : 'price'} = $data['price'];
             }
-            if (! empty($data['category_name'])) {
+            if (array_key_exists('category_uuid', $data)) {
+                $category = $data['category_uuid'] ? app(ShopRecordSyncService::class)->category($shop, $data['category_uuid']) : null;
+                if ($data['category_uuid'] && ! $category) {
+                    throw ValidationException::withMessages(['category_uuid' => 'La categoría no pertenece a la tienda.']);
+                }
+                $product->shop_category_id = $category?->id;
+            } elseif (! empty($data['category_name'])) {
                 $slug = Str::slug($data['category_name']) ?: 'categoria';
                 $category = $shop->categories()->firstOrCreate(['slug' => $slug], ['name' => $data['category_name'], 'status' => 'active']);
                 $product->shop_category_id = $category->id;
+            }
+            if (isset($data['unit_uuid'])) {
+                app(ShopRecordSyncService::class)->saveProductUnit($shop, $product->public_id, $data['unit_uuid']);
             }
             $product->save();
             if (array_key_exists('combo_items', $data) || ($product->isCombo() && ! $product->comboItems()->exists())) {
@@ -271,13 +291,14 @@ class MobileOperationService
                 app(InventoryService::class)->openBottle($product, $data['quantity'], $data['notes'] ?? null, $user->id, (bool) ($data['track_decants'] ?? false));
             } elseif ($data['type'] === 'adjustment') {
                 $inventory = $product->inventory()->lockForUpdate()->firstOrFail();
-                if ($inventory->stock_quantity !== $data['expected_stock']) {
+                $reserved = app(ShopRouteSyncService::class)->reserved($product);
+                if ($inventory->stock_quantity - $reserved !== $data['expected_stock']) {
                     throw new InvalidArgumentException('El stock cambió; vuelve a contar antes de ajustar.', 409);
                 }
                 if (isset($data['expected_available_ml']) && $inventory->available_ml !== $data['expected_available_ml']) {
                     throw new InvalidArgumentException('Los mililitros disponibles cambiaron; vuelve a contar antes de ajustar.', 409);
                 }
-                app(InventoryService::class)->adjustStock($product, $data['stock'], $data['notes'], $user->id);
+                app(InventoryService::class)->adjustStock($product, $data['stock'] + $reserved, $data['notes'], $user->id);
             }
         }
 
@@ -444,22 +465,10 @@ class MobileOperationService
         }
         // Allocate invoice-level tax deterministically in cents, conserving the
         // full amount across all lines and subsequent partial returns.
-        $globalTax = Money::toCents($invoice->tax);
-        $weights = $rows->mapWithKeys(fn ($item) => [$item->id => max(0, Money::toCents($item->line_total) - (int) $item->general_discount_cents)]);
-        if ($weights->sum() === 0) {
-            $weights = $rows->mapWithKeys(fn ($item) => [$item->id => Money::toCents($item->line_total)]);
-            if ($weights->sum() === 0) {
-                $weights = $rows->mapWithKeys(fn ($item) => [$item->id => (int) $item->quantity]);
-            }
-        }
-        $weightTotal = $weights->sum();
+        $chargedLines = app(InvoiceRefundAmounts::class)->chargedLines($invoice->setRelation('items', $rows));
         $taxShares = [];
-        $cumulativeWeight = $allocatedTax = 0;
         foreach ($rows->sortBy('id') as $row) {
-            $cumulativeWeight += $weights[$row->id];
-            $nextTax = $weightTotal > 0 ? intdiv($globalTax * $cumulativeWeight, $weightTotal) : 0;
-            $taxShares[$row->id] = $nextTax - $allocatedTax;
-            $allocatedTax = $nextTax;
+            $taxShares[$row->id] = $chargedLines[$row->id] - max(0, Money::toCents($row->line_total) - (int) $row->general_discount_cents);
         }
         $returnId = DB::table('invoice_returns')->insertGetId(['invoice_id' => $invoice->id, 'mobile_operation_id' => $operation->id,
             'total' => 0, 'notes' => $data['notes'] ?? null, 'created_at' => now(), 'updated_at' => now()]);
@@ -489,7 +498,7 @@ class MobileOperationService
             }
             $refundCents = isset($line['refund_total']) ? Money::toCents($line['refund_total'])
                 : Money::toCents($line['refund_price']) * $qty;
-            $chargedCents = Money::toCents($item->line_total) - (int) $item->general_discount_cents + $taxShares[$item->id];
+            $chargedCents = $chargedLines[$item->id];
             $maxRefund = intdiv($chargedCents * ($oldQty + $qty), $item->quantity) - intdiv($chargedCents * $oldQty, $item->quantity);
             if ($refundCents > $maxRefund) {
                 throw new InvalidArgumentException('El reembolso supera lo cobrado por esas unidades.', 422);

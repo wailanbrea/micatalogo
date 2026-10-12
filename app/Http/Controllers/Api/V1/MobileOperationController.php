@@ -5,6 +5,11 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Shop;
 use App\Services\MobileOperationService;
+use App\Services\ShopRecordSyncService;
+use App\Services\ShopRouteSyncService;
+use App\Services\FinancialMobileOperationService;
+use App\Services\OnlineMobileOperationService;
+use App\Services\ShopAdministrationMobileOperationService;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
 
@@ -16,10 +21,39 @@ class MobileOperationController extends Controller
         // Otherwise an external actor could probe validation details for a shop
         // they cannot access, even though no mutation would be committed.
         abort_unless($request->user()->canSellAtShop($shop), 404);
-        $type = $request->validate(['type' => ['required', 'in:product_upsert,product_archive,restock,adjustment,open_bottle,customer_upsert,return,decant_vial_receive,decant_vial_update,decant_prepare,decant_presentation_update,decant_discard,decant_undo_open,decant_sell_remainder,decant_reconcile_opening']])['type'];
+        $type = $request->validate(['type' => ['required', 'in:'.implode(',', array_merge(ShopRecordSyncService::TYPES, ShopRouteSyncService::TYPES, FinancialMobileOperationService::TYPES, OnlineMobileOperationService::TYPES, ShopAdministrationMobileOperationService::TYPES, ['product_upsert','product_archive','restock','adjustment','open_bottle','customer_upsert','return','decant_setup','decant_vial_receive','decant_vial_update','decant_prepare','decant_presentation_update','decant_discard','decant_undo_open','decant_sell_remainder','decant_reconcile_opening']))]])['type'];
         $rules = ['type' => ['required'], 'client_operation_uuid' => ['required', 'uuid'], 'notes' => ['nullable', 'string', 'max:1000']];
-        if (str_starts_with($type, 'decant_')) {
+        if (in_array($type, array_merge(FinancialMobileOperationService::TYPES, OnlineMobileOperationService::TYPES, ShopAdministrationMobileOperationService::TYPES), true)) {
+            $rules += ['request' => ['required', 'array'], 'resource_id' => ['required_if:type,cash_close,cash_movement,expense_payment,quote_convert,order_confirm,purchase_receive,partner_transaction,seller_menu_permissions_update,authorization_approve,authorization_reject', 'nullable', 'string', 'max:80']];
+            if ($type === 'order_confirm') {
+                // Orders expose their numeric tenant-scoped primary key, unlike quotes and purchases.
+                $rules['resource_id'] = ['required', 'integer', 'min:1'];
+            }
+        } elseif (in_array($type, ShopRouteSyncService::TYPES, true)) {
+            try {
+                $data = app(ShopRouteSyncService::class)->validate($request->all());
+                return response()->json($service->apply($shop, $request->user(), $data), 201);
+            } catch (InvalidArgumentException $error) {
+                return response()->json(['message' => $error->getMessage(), 'reason' => 'operation_conflict'], $error->getCode() ?: 422);
+            }
+        } elseif (in_array($type, ShopRecordSyncService::TYPES, true)) {
+            $rules += ['record_id' => ['required', 'uuid'], 'name' => ['required', 'string', 'max:100'],
+                'is_active' => ['required', 'boolean'], 'is_deleted' => ['required', 'boolean'], 'created_at' => ['required', 'date']];
             $rules += match ($type) {
+                'category_upsert' => ['description' => ['nullable', 'string', 'max:2000'], 'icon' => ['required', 'string', 'max:80'], 'sort_order' => ['required', 'integer', 'min:0']],
+                'unit_upsert' => ['abbreviation' => ['required', 'string', 'max:12']],
+                'adjustment_reason_upsert' => ['direction' => ['required', 'in:IN,OUT,BOTH']],
+            };
+        } elseif (str_starts_with($type, 'decant_')) {
+            $rules += match ($type) {
+                'decant_setup' => ['source_product_id' => ['required', 'ulid'], 'expected_stock' => ['required', 'integer', 'min:0'],
+                    'mode' => ['sometimes', 'in:ready,on_demand'], 'presentations' => ['required', 'array', 'min:1', 'max:12'],
+                    'presentations.*.volume_ml' => ['required', 'integer', 'min:1', 'max:100000'],
+                    'presentations.*.price' => ['required', 'decimal:0,2', 'min:0', 'max:1000000000'],
+                    'presentations.*.quantity' => ['sometimes', 'integer', 'min:0', 'max:100000'],
+                    'presentations.*.vial_quantity' => ['sometimes', 'integer', 'min:0', 'max:100000'],
+                    'presentations.*.vial_unit_cost' => ['nullable', 'decimal:0,2', 'min:0', 'max:1000000'],
+                    'presentations.*.name' => ['nullable', 'string', 'max:255']],
                 'decant_vial_receive' => ['volume_ml' => ['required', 'integer', 'min:1', 'max:1000'], 'name' => ['nullable', 'string', 'max:120'],
                     'quantity' => ['required', 'integer', 'min:1', 'max:100000'], 'unit_cost' => ['required', 'decimal:0,2', 'min:0', 'max:1000000']],
                 'decant_vial_update' => ['vial_id' => ['required', 'ulid'], 'name' => ['nullable', 'string', 'max:120'], 'active' => ['required', 'boolean']],
@@ -70,6 +104,7 @@ class MobileOperationController extends Controller
                 $rules += ['name' => ['sometimes', 'required', 'string', 'max:255'],
                     'internal_code' => ['nullable', 'string', 'max:120'], 'barcode' => ['nullable', 'regex:/^[0-9]{8,14}$/'],
                     'description' => ['nullable', 'string', 'max:10000'], 'category_name' => ['nullable', 'string', 'max:100'],
+                    'category_uuid' => ['sometimes', 'nullable', 'uuid'], 'unit_uuid' => ['sometimes', 'uuid'],
                     'sale_unit' => ['sometimes', 'nullable', 'in:unit,bottle,ml,decant,service'],
                     'is_combo' => ['sometimes', 'boolean'],
                     'combo_items' => ['sometimes', 'array', 'max:30'],

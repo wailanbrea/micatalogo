@@ -1036,30 +1036,7 @@ class SellerFeatureController extends Controller
         $status = in_array($status, ['all', 'paid', 'credit', 'partial', 'void'], true) ? $status : 'all';
         $search = trim((string) request()->query('q', ''));
 
-        $filtered = $shop->invoices()->with(['customer', 'user', 'items']);
-        if ($status === 'all') {
-            $filtered->where('status', '!=', 'void');
-        } elseif ($status === 'credit') {
-            // POS uses `pending` for a sale whose full balance remains on credit;
-            // `credit` is kept for invoices created by older/web flows.
-            $filtered->whereIn('status', ['credit', 'pending']);
-        } else {
-            $filtered->where('status', $status);
-        }
-        if ($period === 'today') {
-            $filtered->whereDate('issued_at', today());
-        } elseif ($period === 'month') {
-            $filtered->whereBetween('issued_at', [now()->startOfMonth(), now()->endOfDay()]);
-        } elseif ($period === 'last_7') {
-            $filtered->whereBetween('issued_at', [now()->subDays(6)->startOfDay(), now()->endOfDay()]);
-        }
-        if ($search !== '') {
-            $filtered->where(function ($query) use ($search): void {
-                $query->where('invoice_number', 'like', "%{$search}%")
-                    ->orWhereHas('customer', fn ($customer) => $customer->where('name', 'like', "%{$search}%"))
-                    ->orWhereHas('user', fn ($user) => $user->where('name', 'like', "%{$search}%"));
-            });
-        }
+        $filtered = app(\App\Services\ShopSalesReadService::class)->query($shop, request());
 
         $today = $shop->invoices()->whereDate('issued_at', today())->where('status', '!=', 'void');
         $rows = (clone $filtered)->latest('issued_at')->limit(100)->get();
@@ -1082,10 +1059,15 @@ class SellerFeatureController extends Controller
                 'count' => $rows->count(),
             ],
             'rows' => $rows->map(fn (Invoice $invoice) => [
+                'id' => (string) $invoice->id,
                 'primary' => $invoice->invoice_number,
                 'secondary' => ($invoice->customer?->name ?: 'Venta general').' · '.($invoice->issued_at?->format('d/m/Y H:i') ?: 'Sin fecha').' · '.number_format((int) $invoice->items->sum('quantity')).' artículo(s)',
                 'value' => $this->money($invoice->total),
                 'status' => $this->invoiceStatus($invoice),
+                'customer_name' => $invoice->customer?->name,
+                'created_at' => $invoice->issued_at?->toISOString(),
+                'items' => $invoice->items->map(fn ($item) => ['name' => $item->product_name, 'quantity' => (int) $item->quantity,
+                    'unit_price' => (string) $item->unit_price, 'line_total' => (string) $item->line_total])->all(),
             ])->all(),
             'note' => 'Las ventas confirmadas alimentan inventario, caja, crédito y ganancias. Las anuladas se mantienen fuera del resumen general, pero pueden consultarse desde el filtro de estado.',
         ];

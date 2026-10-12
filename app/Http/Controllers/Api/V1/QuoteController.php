@@ -47,7 +47,7 @@ class QuoteController extends Controller
 
         $customerId = null;
         if (! empty($data['customer_id'])) {
-            $customerId = $shop->customers()->where('public_id', $data['customer_id'])->value('id');
+            $customerId = $shop->customers()->where('public_id', $data['customer_id'])->where('is_active', true)->value('id');
             if (! $customerId) {
                 return response()->json(['message' => 'El cliente no pertenece a esta tienda.'], 422);
             }
@@ -115,6 +115,9 @@ class QuoteController extends Controller
         }
         if ($quote->isExpired()) {
             return response()->json(['message' => 'Una cotización vencida no puede convertirse en venta.'], 409);
+        }
+        if ($quote->customer_id && ! $shop->customers()->whereKey($quote->customer_id)->where('is_active', true)->exists()) {
+            return response()->json(['message' => 'El cliente de la cotización está inactivo o ya no pertenece a la tienda.'], 422);
         }
 
         try {

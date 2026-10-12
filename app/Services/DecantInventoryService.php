@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\ProductAvailabilityStatus;
+use App\Enums\ProductModerationStatus;
 use App\Models\InventoryMovement;
 use App\Models\Product;
 use App\Models\ProductInventory;
@@ -131,20 +133,11 @@ class DecantInventoryService
 
             return ['message' => 'Apertura histórica conciliada; no se han creado frascos preparados ni ventas.'];
         }
+        if ($data['type'] === 'decant_setup') {
+            return $this->setup($shop, $data, $userId);
+        }
         if ($data['type'] === 'decant_vial_receive') {
-            $vial = DB::table('decant_vials')->where('shop_id', $shop->id)->where('volume_ml', $data['volume_ml'])->lockForUpdate()->first();
-            if (! $vial) {
-                $id = DB::table('decant_vials')->insertGetId(['public_id' => (string) Str::ulid(), 'shop_id' => $shop->id,
-                    'volume_ml' => $data['volume_ml'], 'name' => $data['name'] ?? $data['volume_ml'].' ml',
-                    'active' => true, 'created_at' => now(), 'updated_at' => now()]);
-            } else {
-                $id = $vial->id;
-                DB::table('decant_vials')->where('id', $id)->update(['active' => true, 'updated_at' => now()]);
-            }
-            DB::table('decant_vial_lots')->insert(['vial_id' => $id, 'received_quantity' => $data['quantity'],
-                'remaining_quantity' => $data['quantity'], 'received_cost_cents' => Money::toCents($data['unit_cost']) * $data['quantity'],
-                'remaining_cost_cents' => Money::toCents($data['unit_cost']) * $data['quantity'],
-                'received_at' => now(), 'created_at' => now(), 'updated_at' => now()]);
+            $this->receiveVials($shop, (int) $data['volume_ml'], (int) $data['quantity'], (string) $data['unit_cost'], $data['name'] ?? null);
             $shop->products()->whereIn('sale_unit', ['bottle', 'ml'])->get()->each(function (Product $source): void {
                 if ($this->managed($source)) $this->sync($source);
             });
@@ -279,6 +272,129 @@ class DecantInventoryService
         $this->sync($source);
 
         return ['message' => 'Movimiento registrado con trazabilidad.'];
+    }
+
+    /**
+     * Configure several presentations from one existing bottle without
+     * exposing the internal open/prepare/receive sequence to the seller.
+     * The mobile operation envelope supplies idempotency and the caller's
+     * transaction keeps product, vial and FIFO changes atomic.
+     */
+    private function setup(Shop $shop, array $data, int $userId): array
+    {
+        $source = $shop->products()->with('inventory')->where('public_id', $data['source_product_id'])->lockForUpdate()->firstOrFail();
+        $inventory = $source->inventory()->lockForUpdate()->firstOrFail();
+        if ($source->sale_unit !== 'bottle' || ! $source->volume_ml || ! $inventory->track_inventory) {
+            throw new InvalidArgumentException('Elige un perfume completo configurado como botella, con volumen y control de inventario.', 422);
+        }
+        if ($inventory->stock_quantity !== (int) $data['expected_stock']) {
+            throw new InvalidArgumentException('La existencia de la botella cambió. Actualiza Decants e inténtalo de nuevo.', 409);
+        }
+
+        $mode = ($data['mode'] ?? 'ready') === 'on_demand' ? 'on_demand' : 'ready';
+        $presentations = collect($data['presentations'])->map(function (array $presentation) use ($source, $mode): array {
+            $volume = (int) $presentation['volume_ml'];
+            if ($volume > (int) $source->volume_ml) {
+                throw new InvalidArgumentException("El tamaño de {$volume} ml supera el volumen de la botella fuente.", 422);
+            }
+            $quantity = max(0, (int) ($presentation['quantity'] ?? 0));
+            $vialQuantity = max(0, (int) ($presentation['vial_quantity'] ?? 0));
+            if ($vialQuantity > 0 && ! isset($presentation['vial_unit_cost'])) {
+                throw new InvalidArgumentException("Indica el costo de los envases de {$volume} ml.", 422);
+            }
+            return [
+                'volume_ml' => $volume,
+                'price' => (string) $presentation['price'],
+                'quantity' => $mode === 'ready' ? $quantity : 0,
+                'vial_quantity' => $vialQuantity,
+                'vial_unit_cost' => $presentation['vial_unit_cost'] ?? null,
+                'name' => trim((string) ($presentation['name'] ?? '')),
+            ];
+        })->unique('volume_ml')->values();
+        if ($presentations->isEmpty()) {
+            throw new InvalidArgumentException('Agrega al menos una presentación.', 422);
+        }
+
+        $newProducts = $presentations->filter(fn (array $item): bool => ! $shop->products()
+            ->where('sale_unit', 'decant')->where('inventory_source_product_id', $source->id)
+            ->where('volume_ml', $item['volume_ml'])->exists())->count();
+        if ($newProducts > 0) {
+            app(PlanLimitsService::class)->assertCanAddProducts($shop, $newProducts);
+        }
+
+        foreach ($presentations as $item) {
+            if ($item['vial_quantity'] > 0) {
+                $this->receiveVials($shop, $item['volume_ml'], $item['vial_quantity'], (string) $item['vial_unit_cost']);
+            }
+        }
+
+        $opening = DB::table('decant_openings')->where('product_id', $source->id)->where('status', 'open')
+            ->where('remaining_ml', '>', 0)->orderBy('id')->lockForUpdate()->first();
+        $created = [];
+        foreach ($presentations as $item) {
+            $product = $shop->products()->where('sale_unit', 'decant')->where('inventory_source_product_id', $source->id)
+                ->where('volume_ml', $item['volume_ml'])->lockForUpdate()->first();
+            $isNew = ! $product;
+            if (! $product) {
+                $name = $item['name'] !== '' ? $item['name'] : $source->name.' · Decant '.$item['volume_ml'].' ml';
+                $product = $shop->products()->make([
+                    'name' => $name,
+                    'product_code' => 'DEC-'.$item['volume_ml'].'-'.strtoupper(Str::random(8)),
+                    'slug' => (Str::slug($name) ?: 'decant').'-'.strtolower((string) Str::ulid()),
+                    'brand' => $source->brand,
+                    'description' => $source->description,
+                    'shop_category_id' => $source->shop_category_id,
+                    'price' => $item['price'],
+                    'currency' => $source->currency ?: 'DOP',
+                    'sale_unit' => 'decant',
+                    'volume_ml' => $item['volume_ml'],
+                    'inventory_source_product_id' => $source->id,
+                    'availability_status' => ProductAvailabilityStatus::OutOfStock,
+                    'moderation_status' => ProductModerationStatus::Active,
+                    'published_at' => now(),
+                ]);
+                $product->forceFill(['public_id' => (string) Str::ulid()])->save();
+                $product->inventory()->create(['track_inventory' => true, 'stock_quantity' => 0, 'sold_quantity' => 0, 'low_stock_threshold' => 2]);
+            } else {
+                $locked = (bool) DB::table('decant_presentation_settings')->where('product_id', $product->id)->value('price_locked');
+                if ($locked && Money::toCents($item['price']) !== $product->currentPriceCents()) {
+                    throw new InvalidArgumentException("El precio de {$item['volume_ml']} ml está fijado. Cámbialo desde Opciones avanzadas.", 409);
+                }
+                $product->forceFill([$product->isOnSale() ? 'sale_price' : 'price' => $item['price']])->save();
+            }
+            DB::table('decant_presentation_settings')->updateOrInsert(['product_id' => $product->id], [
+                'on_demand' => $mode === 'on_demand', 'offered' => true, 'price_locked' => false,
+            ]);
+
+            if ($mode === 'ready' && $item['quantity'] > 0) {
+                if (! $opening || $opening->remaining_ml < $item['quantity'] * $item['volume_ml']) {
+                    throw new InvalidArgumentException("No hay suficientes ml en una sola apertura para preparar {$item['volume_ml']} ml. Prepara una cantidad menor o usa A pedido.", 409);
+                }
+                $this->prepare($product, $opening, $item['quantity'], Money::toCents($item['price']), $userId);
+                $opening = DB::table('decant_openings')->where('id', $opening->id)->lockForUpdate()->first();
+            }
+            $this->sync($source);
+            $created[] = ['id' => $product->public_id, 'volume_ml' => $product->volume_ml, 'created' => $isNew, 'quantity' => $item['quantity']];
+        }
+
+        return ['message' => 'Decants activados. Ya puedes venderlos desde Terminal.', 'source_product_id' => $source->public_id,
+            'mode' => $mode, 'presentations' => $created];
+    }
+
+    private function receiveVials(Shop $shop, int $volumeMl, int $quantity, string $unitCost, ?string $name = null): void
+    {
+        if ($quantity < 1) return;
+        $vial = DB::table('decant_vials')->where('shop_id', $shop->id)->where('volume_ml', $volumeMl)->lockForUpdate()->first();
+        if (! $vial) {
+            $id = DB::table('decant_vials')->insertGetId(['public_id' => (string) Str::ulid(), 'shop_id' => $shop->id,
+                'volume_ml' => $volumeMl, 'name' => $name ?: $volumeMl.' ml', 'active' => true, 'created_at' => now(), 'updated_at' => now()]);
+        } else {
+            $id = $vial->id;
+            DB::table('decant_vials')->where('id', $id)->update(['active' => true, 'updated_at' => now()]);
+        }
+        $total = Money::toCents($unitCost) * $quantity;
+        DB::table('decant_vial_lots')->insert(['vial_id' => $id, 'received_quantity' => $quantity, 'remaining_quantity' => $quantity,
+            'received_cost_cents' => $total, 'remaining_cost_cents' => $total, 'received_at' => now(), 'created_at' => now(), 'updated_at' => now()]);
     }
 
     private function opening(Shop $shop, string $id): object

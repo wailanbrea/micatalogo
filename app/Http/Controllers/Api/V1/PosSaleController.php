@@ -36,6 +36,7 @@ class PosSaleController extends Controller
             'payment_status' => ['required', 'in:paid,partial,pending'],
             'sale_mode' => ['sometimes', 'in:retail,wholesale'],
             'customer_id' => ['nullable', 'ulid'],
+            'route_uuid' => ['sometimes', 'nullable', 'uuid'],
             'credit_amount' => ['nullable', 'decimal:0,2', 'min:0'],
             'discount' => ['sometimes', 'decimal:0,2', 'min:0'],
             'tax' => ['sometimes', 'decimal:0,2', 'min:0'],
@@ -71,6 +72,7 @@ class PosSaleController extends Controller
 
         try {
             return DB::transaction(function () use ($shop, $validated, $payloadHash, $inventoryService, $paymentService, $request): JsonResponse {
+                $shop = Shop::whereKey($shop->id)->lockForUpdate()->firstOrFail();
                 $existing = PosSaleUpload::query()
                     ->with('invoice')
                     ->where('shop_id', $shop->id)
@@ -184,6 +186,9 @@ class PosSaleController extends Controller
                     default => 'partial',
                 };
 
+                if (! empty($validated['route_uuid'])) {
+                    app(\App\Services\ShopRouteSyncService::class)->consume($shop, $validated['route_uuid'], $validated['items'], $validated['client_sale_uuid']);
+                }
                 $upload = PosSaleUpload::create([
                     'shop_id' => $shop->id,
                     'client_sale_uuid' => $validated['client_sale_uuid'],
