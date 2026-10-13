@@ -210,9 +210,10 @@ class MobileOperationService
                     }
                     $hadLots = InventoryLot::where('product_id', $product->id)->exists()
                         || (app(DecantInventoryService::class)->available() && DB::table('decant_batches')->where('product_id', $product->id)->exists());
-                    if ($hadLots && ($presentation['sale_unit'] !== $product->sale_unit
+                    $presentationChanged = $presentation['sale_unit'] !== ($product->sale_unit ?: 'unit')
                         || $presentation['volume_ml'] !== $product->volume_ml
-                        || $presentation['inventory_source_product_id'] !== $product->inventory_source_product_id)) {
+                        || $presentation['inventory_source_product_id'] !== $product->inventory_source_product_id;
+                    if ($hadLots && $presentationChanged && ! $this->canConfigureUnitAsBottle($product, $presentation)) {
                         throw new InvalidArgumentException('No cambies la presentación de un producto con lotes; crea una presentación vinculada.', 422);
                     }
                     $product->fill([
@@ -326,6 +327,16 @@ class MobileOperationService
     private function isGeneratedMobileCode(string $code): bool
     {
         return $code !== '' && preg_match('/^AUTO-[A-Z0-9-]+$/i', $code) === 1;
+    }
+
+    private function canConfigureUnitAsBottle(Product $product, array $presentation): bool
+    {
+        return ($product->sale_unit ?: 'unit') === 'unit'
+            && $presentation['sale_unit'] === 'bottle'
+            && (int) ($presentation['volume_ml'] ?? 0) > 0
+            && $presentation['inventory_source_product_id'] === null
+            && ! (app(DecantInventoryService::class)->available()
+                && DB::table('decant_batches')->where('product_id', $product->id)->exists());
     }
 
     private function productCodeExists(Shop $shop, string $code, ?Product $except = null): bool

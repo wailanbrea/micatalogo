@@ -15,6 +15,7 @@ use App\Models\ProductInventory;
 use App\Models\Shop;
 use App\Services\BusinessCapabilityService;
 use App\Services\CatalogMediaService;
+use App\Services\DecantInventoryService;
 use App\Services\FifoCostService;
 use App\Services\ImageProcessingService;
 use App\Services\MediaStorageService;
@@ -274,7 +275,9 @@ class SellerProductController extends Controller
             $oldStock = $inventory->stock_quantity;
             $fifo = app(FifoCostService::class);
             $hadLots = InventoryLot::where('product_id', $product->id)->exists();
-            if ($hadLots && ($presentation->sale_unit !== $product->sale_unit || $presentation->volume_ml !== $product->volume_ml)) {
+            $presentationChanged = $presentation->sale_unit !== ($product->sale_unit ?: 'unit')
+                || $presentation->volume_ml !== $product->volume_ml;
+            if ($hadLots && $presentationChanged && ! $this->canConfigureUnitAsBottle($product, $presentation)) {
                 throw ValidationException::withMessages(['sale_unit' => 'No cambies la unidad o volumen de un producto con lotes. Crea una presentación vinculada.']);
             }
             $oldCanonical = $fifo->quantity($product, $inventory);
@@ -559,6 +562,16 @@ class SellerProductController extends Controller
             || Money::toCents($source->inventory->getRawOriginal('cost_price') ?? $source->inventory->cost_price) <= 0) {
             throw ValidationException::withMessages(['inventory_source_product_id' => 'La botella fuente debe tener un costo de compra mayor que RD$ 0 para calcular la ganancia y recuperar su inversión.']);
         }
+    }
+
+    private function canConfigureUnitAsBottle(Product $product, Product $presentation): bool
+    {
+        return ($product->sale_unit ?: 'unit') === 'unit'
+            && $presentation->sale_unit === 'bottle'
+            && (int) ($presentation->volume_ml ?? 0) > 0
+            && $presentation->inventory_source_product_id === null
+            && ! (app(DecantInventoryService::class)->available()
+                && DB::table('decant_batches')->where('product_id', $product->id)->exists());
     }
 
     private function presentationStock(Product $product, int $requestedStock): int
