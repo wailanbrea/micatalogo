@@ -28,6 +28,8 @@ Thumbs.db
 *.apk
 /.tools/composer/composer.phar
 /graphify-out
+/qa/artifacts/*.xml
+/qa/artifacts/*.txt
 /.ofb-deploy
 /production-*-requests.txt
 /public/downloads/*.apk
