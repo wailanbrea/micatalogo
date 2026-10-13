@@ -304,6 +304,36 @@ test('mobile product creation and edits are scoped and keep offers meaningful', 
     $this->withToken($token)->postJson('/api/v1/shops/'.$other->public_id.'/mobile-operations', $create)->assertNotFound();
 });
 
+test('mobile rekeys legacy generated AUTO SKU conflicts but keeps explicit SKU conflicts strict', function () {
+    [$user, $shop, $product, $token] = mobileFixture();
+    $url = '/api/v1/shops/'.$shop->public_id.'/mobile-operations';
+    $firstId = (string) Str::ulid();
+    $payload = [
+        'client_operation_uuid' => (string) Str::uuid(),
+        'type' => 'product_upsert',
+        'product_id' => $firstId,
+        'name' => 'Producto automático uno',
+        'price' => '45.00',
+        'cost_price' => '20.00',
+        'category_name' => 'Accesorios',
+        'internal_code' => 'AUTO-PRODUCTO-AUTOMATICO',
+    ];
+
+    $this->withToken($token)->postJson($url, $payload)->assertCreated()
+        ->assertJsonPath('internal_code', 'AUTO-PRODUCTO-AUTOMATICO');
+
+    $payload['client_operation_uuid'] = (string) Str::uuid();
+    $payload['product_id'] = (string) Str::ulid();
+    $payload['name'] = 'Producto automático dos';
+    $response = $this->withToken($token)->postJson($url, $payload)->assertCreated();
+    $second = Product::where('public_id', $payload['product_id'])->firstOrFail();
+
+    expect($second->product_code)->toStartWith('AUTO-')
+        ->and($second->product_code)->not->toBe('AUTO-PRODUCTO-AUTOMATICO')
+        ->and($response->json('internal_code'))->toBe($second->product_code)
+        ->and(Product::where('shop_id', $shop->id)->where('product_code', 'AUTO-PRODUCTO-AUTOMATICO')->count())->toBe(1);
+});
+
 test('mobile product creation supports validated decant presentations linked to a complete bottle', function () {
     $user = User::factory()->create(['plan' => UserPlan::Pro]);
     $shop = Shop::factory()->create(['user_id' => $user->id, 'business_type' => 'perfume_store']);

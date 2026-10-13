@@ -352,7 +352,7 @@ class DecantInventoryService
                 $name = $item['name'] !== '' ? $item['name'] : $source->name.' · Decant '.$item['volume_ml'].' ml';
                 $product = $shop->products()->make([
                     'name' => $name,
-                    'product_code' => 'DEC-'.$item['volume_ml'].'-'.strtoupper(Str::random(8)),
+                    'product_code' => $this->nextDecantProductCode($shop, (int) $item['volume_ml']),
                     'slug' => (Str::slug($name) ?: 'decant').'-'.strtolower((string) Str::ulid()),
                     'brand' => $source->brand,
                     'description' => $source->description,
@@ -392,6 +392,15 @@ class DecantInventoryService
 
         return ['message' => 'Decants activados. Ya puedes venderlos desde Terminal.', 'source_product_id' => $source->public_id,
             'mode' => $mode, 'presentations' => $created];
+    }
+
+    private function nextDecantProductCode(Shop $shop, int $volumeMl): string
+    {
+        do {
+            $candidate = 'DEC-'.$volumeMl.'-'.strtoupper(Str::random(8));
+        } while ($shop->products()->whereRaw('LOWER(product_code) = ?', [Str::lower($candidate)])->exists());
+
+        return $candidate;
     }
 
     private function receiveVials(Shop $shop, int $volumeMl, int $quantity, string $unitCost, ?string $name = null, ?string $salePrice = null): void
