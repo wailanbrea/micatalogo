@@ -196,6 +196,31 @@ test('quick setup creates multiple presentations, receives envases and is idempo
         ->and(DB::table('mobile_operations')->where('client_operation_uuid', $uuid)->count())->toBe(1);
 });
 
+test('quick setup opens a sealed bottle when preparing the first presentation', function () {
+    $owner = User::factory()->create(['plan' => UserPlan::Premium]);
+    $shop = Shop::factory()->for($owner)->create(['business_type' => 'perfumery']);
+    $source = Product::factory()->for($shop)->create([
+        'sale_unit' => 'bottle', 'volume_ml' => 100, 'price' => '1800.00', 'moderation_status' => 'active',
+    ]);
+    ProductInventory::create([
+        'product_id' => $source->id, 'track_inventory' => true, 'stock_quantity' => 1,
+        'available_ml' => 100, 'cost_price' => '1000.00', 'sold_quantity' => 0,
+    ]);
+    decantCommand($this, $owner, $shop, [
+        'type' => 'decant_vial_receive', 'volume_ml' => 5, 'quantity' => 2, 'unit_cost' => '50.00',
+    ])->assertCreated();
+
+    decantCommand($this, $owner, $shop, [
+        'type' => 'decant_setup', 'source_product_id' => $source->public_id, 'expected_stock' => 1,
+        'mode' => 'ready', 'presentations' => [['volume_ml' => 5, 'price' => '320.00', 'quantity' => 1]],
+    ])->assertCreated();
+
+    expect($source->fresh()->inventory->stock_quantity)->toBe(0)
+        ->and(DB::table('decant_openings')->where('product_id', $source->id)->count())->toBe(1)
+        ->and(DB::table('decant_batches')->sum('remaining_quantity'))->toBe(1)
+        ->and($shop->products()->where('sale_unit', 'decant')->where('volume_ml', 5)->exists())->toBeTrue();
+});
+
 test('on demand opens a sealed source only when the existing openings cannot fill the requested size', function () {
     [$owner, $shop, $source, $product, $opening] = physicalDecantFixture();
     decantCommand($this, $owner, $shop, ['type' => 'decant_discard', 'opening_id' => $opening->public_id,

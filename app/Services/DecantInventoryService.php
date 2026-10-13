@@ -330,6 +330,19 @@ class DecantInventoryService
 
         $opening = DB::table('decant_openings')->where('product_id', $source->id)->where('status', 'open')
             ->where('remaining_ml', '>', 0)->orderBy('id')->lockForUpdate()->first();
+        $needsPreparation = $mode === 'ready' && $presentations->sum('quantity') > 0;
+        if (! $opening && $needsPreparation) {
+            // Starting from a sealed bottle is equivalent to selecting
+            // "Abrir y preparar" in the manual flow. Keep the whole command
+            // atomic so a missing vial or insufficient volume rolls back the
+            // opening together with the presentation.
+            if ((int) $inventory->stock_quantity < 1) {
+                throw new InvalidArgumentException('No hay una botella sellada disponible para preparar estos decants.', 409);
+            }
+            app(InventoryService::class)->openBottle($source, 1, 'Apertura automática para preparar decants', $userId, true);
+            $opening = DB::table('decant_openings')->where('product_id', $source->id)->where('status', 'open')
+                ->where('remaining_ml', '>', 0)->orderByDesc('id')->lockForUpdate()->first();
+        }
         $created = [];
         foreach ($presentations as $item) {
             $product = $shop->products()->where('sale_unit', 'decant')->where('inventory_source_product_id', $source->id)
