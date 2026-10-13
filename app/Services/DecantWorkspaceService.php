@@ -20,6 +20,7 @@ class DecantWorkspaceService
             $next = $lots->first(fn ($lot) => $lot->remaining_quantity > 0);
 
             return ['id' => $vial->public_id, 'name' => $vial->name, 'volume_ml' => $vial->volume_ml, 'active' => (bool) $vial->active,
+                'sale_price_cents' => $vial->sale_price === null ? null : Money::toCents($vial->sale_price),
                 'empty' => (int) $lots->sum('remaining_quantity'), 'investment_cents' => $finance ? (int) $lots->sum('remaining_cost_cents') : null,
                 'next_cost_cents' => $finance && $next ? intdiv($next->remaining_cost_cents, $next->remaining_quantity) : null,
                 'lots' => $lots->map(fn ($lot) => ['id' => $lot->id, 'received_at' => $lot->received_at,
@@ -54,6 +55,7 @@ class DecantWorkspaceService
                     'price_cents' => $price, 'prepared' => $prepared, 'capacity' => $capacity,
                     'offered' => $offered, 'state' => $state, 'low' => $threshold > 0 && $prepared > 0 && $prepared <= $threshold,
                     'low_threshold' => $threshold, 'price_source' => $locked ? 'fijado' : ($available && DB::table('decant_batches')->where('product_id', $product->id)->exists() ? 'al preparar' : 'catálogo'),
+                    'image_url' => $product->image_url,
                     'legacy_capacity' => $tracked ? 0 : (int) ($product->inventory?->stock_quantity ?? 0),
                     'on_demand' => $onDemand, 'empty_vials' => $vial['empty'] ?? 0,
                     'vial_cost_cents' => $finance ? ($vial['next_cost_cents'] ?? null) : null,

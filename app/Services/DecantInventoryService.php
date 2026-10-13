@@ -137,7 +137,7 @@ class DecantInventoryService
             return $this->setup($shop, $data, $userId);
         }
         if ($data['type'] === 'decant_vial_receive') {
-            $this->receiveVials($shop, (int) $data['volume_ml'], (int) $data['quantity'], (string) $data['unit_cost'], $data['name'] ?? null);
+            $this->receiveVials($shop, (int) $data['volume_ml'], (int) $data['quantity'], (string) $data['unit_cost'], $data['name'] ?? null, $data['sale_price'] ?? null);
             $shop->products()->whereIn('sale_unit', ['bottle', 'ml'])->get()->each(function (Product $source): void {
                 if ($this->managed($source)) $this->sync($source);
             });
@@ -381,16 +381,19 @@ class DecantInventoryService
             'mode' => $mode, 'presentations' => $created];
     }
 
-    private function receiveVials(Shop $shop, int $volumeMl, int $quantity, string $unitCost, ?string $name = null): void
+    private function receiveVials(Shop $shop, int $volumeMl, int $quantity, string $unitCost, ?string $name = null, ?string $salePrice = null): void
     {
         if ($quantity < 1) return;
         $vial = DB::table('decant_vials')->where('shop_id', $shop->id)->where('volume_ml', $volumeMl)->lockForUpdate()->first();
         if (! $vial) {
             $id = DB::table('decant_vials')->insertGetId(['public_id' => (string) Str::ulid(), 'shop_id' => $shop->id,
-                'volume_ml' => $volumeMl, 'name' => $name ?: $volumeMl.' ml', 'active' => true, 'created_at' => now(), 'updated_at' => now()]);
+                'volume_ml' => $volumeMl, 'name' => $name ?: $volumeMl.' ml', 'sale_price' => $salePrice, 'active' => true, 'created_at' => now(), 'updated_at' => now()]);
         } else {
             $id = $vial->id;
-            DB::table('decant_vials')->where('id', $id)->update(['active' => true, 'updated_at' => now()]);
+            $values = ['active' => true, 'updated_at' => now()];
+            if ($name !== null && trim($name) !== '') $values['name'] = trim($name);
+            if ($salePrice !== null) $values['sale_price'] = $salePrice;
+            DB::table('decant_vials')->where('id', $id)->update($values);
         }
         $total = Money::toCents($unitCost) * $quantity;
         DB::table('decant_vial_lots')->insert(['vial_id' => $id, 'received_quantity' => $quantity, 'remaining_quantity' => $quantity,

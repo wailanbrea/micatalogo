@@ -36,7 +36,7 @@ function decantCommand($test, User $owner, Shop $shop, array $payload)
 
 test('physical preparation transfers ml and FIFO vial cost without creating a sale or duplicating inventory', function () {
     [$owner, $shop, $source, $product, $opening] = physicalDecantFixture();
-    decantCommand($this, $owner, $shop, ['type' => 'decant_vial_receive', 'volume_ml' => 5, 'quantity' => 1, 'unit_cost' => '50.00'])->assertCreated();
+    decantCommand($this, $owner, $shop, ['type' => 'decant_vial_receive', 'volume_ml' => 5, 'quantity' => 1, 'unit_cost' => '50.00', 'sale_price' => '125.00'])->assertCreated();
     decantCommand($this, $owner, $shop, ['type' => 'decant_vial_receive', 'volume_ml' => 5, 'quantity' => 2, 'unit_cost' => '60.00'])->assertCreated();
     $payload = ['type' => 'decant_prepare', 'opening_id' => $opening->public_id, 'product_id' => $product->public_id,
         'expected_ml' => 100, 'quantity' => 2, 'price' => '300.00', 'client_operation_uuid' => (string) Str::uuid()];
@@ -48,6 +48,7 @@ test('physical preparation transfers ml and FIFO vial cost without creating a sa
         ->and(DB::table('decant_openings')->value('remaining_ml'))->toBe(90)
         ->and($source->fresh()->inventory->available_ml)->toBe(190)
         ->and(DB::table('invoices')->count())->toBe(0);
+    expect((float) DB::table('decant_vials')->where('volume_ml', 5)->value('sale_price'))->toBe(125.0);
     $snapshot = app(DecantWorkspaceService::class)->snapshot($shop, true);
     expect($snapshot['prepared'])->toBe(2)->and($snapshot['prepared_value_cents'])->toBe(60000);
     $sale = app(InventoryService::class)->recordSale($product, 1, null, $owner->id, false);
