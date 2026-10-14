@@ -148,7 +148,7 @@
                         </div>
 
                         <p x-show="validationMessage" x-cloak x-text="validationMessage" class="login-field-error" role="alert"></p>
-                        <button class="login-submit" type="submit" :disabled="submitting" :aria-busy="submitting">
+                        <button class="login-submit" type="submit" :disabled="submitting" :aria-busy="submitting" @click="if (!$el.form.checkValidity()) { validationMessage = 'Completa el correo y la contraseña para iniciar sesión.'; }">
                             <svg x-show="submitting" x-cloak class="login-spinner" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" opacity=".3"/><path d="M12 3a9 9 0 0 1 9 9" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
                             <span x-text="submitting ? 'Iniciando sesión…' : 'Iniciar sesion'">Iniciar sesion</span>
                             <span x-show="!submitting" aria-hidden="true">&rarr;</span>
