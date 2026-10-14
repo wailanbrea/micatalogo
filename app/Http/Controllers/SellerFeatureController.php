@@ -697,7 +697,7 @@ class SellerFeatureController extends Controller
     private function purchasingData(Shop $shop, string $feature): array
     {
         $documents = $shop->purchaseDocuments()->with(['supplier', 'items.product', 'parentDocument'])->latest()->limit(30)->get();
-        $suppliers = $shop->suppliers()->get();
+        $suppliers = $shop->suppliers()->withCount('purchaseDocuments')->get();
         $products = $shop->products()->whereHas('inventory', fn ($query) => $query->where('track_inventory', true))->orderBy('name')->limit(300)->get();
 
         $labels = [
@@ -729,8 +729,9 @@ class SellerFeatureController extends Controller
             $rows = $suppliers->map(fn (Supplier $supplier) => [
                 'primary' => $supplier->name,
                 'secondary' => ($supplier->invoice_currency ? 'Factura en '.$supplier->invoice_currency.' · ' : '').($supplier->phone ?: ($supplier->email ?: 'Sin contacto')),
-                'value' => number_format($supplier->purchaseDocuments()->count()).' compra(s)',
+                'value' => number_format($supplier->purchase_documents_count).' compra(s)',
                 'status' => 'Activo',
+                'details' => ['Teléfono' => $supplier->phone, 'Correo' => $supplier->email, 'Moneda de factura' => $supplier->invoice_currency],
             ])->all();
         }
 
@@ -847,6 +848,7 @@ class SellerFeatureController extends Controller
                 'value' => $this->money($partner->transactions->where('type', 'contribution')->sum('amount') - $partner->transactions->whereIn('type', ['withdrawal', 'distribution'])->sum('amount')),
                 'status' => 'Activo',
                 'id' => $partner->public_id,
+                'details' => ['Correo' => $partner->email, 'Teléfono' => $partner->phone, 'Participación' => number_format((float) $partner->ownership_percent, 2).'%'],
             ])->all(),
             'partners' => $partners->map(fn (BusinessPartner $partner) => ['id' => $partner->public_id, 'name' => $partner->name])->all(),
             'note' => 'Los aportes y retiros se registran mediante la sesión de caja abierta y quedan enlazados al movimiento contable correspondiente.',

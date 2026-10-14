@@ -23,46 +23,8 @@
                 <div class="rounded-xl border border-slate-200 bg-white p-4"><p class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Productos</p><p class="mt-1 text-lg font-black text-slate-900">{{ $quota['product_count'] }} / {{ $quota['product_limit'] }}</p></div>
             </div>
 
-            <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
-                <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6">
-                    <div class="border-b border-slate-100 pb-5"><h1 class="text-xl font-bold text-slate-900">Vendedores y comisiones</h1><p class="mt-1 text-xs text-slate-500">Cada venta conserva la comisión configurada cuando fue registrada.</p></div>
-                    <div class="mt-5 space-y-4">
-                        @forelse ($sellers as $seller)
-                            @php($stat = $stats->get($seller->user_id))
-                            @php($menuOptions = app(\App\Services\SellerMenuService::class)->assignableOptions())
-                            @php($enabledMenus = app(\App\Services\SellerMenuService::class)->forAssignment($seller))
-                            <article class="rounded-xl border border-slate-200 p-4 {{ $seller->is_active ? 'bg-white' : 'bg-slate-50 opacity-70' }}">
-                                <div class="flex flex-wrap items-start justify-between gap-4">
-                                    <div><h2 class="font-bold text-slate-900">{{ $seller->user->name }}</h2><p class="mt-1 text-xs text-slate-500">{{ $seller->user->email }}</p><p class="mt-3 text-xs font-semibold text-slate-700">{{ number_format((int) ($stat->sales_count ?? 0)) }} ventas · RD$ {{ number_format((float) ($stat->sales_total ?? 0), 2) }} vendido</p></div>
-                                    <div class="text-right"><p class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Comisión acumulada</p><p class="mt-1 text-lg font-black text-emerald-700">RD$ {{ number_format((float) ($stat->commission_total ?? 0), 2) }}</p><p class="mt-1 text-[11px] font-bold {{ $seller->is_active ? 'text-emerald-700' : 'text-slate-500' }}">{{ $seller->is_active ? 'Activo' : 'Desactivado' }}</p></div>
-                                </div>
-                                <form method="POST" action="{{ route('seller.shops.sellers.update', [$shop, $seller]) }}" class="mt-4 flex flex-wrap items-end gap-2 border-t border-slate-100 pt-4">@csrf @method('PATCH')
-                                    <label class="text-xs font-bold text-slate-700">Modalidad<select name="commission_type" class="mt-1 block rounded-lg border border-slate-300 px-3 py-2 text-sm"><option value="percentage" @selected($seller->commission_type === 'percentage')>Porcentaje</option><option value="fixed" @selected($seller->commission_type === 'fixed')>Monto fijo</option></select></label>
-                                    <label class="text-xs font-bold text-slate-700">Valor<input name="commission_value" type="number" min="0.01" step="0.01" value="{{ $seller->commission_value }}" class="mt-1 block w-32 rounded-lg border border-slate-300 px-3 py-2 text-sm"></label>
-                                    <input type="hidden" name="menu_permissions_configured" value="1">
-                                    <div class="w-full rounded-xl bg-slate-50 p-3">
-                                        <p class="text-xs font-bold text-slate-700">Menús visibles para este vendedor</p>
-                                        <p class="mt-1 text-xs text-slate-500">Solo tendrá acceso a los menús marcados, según el plan de la tienda. Desmarca un menú para revocar su acceso. Resumen muestra únicamente sus ventas; configuración y gestión del equipo quedan reservadas a la administración.</p>
-                                        <div class="mt-2 grid gap-2 sm:grid-cols-2">
-                                            @foreach ($menuOptions as $key => $label)
-                                                <label class="flex items-center gap-2 text-xs font-medium text-slate-600">
-                                                    <input type="checkbox" name="menu_permissions[]" value="{{ $key }}" @checked(in_array($key, $enabledMenus, true)) class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
-                                                    <span>{{ $label }}</span>
-                                                </label>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                    <button class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700">Guardar</button>
-                                </form>
-                                @if ($seller->is_active)<form method="POST" action="{{ route('seller.shops.sellers.destroy', [$shop, $seller]) }}" class="mt-2">@csrf @method('DELETE')<button class="text-xs font-bold text-rose-700 hover:underline">Desactivar vendedor</button></form>@endif
-                            </article>
-                        @empty
-                            <div class="rounded-xl border border-dashed border-slate-300 p-10 text-center text-sm text-slate-500">Aún no hay vendedores asignados a esta tienda.</div>
-                        @endforelse
-                    </div>
-                </section>
-
-                <aside class="h-fit rounded-xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6">
+            <div class="space-y-5">
+                <x-record-modal title="Invitar vendedor y gestionar equipo" button="+ Invitar vendedor" :reopen="$errors->any() && old('email') !== null">
                     <h2 class="text-base font-bold text-slate-900">Invitar vendedor</h2><p class="mt-1 text-xs text-slate-500">Si aún no tiene cuenta, recibirá un enlace para confirmar su correo y crear su contraseña.</p>
                     <form method="POST" action="{{ route('seller.shops.sellers.store', $shop) }}" class="mt-5 space-y-4">@csrf
                         <div><label class="text-xs font-bold text-slate-700">Correo del vendedor</label><input name="email" type="email" required value="{{ old('email') }}" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></div>
@@ -109,7 +71,44 @@
                              <button class="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-900 hover:border-slate-900" @disabled(!$quota['can_add_users'])>Invitar usuario administrativo</button>
                          </form>
                      </div>
-                 </aside>
+                 </x-record-modal>
+                <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6">
+                    <div class="border-b border-slate-100 pb-5"><h1 class="text-xl font-bold text-slate-900">Vendedores y comisiones</h1><p class="mt-1 text-xs text-slate-500">Cada venta conserva la comisión configurada cuando fue registrada.</p></div>
+                    <div class="customer-table-wrapper mt-5"><table class="customer-table"><thead><tr><th scope="col">Vendedor</th><th scope="col" class="customer-extra-column">Ventas</th><th scope="col" class="customer-extra-column customer-money-column">Total vendido</th><th scope="col" class="customer-money-column">Comisión</th><th scope="col">Estado</th></tr></thead>
+                        @forelse ($sellers as $seller)
+                            @php($stat = $stats->get($seller->user_id))
+                            @php($menuOptions = app(\App\Services\SellerMenuService::class)->assignableOptions())
+                            @php($enabledMenus = app(\App\Services\SellerMenuService::class)->forAssignment($seller))
+                            <tbody x-data="{ open: false }"><tr class="customer-table-row" @click="open = !open" :class="open ? 'is-open' : ''">
+                                <th scope="row"><button type="button" class="customer-row-toggle" @click.stop="open = !open" :aria-expanded="open"><span aria-hidden="true" x-text="open ? '⌄' : '›'"></span>{{ $seller->user->name }}</button></th>
+                                <td class="customer-extra-column">{{ number_format((int) ($stat->sales_count ?? 0)) }}</td><td class="customer-extra-column customer-money-column">RD$ {{ number_format((float) ($stat->sales_total ?? 0), 2) }}</td><td class="customer-money-column">RD$ {{ number_format((float) ($stat->commission_total ?? 0), 2) }}</td><td><span class="customer-table-status">{{ $seller->is_active ? 'Activo' : 'Desactivado' }}</span></td>
+                            </tr><tr x-show="open" x-cloak><td colspan="5" class="customer-detail-cell"><h3 class="font-bold">{{ $seller->user->name }}</h3><p class="mt-2 text-sm text-slate-600">{{ $seller->user->email }} · {{ number_format((int) ($stat->sales_count ?? 0)) }} ventas · RD$ {{ number_format((float) ($stat->sales_total ?? 0), 2) }} vendido</p>
+                                <form method="POST" action="{{ route('seller.shops.sellers.update', [$shop, $seller]) }}" class="mt-4 flex flex-wrap items-end gap-2 border-t border-slate-100 pt-4">@csrf @method('PATCH')
+                                    <label class="text-xs font-bold text-slate-700">Modalidad<select name="commission_type" class="mt-1 block rounded-lg border border-slate-300 px-3 py-2 text-sm"><option value="percentage" @selected($seller->commission_type === 'percentage')>Porcentaje</option><option value="fixed" @selected($seller->commission_type === 'fixed')>Monto fijo</option></select></label>
+                                    <label class="text-xs font-bold text-slate-700">Valor<input name="commission_value" type="number" min="0.01" step="0.01" value="{{ $seller->commission_value }}" class="mt-1 block w-32 rounded-lg border border-slate-300 px-3 py-2 text-sm"></label>
+                                    <input type="hidden" name="menu_permissions_configured" value="1">
+                                    <div class="w-full rounded-xl bg-slate-50 p-3">
+                                        <p class="text-xs font-bold text-slate-700">Menús visibles para este vendedor</p>
+                                        <p class="mt-1 text-xs text-slate-500">Solo tendrá acceso a los menús marcados, según el plan de la tienda. Desmarca un menú para revocar su acceso. Resumen muestra únicamente sus ventas; configuración y gestión del equipo quedan reservadas a la administración.</p>
+                                        <div class="mt-2 grid gap-2 sm:grid-cols-2">
+                                            @foreach ($menuOptions as $key => $label)
+                                                <label class="flex items-center gap-2 text-xs font-medium text-slate-600">
+                                                    <input type="checkbox" name="menu_permissions[]" value="{{ $key }}" @checked(in_array($key, $enabledMenus, true)) class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                                                    <span>{{ $label }}</span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                    <button class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700">Guardar</button>
+                                </form>
+                                @if ($seller->is_active)<form method="POST" action="{{ route('seller.shops.sellers.destroy', [$shop, $seller]) }}" class="mt-2">@csrf @method('DELETE')<button class="text-xs font-bold text-rose-700 hover:underline">Desactivar vendedor</button></form>@endif
+                            </td></tr></tbody>
+                        @empty
+                            <tbody><tr><td colspan="5" class="p-6 text-center text-slate-500">Aún no hay vendedores asignados a esta tienda.</td></tr></tbody>
+                        @endforelse
+                    </table></div>
+                </section>
+
             </div>
 
             <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6"><div class="border-b border-slate-100 pb-5"><h2 class="text-lg font-bold text-slate-900">Historial de ventas y ganancias</h2><p class="mt-1 text-xs text-slate-500">Sólo muestra ventas realizadas por vendedores asignados.</p></div><div class="mt-4 overflow-x-auto"><table class="w-full text-left text-sm"><thead class="text-xs uppercase tracking-wide text-slate-500"><tr><th class="pb-3 pr-4">Fecha</th><th class="pb-3 pr-4">Vendedor</th><th class="pb-3 pr-4">Factura</th><th class="pb-3 pr-4">Venta</th><th class="pb-3">Ganancia</th></tr></thead><tbody class="divide-y divide-slate-100">@forelse ($sales as $sale)<tr><td class="py-3 pr-4 text-slate-600">{{ $sale->issued_at->format('d/m/Y H:i') }}</td><td class="py-3 pr-4 font-semibold text-slate-900">{{ $sale->salesperson->name }}</td><td class="py-3 pr-4 font-mono text-xs text-slate-600">{{ $sale->invoice_number }}</td><td class="py-3 pr-4 font-semibold">RD$ {{ number_format((float) $sale->total, 2) }}</td><td class="py-3 font-black text-emerald-700">RD$ {{ number_format((float) $sale->commission_amount, 2) }} <span class="text-[10px] font-medium text-slate-500">({{ $sale->commission_type === 'percentage' ? $sale->commission_value.'%' : 'fijo' }})</span></td></tr>@empty<tr><td colspan="5" class="py-10 text-center text-slate-500">Aún no hay ventas de vendedores.</td></tr>@endforelse</tbody></table></div><div class="mt-5">{{ $sales->links() }}</div></section>
