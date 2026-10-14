@@ -1,5 +1,24 @@
 /* Shared page geometry. Keep dialog, preview and prose widths independent. */
 body { min-width: 0; }
+.customer-table-wrapper { border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; }
+.customer-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.customer-table thead { background: #f8fafc; color: #64748b; }
+.customer-table th, .customer-table td { padding: 14px 12px; text-align: left; border-bottom: 1px solid #e2e8f0; overflow-wrap: anywhere; }
+.customer-table thead th { font-size: 11px; font-weight: 700; }
+.customer-table .customer-money-column { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.customer-table-row { cursor: pointer; background: white; }
+.customer-table-row:hover, .customer-table-row.is-open { background: #eff6ff; }
+.customer-row-toggle { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; font-weight: 700; color: #0f172a; }
+.customer-row-toggle svg { flex-shrink: 0; transition: transform .15s ease; }
+.customer-row-toggle:focus-visible { outline: 2px solid #2563eb; outline-offset: 4px; }
+.customer-table-status { display: inline-block; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; color: #047857; background: #ecfdf5; white-space: nowrap; }
+.customer-table-status.has-debt { color: #b45309; background: #fffbeb; }
+.customer-table .customer-detail-cell { padding: 20px; background: #f8fafc; }
+.customer-detail-data { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin: 16px 0; }
+.customer-detail-data dt { color: #64748b; font-size: 11px; }
+.customer-detail-data dd { color: #334155; margin-top: 3px; font-size: 12px; overflow-wrap: anywhere; }
+@media (max-width: 1023px) { .customer-table .customer-extra-column { display: none; } }
+@media (max-width: 480px) { .customer-table th, .customer-table td { padding: 10px 6px; font-size: 11px; } .customer-table .customer-detail-cell { padding: 12px; } .customer-table-status { padding: 4px 6px; font-size: 10px; } }
 .customer-account-list { display: grid; gap: 20px; }
 .customer-account-card { border: 1px solid #cbd5e1; border-left: 4px solid #10b981; border-radius: 16px; padding: 20px; background: #fff; box-shadow: 0 2px 6px rgb(15 23 42 / .04); }
 .customer-account-card.has-debt { border-left-color: #f59e0b; }
