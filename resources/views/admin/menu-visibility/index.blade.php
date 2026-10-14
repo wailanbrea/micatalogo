@@ -34,10 +34,14 @@
                     </div>
 
                     <form method="GET" action="{{ route('admin.menus.index') }}" class="mt-3 grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto_auto]">
-                        <label class="group relative block">
+                        <label class="group block">
                             <span class="sr-only">Buscar tienda o propietario</span>
-                            <svg class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 transition group-focus-within:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m21 21-4.35-4.35m2.1-5.4a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z"/></svg>
-                            <input type="search" name="q" value="{{ $search }}" placeholder="Buscar tienda, propietario o correo" class="h-12 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
+                            <span class="flex h-12 w-full items-center rounded-xl border border-slate-200 bg-white transition focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10">
+                                <span class="flex h-full w-12 shrink-0 items-center justify-center text-slate-400 transition group-focus-within:text-blue-600" aria-hidden="true">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" stroke-width="1.8"/><path stroke-linecap="round" stroke-width="1.8" d="m16 16 4.5 4.5"/></svg>
+                                </span>
+                                <input type="search" name="q" value="{{ $search }}" placeholder="Buscar tienda, propietario o correo" class="min-w-0 flex-1 bg-transparent pr-4 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400">
+                            </span>
                         </label>
 
                         <fieldset class="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1">
