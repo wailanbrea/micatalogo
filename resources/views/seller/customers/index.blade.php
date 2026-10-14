@@ -33,13 +33,17 @@
                         <form method="GET" class="flex gap-2"><input name="q" value="{{ $search }}" type="search" placeholder="Nombre o teléfono" class="w-44 rounded-lg border border-slate-300 px-3 py-2 text-xs focus:border-blue-600 focus:outline-none"><button class="rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white">Buscar</button></form>
                     </div>
 
-                    <div class="mt-5 space-y-3">
+                    <div class="customer-account-list mt-5">
                         @forelse ($customers as $customer)
-                            <article class="rounded-xl border border-slate-200 p-4 {{ (float) $customer->balance > 0 ? 'bg-amber-50/40' : 'bg-white' }}">
+                            <article class="customer-account-card {{ (float) $customer->balance > 0 ? 'has-debt' : '' }}" aria-labelledby="customer-account-{{ $customer->public_id }}">
                                 <div class="flex flex-wrap items-start justify-between gap-3">
-                                     <div><h2 class="font-bold text-slate-900">{{ $customer->name }}</h2><p class="mt-1 text-xs text-slate-500">{{ $customer->document_type && $customer->document_number ? strtoupper($customer->document_type).' '.$customer->document_number.' · ' : '' }}{{ $customer->phone ?: 'Sin teléfono' }}{{ $customer->email ? ' · '.$customer->email : '' }}</p></div>
+                                     <div class="customer-account-identity"><span class="customer-account-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($customer->name, 0, 1)) }}</span><div><h2 id="customer-account-{{ $customer->public_id }}" class="font-bold text-slate-900">{{ $customer->name }}</h2><p class="mt-1 text-xs text-slate-500">{{ $customer->document_type && $customer->document_number ? strtoupper($customer->document_type).' '.$customer->document_number.' · ' : '' }}{{ $customer->phone ?: 'Sin teléfono' }}{{ $customer->email ? ' · '.$customer->email : '' }}</p><span class="customer-account-status">{{ (float) $customer->balance > 0 ? 'Cuenta con saldo pendiente' : 'Sin deuda pendiente' }}</span></div></div>
                                     <div class="text-right"><p class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Saldo pendiente</p><p class="text-lg font-black {{ (float) $customer->balance > 0 ? 'text-amber-700' : 'text-emerald-700' }}">RD$ {{ number_format((float) $customer->balance, 2) }}</p><p class="text-[11px] text-slate-500">Límite RD$ {{ number_format((float) $customer->credit_limit, 2) }}</p></div>
                                 </div>
+                                <details class="customer-account-details">
+                                    <summary>Ver cuenta y movimientos de {{ $customer->name }}</summary>
+                                    <div class="customer-account-content">
+                                    <h3 class="text-sm font-bold text-slate-800">Gestionar cuenta de {{ $customer->name }}</h3>
                                 <div class="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2">
                                     <form method="POST" action="{{ route('seller.shops.customers.charge', [$shop, $customer]) }}" class="flex flex-wrap gap-2">@csrf<input name="amount" required min="0.01" step="0.01" type="number" placeholder="Monto crédito" class="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-xs"><input name="notes" required maxlength="255" placeholder="Motivo" class="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-xs"><button class="rounded-lg bg-amber-600 px-3 py-2 text-xs font-bold text-white hover:bg-amber-700">Registrar crédito</button></form>
                                     <form method="POST" action="{{ route('seller.shops.customers.payment', [$shop, $customer]) }}" class="flex flex-wrap items-center gap-2">
@@ -86,7 +90,11 @@
                                             </div>
                                         @endforeach
                                     </section>
+                                @else
+                                    <p class="customer-account-empty">Este cliente todavía no tiene movimientos registrados.</p>
                                 @endif
+                                    </div>
+                                </details>
                             </article>
                         @empty
                             <div class="rounded-xl border border-dashed border-slate-300 p-10 text-center text-sm text-slate-500">Aún no hay clientes. Crea el primer perfil desde el formulario.</div>

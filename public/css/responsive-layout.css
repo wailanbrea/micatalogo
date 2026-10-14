@@ -1,5 +1,18 @@
 /* Shared page geometry. Keep dialog, preview and prose widths independent. */
 body { min-width: 0; }
+.customer-account-list { display: grid; gap: 20px; }
+.customer-account-card { border: 1px solid #cbd5e1; border-left: 4px solid #10b981; border-radius: 16px; padding: 20px; background: #fff; box-shadow: 0 2px 6px rgb(15 23 42 / .04); }
+.customer-account-card.has-debt { border-left-color: #f59e0b; }
+.customer-account-identity { display: flex; gap: 12px; align-items: start; overflow-wrap: anywhere; }
+.customer-account-avatar { display: flex; flex-shrink: 0; width: 40px; height: 40px; border-radius: 12px; background: #eff6ff; color: #1d4ed8; align-items: center; justify-content: center; font-weight: 800; }
+.customer-account-status { display: inline-block; margin-top: 8px; font-size: 11px; font-weight: 700; color: #047857; }
+.has-debt .customer-account-status { color: #b45309; }
+.customer-account-details { margin-top: 16px; border-top: 1px solid #e2e8f0; }
+.customer-account-details summary { padding: 14px 0 0; cursor: pointer; color: #1d4ed8; font-weight: 700; font-size: 13px; overflow-wrap: anywhere; }
+.customer-account-details summary:focus-visible { outline: 2px solid #2563eb; outline-offset: 4px; }
+.customer-account-content { padding-top: 16px; }
+.customer-account-empty { margin-top: 16px; padding: 16px; background: #f8fafc; border-radius: 10px; color: #64748b; font-size: 13px; }
+@media (max-width: 480px) { .customer-account-card { padding: 14px; } }
 .customer-movements { margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 16px; }
 .customer-movement-day { margin-top: 14px; }
 .customer-movement-date { padding: 6px 0; color: #64748b; font-size: 11px; font-weight: 700; text-transform: capitalize; }
