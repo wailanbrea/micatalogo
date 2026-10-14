@@ -70,7 +70,7 @@
                                                             $localTime = $entry->created_at->copy()->timezone('America/Santo_Domingo');
                                                         @endphp
                                                         <li class="customer-movement-row">
-                                                            <span class="customer-movement-icon {{ $isPayment ? 'is-payment' : 'is-charge' }}" aria-hidden="true">{{ $isPayment ? '↙' : '↗' }}</span>
+                                                            <span class="customer-movement-icon {{ $isPayment ? 'is-payment' : 'is-charge' }}" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{ $isPayment ? 'M17 7 7 17M7 7v10h10' : 'M7 17 17 7M7 7h10v10' }}"/></svg></span>
                                                             <div class="customer-movement-description">
                                                                 <p class="font-bold text-slate-800">{{ $entryLabel }}</p>
                                                                 <time class="text-xs text-slate-500" datetime="{{ $localTime->toIso8601String() }}">{{ $localTime->format('g:i a') }}</time>
