@@ -16,7 +16,9 @@ body { min-width: 0; }
 .pos-product-stepper button:disabled { opacity: .35; cursor: not-allowed; }
 .pos-product-stepper output { font-weight: 800; font-variant-numeric: tabular-nums; }
 .pos-product-actions button:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
-@media (min-width: 640px) { .pos-product-grid { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; } }
+.pos-product-details > .mt-auto > span:first-child { white-space: nowrap; flex-shrink: 0; }
+.pos-product-details > .mt-auto > span:last-child { display: none; }
+@media (min-width: 640px) { .pos-product-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; } }
 main { min-width: 0; }
 main.mx-auto,
 main > .mx-auto {
