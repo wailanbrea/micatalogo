@@ -4,6 +4,7 @@ body { min-width: 0; }
 .pos-product-card { min-width: 0; }
 .pos-product-image { height: clamp(120px, 15vw, 160px); }
 .pos-product-details { padding: 12px; }
+.pos-product-details > p.text-lg { white-space: nowrap; font-size: clamp(14px, 1.2vw, 18px); font-variant-numeric: tabular-nums; }
 .pos-product-name { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 40px; line-height: 20px; }
 .pos-product-actions { margin-top: 12px; }
 .pos-product-add, .pos-product-stepper { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 44px; border-radius: 10px; }
