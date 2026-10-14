@@ -27,6 +27,10 @@ test('owner can switch to store mode and hide administrative menus on desktop an
         ->assertOk()
         ->assertDontSee('aria-label="Menú Administrativo"', false)
         ->assertDontSee('Administración Global')
+        ->assertDontSee('href="'.route('admin.dashboard').'"', false)
+        ->assertSee('href="'.route('seller.dashboard').'"', false)
+        ->assertSee('Panel')
+        ->assertSee('Administrador de tienda')
         ->assertSee('Modo tienda activo')
         ->assertSee('Mostrar menú administrativo');
 });

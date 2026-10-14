@@ -8,6 +8,7 @@
 @php
     $user = auth()->user();
     $isAdmin = $user?->isAdmin() ?? false;
+    $ownerStoreMode = $isAdmin && (bool) session('owner_store_mode', false);
     $openReportsCount = $isAdmin ? \App\Models\Report::where('status', 'open')->count() : 0;
     $openSupportCount = $isAdmin ? \App\Models\SupportRequest::where('status', 'open')->count() : 0;
     
@@ -27,25 +28,27 @@
     $canManageMenuVisibility = $activeShop && $user
         ? app(\App\Services\SellerMenuService::class)->canManageMenuVisibility($activeShop, $user)
         : false;
-    $dashboardUrl = $isAdmin ? route('admin.dashboard') : route('seller.dashboard');
-    $isDashboard = $isAdmin ? $isAdminDashboard : request()->routeIs('seller.dashboard') && request('view') !== 'all';
+    $dashboardUrl = $isAdmin && ! $ownerStoreMode ? route('admin.dashboard') : route('seller.dashboard');
+    $isDashboard = $isAdmin && ! $ownerStoreMode
+        ? $isAdminDashboard
+        : request()->routeIs('seller.dashboard') && request('view') !== 'all';
 @endphp
 
 @auth
     <aside class="fixed inset-y-0 left-0 z-40 hidden w-72 flex-col border-r border-slate-200 bg-white md:flex">
         <div class="border-b border-slate-100 px-6 py-5">
-            <a class="flex items-center gap-2 text-lg font-black text-slate-900" href="{{ $isAdmin ? route('admin.dashboard') : route('seller.dashboard') }}">
+            <a class="flex items-center gap-2 text-lg font-black text-slate-900" href="{{ $dashboardUrl }}">
                 <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-sm text-white">M</span>
                 <span>Mi<span class="text-blue-600">Catalogo</span></span>
             </a>
-            <p class="mt-2 text-xs font-semibold text-slate-500">{{ $isAdmin ? 'Panel administrativo' : 'Panel de tienda' }}</p>
+            <p class="mt-2 text-xs font-semibold text-slate-500">{{ $isAdmin && ! $ownerStoreMode ? 'Panel administrativo' : 'Panel de tienda' }}</p>
         </div>
 
         <nav class="min-h-0 flex-1 overflow-y-auto px-3 py-4 text-sm font-semibold" aria-label="Navegación lateral">
             <div>
                 <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Inicio</p>
                 <a class="block rounded-lg px-3 py-2 transition {{ $isDashboard ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ $dashboardUrl }}">Dashboard</a>
-                @if ($isAdmin)
+                @if ($isAdmin && ! $ownerStoreMode)
                     <a class="block rounded-lg px-3 py-2 transition {{ $isMyShops ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.dashboard') }}">Mis tiendas</a>
                 @endif
                 <a class="block rounded-lg px-3 py-2 text-slate-700 transition hover:bg-slate-100" href="{{ route('seller.shops.create') }}">Crear tienda</a>
@@ -76,7 +79,7 @@
                 </div>
             @endif
 
-            @if ($isAdmin)
+            @if ($isAdmin && ! $ownerStoreMode)
                 <div class="mt-4 border-t border-slate-100 pt-4">
                     <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-rose-500">Administración</p>
                     <a class="block rounded-lg px-3 py-2 transition {{ $isViewAllShops ? 'bg-rose-600 text-white' : 'text-slate-700 hover:bg-rose-50' }}" href="{{ route('seller.dashboard', ['view' => 'all']) }}">Todas las tiendas</a>
@@ -96,9 +99,9 @@
     <div class="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-2.5 sm:px-6">
         <!-- Brand & Nav Links -->
         <div class="flex min-w-0 items-center gap-2 sm:gap-6">
-            <a class="flex min-w-0 shrink items-center gap-2 text-base font-black text-slate-900 hover:opacity-90 transition" href="{{ $isAdmin ? route('admin.dashboard') : route('seller.dashboard') }}">
+            <a class="flex min-w-0 shrink items-center gap-2 text-base font-black text-slate-900 hover:opacity-90 transition" href="{{ $dashboardUrl }}">
                 <span class="truncate">Mi<span class="text-blue-600">Catalogo</span></span>
-                @if ($isAdmin)
+                @if ($isAdmin && ! $ownerStoreMode)
                     <span class="rounded bg-rose-100 px-1.5 py-0.5 text-[11px] font-bold text-rose-700">Admin</span>
                 @else
                     <span class="rounded bg-blue-100 px-1.5 py-0.5 text-[11px] font-bold text-blue-700">Panel</span>
@@ -115,7 +118,7 @@
                     Mis tiendas
                 </a>
 
-                @if ($isAdmin)
+                @if ($isAdmin && ! $ownerStoreMode)
                     <!-- Todas las Tiendas (Admin) -->
                     <a 
                         class="px-3 py-1.5 rounded-lg transition {{ $isViewAllShops ? 'bg-blue-600 text-white shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}" 
@@ -187,7 +190,7 @@
                 <div>
                     <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Inicio</p>
                     <a class="block rounded-lg px-3 py-2 transition {{ $isDashboard ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ $dashboardUrl }}">Dashboard</a>
-                    @if ($isAdmin)
+                    @if ($isAdmin && ! $ownerStoreMode)
                         <a class="block rounded-lg px-3 py-2 transition {{ $isMyShops ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.dashboard') }}">Mis tiendas</a>
                     @endif
                     <a class="block rounded-lg px-3 py-2 text-slate-700 transition hover:bg-slate-100" href="{{ route('seller.shops.create') }}">Crear tienda</a>
@@ -216,7 +219,7 @@
                         @endif
                     </div>
                 @endif
-                @if ($isAdmin)
+                @if ($isAdmin && ! $ownerStoreMode)
                     <div class="mt-2 border-t border-slate-100 pt-2">
                         <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-rose-500">Administración</p>
                         <a class="block rounded-lg px-3 py-2 transition {{ $isViewAllShops ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.dashboard', ['view' => 'all']) }}">Todas las tiendas</a>
@@ -306,7 +309,7 @@
                             @endif
                         </div>
 
-                        @if ($isAdmin)
+                        @if ($isAdmin && ! $ownerStoreMode)
                             <div class="py-1 text-xs">
                                 <div class="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-rose-500">
                                     Administración Global
@@ -384,7 +387,7 @@
                 <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Inicio</p>
                 <a class="block rounded-lg px-3 py-2 transition {{ $isMyShops ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.dashboard') }}">Mis tiendas</a>
             </div>
-            @if ($isAdmin)
+            @if ($isAdmin && ! $ownerStoreMode)
                 <div class="border-t border-slate-100 pt-2">
                     <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Catalogo</p>
                     <a class="block rounded-lg px-3 py-2 transition {{ $isViewAllShops ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.dashboard', ['view' => 'all']) }}">Todas las tiendas</a>
@@ -403,7 +406,7 @@
             @endif
             <div class="border-t border-slate-100 pt-2">
                 <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Configuracion</p>
-                @if ($isAdmin)
+                @if ($isAdmin && ! $ownerStoreMode)
                     <a class="block rounded-lg px-3 py-2 transition {{ $isAdminUsers ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.users.index') }}">Usuarios</a>
                 @endif
                 <a class="block rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100" href="{{ route('home') }}" target="_blank">Ver vitrina publica</a>

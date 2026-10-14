@@ -28,13 +28,17 @@
     $activeShop = request()->route('shop');
     $activeShop = $activeShop instanceof \App\Models\Shop ? $activeShop : null;
     $isAccountantContext = (bool) ($activeShop && $user?->isActiveShopAccountant($activeShop));
-    $contextRoleLabel = $isAdmin ? 'Administrador / Owner' : ($activeShop && $user?->ownsShop($activeShop) ? 'Propietario' : ($isAccountantContext ? 'Contador' : 'Vendedor'));
+    $contextRoleLabel = $ownerStoreMode
+        ? 'Administrador de tienda'
+        : ($isAdmin ? 'Administrador / Owner' : ($activeShop && $user?->ownsShop($activeShop) ? 'Propietario' : ($isAccountantContext ? 'Contador' : 'Vendedor')));
     $visibleMenus = $activeShop && $user
         ? app(\App\Services\SellerMenuService::class)->visibleForUser($activeShop, $user)
         : [];
     $canSeeMenu = fn (string $key): bool => ! $activeShop || in_array($key, $visibleMenus, true);
-    $dashboardUrl = $isAdmin ? route('admin.dashboard') : route('seller.dashboard');
-    $isDashboard = $isAdmin ? $isAdminDashboard : request()->routeIs('seller.dashboard') && request('view') !== 'all';
+    $dashboardUrl = $isAdmin && ! $ownerStoreMode ? route('admin.dashboard') : route('seller.dashboard');
+    $isDashboard = $isAdmin && ! $ownerStoreMode
+        ? $isAdminDashboard
+        : request()->routeIs('seller.dashboard') && request('view') !== 'all';
     $contextLabel = match (true) {
         request()->routeIs('seller.shops.pos') => 'Punto de venta',
         request()->routeIs('seller.shops.products.*') => 'Productos',
@@ -57,9 +61,9 @@
     <div class="mx-auto flex min-h-14 max-w-[1600px] items-center justify-between gap-2 px-4 py-2 sm:px-6">
         <!-- Brand & Nav Links -->
         <div class="flex min-w-0 items-center gap-2 sm:gap-6">
-            <a wire:navigate.hover class="flex min-w-0 shrink items-center gap-2 text-base font-black text-slate-900 hover:opacity-90 transition" href="{{ $isAdmin ? route('admin.dashboard') : route('seller.dashboard') }}">
+            <a wire:navigate.hover class="flex min-w-0 shrink items-center gap-2 text-base font-black text-slate-900 hover:opacity-90 transition" href="{{ $dashboardUrl }}">
                 <span class="truncate">Mi<span class="text-blue-600">Catalogo</span></span>
-                @if ($isAdmin)
+                @if ($isAdmin && ! $ownerStoreMode)
                     <span class="rounded bg-rose-100 px-1.5 py-0.5 text-[11px] font-bold text-rose-700">Admin</span>
                 @else
                     <span class="rounded bg-blue-100 px-1.5 py-0.5 text-[11px] font-bold text-blue-700">Panel</span>
@@ -157,7 +161,7 @@
                             @endif
                         </div>
 
-                        @if ($isAdmin)
+                        @if ($isAdmin && ! $ownerStoreMode)
                             <div class="py-1 text-xs">
                                 <div class="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-rose-500">
                                     Administración Global

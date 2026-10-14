@@ -34,7 +34,9 @@
     $canManageContext = $contextShop && app(\App\Services\SellerMenuService::class)->canManage($contextShop, $user);
     $canManageMenuVisibility = $contextShop && app(\App\Services\SellerMenuService::class)->canManageMenuVisibility($contextShop, $user);
     $isAccountantContext = (bool) ($contextShop && $user?->isActiveShopAccountant($contextShop));
-    $contextRoleLabel = $isAdmin ? 'Administrador' : ($contextShop && $user->ownsShop($contextShop) ? 'Propietario' : ($canManageContext ? 'Administrador de tienda' : ($isAccountantContext ? 'Contador' : 'Vendedor')));
+    $contextRoleLabel = $ownerStoreMode
+        ? 'Administrador de tienda'
+        : ($isAdmin ? 'Administrador' : ($contextShop && $user->ownsShop($contextShop) ? 'Propietario' : ($canManageContext ? 'Administrador de tienda' : ($isAccountantContext ? 'Contador' : 'Vendedor'))));
     $isAssignedSellerOnly = $user?->isAssignedSellerOnly() ?? false;
     $canManageShops = ! $isAssignedSellerOnly;
     $canCreateShop = $isAdmin || ! ($user?->hasActiveShopAssignment() ?? false);
