@@ -5,6 +5,8 @@ body { min-width: 0; }
 .customer-new-button:hover { background: #1d4ed8; }
 .customer-create-dialog { width: min(680px, calc(100vw - 24px)); max-height: calc(100dvh - 32px); padding: 0; margin: auto; border: 1px solid #e2e8f0; border-radius: 20px; background: white; box-shadow: 0 24px 80px rgb(15 23 42 / .25); overflow-y: auto; overscroll-behavior: contain; }
 .customer-create-dialog::backdrop { background: rgb(15 23 42 / .55); backdrop-filter: blur(4px); }
+.customer-create-dialog form.grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 480px) { .customer-create-dialog form.grid { grid-template-columns: minmax(0, 1fr); } }
 body:has(.customer-create-dialog[open]) { overflow: hidden; }
 .customer-dialog-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 24px; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; background: white; z-index: 1; }
 .customer-dialog-close { width: 40px; height: 40px; border-radius: 10px; background: #f1f5f9; color: #64748b; font-size: 24px; }
