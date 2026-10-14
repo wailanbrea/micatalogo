@@ -108,7 +108,12 @@
                         <div class="login-alert login-alert-error">{{ $errors->first() }}</div>
                     @endif
 
-                    <form method="POST" action="{{ url('/login') }}" x-data="{ showPassword: false }">
+                    <form method="POST" action="{{ url('/login') }}"
+                        x-data="{ showPassword: false, submitting: false, validationMessage: '' }"
+                        @submit="if (submitting) { $event.preventDefault(); } else { validationMessage = ''; submitting = true; }"
+                        @invalid.capture="validationMessage = 'Completa el correo y la contraseña para iniciar sesión.'"
+                        @pageshow.window="submitting = false"
+                        :aria-busy="submitting">
                         @csrf
 
                         <div class="login-field">
@@ -119,7 +124,7 @@
 
                         <div class="login-field">
                             <svg class="login-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
-                            <input id="password" name="password" :type="showPassword ? 'text' : 'password'" placeholder="Contrasena" autocomplete="current-password" required>
+                            <input id="password" name="password" type="password" :type="showPassword ? 'text' : 'password'" placeholder="Contrasena" autocomplete="current-password" required>
                             <button class="login-password-toggle" type="button" @click="showPassword = !showPassword" :aria-label="showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'">
                                 <svg x-show="!showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="23" height="23"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg>
                                 <svg x-show="showPassword" x-cloak viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="23" height="23"><path d="m3 3 18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.1A10.7 10.7 0 0 1 12 5c6 0 9.5 7 9.5 7a18.5 18.5 0 0 1-3.2 4.1M6.2 6.2C3.8 8 2.5 12 2.5 12s3.5 7 9.5 7c1 0 2-.2 2.9-.5"/></svg>
@@ -142,7 +147,12 @@
                             <a class="login-link" href="{{ url('/forgot-password') }}">Olvidaste tu contrasena?</a>
                         </div>
 
-                        <button class="login-submit" type="submit">Iniciar sesion <span aria-hidden="true">&rarr;</span></button>
+                        <p x-show="validationMessage" x-cloak x-text="validationMessage" class="login-field-error" role="alert"></p>
+                        <button class="login-submit" type="submit" :disabled="submitting" :aria-busy="submitting">
+                            <svg x-show="submitting" x-cloak class="login-spinner" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" opacity=".3"/><path d="M12 3a9 9 0 0 1 9 9" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+                            <span x-text="submitting ? 'Iniciando sesión…' : 'Iniciar sesion'">Iniciar sesion</span>
+                            <span x-show="!submitting" aria-hidden="true">&rarr;</span>
+                        </button>
                     </form>
 
                     <p class="login-activation">Tienes un codigo de activacion? <a class="login-link" href="{{ route('verification.notice') }}">Activalo aqui</a></p>
@@ -155,6 +165,12 @@
             </section>
         </div>
     </main>
+    <style>
+        .login-spinner { flex-shrink: 0; animation: login-spin .8s linear infinite; }
+        .login-submit:disabled { cursor: wait; opacity: .8; }
+        @keyframes login-spin { to { transform: rotate(360deg); } }
+        @media (prefers-reduced-motion: reduce) { .login-spinner { animation: none; } }
+    </style>
 
     @if (config('services.turnstile.enabled'))
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
