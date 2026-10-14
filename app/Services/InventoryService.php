@@ -614,13 +614,32 @@ class InventoryService
             ->get();
 
         $trackedProducts = $products->filter(fn (Product $p) => $p->isInventoryTracked());
+        // The parent product is already loaded; avoid one lazy query per inventory.
+        $products->each(function (Product $product): void {
+            $product->inventory?->setRelation('product', $product);
+        });
 
         $totalAvailable = $trackedProducts->sum(fn (Product $p) => $p->inventory->stock_quantity);
         $totalSold = $trackedProducts->sum(fn (Product $p) => $p->inventory->sold_quantity);
 
         // Valuación financiera del inventario
         $totalInventoryValue = $trackedProducts->sum(fn (Product $p) => $p->inventory->inventory_value);
-        $totalGrossProfit = $trackedProducts->sum(fn (Product $p) => $p->inventory->gross_profit);
+        $productIds = $trackedProducts->pluck('id');
+        $invoicedProfit = \App\Models\InvoiceItem::query()
+            ->whereIn('product_id', $productIds)->whereNotNull('total_cost_cents')
+            ->selectRaw('COALESCE(SUM(ROUND((line_total - tax) * 100) - general_discount_cents - total_cost_cents), 0) as total_cents')
+            ->value('total_cents');
+        $legacyProfit = InventoryMovement::query()
+            ->whereIn('product_id', $productIds)->where('type', 'sale')->whereNull('invoice_id')
+            ->whereNotNull('unit_price')->whereNotNull('unit_cost')
+            ->selectRaw('COALESCE(SUM(ROUND(ABS(quantity) * unit_price * 100) - COALESCE(total_cost_cents, ROUND(ABS(quantity) * unit_cost * 100))), 0) as total_cents')
+            ->value('total_cents');
+        $refundProfit = DB::table('invoice_return_items')
+            ->join('invoice_items', 'invoice_items.id', '=', 'invoice_return_items.invoice_item_id')
+            ->whereIn('invoice_items.product_id', $productIds)->whereNotNull('invoice_items.total_cost_cents')
+            ->selectRaw('COALESCE(SUM(ROUND((refund - tax_refund) * 100) - CASE WHEN restock = 1 THEN COALESCE(invoice_return_items.total_cost_cents, 0) ELSE 0 END), 0) as total_cents')
+            ->value('total_cents');
+        $totalGrossProfit = (float) Money::toDecimal((int) $invoicedProfit + (int) $legacyProfit - (int) $refundProfit);
 
         $lowStockProducts = $trackedProducts->filter(function (Product $p) {
             return $p->inventory->isLowStock($p);
