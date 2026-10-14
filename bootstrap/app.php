@@ -29,6 +29,19 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(SecurityHeadersMiddleware::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->respond(function ($response, Throwable $exception, Request $request) {
+            if ($response->getStatusCode() !== 419 || $request->is('api/*') || $request->expectsJson()) {
+                return $response;
+            }
+
+            if ($request->is('login') && $request->isMethod('POST')) {
+                return redirect('/login', 303)
+                    ->with('status', 'El formulario caducó. Vuelve a iniciar sesión para continuar.')
+                    ->withInput($request->only('email'));
+            }
+
+            return response()->view('errors.419', [], 419);
+        });
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request, Throwable $exception): bool => $request->is('api/*') || $request->expectsJson(),
         );
