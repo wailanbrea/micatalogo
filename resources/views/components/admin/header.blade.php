@@ -223,7 +223,7 @@
     </div>
 
     <!-- Mobile navigation is intentionally on demand, leaving workspace actions unobstructed. -->
-    <div class="relative border-t border-slate-100 bg-slate-50 md:hidden" x-data="{ open: false }">
+    <div class="panel-mobile-navigation relative border-t border-slate-100 bg-slate-50 lg:hidden" x-data="{ open: false }">
         <button
             type="button"
             @click="open = !open"

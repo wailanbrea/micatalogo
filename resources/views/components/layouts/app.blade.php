@@ -38,6 +38,7 @@
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        <link rel="stylesheet" href="{{ asset('css/responsive-layout.css') }}?v={{ filemtime(public_path('css/responsive-layout.css')) }}">
 
         @livewireStyles
     </head>
@@ -45,7 +46,7 @@
         $isPanelLayout = auth()->check() && request()->is('panel*', 'admin*');
     @endphp
 
-    <body @class(['bg-slate-50', 'panel-shell md:pl-80' => $isPanelLayout])>
+    <body @class(['bg-slate-50', 'panel-shell lg:pl-80' => $isPanelLayout])>
         <div data-navigation-progress class="navigation-progress" aria-hidden="true"></div>
         @if ($isPanelLayout)
             <x-admin.sidebar />
