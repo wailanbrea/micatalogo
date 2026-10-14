@@ -1,4 +1,9 @@
 <x-layouts.app :title="'Control de Inventario | ' . $shop->name">
+    <style>
+        .inventory-quick-actions { display: grid; grid-template-columns: repeat(2, minmax(88px, 1fr)); gap: 8px; min-width: 184px; }
+        .inventory-quick-actions > button, .inventory-quick-actions > a { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; padding: 6px 10px; line-height: 1.25; white-space: nowrap; border-radius: 8px; }
+        .inventory-quick-actions svg { flex-shrink: 0; }
+    </style>
     <!-- Persistent Unified Navigation -->
     <x-admin.header
         :breadcrumbs="[
@@ -486,7 +491,7 @@
 
                                     <!-- Acciones Rápidas -->
                                     <td class="px-4 py-3.5 text-right whitespace-nowrap">
-                                        <div class="grid grid-cols-2 gap-1.5">
+                                        <div class="inventory-quick-actions">
                                             @if ($isControlled)
                                                 <!-- Registrar Venta -->
                                                 <button
@@ -521,8 +526,9 @@
                                                     href="{{ route('seller.shops.inventory.movements', [$shop, $product]) }}"
                                                     class="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition"
                                                     title="Ver bitácora de movimientos"
+                                                    aria-label="Ver historial de movimientos de {{ $product->name }}"
                                                 >
-                                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                                 </a>
                                             @else
                                                 <a
