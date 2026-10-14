@@ -127,10 +127,12 @@ return [
     |
     */
 
+    // A fresh, host-scoped name avoids collisions with historical cookies
+    // issued both for the app host and its parent domain.
     'cookie' => env(
         'SESSION_COOKIE',
         Str::slug((string) env('APP_NAME', 'laravel')).'-session'
-    ),
+    ).'_host',
 
     /*
     |--------------------------------------------------------------------------
@@ -156,7 +158,7 @@ return [
     |
     */
 
-    'domain' => env('SESSION_DOMAIN'),
+    'domain' => null,
 
     /*
     |--------------------------------------------------------------------------
