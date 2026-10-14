@@ -143,7 +143,7 @@
                 <p class="{{ $loop->first ? 'px-3 pb-2' : 'mt-5 px-3 pb-2 pt-2' }} text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">{{ $section['label'] }}</p>
                 @foreach ($section['items'] as $item)
                     @if (in_array($item['key'], ['summary', 'downloads'], true) || $canSeeMenu($item['key']))
-                        <a wire:navigate.hover href="{{ $item['url'] }}" @if ($item['active'] ?? false) aria-current="page" @endif @if ($item['external'] ?? false) target="_blank" @endif @if ($item['aria'] ?? false) aria-label="{{ $item['aria'] }}" @endif class="{{ $linkClass }} {{ ($item['active'] ?? false) ? $activeClass : $idleClass }}" @if ($item['label'] === 'Contenedores') title="Agrupa compras y recepciones grandes" @endif>
+                        <a wire:navigate href="{{ $item['url'] }}" @if ($item['active'] ?? false) aria-current="page" @endif @if ($item['external'] ?? false) target="_blank" @endif @if ($item['aria'] ?? false) aria-label="{{ $item['aria'] }}" @endif class="{{ $linkClass }} {{ ($item['active'] ?? false) ? $activeClass : $idleClass }}" @if ($item['label'] === 'Contenedores') title="Agrupa compras y recepciones grandes" @endif>
                             <svg class="h-4 w-4 shrink-0 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $item['path'] ?? $iconPath }}"/></svg>
                             <span class="truncate">{{ $item['label'] }}</span>
                             @if ($item['label'] === 'Productos')<span class="ml-auto rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold text-stone-200">{{ $productCount }}</span>@endif
