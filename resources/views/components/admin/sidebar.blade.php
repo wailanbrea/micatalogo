@@ -1,6 +1,7 @@
 @php
     $user = auth()->user();
     $isAdmin = $user?->isAdmin() ?? false;
+    $isPlatformOwner = $user && app(\App\Services\SellerMenuService::class)->isPlatformOwner($user);
     $ownerStoreMode = $isAdmin && (bool) session('owner_store_mode', false);
     $activeShop = request()->route('shop');
     $activeShop = $activeShop instanceof \App\Models\Shop ? $activeShop : null;
@@ -297,6 +298,9 @@
                 <a wire:navigate.hover href="{{ route('admin.reports.index') }}" class="{{ $linkClass }} {{ request()->routeIs('admin.reports.*') ? $activeClass : $idleClass }}">Reportes</a>
                 <a wire:navigate.hover href="{{ route('admin.support.index') }}" class="{{ $linkClass }} {{ request()->routeIs('admin.support.*') ? $activeClass : $idleClass }}">Soporte</a>
                 <a wire:navigate.hover href="{{ route('admin.users.index') }}" class="{{ $linkClass }} {{ request()->routeIs('admin.users.*') ? $activeClass : $idleClass }}">Usuarios del sistema</a>
+                @if ($isPlatformOwner)
+                    <a wire:navigate.hover href="{{ route('admin.menus.index') }}" class="{{ $linkClass }} {{ request()->routeIs('admin.menus.*') ? $activeClass : $idleClass }}">Menús de todas las tiendas</a>
+                @endif
             </div>
         @endif
     </nav>

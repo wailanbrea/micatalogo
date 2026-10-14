@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AdminGlobalCategoryController;
 use App\Http\Controllers\AdminModerationController;
+use App\Http\Controllers\AdminMenuVisibilityController;
 use App\Http\Controllers\AdminSupportController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AccountantAccessController;
@@ -245,4 +246,7 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified', 'can:adm
     Route::post('/usuarios/{user}/toggle-status', [AdminUserController::class, 'toggleStatus'])->name('users.toggle-status');
     Route::post('/usuarios/{user}/toggle-role', [AdminUserController::class, 'toggleRole'])->name('users.toggle-role');
     Route::post('/usuarios/{user}/plan', [AdminUserController::class, 'updatePlan'])->name('users.update-plan');
+    Route::get('/menus', [AdminMenuVisibilityController::class, 'index'])->name('menus.index');
+    Route::get('/menus/{shop}', [AdminMenuVisibilityController::class, 'edit'])->name('menus.edit');
+    Route::put('/menus/{shop}', [AdminMenuVisibilityController::class, 'update'])->name('menus.update');
 });

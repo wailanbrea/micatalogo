@@ -66,6 +66,17 @@ class SellerMenuService
         );
     }
 
+    /**
+     * The platform-wide menu editor is intentionally narrower than a shop
+     * owner editor. It is reserved for the configured platform owner account,
+     * even when another administrator exists in the system.
+     */
+    public function isPlatformOwner(User $user): bool
+    {
+        return $user->isAdmin()
+            && strcasecmp(trim((string) $user->email), trim((string) config('bspos.platform_owner_email'))) === 0;
+    }
+
     /** @return array<int, array{key: string, label: string, group: string, protected: bool}> */
     public function ownerMenuOptions(): array
     {

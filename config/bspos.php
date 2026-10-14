@@ -1,6 +1,10 @@
 <?php
 
 return [
+    // The platform owner is the only account allowed to configure menu
+    // visibility across every shop. Keep this overridable per environment so
+    // the authorization rule never depends on a browser-visible condition.
+    'platform_owner_email' => env('PLATFORM_OWNER_EMAIL', 'wailandkey@gmail.com'),
     'seller_menu_options' => [
         'sales' => 'Ventas',
         'products' => 'Productos',

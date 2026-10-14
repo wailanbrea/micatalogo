@@ -8,6 +8,7 @@
 @php
     $user = auth()->user();
     $isAdmin = $user?->isAdmin() ?? false;
+    $isPlatformOwner = $user && app(\App\Services\SellerMenuService::class)->isPlatformOwner($user);
     $ownerStoreMode = $isAdmin && (bool) session('owner_store_mode', false);
     $isAssignedSellerOnly = $user?->isAssignedSellerOnly() ?? false;
     $canManageShops = ! $isAssignedSellerOnly;
@@ -25,6 +26,7 @@
     $isAdminSupport = request()->routeIs('admin.support.*');
     $isAdminCategories = request()->routeIs('admin.categories.*');
     $isAdminUsers = request()->routeIs('admin.users.*');
+    $isAdminMenuVisibility = request()->routeIs('admin.menus.*');
     $activeShop = request()->route('shop');
     $activeShop = $activeShop instanceof \App\Models\Shop ? $activeShop : null;
     $isAccountantContext = (bool) ($activeShop && $user?->isActiveShopAccountant($activeShop));
@@ -191,6 +193,12 @@
                                     <svg class="h-4 w-4 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                                     <span>Usuarios del sistema</span>
                                 </a>
+                                 @if ($isPlatformOwner)
+                                     <a href="{{ route('admin.menus.index') }}" class="flex items-center gap-2 rounded-lg px-3 py-2 text-slate-700 hover:bg-rose-50 hover:text-rose-900 transition {{ $isAdminMenuVisibility ? 'font-bold text-rose-700 bg-rose-50' : '' }}">
+                                         <svg class="h-4 w-4 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16M8 6v.01M8 12v.01M8 18v.01"/></svg>
+                                         <span>Menús de todas las tiendas</span>
+                                     </a>
+                                 @endif
                             </div>
                         @endif
 
@@ -325,6 +333,9 @@
                     </a>
                     <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ $isAdminCategories ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.categories.index') }}">Categorías globales</a>
                     <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ $isAdminUsers ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.users.index') }}">Usuarios</a>
+                    @if ($isPlatformOwner)
+                        <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ $isAdminMenuVisibility ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('admin.menus.index') }}">Menús de todas las tiendas</a>
+                    @endif
                 </div>
             @endif
             <div class="border-t border-slate-100 pt-2">
