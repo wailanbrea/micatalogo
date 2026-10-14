@@ -8,6 +8,34 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
+test('recent movements are limited per customer and ordered by transaction date', function () {
+    $seller = User::factory()->create();
+    $shop = Shop::factory()->for($seller)->create();
+    foreach (['Ana', 'Luis'] as $name) {
+        $customer = Customer::create(['shop_id' => $shop->id, 'name' => $name]);
+        foreach (range(7, 0) as $day) {
+            CustomerAccountEntry::create([
+                'shop_id' => $shop->id, 'customer_id' => $customer->id,
+                'type' => 'charge', 'amount' => 10, 'balance_after' => 10,
+                'created_at' => now()->subDays($day),
+            ]);
+        }
+        // A later ID with an older timestamp must not replace the newest entries.
+        CustomerAccountEntry::create([
+            'shop_id' => $shop->id, 'customer_id' => $customer->id,
+            'type' => 'charge', 'amount' => 10, 'balance_after' => 10,
+            'notes' => 'Old imported movement', 'created_at' => now()->subYear(),
+        ]);
+    }
+    $response = $this->actingAs($seller)->get(route('seller.shops.customers.index', $shop))->assertOk();
+    foreach ($response->viewData('customers') as $customer) {
+        expect($customer->accountEntries)->toHaveCount(6);
+        expect($customer->accountEntries->first()->created_at->isToday())->toBeTrue();
+        expect($customer->accountEntries->pluck('notes'))->not->toContain('Old imported movement');
+    }
+    $response->assertSee('customer-movement-date')->assertSee('Saldo: RD$');
+});
+
 test('a seller can create and view customers in their shop', function () {
     $seller = User::factory()->create();
     $shop = Shop::factory()->for($seller)->create();

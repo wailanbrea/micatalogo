@@ -19,7 +19,7 @@ class SellerCustomerController extends Controller
         $validated = $request->validate(['q' => ['nullable', 'string', 'max:120']]);
         $search = trim((string) ($validated['q'] ?? ''));
         $customers = $shop->customers()
-            ->with(['accountEntries' => fn ($query) => $query->limit(3)])
+            ->with(['accountEntries' => fn ($query) => $query->reorder()->latest('created_at')->latest('id')->limit(6)])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(fn ($query) => $query->where('name', 'like', "%{$search}%")->orWhere('phone', 'like', "%{$search}%")->orWhere('document_number', 'like', "%{$search}%"));
             })

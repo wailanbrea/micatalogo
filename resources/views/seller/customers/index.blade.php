@@ -57,7 +57,35 @@
                                     </form>
                                 </div>
                                 @if ($customer->accountEntries->isNotEmpty())
-                                    <div class="mt-3 text-xs text-slate-500"><span class="font-semibold text-slate-700">Últimos movimientos:</span> @foreach ($customer->accountEntries as $entry)<span class="ml-2 inline-block">{{ $entry->created_at->format('d/m H:i') }} · {{ $entry->type === 'payment' ? 'Cobro' : ($entry->type === 'charge' ? 'Crédito' : 'Ajuste') }} <strong class="{{ (float) $entry->amount < 0 ? 'text-emerald-700' : 'text-amber-700' }}">RD$ {{ number_format((float) $entry->amount, 2) }}</strong></span>@endforeach</div>
+                                    <section class="customer-movements" aria-label="Últimos movimientos de {{ $customer->name }}">
+                                        <h3 class="text-sm font-bold text-slate-800">Últimos movimientos</h3>
+                                        @foreach ($customer->accountEntries->groupBy(fn ($entry) => $entry->created_at->copy()->timezone('America/Santo_Domingo')->format('Y-m-d')) as $date => $entries)
+                                            <div class="customer-movement-day">
+                                                <h4 class="customer-movement-date"><time datetime="{{ $date }}">{{ \Carbon\Carbon::parse($date)->locale('es')->translatedFormat('l j \d\e F \d\e Y') }}</time></h4>
+                                                <ol class="customer-movement-list">
+                                                    @foreach ($entries as $entry)
+                                                        @php
+                                                            $isPayment = $entry->type === 'payment';
+                                                            $entryLabel = $isPayment ? 'Abono recibido' : ($entry->type === 'charge' ? 'Crédito registrado' : 'Ajuste de cuenta');
+                                                            $localTime = $entry->created_at->copy()->timezone('America/Santo_Domingo');
+                                                        @endphp
+                                                        <li class="customer-movement-row">
+                                                            <span class="customer-movement-icon {{ $isPayment ? 'is-payment' : 'is-charge' }}" aria-hidden="true">{{ $isPayment ? '↙' : '↗' }}</span>
+                                                            <div class="customer-movement-description">
+                                                                <p class="font-bold text-slate-800">{{ $entryLabel }}</p>
+                                                                <time class="text-xs text-slate-500" datetime="{{ $localTime->toIso8601String() }}">{{ $localTime->format('g:i a') }}</time>
+                                                                @if ($entry->notes)<p class="customer-movement-note">{{ $entry->notes }}</p>@endif
+                                                            </div>
+                                                            <div class="customer-movement-amount">
+                                                                <strong class="{{ (float) $entry->amount < 0 ? 'text-emerald-700' : 'text-amber-700' }}">{{ (float) $entry->amount < 0 ? '−' : '+' }} RD$ {{ number_format(abs((float) $entry->amount), 2) }}</strong>
+                                                                <span>Saldo: RD$ {{ number_format((float) $entry->balance_after, 2) }}</span>
+                                                            </div>
+                                                        </li>
+                                                    @endforeach
+                                                </ol>
+                                            </div>
+                                        @endforeach
+                                    </section>
                                 @endif
                             </article>
                         @empty

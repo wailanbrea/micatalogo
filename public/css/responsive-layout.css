@@ -1,5 +1,19 @@
 /* Shared page geometry. Keep dialog, preview and prose widths independent. */
 body { min-width: 0; }
+.customer-movements { margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 16px; }
+.customer-movement-day { margin-top: 14px; }
+.customer-movement-date { padding: 6px 0; color: #64748b; font-size: 11px; font-weight: 700; text-transform: capitalize; }
+.customer-movement-list { border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #f8fafc; }
+.customer-movement-row { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 12px; font-size: 13px; }
+.customer-movement-row + .customer-movement-row { border-top: 1px solid #e2e8f0; }
+.customer-movement-icon { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 10px; font-size: 18px; font-weight: 700; }
+.customer-movement-icon.is-payment { background: #d1fae5; color: #047857; }
+.customer-movement-icon.is-charge { background: #fef3c7; color: #b45309; }
+.customer-movement-note { margin-top: 4px; color: #64748b; font-size: 12px; overflow-wrap: anywhere; }
+.customer-movement-amount { text-align: right; font-variant-numeric: tabular-nums; }
+.customer-movement-amount strong, .customer-movement-amount span { display: block; }
+.customer-movement-amount span { margin-top: 4px; color: #64748b; font-size: 11px; }
+@media (max-width: 480px) { .customer-movement-row { grid-template-columns: 32px minmax(0, 1fr); gap: 8px; } .customer-movement-amount { grid-column: 2; text-align: left; } }
 .pos-product-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .pos-product-card { min-width: 0; }
 .pos-product-image { height: clamp(120px, 15vw, 160px); }
