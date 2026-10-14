@@ -1,6 +1,7 @@
 @php
     $user = auth()->user();
     $isAdmin = $user?->isAdmin() ?? false;
+    $ownerStoreMode = $isAdmin && (bool) session('owner_store_mode', false);
     $activeShop = request()->route('shop');
     $activeShop = $activeShop instanceof \App\Models\Shop ? $activeShop : null;
     $contextShop = $activeShop ?: $user?->shops()->first();
@@ -285,7 +286,7 @@
         @endif
         </div>
 
-        @if ($isAdmin)
+        @if ($isAdmin && ! $ownerStoreMode)
             <div class="mt-6 border-t border-blue-400/30 pt-4" aria-label="Menú Administrativo">
                 <p class="mx-3 border-b-2 border-blue-500 px-0 pb-2 text-[10px] font-black uppercase tracking-[0.16em] text-blue-300">Menú Administrativo</p>
                 <a wire:navigate.hover href="{{ route('admin.dashboard') }}" class="{{ $linkClass }} {{ request()->routeIs('admin.dashboard') ? $activeClass : $idleClass }}">Panel administrativo</a>
@@ -299,6 +300,23 @@
     </nav>
 
     <div class="border-t border-white/10 p-3">
+        @if ($isAdmin)
+            <form method="POST" action="{{ route('seller.panel-mode.update') }}" class="mb-3">
+                @csrf
+                <input type="hidden" name="mode" value="{{ $ownerStoreMode ? 'admin' : 'store' }}">
+                <button
+                    type="submit"
+                    aria-label="{{ $ownerStoreMode ? 'Mostrar menú administrativo' : 'Activar modo tienda y ocultar menú administrativo' }}"
+                    class="flex w-full items-center gap-3 rounded-2xl border border-blue-400/30 bg-blue-500/10 p-3 text-left text-white transition hover:bg-blue-500/20 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                >
+                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-500/20 text-blue-200" aria-hidden="true">{{ $ownerStoreMode ? '↗' : '⌘' }}</span>
+                    <span class="min-w-0 flex-1">
+                        <span class="block text-xs font-black">{{ $ownerStoreMode ? 'Modo tienda activo' : 'Activar modo tienda' }}</span>
+                        <span class="mt-0.5 block text-[11px] text-slate-400">{{ $ownerStoreMode ? 'Mostrar menú administrativo' : 'Ocultar control del sistema' }}</span>
+                    </span>
+                </button>
+            </form>
+        @endif
         @if ($contextShop && $canSeeMenu('shop_settings'))
             <a wire:navigate.hover href="{{ route('seller.shops.edit', $contextShop) }}" class="mb-3 flex items-center gap-3 rounded-2xl bg-white/10 p-3 text-white transition hover:bg-white/15">
                 <span class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-lg text-white shadow-sm">&#9733;</span>

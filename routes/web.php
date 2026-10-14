@@ -30,6 +30,7 @@ use App\Http\Controllers\SellerInventoryImportController;
 use App\Http\Controllers\SellerInvitationController;
 use App\Http\Controllers\SellerManagementController;
 use App\Http\Controllers\SellerPosController;
+use App\Http\Controllers\SellerPanelModeController;
 use App\Http\Controllers\SellerProductController;
 use App\Http\Controllers\SellerShopController;
 use App\Http\Controllers\SellerShopMenuController;
@@ -77,6 +78,9 @@ Route::post('/invitacion/vendedor/{user}/{hash}/{shop}', [SellerInvitationContro
 
 Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix('panel')->name('seller.')->group(function () {
     Route::get('/', [SellerShopController::class, 'index'])->name('dashboard');
+    Route::post('/modo-panel', [SellerPanelModeController::class, 'update'])
+        ->middleware('can:admin')
+        ->name('panel-mode.update');
     Route::get('/tiendas/crear', [SellerShopController::class, 'create'])->middleware('can:create,App\\Models\\Shop')->name('shops.create');
     Route::post('/tiendas', [SellerShopController::class, 'store'])->middleware('can:create,App\\Models\\Shop')->name('shops.store');
     Route::get('/tiendas/{shop}/editar', [SellerShopController::class, 'edit'])

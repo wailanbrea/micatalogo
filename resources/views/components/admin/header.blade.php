@@ -8,6 +8,7 @@
 @php
     $user = auth()->user();
     $isAdmin = $user?->isAdmin() ?? false;
+    $ownerStoreMode = $isAdmin && (bool) session('owner_store_mode', false);
     $isAssignedSellerOnly = $user?->isAssignedSellerOnly() ?? false;
     $canManageShops = ! $isAssignedSellerOnly;
     $openReportsCount = $isAdmin ? \App\Models\Report::where('status', 'open')->count() : 0;
@@ -301,7 +302,7 @@
                     @endif
                 </div>
             @endif
-            @if ($isAdmin)
+            @if ($isAdmin && ! $ownerStoreMode)
                 <div class="border-t border-blue-200 pt-2" aria-label="Menú Administrativo">
                     <p class="mx-3 border-b-2 border-blue-500 px-0 pb-2 text-[11px] font-black uppercase tracking-wide text-blue-700">Menú Administrativo</p>
                     <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ $isViewAllShops ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.dashboard', ['view' => 'all']) }}">Todas las tiendas</a>
@@ -325,6 +326,15 @@
             <div class="border-t border-slate-100 pt-2">
                 <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Acciones</p>
                 <a class="block rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100" href="{{ route('home') }}" target="_blank">Ver vitrina publica</a>
+                @if ($isAdmin)
+                    <form method="POST" action="{{ route('seller.panel-mode.update') }}" class="border-t border-slate-100 pt-2">
+                        @csrf
+                        <input type="hidden" name="mode" value="{{ $ownerStoreMode ? 'admin' : 'store' }}">
+                        <button type="submit" class="block w-full rounded-lg px-3 py-2 text-left font-semibold {{ $ownerStoreMode ? 'text-blue-700 hover:bg-blue-50' : 'text-slate-700 hover:bg-slate-100' }}">
+                            {{ $ownerStoreMode ? 'Mostrar menú administrativo' : 'Activar modo tienda' }}
+                        </button>
+                    </form>
+                @endif
                 <form class="border-t border-slate-100 pt-2" method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button class="block w-full rounded-lg px-3 py-2 text-left text-rose-600 hover:bg-rose-50" type="submit">Cerrar sesión</button>
