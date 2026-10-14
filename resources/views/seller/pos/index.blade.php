@@ -91,7 +91,12 @@
                         <p class="text-xs font-semibold text-emerald-600"><span x-text="cart.length"></span> producto(s) en carrito</p>
                     </div>
                 </div>
-                <div class="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <a
+                    href="{{ route('seller.shops.inventory.index', [$shop, 'stock' => 'low']) }}"
+                    aria-label="Ver productos con stock bajo y reponer"
+                    title="Ver productos con stock bajo y reponer"
+                    class="group flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-amber-100"
+                >
                     <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
                         <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.3 4.9 3.2 17a2 2 0 0 0 1.7 3h14.2a2 2 0 0 0 1.7-3L13.7 4.9a2 2 0 0 0-3.4 0Z"/></svg>
                     </div>
@@ -99,8 +104,9 @@
                         <p class="text-xs font-semibold text-slate-500">Productos bajos</p>
                         <p class="mt-0.5 text-2xl font-black text-slate-950" x-text="summary.low_stock"></p>
                         <p class="text-xs font-semibold" :class="summary.low_stock ? 'text-amber-600' : 'text-emerald-600'" x-text="summary.low_stock ? 'Requieren reabastecimiento' : 'Inventario saludable'"></p>
+                        <span class="mt-1 block text-[11px] font-bold text-amber-700 opacity-0 transition group-hover:opacity-100 group-focus:opacity-100">Ver y reponer →</span>
                     </div>
-                </div>
+                </a>
             </div>
 
             <form method="POST" action="{{ route('seller.shops.pos.store', $shop) }}" @submit="submitForm($event)" class="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_410px]">

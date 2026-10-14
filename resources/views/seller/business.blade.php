@@ -246,7 +246,12 @@
                 </div>
 
                 <!-- 4. Stock Bajo -->
-                <div class="rounded-3xl border {{ $inventory['low_stock_count'] > 0 ? 'border-amber-300 bg-amber-50/40' : 'border-slate-200 bg-white' }} p-5 shadow-xs transition hover:shadow-sm">
+                <a
+                    href="{{ route('seller.shops.inventory.index', [$shop, 'stock' => 'low']) }}"
+                    aria-label="Ver productos con stock bajo y reponer"
+                    title="Ver productos con stock bajo y reponer"
+                    class="group block rounded-3xl border {{ $inventory['low_stock_count'] > 0 ? 'border-amber-300 bg-amber-50/40' : 'border-slate-200 bg-white' }} p-5 shadow-xs transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-amber-100"
+                >
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold uppercase tracking-wider {{ $inventory['low_stock_count'] > 0 ? 'text-amber-800' : 'text-slate-500' }}">Stock bajo</span>
                         <div class="flex h-8 w-8 items-center justify-center rounded-xl {{ $inventory['low_stock_count'] > 0 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500' }}">
@@ -258,8 +263,11 @@
                     <p class="mt-3 text-2xl font-black {{ $inventory['low_stock_count'] > 0 ? 'text-amber-700' : 'text-slate-900' }} tabular-nums">
                         {{ $inventory['low_stock_count'] }}
                     </p>
-                    <p class="mt-1 text-[11px] {{ $inventory['low_stock_count'] > 0 ? 'text-amber-800 font-semibold' : 'text-slate-500' }}">Por agotarse</p>
-                </div>
+                    <p class="mt-1 flex items-center justify-between gap-2 text-[11px] {{ $inventory['low_stock_count'] > 0 ? 'text-amber-800 font-semibold' : 'text-slate-500' }}">
+                        <span>{{ $inventory['low_stock_count'] > 0 ? 'Por agotarse' : 'Sin alertas' }}</span>
+                        <span class="font-bold text-amber-700 opacity-0 transition group-hover:opacity-100 group-focus:opacity-100">Ver y reponer →</span>
+                    </p>
+                </a>
 
                 <!-- 5. Agotados -->
                 <div class="rounded-3xl border {{ $inventory['out_of_stock_count'] > 0 ? 'border-rose-300 bg-rose-50/40' : 'border-slate-200 bg-white' }} p-5 shadow-xs transition hover:shadow-sm">

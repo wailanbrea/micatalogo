@@ -28,7 +28,8 @@ test('seller can open the web POS and register a paid sale', function () {
     $user = User::factory()->create(['plan' => 'premium']);
     $shop = Shop::factory()->create(['user_id' => $user->id]);
     $product = Product::factory()->create(['shop_id' => $shop->id, 'price' => 275]);
-    ProductInventory::create(['product_id' => $product->id, 'track_inventory' => true, 'stock_quantity' => 8]);
+    ProductInventory::create(['product_id' => $product->id, 'track_inventory' => true, 'stock_quantity' => 8, 'low_stock_threshold' => 3]);
+    $lowStockUrl = route('seller.shops.inventory.index', [$shop, 'stock' => 'low'], false);
 
     $this->actingAs($user)
         ->get(route('seller.shops.pos', $shop))
@@ -40,6 +41,8 @@ test('seller can open the web POS and register a paid sale', function () {
         ->assertSee('payment_note')
         ->assertSee('cashChange')
         ->assertSee(':disabled="paymentKind !== \'mixed\'"', false)
+        ->assertSee($lowStockUrl, false)
+        ->assertSee('Ver productos con stock bajo y reponer', false)
         ->assertSee('Crear nuevo servicio')
         ->assertSee($product->name);
 

@@ -218,6 +218,7 @@ test('ads are shown only inside free catalogs', function () {
 
 test('business and earnings dashboard renders styled kpis and sections', function () {
     [$user, $shop, $product] = businessFixture();
+    $lowStockUrl = route('seller.shops.inventory.index', [$shop, 'stock' => 'low'], false);
 
     $response = $this->actingAs($user)->get(route('seller.shops.business', $shop));
 
@@ -227,6 +228,8 @@ test('business and earnings dashboard renders styled kpis and sections', functio
         ->assertSee('Ventas del período')
         ->assertSee('Por cobrar')
         ->assertSee('Stock bajo')
+        ->assertSee($lowStockUrl, false)
+        ->assertSee('Ver productos con stock bajo y reponer', false)
         ->assertSee('Agotados')
         ->assertSee('Ventas y ganancia por producto')
         ->assertSee('Lotes de inventario')
