@@ -157,18 +157,17 @@
                         </div>
                     @endcan
 
-                    <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+                    <div class="pos-product-grid mt-5">
                         <template x-for="product in filteredProducts" :key="product.id">
-                            <article class="group relative flex min-h-[285px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg hover:shadow-blue-100/60">
-                                <div class="relative flex h-40 items-center justify-center overflow-hidden bg-slate-50">
+                            <article class="pos-product-card group relative flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:border-blue-300 hover:shadow-lg hover:shadow-blue-100/60">
+                                <div class="pos-product-image relative flex items-center justify-center overflow-hidden bg-slate-50">
                                     <template x-if="product.image_url"><img :src="product.image_url" :alt="product.name" class="h-full w-full object-contain p-3 transition duration-300 group-hover:scale-105"></template>
                                     <template x-if="!product.image_url"><div class="flex h-20 w-20 items-center justify-center rounded-3xl bg-blue-50 text-3xl font-black text-blue-300" x-text="product.name.charAt(0).toUpperCase()"></div></template>
-                                    <button type="button" @click="addProduct(product)" :disabled="!canAdd(product)" class="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-2xl font-light text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none" :aria-label="`Agregar ${product.name}`">+</button>
                                     <span x-show="product.stock > 0 && product.stock <= 5" x-cloak class="absolute left-3 top-3 rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-black text-amber-700">Pocas unidades</span>
                                 </div>
-                                <div class="flex flex-1 flex-col p-4">
+                                <div class="pos-product-details flex flex-1 flex-col">
                                     <p class="truncate text-[11px] font-semibold uppercase tracking-wide text-slate-400" x-text="product.category"></p>
-                                    <h3 class="mt-1 truncate text-sm font-black text-slate-900" x-text="product.name"></h3>
+                                    <h3 class="pos-product-name mt-1 text-sm font-black text-slate-900" :title="product.name" x-text="product.name"></h3>
                                     <span x-show="product.is_decant" x-cloak class="mt-1 inline-flex w-fit rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-black text-blue-700" x-text="'DECANT · ' + product.volume_ml + ' ml'"></span>
                                     <span x-show="product.is_service" x-cloak class="mt-1 inline-flex w-fit rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-black text-violet-700">SERVICIO · SIN INVENTARIO</span>
                                     <p class="mt-1 text-lg font-black text-blue-950" x-text="money(priceFor(product))"></p>
@@ -177,6 +176,17 @@
                                     <div class="mt-auto flex items-center justify-between gap-2 pt-3">
                                         <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold" :class="stockClass(product)" x-text="stockLabel(product)"></span>
                                         <span class="truncate text-[10px] text-slate-400" x-text="product.code || product.sale_unit_label"></span>
+                                    </div>
+                                    <div class="pos-product-actions">
+                                        <button x-show="!productQuantity(product.id)" type="button" @click="addProduct(product)" :disabled="!canAdd(product)" class="pos-product-add" :aria-label="`Agregar ${product.name}`">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" d="M12 5v14M5 12h14"/></svg>
+                                            <span x-text="canAdd(product) ? 'Agregar' : (product.stock <= 0 ? 'Agotado' : 'Sin precio mayorista')"></span>
+                                        </button>
+                                        <div x-show="productQuantity(product.id) > 0" x-cloak class="pos-product-stepper" role="group" :aria-label="`Cantidad de ${product.name}`">
+                                            <button type="button" @click="decreaseProduct(product.id)" :aria-label="`Quitar una unidad de ${product.name}`">−</button>
+                                            <output aria-live="polite" x-text="productQuantity(product.id)"></output>
+                                            <button type="button" @click="addProduct(product)" :disabled="!canAdd(product) || (!product.is_service && productQuantity(product.id) >= product.stock)" :aria-label="`Agregar una unidad de ${product.name}`">+</button>
+                                        </div>
                                     </div>
                                 </div>
                             </article>
@@ -576,6 +586,17 @@
                         sourceProductName: product.source_product_name,
                     });
                     this.formError = '';
+                },
+
+                productQuantity(id) {
+                    return this.cart.find((item) => item.id === id)?.quantity || 0;
+                },
+
+                decreaseProduct(id) {
+                    const item = this.cart.find((item) => item.id === id);
+                    if (!item) return;
+                    if (item.quantity <= 1) this.removeItem(id);
+                    else this.changeQuantity(item, -1);
                 },
 
                 changeQuantity(item, delta) {

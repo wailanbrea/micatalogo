@@ -1,5 +1,22 @@
 /* Shared page geometry. Keep dialog, preview and prose widths independent. */
 body { min-width: 0; }
+.pos-product-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.pos-product-card { min-width: 0; }
+.pos-product-image { height: clamp(120px, 15vw, 160px); }
+.pos-product-details { padding: 12px; }
+.pos-product-name { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 40px; line-height: 20px; }
+.pos-product-actions { margin-top: 12px; }
+.pos-product-add, .pos-product-stepper { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 44px; border-radius: 10px; }
+.pos-product-add { gap: 8px; background: #2563eb; color: white; padding: 8px; font-size: 13px; font-weight: 700; }
+.pos-product-add:hover { background: #1d4ed8; }
+.pos-product-add svg { flex-shrink: 0; }
+.pos-product-add:disabled { background: #f1f5f9; color: #64748b; cursor: not-allowed; }
+.pos-product-stepper { justify-content: space-between; border: 1px solid #bfdbfe; background: #eff6ff; }
+.pos-product-stepper button { width: 44px; height: 44px; flex-shrink: 0; font-size: 22px; color: #1d4ed8; }
+.pos-product-stepper button:disabled { opacity: .35; cursor: not-allowed; }
+.pos-product-stepper output { font-weight: 800; font-variant-numeric: tabular-nums; }
+.pos-product-actions button:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+@media (min-width: 640px) { .pos-product-grid { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; } }
 main { min-width: 0; }
 main.mx-auto,
 main > .mx-auto {
