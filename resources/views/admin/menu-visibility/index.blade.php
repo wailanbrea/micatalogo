@@ -18,21 +18,61 @@
                     <span class="rounded-full bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700">{{ $shops->total() }} tiendas</span>
                 </div>
 
-                <form method="GET" action="{{ route('admin.menus.index') }}" class="mt-6 grid gap-3 sm:grid-cols-[minmax(0,1fr)_11rem_auto]">
-                    <label class="relative block">
-                        <span class="sr-only">Buscar tienda o propietario</span>
-                        <input type="search" name="q" value="{{ $search }}" placeholder="Buscar tienda, propietario o correo" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
-                    </label>
-                    <label>
-                        <span class="sr-only">Estado</span>
-                        <select name="status" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
-                            <option value="all" @selected($status === 'all')>Todas</option>
-                            <option value="active" @selected($status === 'active')>Activas</option>
-                            <option value="suspended" @selected($status === 'suspended')>Suspendidas</option>
-                        </select>
-                    </label>
-                    <button class="rounded-xl bg-slate-900 px-5 py-3 text-sm font-black text-white transition hover:bg-slate-700">Filtrar</button>
-                </form>
+                @php($hasFilters = $search !== '' || $status !== 'all')
+                <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50/80 p-3 sm:p-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2 px-1">
+                        <div class="flex items-center gap-2">
+                            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-blue-600 shadow-sm ring-1 ring-slate-200" aria-hidden="true">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 5h18M6 12h12m-8 7h4"/></svg>
+                            </span>
+                            <div>
+                                <p class="text-sm font-black text-slate-900">Filtrar tiendas</p>
+                                <p class="text-[11px] text-slate-500">Busca por tienda, propietario o correo</p>
+                            </div>
+                        </div>
+                        <span class="text-xs font-semibold text-slate-500">{{ $shops->total() }} resultado{{ $shops->total() === 1 ? '' : 's' }}</span>
+                    </div>
+
+                    <form method="GET" action="{{ route('admin.menus.index') }}" class="mt-3 grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto_auto]">
+                        <label class="group relative block">
+                            <span class="sr-only">Buscar tienda o propietario</span>
+                            <svg class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 transition group-focus-within:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m21 21-4.35-4.35m2.1-5.4a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z"/></svg>
+                            <input type="search" name="q" value="{{ $search }}" placeholder="Buscar tienda, propietario o correo" class="h-12 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
+                        </label>
+
+                        <fieldset class="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1">
+                            <legend class="sr-only">Filtrar por estado</legend>
+                            @foreach (['all' => 'Todas', 'active' => 'Activas', 'suspended' => 'Suspendidas'] as $statusKey => $statusLabel)
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="status" value="{{ $statusKey }}" @checked($status === $statusKey) class="peer sr-only">
+                                    <span class="inline-flex h-10 items-center rounded-lg px-3 text-xs font-bold transition peer-checked:bg-slate-900 peer-checked:text-white peer-checked:shadow-sm {{ $status === $statusKey ? '' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800' }}">{{ $statusLabel }}</span>
+                                </label>
+                            @endforeach
+                        </fieldset>
+
+                        <div class="flex gap-2">
+                            <button type="submit" class="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 text-sm font-black text-white shadow-sm shadow-blue-600/20 transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 xl:flex-none">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m21 21-4.35-4.35m2.1-5.4a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z"/></svg>
+                                Aplicar filtros
+                            </button>
+                            @if ($hasFilters)
+                                <a href="{{ route('admin.menus.index') }}" class="inline-flex h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 transition hover:border-slate-300 hover:bg-slate-100" aria-label="Limpiar filtros">Limpiar</a>
+                            @endif
+                        </div>
+                    </form>
+
+                    @if ($hasFilters)
+                        <div class="mt-3 flex flex-wrap items-center gap-2 px-1 text-xs">
+                            <span class="font-bold text-slate-500">Filtros activos:</span>
+                            @if ($search !== '')
+                                <span class="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 font-bold text-blue-700">Búsqueda: {{ $search }}</span>
+                            @endif
+                            @if ($status !== 'all')
+                                <span class="inline-flex items-center gap-1 rounded-full bg-slate-200 px-2.5 py-1 font-bold text-slate-700">Estado: {{ $status === 'active' ? 'Activas' : 'Suspendidas' }}</span>
+                            @endif
+                        </div>
+                    @endif
+                </div>
             </section>
 
             @if (session('status'))
