@@ -48,3 +48,27 @@ Instrumentadas ejecutadas: CollectionAuthorizationTest (2), FinancePermissionTab
 ## Conservación
 
 No se borraron datos, no se ejecutaron migraciones ni seeders, no se registraron operaciones financieras en producción y no se publicaron versiones. Se preservaron los cambios locales existentes en ambos proyectos.
+
+## Reejecución focalizada de QA — sincronización y modales (15/10/2026)
+
+Esta ampliación sí ejecutó recorridos interactivos locales y pruebas actualizadas contra los cambios pendientes. No publica ni despliega.
+
+| Capa / recorrido | Resultado |
+| --- | --- |
+| Backend completo | `php vendor/bin/pest`: **679 PASS, 7.710 assertions**, `phpunit.xml` fuerza `APP_ENV=testing`, SQLite `:memory:` y `DB_URL` vacío. |
+| Backend — taxonomía, sync y tenants | **35 PASS, 354 assertions**: escritura Web/API, ACK y lectura posterior, replay idempotente, rechazo de payload distinto (409), revisión obsoleta, permisos revocados, aislamiento tenant y desactivar/reactivar preservando UUID y referencias. |
+| Android — sincronización Room/API | `CatalogSyncIntegrationTest`: **17/17 PASS**; snapshot repetido sin duplicar movimientos, mutaciones pendientes preservadas, tienda incorrecta rechazada y tombstones no borran cambios locales pendientes. Base Room en memoria y API simulada. |
+| Android — Decants y transición de modal | `DecantsWorkspaceTest`: **11/11 PASS**, cero skips. Incluye regresión de la secuencia Productos sin volumen → Configurar botella → cancelar, muestra el modal seleccionado y cancelar no guarda el volumen. |
+| Android — sincronización real de prueba | `PosSaleLiveIntegrationTest#offlineQueuedDecantConsumesSourceMillilitersAndSyncsExactlyOnce`: **1/1 PASS** en `emulator-5554`, app QA aislada + Laravel QA local + SQLite `micatalogo-sync-20261012.sqlite`. Verifica que la venta en cola sincroniza una sola vez, la fuente baja de 100 a 90 ml y el stock de decants de 10 a 9. La fixture sintética queda retenida únicamente en ese archivo SQLite QA; no existe limpieza automática ni se ejecutó contra producción. |
+| Web — terminal/cobro | Navegador Playwright en el servidor autenticado de QA local. Añadir producto y abrir Cobrar; cerrar por `×` y por Escape cierra el diálogo, conserva el carrito y no confirma ni registra venta. Luego se vació el carrito del navegador. |
+| Web — responsive/errores | En viewport 390×844 no hay desbordamiento horizontal; la consola reporta 0 errores ni advertencias durante el recorrido. La vista Categorías y unidades y sus pestañas cargaron; no se enviaron formularios mutadores. |
+| Entorno QA web | Identidad verificada antes de interactuar: `APP_ENV=testing`, driver SQLite y archivo `micatalogo-navigation-20261014.sqlite`. El router de sincronización se verificó contra su SQLite aislado, se apagó al finalizar y se retiró únicamente el reverse ADB temporal de 18767; el reverse previo de 18768 se conservó. |
+| Android unitarias | `testDebugUnitTest` terminó `BUILD SUCCESSFUL`; Gradle informó las tareas al día. No se fuerza en este resultado una cifra de casos unitarios ejecutados en esta reejecución. |
+
+Se añadió la prueba Compose de transición y cancelación en `app/src/androidTest/java/com/example/bspos/presentation/decants/DecantsWorkspaceTest.kt`.
+
+### Límites que continúan abiertos
+
+- El test integrado de venta/decant demuestra el ACK entre la app QA y la API Laravel aislada; no equivale a una prueba de mutación de una cuenta comercial ni valida todos los módulos en una sesión E2E.
+- No se revisó cada modal de todos los menús. El cierre interactivo cubierto aquí es el cobro Web y la transición/cancelación del modal de botella en Android; los demás requieren una matriz de recorrido por módulo.
+- Los cambios continúan locales y sin commit/push/despliegue; no se generó ni publicó APK. Producción no se tocó.

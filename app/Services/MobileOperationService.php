@@ -23,7 +23,7 @@ use InvalidArgumentException;
 
 class MobileOperationService
 {
-    public function apply(Shop $shop, User $user, array $data): array
+    public function apply(Shop $shop, User $user, array $data, string $source = 'android'): array
     {
         abort_unless($user->canSellAtShop($shop), 404);
         if (str_starts_with($data['type'], 'decant_') || ($data['type'] === 'open_bottle' && ($data['track_decants'] ?? false))) {
@@ -39,6 +39,8 @@ class MobileOperationService
         } elseif ($data['type'] === 'product_photo_update') {
             $product = $shop->products()->where('public_id', $data['product_id'])->firstOrFail();
             abort_unless(app(CatalogAccessService::class)->canManagePhotos($shop, $user, $product), 403);
+        } elseif (in_array($data['type'], ['category_upsert', 'unit_upsert'], true)) {
+            app(CatalogTaxonomyService::class)->authorize($shop, $user, $data);
         } elseif ($data['type'] !== 'return') {
             Gate::forUser($user)->authorize('update', $shop);
             if (in_array($data['type'], ['restock', 'adjustment', 'open_bottle'], true)) {
@@ -58,14 +60,14 @@ class MobileOperationService
             app(OnlineMobileOperationService::class)->authorize($shop, $user, $data);
         } elseif (in_array($data['type'], ShopAdministrationMobileOperationService::TYPES, true)) {
             app(ShopAdministrationMobileOperationService::class)->authorize($shop, $user, $data);
-        } elseif (in_array($data['type'], array_merge(ShopRecordSyncService::TYPES, ShopRouteSyncService::TYPES), true)) {
+        } elseif (in_array($data['type'], array_diff(array_merge(ShopRecordSyncService::TYPES, ShopRouteSyncService::TYPES), ['category_upsert', 'unit_upsert']), true)) {
             $menu = in_array($data['type'], ShopRouteSyncService::TYPES, true) ? 'routes'
                 : ($data['type'] === 'adjustment_reason_upsert' ? 'inventory_adjustments' : 'products');
             abort_unless(in_array($menu, app(SellerMenuService::class)->visibleForUser($shop, $user), true), 403);
         }
         $hash = hash('sha256', json_encode($data, JSON_THROW_ON_ERROR));
 
-        return DB::transaction(function () use ($shop, $user, $data, $hash) {
+        return DB::transaction(function () use ($shop, $user, $data, $hash, $source) {
             // Serializes deduplication, quota checks and document writes in one tenant.
             $shop = Shop::whereKey($shop->id)->lockForUpdate()->firstOrFail();
             $old = MobileOperation::where('shop_id', $shop->id)->where('client_operation_uuid', $data['client_operation_uuid'])->first();
@@ -87,7 +89,7 @@ class MobileOperationService
                 'shop_settings_update', 'seller_menu_permissions_update', 'shop_menu_visibility_update', 'seller_create', 'authorization_approve', 'authorization_reject' => app(ShopAdministrationMobileOperationService::class)->apply($shop, $user, $data),
                 'cash_open', 'cash_close', 'cash_movement', 'expense_create', 'expense_payment' => app(FinancialMobileOperationService::class)->apply($shop, $user, $data),
                 'route_upsert', 'route_assign', 'route_unassign', 'route_reorder', 'route_load_create', 'route_load_status' => app(ShopRouteSyncService::class)->apply($shop, $data),
-                'category_upsert', 'unit_upsert', 'adjustment_reason_upsert' => app(ShopRecordSyncService::class)->apply($shop, $data),
+                'category_upsert', 'unit_upsert', 'adjustment_reason_upsert' => app(ShopRecordSyncService::class)->apply($shop, $data, $user, $source),
                 'return' => $this->refund($shop, $user, $data, $operation),
                 'customer_upsert' => $this->customerOperation($shop, $data),
                 'decant_setup', 'decant_vial_receive', 'decant_vial_update', 'decant_prepare', 'decant_presentation_update', 'decant_discard', 'decant_undo_open', 'decant_sell_remainder', 'decant_reconcile_opening' => app(DecantInventoryService::class)->command($shop, $data, $user->id),
@@ -295,14 +297,14 @@ class MobileOperationService
                 if ($data['category_uuid'] && ! $category) {
                     throw ValidationException::withMessages(['category_uuid' => 'La categoría no pertenece a la tienda.']);
                 }
+                if ($category) app(CatalogTaxonomyService::class)->assertCategoryAssignment($shop, $user, $category, $product->sale_unit, $product->shop_category_id);
                 $product->shop_category_id = $category?->id;
             } elseif (! empty($data['category_name'])) {
-                $slug = Str::slug($data['category_name']) ?: 'categoria';
-                $category = $shop->categories()->firstOrCreate(['slug' => $slug], ['name' => $data['category_name'], 'status' => 'active']);
+                $category = app(CatalogTaxonomyService::class)->categoryByName($shop, $user, $data['category_name'], $product->sale_unit);
                 $product->shop_category_id = $category->id;
             }
             if (isset($data['unit_uuid'])) {
-                app(ShopRecordSyncService::class)->saveProductUnit($shop, $product->public_id, $data['unit_uuid']);
+                app(ShopRecordSyncService::class)->saveProductUnit($shop, $product->public_id, $data['unit_uuid'], $user);
             }
             $product->save();
             if (array_key_exists('combo_items', $data) || ($product->isCombo() && ! $product->comboItems()->exists())) {

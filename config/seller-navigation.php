@@ -23,7 +23,7 @@ return [
         'catalog' => ['label' => 'Catálogo', 'items' => [
             $item('products', 'products', 'Productos', 'seller.shops.products.index', 'catalog', ['active_routes' => ['seller.shops.products.*'], 'term' => 'products']),
             $feature('services', 'Servicios'),
-            $item('categories', 'products', 'Categorías y unidades', 'seller.shops.categories.index', 'categories', ['active_routes' => ['seller.shops.categories.*']]),
+            $item('categories', 'products', 'Categorías y unidades', 'seller.shops.categories.index', 'categories', ['taxonomy' => true, 'active_routes' => ['seller.shops.categories.*', 'seller.shops.units.*']]),
             $feature('photos', 'Fotos'), $feature('attributes', 'Marcas y atributos'),
             $feature('price_health', 'Diagnóstico de precios'),
             $item('pricing', 'pricing', 'Precios automáticos', 'seller.shops.pricing.index', 'pricing', ['active_routes' => ['seller.shops.pricing.*'], 'manage_route' => true, 'feature_fallback' => 'pricing']),

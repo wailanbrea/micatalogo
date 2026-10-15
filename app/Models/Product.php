@@ -66,6 +66,18 @@ class Product extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::saving(function (Product $product): void {
+            if (! $product->shop_category_id || (! $product->isDirty('shop_category_id') && ! $product->isDirty('sale_unit'))) return;
+            $category = ShopCategory::where('shop_id', $product->shop_id)->whereKey($product->shop_category_id)->first();
+            $access = app(\App\Services\CatalogTaxonomyAccessService::class);
+            if (! $category || ! $access->compatible($access->categoryScope($category), $product->sale_unit)) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['shop_category_id' => 'La categoría no pertenece a esta tienda o no admite este tipo de artículo.']);
+            }
+        });
+    }
+
     public function shop(): BelongsTo
     {
         return $this->belongsTo(Shop::class);

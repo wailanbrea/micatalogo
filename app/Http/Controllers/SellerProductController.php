@@ -116,7 +116,7 @@ class SellerProductController extends Controller
             'shop' => $shop,
             'product' => new Product(['currency' => config('catalog.currency', 'DOP'), 'sale_unit' => $requestedUnit, 'is_combo' => $isCombo]),
             'globalCategories' => GlobalCategory::query()->where('status', 'active')->orderBy('sort_order')->orderBy('name')->get(),
-            'shopCategories' => $shop->categories()->where('status', 'active')->orderBy('name')->get(),
+            ...$this->taxonomyFormData($shop, $requestedUnit),
             'sourceProducts' => $canReadSources ? $shop->products()->with('inventory')->where('sale_unit', 'bottle')->orderBy('name')->get() : collect(),
             'componentProducts' => $canReadSources ? $shop->products()->with('inventory')->where('is_combo', false)->where('sale_unit', '!=', 'service')->orderBy('name')->get() : collect(),
             'attributeDefinitions' => $shop->attributeDefinitions()->get(),
@@ -166,8 +166,9 @@ class SellerProductController extends Controller
 
             unset($attributes['track_inventory'], $attributes['cost_price'], $attributes['stock_quantity'], $attributes['low_stock_threshold']);
 
-            unset($attributes['attributes'], $attributes['combo_items']);
+            unset($attributes['attributes'], $attributes['combo_items'], $attributes['unit_uuid']);
             $product = $lockedShop->products()->create($attributes);
+            if (! empty($validated['unit_uuid'])) app(\App\Services\ShopRecordSyncService::class)->saveProductUnit($lockedShop, $product->public_id, $validated['unit_uuid'], $request->user());
             $this->syncProductAttributes($product, $validated, $lockedShop);
             $this->syncComboItems($product, $validated, $lockedShop);
 
@@ -226,7 +227,7 @@ class SellerProductController extends Controller
             'shop' => $shop,
             'product' => $product,
             'globalCategories' => GlobalCategory::query()->where('status', 'active')->orderBy('sort_order')->orderBy('name')->get(),
-            'shopCategories' => $shop->categories()->where('status', 'active')->orderBy('name')->get(),
+            ...$this->taxonomyFormData($shop, $product->sale_unit, $product),
             'sourceProducts' => $canReadSources ? $shop->products()->with('inventory')->whereKeyNot($product->id)->where('sale_unit', 'bottle')->orderBy('name')->get() : collect(),
             'componentProducts' => $canReadSources ? $shop->products()->with('inventory')->whereKeyNot($product->id)->where('is_combo', false)->where('sale_unit', '!=', 'service')->orderBy('name')->get() : collect(),
             'attributeDefinitions' => $shop->attributeDefinitions()->get(),
@@ -256,7 +257,7 @@ class SellerProductController extends Controller
             if ($product->barcode !== $validated['barcode']) {
                 $attributes['catalog_product_id'] = null;
             }
-            unset($attributes['track_inventory'], $attributes['cost_price'], $attributes['stock_quantity'], $attributes['low_stock_threshold'], $attributes['attributes'], $attributes['combo_items']);
+            unset($attributes['track_inventory'], $attributes['cost_price'], $attributes['stock_quantity'], $attributes['low_stock_threshold'], $attributes['attributes'], $attributes['combo_items'], $attributes['unit_uuid']);
             $presentation = clone $product;
             $presentation->fill($attributes);
 
@@ -360,6 +361,7 @@ class SellerProductController extends Controller
             }
 
             $product->update($attributes);
+            if (! empty($validated['unit_uuid'])) app(\App\Services\ShopRecordSyncService::class)->saveProductUnit($lockedShop, $product->public_id, $validated['unit_uuid'], $request->user());
             $this->syncProductAttributes($product, $validated, $lockedShop);
             $this->syncComboItems($product, $validated, $lockedShop);
             if ($isCombo) {
@@ -396,6 +398,20 @@ class SellerProductController extends Controller
         });
 
         return to_route('seller.shops.products.index', $shop)->with('status', 'Producto restaurado.');
+    }
+
+    private function taxonomyFormData(Shop $shop, ?string $saleUnit, ?Product $product = null): array
+    {
+        $access = app(\App\Services\CatalogTaxonomyAccessService::class);
+        $actor = request()->user();
+        $currentUnit = $product ? (app(\App\Services\ShopRecordSyncService::class)->productUnits($shop)[$product->public_id] ?? null) : null;
+        return ['shopCategories' => $shop->categories()->orderBy('name')->get()->filter(fn ($category) =>
+            ($category->status->value === 'active' || $product?->shop_category_id === $category->id)
+            && $access->canReadCategory($category, $actor) && $access->compatible($access->categoryScope($category), $saleUnit)),
+            'taxonomyUnits' => $access->records($shop)->where('kind', 'unit')->filter(fn ($record) =>
+                (($record->payload['is_active'] && ! $record->payload['is_deleted']) || $record->record_uuid === $currentUnit)
+                && in_array($access->unitScope($shop, $record->record_uuid), $access->readableScopes($shop, $actor), true)
+                && $access->compatible($access->unitScope($shop, $record->record_uuid), $saleUnit)), 'currentUnitUuid' => $currentUnit];
     }
 
     private function catalogRedirect(Shop $shop, Product $product): RedirectResponse

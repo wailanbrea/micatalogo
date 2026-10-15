@@ -102,7 +102,7 @@ test('foreign category and unit identities cannot be used to move product refere
     expect($this->other->products()->count())->toBe(0);
     $payload['client_operation_uuid'] = (string) Str::uuid();
     $payload['category_uuid'] = null;
-    $this->postJson($url, $payload)->assertUnprocessable();
+    $this->postJson($url, $payload)->assertForbidden();
     expect($this->other->products()->count())->toBe(0);
 });
 

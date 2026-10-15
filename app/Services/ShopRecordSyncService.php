@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Shop;
 use App\Models\ShopCategory;
 use App\Models\ShopSyncRecord;
+use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -15,9 +16,13 @@ class ShopRecordSyncService
     private array $readCache = [];
     public const TYPES = ['category_upsert', 'unit_upsert', 'adjustment_reason_upsert'];
 
-    public function apply(Shop $shop, array $input): array
+    public function apply(Shop $shop, array $input, ?User $user = null, string $source = 'android'): array
     {
         unset($this->readCache[$shop->id]);
+        if (in_array($input['type'], ['category_upsert', 'unit_upsert'], true)) {
+            abort_unless($user, 403);
+            return app(CatalogTaxonomyService::class)->apply($shop, $user, $input, $source);
+        }
         $kind = match ($input['type']) {
             'category_upsert' => 'category',
             'unit_upsert' => 'unit',
@@ -87,23 +92,27 @@ class ShopRecordSyncService
         return $this->readRows($shop)->where('kind', 'category')->keyBy(fn ($row) => $row->payload['server_id'])->all();
     }
 
-    public function snapshot(Shop $shop): array
+    public function snapshot(Shop $shop, ?User $user = null): array
     {
+        $taxonomy = app(CatalogTaxonomyAccessService::class);
         return $this->readRows($shop)->whereIn('kind', ['unit', 'adjustment_reason'])
-            ->map(fn ($row) => ['kind' => $row->kind, 'record_id' => $row->record_uuid, 'payload' => $row->payload,
-                'updated_at' => $row->updated_at->toISOString()])->all();
+            ->filter(fn ($row) => ! $user || ($row->kind === 'unit'
+                ? in_array($taxonomy->unitScope($shop, $row->record_uuid), $taxonomy->readableScopes($shop, $user), true)
+                : in_array('inventory_adjustments', app(SellerMenuService::class)->visibleForUser($shop, $user), true)))
+            ->map(fn ($row) => ['kind' => $row->kind, 'record_id' => $row->record_uuid,
+                'payload' => $row->kind === 'unit' ? $row->payload + ['scope' => $taxonomy->unitScope($shop, $row->record_uuid)] : $row->payload,
+                'permissions' => ['update' => $user && $row->kind === 'unit' && $taxonomy->canModifyUnit($shop, $user, $row->record_uuid)],
+                'updated_at' => $row->updated_at->toISOString()])->values()->all();
     }
 
-    public function saveProductUnit(Shop $shop, string $productId, string $unitId): void
+    public function saveProductUnit(Shop $shop, string $productId, string $unitId, User $user): void
     {
-        $unit = $this->query($shop, 'unit')->where('record_uuid', $unitId)->first();
-        $builtIn = collect(['unit', 'bottle', 'ml', 'decant', 'service'])
-            ->contains(fn ($name) => $this->localId($shop, 'unit', $name) === $unitId);
-        if (! $builtIn && (! $unit || ! $unit->payload['is_active'] || $unit->payload['is_deleted'])) {
-            throw ValidationException::withMessages(['unit_uuid' => 'La unidad no está activa en esta tienda.']);
-        }
+        $product = $shop->products()->withTrashed()->where('public_id', $productId)->firstOrFail();
+        abort_unless(app(CatalogAccessService::class)->canWrite($shop, $user, $product->sale_unit), 403);
+        app(CatalogTaxonomyService::class)->assertUnitAssignment($shop, $user, $unitId, $product->sale_unit, $this->productUnits($shop)[$productId] ?? null);
         ShopSyncRecord::updateOrCreate(['shop_id' => $shop->id, 'kind' => 'product_unit', 'record_uuid' => $productId],
             ['payload' => ['unit_uuid' => $unitId]]);
+        app(CatalogTaxonomyAccessService::class)->forget($shop);
     }
 
     public function productUnits(Shop $shop): array
@@ -127,6 +136,6 @@ class ShopRecordSyncService
     }
     private function readRows(Shop $shop)
     {
-        return $this->readCache[$shop->id] ??= $this->query($shop)->orderBy('id')->get();
+        return app(CatalogTaxonomyAccessService::class)->records($shop)->sortBy('id');
     }
 }

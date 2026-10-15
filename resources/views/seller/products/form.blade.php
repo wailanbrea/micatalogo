@@ -329,7 +329,7 @@
                         <div>
                             <div class="flex items-center justify-between">
                                 <label class="block text-sm font-semibold text-slate-800" for="shop_category_id">Categoría de la Tienda</label>
-                                <a class="text-xs font-semibold text-blue-700 hover:text-blue-900" href="{{ route('seller.shops.categories.index', $shop) }}" target="_blank">+ Crear</a>
+                                <a class="text-xs font-semibold text-blue-700 hover:text-blue-900" href="{{ route('seller.shops.categories.index', $shop) }}" target="_blank" rel="noopener">+ Crear categoría</a>
                             </div>
                             <select class="mt-1.5 w-full rounded-md border border-slate-300 px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="shop_category_id" name="shop_category_id">
                                 <option value="">Sin categoría interna</option>
@@ -342,6 +342,19 @@
                         </div>
                     </div>
 
+                    <div>
+                        <div class="flex items-center justify-between gap-3">
+                            <label class="block text-sm font-semibold text-slate-800" for="unit_uuid">Unidad de taxonomía</label>
+                            <a class="text-xs font-semibold text-blue-700" href="{{ route('seller.shops.categories.index', [$shop, 'tab' => 'units']) }}" target="_blank" rel="noopener">+ Crear unidad</a>
+                        </div>
+                        <select id="unit_uuid" name="unit_uuid" class="mt-1.5 w-full rounded-md border border-slate-300 px-3.5 py-2 text-sm">
+                            <option value="">Conservar unidad actual o predeterminada</option>
+                            @foreach ($taxonomyUnits as $unit)
+                                <option value="{{ $unit->record_uuid }}" @selected(old('unit_uuid', $currentUnitUuid) === $unit->record_uuid)>{{ $unit->payload['name'] }} ({{ $unit->payload['abbreviation'] }})</option>
+                            @endforeach
+                        </select>
+                        @error('unit_uuid')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                    </div>
                     @php
                         $savedAttributeValues = $product->attributeValues->keyBy('attribute_definition_id');
                         $attributeRows = $attributeDefinitions->map(fn ($definition) => [

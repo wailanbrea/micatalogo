@@ -39,8 +39,12 @@ class MobileOperationController extends Controller
         } elseif (in_array($type, ShopRecordSyncService::TYPES, true)) {
             $rules += ['record_id' => ['required', 'uuid'], 'name' => ['required', 'string', 'max:100'],
                 'is_active' => ['required', 'boolean'], 'is_deleted' => ['required', 'boolean'], 'created_at' => ['required', 'date']];
+            if (in_array($type, ['category_upsert', 'unit_upsert'], true)) {
+                $rules['name'] = ['required', 'string', 'max:'.($type === 'category_upsert' ? 120 : 100)];
+                $rules += ['scope' => ['sometimes', 'string', 'in:shared,product,service'], 'expected_revision' => ['sometimes', 'nullable', 'uuid']];
+            }
             $rules += match ($type) {
-                'category_upsert' => ['description' => ['nullable', 'string', 'max:2000'], 'icon' => ['required', 'string', 'max:80'], 'sort_order' => ['required', 'integer', 'min:0']],
+                'category_upsert' => ['description' => ['nullable', 'string', 'max:2000'], 'icon' => ['required', 'string', 'max:80'], 'sort_order' => ['required', 'integer', 'min:0'], 'slug' => ['sometimes', 'nullable', 'string', 'max:120']],
                 'unit_upsert' => ['abbreviation' => ['required', 'string', 'max:12']],
                 'adjustment_reason_upsert' => ['direction' => ['required', 'in:IN,OUT,BOTH']],
             };

@@ -26,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'abilities.any' => CheckForAnyAbility::class,
             'menu' => EnsureSellerMenuAccess::class,
             'catalog.operation' => EnsureCatalogOperationAccess::class,
+            'catalog.taxonomy' => \App\Http\Middleware\EnsureCatalogTaxonomyAccess::class,
             'app.version' => EnsureApiAppVersion::class,
         ]);
         $middleware->append(SecurityHeadersMiddleware::class);

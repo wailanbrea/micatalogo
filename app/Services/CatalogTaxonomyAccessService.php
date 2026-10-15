@@ -44,6 +44,12 @@ class CatalogTaxonomyAccessService
         return $this->creatableScopes($shop, $user)[0] ?? null;
     }
 
+    public function payload(Shop $shop, User $user): array
+    {
+        return ['read_scopes' => $this->readableScopes($shop, $user), 'create_scopes' => $this->creatableScopes($shop, $user),
+            'default_scope' => $this->defaultScope($shop, $user)];
+    }
+
     public function categoryRecord(ShopCategory $category): ?ShopSyncRecord
     {
         return $this->records($category->shop)->first(fn ($row) => $row->kind === 'category'

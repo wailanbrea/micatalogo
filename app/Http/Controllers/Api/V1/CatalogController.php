@@ -39,11 +39,13 @@ class CatalogController extends Controller
             || in_array('finance', $menus->visibleForUser($shop, $request->user()), true);
 
         $recordSync = app(ShopRecordSyncService::class);
+        $taxonomy = app(\App\Services\CatalogTaxonomyAccessService::class);
         $categoryMetadata = $recordSync->categoryMetadata($shop);
         $categories = $shop->categories()
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get()
+            ->filter(fn ($category) => $taxonomy->canReadCategory($category, $request->user()))
             ->map(fn ($category) => [
                 'id' => (string) $category->id,
                 'name' => $category->name,
@@ -55,6 +57,9 @@ class CatalogController extends Controller
                 'description' => ($categoryMetadata[$category->id] ?? null)?->payload['description'] ?? null,
                 'icon' => ($categoryMetadata[$category->id] ?? null)?->payload['icon'] ?? 'category_default',
                 'is_deleted' => ($categoryMetadata[$category->id] ?? null)?->payload['is_deleted'] ?? false,
+                'scope' => $taxonomy->categoryScope($category),
+                'revision' => ($categoryMetadata[$category->id] ?? null)?->payload['revision'] ?? null,
+                'permissions' => ['update' => $taxonomy->canModifyCategory($category, $request->user())],
             ])
             ->values();
 
@@ -92,10 +97,13 @@ class CatalogController extends Controller
                 ...$capabilities->payload($shop),
                 'presentation' => $presentation->resolve($shop),
                 'quota' => $limits->shopQuota($shop, $snapshotAccess['physical'] && $snapshotAccess['services'] && $snapshotAccess['decants'] ? $products->count() : $shop->products()->count()),
+                'taxonomy_permissions' => $taxonomy->payload($shop, $request->user()),
             ],
             'categories' => $categories,
             'products' => $products,
-            'store_records' => array_merge($recordSync->snapshot($shop), $snapshotAccess['routes'] ? $routeSync->snapshot($shop, $canViewSensitiveFinance) : []),
+            'store_records' => array_merge($recordSync->snapshot($shop, $request->user()),
+                $snapshotAccess['routes'] ? $routeSync->snapshot($shop, $canViewSensitiveFinance) : []),
+            'catalog_scope' => array_intersect_key($snapshotAccess, array_flip(['physical', 'services', 'decants'])),
             'route_stock' => $snapshotAccess['routes'] ? $routeStock->map(fn ($row) => $canViewSensitiveFinance ? $row : array_replace($row, ['unit_cost_cents' => 0]))->all() : [],
             'generated_at' => now()->toISOString(),
         ]);

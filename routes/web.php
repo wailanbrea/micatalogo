@@ -141,7 +141,15 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
     });
     Route::scopeBindings()->middleware(['can:sell,shop', 'menu:products'])->group(function () {
         Route::get('/tiendas/{shop}/productos', [SellerProductController::class, 'index'])->name('shops.products.index');
+    });
+    Route::scopeBindings()->middleware(['can:sell,shop', 'catalog.taxonomy'])->group(function () {
         Route::get('/tiendas/{shop}/categorias', [ShopCategoryController::class, 'index'])->name('shops.categories.index');
+        Route::post('/tiendas/{shop}/categorias', [ShopCategoryController::class, 'store'])->name('shops.categories.store');
+        Route::put('/tiendas/{shop}/categorias/{category}', [ShopCategoryController::class, 'update'])->middleware('can:update,category')->name('shops.categories.update');
+        Route::delete('/tiendas/{shop}/categorias/{category}', [ShopCategoryController::class, 'destroy'])->middleware('can:delete,category')->name('shops.categories.destroy');
+        Route::post('/tiendas/{shop}/unidades', [\App\Http\Controllers\ShopUnitController::class, 'store'])->name('shops.units.store');
+        Route::put('/tiendas/{shop}/unidades/{unit}', [\App\Http\Controllers\ShopUnitController::class, 'update'])->name('shops.units.update');
+        Route::delete('/tiendas/{shop}/unidades/{unit}', [\App\Http\Controllers\ShopUnitController::class, 'destroy'])->name('shops.units.destroy');
     });
     Route::scopeBindings()->middleware(['can:sell,shop', 'catalog.operation'])->group(function () {
         Route::get('/tiendas/{shop}/productos/combos/nuevo', [SellerProductController::class, 'create'])->defaults('combo', true)->name('shops.products.combos.create');
@@ -213,9 +221,6 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
         Route::post('/tiendas/{shop}/cuentas-pago', [ShopPaymentAccountController::class, 'store'])->middleware('menu:shop_settings')->name('shops.payment-accounts.store');
         Route::put('/tiendas/{shop}/cuentas-pago/{paymentAccount}', [ShopPaymentAccountController::class, 'update'])->middleware('menu:shop_settings')->name('shops.payment-accounts.update');
         Route::delete('/tiendas/{shop}/cuentas-pago/{paymentAccount}', [ShopPaymentAccountController::class, 'destroy'])->middleware('menu:shop_settings')->name('shops.payment-accounts.destroy');
-        Route::post('/tiendas/{shop}/categorias', [ShopCategoryController::class, 'store'])->middleware('menu:products')->name('shops.categories.store');
-        Route::put('/tiendas/{shop}/categorias/{category}', [ShopCategoryController::class, 'update'])->middleware(['can:update,category', 'menu:products'])->name('shops.categories.update');
-        Route::delete('/tiendas/{shop}/categorias/{category}', [ShopCategoryController::class, 'destroy'])->middleware(['can:delete,category', 'menu:products'])->name('shops.categories.destroy');
 
         Route::get('/tiendas/{shop}/subida-masiva', [SellerBulkProductController::class, 'create'])->middleware('menu:import')->name('shops.products.bulk.create');
         Route::post('/tiendas/{shop}/subida-masiva', [SellerBulkProductController::class, 'store'])->middleware('menu:import')->name('shops.products.bulk.store');

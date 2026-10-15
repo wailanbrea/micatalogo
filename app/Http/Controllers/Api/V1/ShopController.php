@@ -53,6 +53,7 @@ class ShopController extends Controller
                     'menu_permissions' => $menus->visibleForUser($shop, $request->user()),
                     'navigation' => $navigation->forUser($shop, $request->user()),
                     'catalog_permissions' => $catalogAccess->payload($shop, $request->user()),
+                    'taxonomy_permissions' => app(\App\Services\CatalogTaxonomyAccessService::class)->payload($shop, $request->user()),
                     // Seller/team administration is an owner-only control
                     // surface. Managers retain operational access but must
                     // not receive a misleading write capability here.

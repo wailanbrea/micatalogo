@@ -38,7 +38,9 @@ test('service taxonomy faculty never promotes physical catalog mutation or share
 
 test('physical references including archived products prevent service taxonomy writes', function () {
     [$owner, $shop, $actor, $category, $unit] = closureTaxonomyFixture();
-    $physical = Product::factory()->for($shop)->create(['shop_category_id' => $category->id, 'sale_unit' => 'unit']);
+    $physical = Product::factory()->for($shop)->create(['sale_unit' => 'unit']);
+    // Simulate a pre-existing inconsistent historical reference, not a new allowed assignment.
+    \Illuminate\Support\Facades\DB::table('products')->where('id', $physical->id)->update(['shop_category_id' => $category->id]);
     ShopSyncRecord::create(['shop_id' => $shop->id, 'kind' => 'product_unit', 'record_uuid' => $physical->public_id, 'payload' => ['unit_uuid' => $unit]]);
     $physical->delete();
     $access = app(CatalogTaxonomyAccessService::class);

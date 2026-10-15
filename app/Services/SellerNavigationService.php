@@ -49,6 +49,10 @@ class SellerNavigationService
                 if (($definition['manage_shops'] ?? false) && $assignedSellerOnly) {
                     return null;
                 }
+                if ($definition['taxonomy'] ?? false) {
+                    if (! app(CatalogTaxonomyAccessService::class)->canOpen($shop, $user)) return null;
+                    if (! in_array('products', $visible, true)) $definition['key'] = in_array('services', $visible, true) ? 'services' : 'decants';
+                }
                 if ($definition['key'] !== '' && ! ($definition['authenticated'] ?? false) && ! in_array($definition['key'], $visible, true)) {
                     return null;
                 }

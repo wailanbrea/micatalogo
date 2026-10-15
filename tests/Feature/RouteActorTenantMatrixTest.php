@@ -223,7 +223,7 @@ test('ACL-018 every tenant-scoped web mutation rejects an owner from another ten
         })
         ->values();
 
-    expect($routes)->toHaveCount(60, 'La matriz runtime debe cubrir todas las mutaciones web por tienda.');
+    expect($routes)->toHaveCount(63, 'La matriz runtime debe cubrir todas las mutaciones web por tienda.');
 
     $placeholderValues = [
         'shop' => $shopA->public_id,

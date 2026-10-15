@@ -75,6 +75,7 @@ class ProductRequest extends FormRequest
                 'integer',
                 Rule::exists('shop_categories', 'id')->where('shop_id', $shop?->id),
             ],
+            'unit_uuid' => ['sometimes', 'nullable', 'uuid'],
             'track_inventory' => ['nullable', 'boolean'],
             'cost_price' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
             'stock_quantity' => ['nullable', 'integer', 'min:0', 'max:100000'],
@@ -96,7 +97,16 @@ class ProductRequest extends FormRequest
     {
         $validator->after(function (Validator $validator): void {
             $shop = $this->route('shop');
-            $saleUnit = $this->input('sale_unit', 'unit');
+            $saleUnit = $this->input('sale_unit', $this->route('product')?->sale_unit ?? 'unit');
+            if (! $validator->errors()->has('shop_category_id') && $this->filled('shop_category_id')) {
+                $category = $shop->categories()->whereKey($this->input('shop_category_id'))->first();
+                if ($category) app(\App\Services\CatalogTaxonomyService::class)->assertCategoryAssignment($shop, $this->user(), $category, $saleUnit, $this->route('product')?->shop_category_id);
+            }
+            if (! $validator->errors()->has('unit_uuid') && $this->filled('unit_uuid')) {
+                $current = $this->route('product')?->public_id;
+                $currentUnit = $current ? (app(\App\Services\ShopRecordSyncService::class)->productUnits($shop)[$current] ?? null) : null;
+                app(\App\Services\CatalogTaxonomyService::class)->assertUnitAssignment($shop, $this->user(), $this->input('unit_uuid'), $saleUnit, $currentUnit);
+            }
             $tracksInventory = $this->boolean('track_inventory');
 
             if ($saleUnit === 'bottle' && $tracksInventory

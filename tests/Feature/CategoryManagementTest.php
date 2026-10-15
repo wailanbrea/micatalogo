@@ -73,7 +73,7 @@ test('shop owner can update and delete an own shop category through its named ro
             'sort_order' => 5,
         ])
         ->assertRedirect()
-        ->assertSessionHas('status', 'Categoria actualizada.');
+        ->assertSessionHas('status', 'Taxonomía guardada y confirmada.');
 
     expect($category->fresh()->name)->toBe('Hogar y oficina')
         ->and($category->fresh()->slug)->toBe('hogar-oficina');
@@ -81,7 +81,8 @@ test('shop owner can update and delete an own shop category through its named ro
     $this->actingAs($owner)
         ->delete(route('seller.shops.categories.destroy', [$shop, $category]))
         ->assertRedirect()
-        ->assertSessionHas('status', 'Categoria eliminada.');
+        ->assertSessionHas('status', 'Registro desactivado; se conserva el histórico.');
 
-    $this->assertDatabaseMissing('shop_categories', ['id' => $category->id]);
+    expect($category->fresh()->status->value)->toBe('inactive');
+    $this->assertDatabaseHas('shop_categories', ['id' => $category->id, 'shop_id' => $shop->id]);
 });
