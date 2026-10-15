@@ -1,0 +1,459 @@
+{
+  "identity": {
+    "environment": "testing",
+    "driver": "sqlite",
+    "host": "none (local SQLite)",
+    "database": "C:/Users/waila/AppData/Local/Temp/opencode/micatalogo-navigation-20261014.sqlite"
+  },
+  "sql": {
+    "snapshot": {
+      "schema": 0,
+      "tables": {
+        "account_mobile_operations": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "attribute_definitions": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "authorization_requests": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "business_partners": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "cache": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "cache_locks": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "cash_movements": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "cash_register_sessions": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "catalog_product_images": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "catalog_products": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commercial_quote_items": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commercial_quotes": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "customer_account_entries": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "customers": {
+          "count": 1,
+          "sha256": "76ff67722cc349adf447752391e9f170923e8303fd5a8d7c02e2d0bd3361262d"
+        },
+        "daily_closures": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "decant_batch_sales": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "decant_batches": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "decant_openings": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "decant_presentation_settings": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "decant_remainder_sales": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "decant_vial_allocations": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "decant_vial_lots": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "decant_vials": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "email_verification_codes": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "expense_categories": {
+          "count": 11,
+          "sha256": "38e2bedd0fce9307bca9a0cb1d700388397c0d63c6c371531c196f83358cda76"
+        },
+        "expense_payments": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "expenses": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "failed_jobs": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "global_categories": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "inventory_import_sessions": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "inventory_lot_allocations": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "inventory_lots": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "inventory_movements": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "invoice_items": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "invoice_payments": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "invoice_return_items": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "invoice_returns": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "invoices": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "job_batches": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "jobs": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "migrations": {
+          "count": 70,
+          "sha256": "26e54f9658d55d08231c1340c9e9237a5c5a367943a8bbb93783529278822b0d"
+        },
+        "mobile_operations": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "order_items": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "orders": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "partner_transactions": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "password_reset_tokens": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "personal_access_tokens": {
+          "count": 22,
+          "sha256": "25fdf1a6f28ae0428122365fc1dea4101a1bdb7041833cef792d60544778e1b1"
+        },
+        "pos_sale_uploads": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "product_attribute_values": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "product_combo_items": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "product_daily_metrics": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "product_images": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "product_import_records": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "product_inventories": {
+          "count": 1,
+          "sha256": "e48cb08b06b92697886153f846e7b1e9398ffb9fcf42ef4f006b9a29f3e905ce"
+        },
+        "product_price_changes": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "product_price_rules": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "products": {
+          "count": 1,
+          "sha256": "d0442d84363c4663401d1d3d34a6ed0081474d07af8ee4b1d8ff3a202958ab3c"
+        },
+        "purchase_document_items": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "purchase_documents": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "reports": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "sessions": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "shop_categories": {
+          "count": 1,
+          "sha256": "33a00d0be146bf50e575e5ffa664a6b5fcf9373cba93a338ee8f10917e20a4d1"
+        },
+        "shop_daily_metrics": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "shop_members": {
+          "count": 2,
+          "sha256": "4b1b67efd5ddab5a6e48135cf0bdabfa1a14833780a66b59613a0203468328c2"
+        },
+        "shop_payment_accounts": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "shop_sellers": {
+          "count": 5,
+          "sha256": "371bb6f6c1322715ec016ba197e746ef7de45985bde4fa27317b48f75cd8ad90"
+        },
+        "shop_sync_records": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "shops": {
+          "count": 3,
+          "sha256": "601745380a12ebed7521731100c767816da4475de165ee7743f220a56d75cbe8"
+        },
+        "sqlite_sequence": {
+          "count": 18,
+          "sha256": "031a492fa11f5db331453fa5b4416f07be0b45442d22bb2dc14ceddb20acfdfa"
+        },
+        "suppliers": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "support_conversations": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "support_messages": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "support_requests": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "users": {
+          "count": 10,
+          "sha256": "000a7d6612c6c6c2157e135e7f4636f3828b1da01458fff27d56ac42a29acaf8"
+        }
+      },
+      "foreign_key_violations": 0
+    },
+    "private_backup": "C:\\Users\\waila\\AppData\\Local\\Temp\\opencode\\closure-f0-after-menus-sql.sqlite",
+    "backup_sha256": "1b17d07b754ad4683aea2906c2bf9cfd163920a83cf40ff18cfbfece2d174574"
+  },
+  "room": {
+    "snapshot": {
+      "schema": 27,
+      "tables": {
+        "android_metadata": {
+          "count": 1,
+          "sha256": "63bbdf70270819ece78b0f40edb29ebe8399b96ab13d18db6568d7328ae7c924"
+        },
+        "backup_history": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "cash_movements": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "cash_sessions": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "catalog_refresh": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "categories": {
+          "count": 14,
+          "sha256": "b49e5bec09e4bab37b2dd59177ca04e44cef1e1dbbe27d6e5cba30f40ec71091"
+        },
+        "customers": {
+          "count": 29,
+          "sha256": "2cf20de90c6f827672a94e47944d80a87dbcdcadf23adb2bee70a8fc6275589d"
+        },
+        "inventory_adjustment_reasons": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "inventory_count_items": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "inventory_counts": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "inventory_movements": {
+          "count": 15,
+          "sha256": "00ddf4651c5382c7eb78703c4ae4a5e881c2e3d3f2e9e507b4bc07b6b1a78f46"
+        },
+        "inventory_stock": {
+          "count": 14,
+          "sha256": "5729a28d2138de48d2e8a0dc0c8ed12d8a380e23e1f8fe72365a8b6ff4bc727d"
+        },
+        "operation_outbox": {
+          "count": 3,
+          "sha256": "791e4d58e0106984fb98a52d8f9732012b59e56a1e88147995370c216d275078"
+        },
+        "payment_allocations": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "payment_sync_outbox": {
+          "count": 1,
+          "sha256": "b8ef5dcc2e10cb623719275d476df35d6ce592a1742c8d407dd743dc793701ff"
+        },
+        "payments": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "pos_sale_outbox": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "products": {
+          "count": 14,
+          "sha256": "decaf79d744902ab12e9b66d2b5b7d3cb4645d6f3620aee16134cb2847ead16b"
+        },
+        "purchase_items": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "purchases": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "return_items": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "returns": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "room_master_table": {
+          "count": 1,
+          "sha256": "fe8df86a8bb5f077e03f01f92553c29e4881e118d223a00114e53fae1ece81b3"
+        },
+        "route_customers": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "route_load_items": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "route_loads": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "routes": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "sale_items": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "sales": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stock_entries": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stock_entry_items": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "suppliers": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "units_of_measure": {
+          "count": 14,
+          "sha256": "45373926a4033fa294bc23ac816cbc30219d8f1a085d9dddeb88f71a8267c33e"
+        }
+      },
+      "foreign_key_violations": 0
+    },
+    "private_backup": "C:\\Users\\waila\\AppData\\Local\\Temp\\opencode\\closure-f0-after-menus-room.sqlite",
+    "backup_sha256": "151d7ce8ef5218affa007c7171f5aabe060e89481b155b58cf7daa33ad005749",
+    "package": "com.bsolutions.micatalogo.offlinecheck.syncqa",
+    "private_apk_backup": "C:\\Users\\waila\\AppData\\Local\\Temp\\opencode\\closure-f0-after-menus-legacy-debug.apk",
+    "apk_sha256": "e9af4457f9bed3fcc14e5a57259c47642ed45a1caf045df45517ebbd7f6274e6"
+  }
+}

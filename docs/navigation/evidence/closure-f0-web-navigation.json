@@ -1,0 +1,3811 @@
+{
+  "identity": {
+    "environment": "testing",
+    "driver": "sqlite",
+    "host": "none (local SQLite)",
+    "database": "C:/Users/waila/AppData/Local/Temp/opencode/micatalogo-navigation-20261014.sqlite"
+  },
+  "results": [
+    {
+      "role": "owner",
+      "synthetic_account": "owner",
+      "permissions": [
+        "sales",
+        "products",
+        "printers",
+        "quotes",
+        "orders",
+        "encargos",
+        "shipments",
+        "day_close",
+        "containers",
+        "loads",
+        "suppliers",
+        "purchase_invoices",
+        "photos",
+        "storefront",
+        "services",
+        "price_health",
+        "pricing",
+        "decants",
+        "attributes",
+        "import",
+        "customers",
+        "credit",
+        "inventory",
+        "collections",
+        "cash",
+        "finance",
+        "inventory_adjustments",
+        "partners",
+        "expenses",
+        "reports",
+        "commissions",
+        "authorizations",
+        "returns",
+        "routes",
+        "more",
+        "settings",
+        "accountant",
+        "account",
+        "updates",
+        "help",
+        "practice",
+        "support",
+        "metrics",
+        "public_catalog",
+        "shop_settings",
+        "sellers"
+      ],
+      "api_navigation": {
+        "schema_version": 1,
+        "sections": [
+          {
+            "id": "home",
+            "label": "Inicio",
+            "items": [
+              {
+                "id": "summary",
+                "key": "",
+                "label": "Resumen",
+                "business_label": "Resumen",
+                "destination": "dashboard",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/resumen",
+                "route": "seller.shops.summary",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.summary"
+                ],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          },
+          {
+            "id": "sales",
+            "label": "Ventas",
+            "items": [
+              {
+                "id": "pos",
+                "key": "sales",
+                "label": "Vender",
+                "business_label": "Vender",
+                "destination": "pos",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/pos",
+                "route": "seller.shops.pos",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.pos"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "sales_history",
+                "key": "sales",
+                "label": "Historial de ventas",
+                "business_label": "Historial de ventas",
+                "destination": "sales_history",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/sales",
+                "route": "seller.shops.feature",
+                "feature": "sales",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "quotes",
+                "key": "quotes",
+                "label": "Cotizaciones",
+                "business_label": "Cotizaciones",
+                "destination": "quotes",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/quotes",
+                "route": "seller.shops.feature",
+                "feature": "quotes",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "returns",
+                "key": "returns",
+                "label": "Devoluciones",
+                "business_label": "Devoluciones",
+                "destination": "returns",
+                "url": null,
+                "route": null,
+                "feature": null,
+                "active_routes": [],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "cash",
+                "key": "cash",
+                "label": "Caja",
+                "business_label": "Caja",
+                "destination": "cash",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/caja",
+                "route": "seller.shops.cash.index",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.cash.*"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "day_close",
+                "key": "day_close",
+                "label": "Cierre de día",
+                "business_label": "Cierre de día",
+                "destination": "day_close",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/day_close",
+                "route": "seller.shops.feature",
+                "feature": "day_close",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          },
+          {
+            "id": "orders",
+            "label": "Pedidos",
+            "items": [
+              {
+                "id": "orders",
+                "key": "orders",
+                "label": "Pedidos",
+                "business_label": "Pedidos",
+                "destination": "orders",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/orders",
+                "route": "seller.shops.feature",
+                "feature": "orders",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "encargos",
+                "key": "encargos",
+                "label": "Encargos",
+                "business_label": "Encargos",
+                "destination": "encargos",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/encargos",
+                "route": "seller.shops.feature",
+                "feature": "encargos",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "shipments",
+                "key": "shipments",
+                "label": "Envíos",
+                "business_label": "Envíos",
+                "destination": "shipments",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/shipments",
+                "route": "seller.shops.feature",
+                "feature": "shipments",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          },
+          {
+            "id": "catalog",
+            "label": "Catálogo",
+            "items": [
+              {
+                "id": "products",
+                "key": "products",
+                "label": "Productos",
+                "business_label": "Perfumes",
+                "destination": "catalog",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/productos",
+                "route": "seller.shops.products.index",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.products.*"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "services",
+                "key": "services",
+                "label": "Servicios",
+                "business_label": "Servicios",
+                "destination": "services",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/services",
+                "route": "seller.shops.feature",
+                "feature": "services",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "categories",
+                "key": "products",
+                "label": "Categorías y unidades",
+                "business_label": "Categorías y unidades",
+                "destination": "categories",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/categorias",
+                "route": "seller.shops.categories.index",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.categories.*"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "photos",
+                "key": "photos",
+                "label": "Fotos",
+                "business_label": "Fotos",
+                "destination": "photos",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/photos",
+                "route": "seller.shops.feature",
+                "feature": "photos",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "attributes",
+                "key": "attributes",
+                "label": "Marcas y atributos",
+                "business_label": "Marcas y atributos",
+                "destination": "attributes",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/attributes",
+                "route": "seller.shops.feature",
+                "feature": "attributes",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "price_health",
+                "key": "price_health",
+                "label": "Diagnóstico de precios",
+                "business_label": "Diagnóstico de precios",
+                "destination": "price_health",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/price_health",
+                "route": "seller.shops.feature",
+                "feature": "price_health",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "pricing",
+                "key": "pricing",
+                "label": "Precios automáticos",
+                "business_label": "Precios automáticos",
+                "destination": "pricing",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/productos/reglas-precio",
+                "route": "seller.shops.pricing.index",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.pricing.*"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "decants",
+                "key": "decants",
+                "label": "Decants",
+                "business_label": "Decants",
+                "destination": "decants",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/decants",
+                "route": "seller.shops.feature",
+                "feature": "decants",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          },
+          {
+            "id": "inventory",
+            "label": "Inventario",
+            "items": [
+              {
+                "id": "inventory",
+                "key": "inventory",
+                "label": "Existencias y movimientos",
+                "business_label": "Existencias y movimientos",
+                "destination": "inventory",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/inventario",
+                "route": "seller.shops.inventory.index",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.inventory.*"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "inventory_adjustments",
+                "key": "inventory_adjustments",
+                "label": "Ajustes y conteos",
+                "business_label": "Ajustes y conteos",
+                "destination": "inventory_adjustments",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/inventory_adjustments",
+                "route": "seller.shops.feature",
+                "feature": "inventory_adjustments",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "fifo",
+                "key": "inventory",
+                "label": "Lotes FIFO",
+                "business_label": "Lotes FIFO",
+                "destination": "inventory",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/inventario/lotes",
+                "route": "seller.shops.inventory.lots",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.inventory.lots"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "import",
+                "key": "import",
+                "label": "Importar",
+                "business_label": "Importar",
+                "destination": "import",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/importar",
+                "route": "seller.shops.products.import.create",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.products.import.*",
+                  "seller.shops.products.bulk.*"
+                ],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          },
+          {
+            "id": "purchases",
+            "label": "Compras",
+            "items": [
+              {
+                "id": "suppliers",
+                "key": "suppliers",
+                "label": "Proveedores",
+                "business_label": "Proveedores",
+                "destination": "suppliers",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/suppliers",
+                "route": "seller.shops.feature",
+                "feature": "suppliers",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "purchase_invoices",
+                "key": "purchase_invoices",
+                "label": "Facturas de compra",
+                "business_label": "Facturas de compra",
+                "destination": "purchase_invoices",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/purchase_invoices",
+                "route": "seller.shops.feature",
+                "feature": "purchase_invoices",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "loads",
+                "key": "loads",
+                "label": "Cargas",
+                "business_label": "Cargas",
+                "destination": "loads",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/loads",
+                "route": "seller.shops.feature",
+                "feature": "loads",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "containers",
+                "key": "containers",
+                "label": "Contenedores",
+                "business_label": "Contenedores",
+                "destination": "containers",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/containers",
+                "route": "seller.shops.feature",
+                "feature": "containers",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          },
+          {
+            "id": "customers",
+            "label": "Clientes y cobros",
+            "items": [
+              {
+                "id": "customers",
+                "key": "customers",
+                "label": "Clientes",
+                "business_label": "Clientes",
+                "destination": "customers",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/clientes",
+                "route": "seller.shops.customers.index",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.customers.*"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "credit",
+                "key": "credit",
+                "label": "Cartera y crédito",
+                "business_label": "Cartera y crédito",
+                "destination": "credit_ledger",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/credit",
+                "route": "seller.shops.feature",
+                "feature": "credit",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "collections",
+                "key": "collections",
+                "label": "Cobros y abonos",
+                "business_label": "Cobros y abonos",
+                "destination": "collections",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/clientes?view=collections",
+                "route": "seller.shops.customers.index",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.customers.index"
+                ],
+                "external": false,
+                "preferred_query": {
+                  "view": "collections"
+                }
+              }
+            ]
+          },
+          {
+            "id": "finance",
+            "label": "Finanzas",
+            "items": [
+              {
+                "id": "finance",
+                "key": "finance",
+                "label": "Ganancias",
+                "business_label": "Ganancias",
+                "destination": "finance",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/negocio",
+                "route": "seller.shops.business",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.business"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "expenses",
+                "key": "expenses",
+                "label": "Gastos",
+                "business_label": "Gastos",
+                "destination": "expenses",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/gastos",
+                "route": "seller.shops.expenses.index",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.expenses.*"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "partners",
+                "key": "partners",
+                "label": "Socios",
+                "business_label": "Socios",
+                "destination": "partners",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/partners",
+                "route": "seller.shops.feature",
+                "feature": "partners",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          },
+          {
+            "id": "reports",
+            "label": "Reportes",
+            "items": [
+              {
+                "id": "reports",
+                "key": "reports",
+                "label": "Reportes operativos",
+                "business_label": "Reportes operativos",
+                "destination": "reports",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/reports",
+                "route": "seller.shops.feature",
+                "feature": "reports",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          },
+          {
+            "id": "storefront",
+            "label": "Mi tienda",
+            "items": [
+              {
+                "id": "storefront",
+                "key": "storefront",
+                "label": "Vitrina y diseño",
+                "business_label": "Vitrina y diseño",
+                "destination": "storefront",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/mi-tienda",
+                "route": "seller.shops.storefront",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.storefront"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "public_catalog",
+                "key": "public_catalog",
+                "label": "Compartir catálogo",
+                "business_label": "Compartir catálogo",
+                "destination": "public_catalog",
+                "url": "http://127.0.0.1:18768/tienda/qa-nav-perfumes",
+                "route": "shops.show",
+                "feature": null,
+                "active_routes": [
+                  "shops.show"
+                ],
+                "external": true,
+                "preferred_query": []
+              },
+              {
+                "id": "metrics",
+                "key": "metrics",
+                "label": "Métricas y QR",
+                "business_label": "Métricas y QR",
+                "destination": "metrics",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/metricas",
+                "route": "seller.shops.metrics.index",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.metrics.*",
+                  "seller.shops.qr.*"
+                ],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          },
+          {
+            "id": "settings",
+            "label": "Configuración",
+            "items": [
+              {
+                "id": "shop_settings",
+                "key": "shop_settings",
+                "label": "Negocio",
+                "business_label": "Negocio",
+                "destination": "shop_settings",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/editar",
+                "route": "seller.shops.edit",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.edit"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "shop_menus",
+                "key": "shop_settings",
+                "label": "Menús de la tienda",
+                "business_label": "Menús de la tienda",
+                "destination": "shop_settings?section=menus",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/menus",
+                "route": "seller.shops.menus.edit",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.menus.*"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "sellers",
+                "key": "sellers",
+                "label": "Equipo",
+                "business_label": "Equipo",
+                "destination": "team",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/vendedores",
+                "route": "seller.shops.sellers.index",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.sellers.*"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "commissions",
+                "key": "commissions",
+                "label": "Comisiones",
+                "business_label": "Comisiones",
+                "destination": "commissions",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/commissions",
+                "route": "seller.shops.feature",
+                "feature": "commissions",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "authorizations",
+                "key": "authorizations",
+                "label": "Autorizaciones",
+                "business_label": "Autorizaciones",
+                "destination": "authorizations",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/authorizations",
+                "route": "seller.shops.feature",
+                "feature": "authorizations",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "accountant",
+                "key": "accountant",
+                "label": "Contador",
+                "business_label": "Contador",
+                "destination": "accountant",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/accountant",
+                "route": "seller.shops.feature",
+                "feature": "accountant",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "settings",
+                "key": "settings",
+                "label": "Ajustes de la app",
+                "business_label": "Ajustes de la app",
+                "destination": "settings",
+                "url": null,
+                "route": null,
+                "feature": null,
+                "active_routes": [],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "printers",
+                "key": "printers",
+                "label": "Impresoras",
+                "business_label": "Impresoras",
+                "destination": "printers",
+                "url": null,
+                "route": null,
+                "feature": null,
+                "active_routes": [],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          }
+        ],
+        "secondary": [
+          {
+            "id": "account",
+            "key": "account",
+            "label": "Mi cuenta",
+            "business_label": "Mi cuenta",
+            "destination": "profile",
+            "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/account",
+            "route": "seller.shops.feature",
+            "feature": "account",
+            "active_routes": [
+              "seller.shops.feature"
+            ],
+            "external": false,
+            "preferred_query": []
+          },
+          {
+            "id": "help",
+            "key": "help",
+            "label": "Ayuda",
+            "business_label": "Ayuda",
+            "destination": "help",
+            "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/help",
+            "route": "seller.shops.feature",
+            "feature": "help",
+            "active_routes": [
+              "seller.shops.feature"
+            ],
+            "external": false,
+            "preferred_query": []
+          },
+          {
+            "id": "support",
+            "key": "support",
+            "label": "Contactar soporte",
+            "business_label": "Contactar soporte",
+            "destination": "support",
+            "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/support",
+            "route": "seller.shops.feature",
+            "feature": "support",
+            "active_routes": [
+              "seller.shops.feature"
+            ],
+            "external": false,
+            "preferred_query": []
+          },
+          {
+            "id": "updates",
+            "key": "updates",
+            "label": "Actualizaciones",
+            "business_label": "Actualizaciones",
+            "destination": "updates",
+            "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/updates",
+            "route": "seller.shops.feature",
+            "feature": "updates",
+            "active_routes": [
+              "seller.shops.feature"
+            ],
+            "external": false,
+            "preferred_query": []
+          },
+          {
+            "id": "practice",
+            "key": "practice",
+            "label": "Guía de práctica",
+            "business_label": "Guía de práctica",
+            "destination": "practice",
+            "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/practice",
+            "route": "seller.shops.feature",
+            "feature": "practice",
+            "active_routes": [
+              "seller.shops.feature"
+            ],
+            "external": false,
+            "preferred_query": []
+          }
+        ],
+        "contextual_sections": [
+          {
+            "id": "distribution",
+            "label": "Distribución",
+            "items": [
+              {
+                "id": "routes",
+                "key": "routes",
+                "label": "Rutas",
+                "business_label": "Rutas",
+                "destination": "routes",
+                "url": null,
+                "route": null,
+                "feature": null,
+                "active_routes": [],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "route_loads",
+                "key": "routes",
+                "label": "Cargas de ruta",
+                "business_label": "Cargas de ruta",
+                "destination": "route_loads",
+                "url": null,
+                "route": null,
+                "feature": null,
+                "active_routes": [],
+                "external": false,
+                "preferred_query": []
+              }
+            ],
+            "requires_local_setting": "routesEnabled"
+          }
+        ]
+      },
+      "formats": {
+        "desktop": {
+          "sections": [
+            "sales",
+            "orders",
+            "catalog",
+            "inventory",
+            "purchases",
+            "customers",
+            "finance",
+            "reports",
+            "storefront",
+            "settings"
+          ],
+          "links": [
+            {
+              "id": "summary",
+              "label": "Inicio",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/resumen",
+              "active": true
+            },
+            {
+              "id": "pos",
+              "label": "Vender",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/pos",
+              "active": false
+            },
+            {
+              "id": "sales_history",
+              "label": "Historial de ventas",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/sales",
+              "active": false
+            },
+            {
+              "id": "quotes",
+              "label": "Cotizaciones",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/quotes",
+              "active": false
+            },
+            {
+              "id": "cash",
+              "label": "Caja",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/caja",
+              "active": false
+            },
+            {
+              "id": "day_close",
+              "label": "Cierre de día",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/day_close",
+              "active": false
+            },
+            {
+              "id": "orders",
+              "label": "Pedidos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/orders",
+              "active": false
+            },
+            {
+              "id": "encargos",
+              "label": "Encargos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/encargos",
+              "active": false
+            },
+            {
+              "id": "shipments",
+              "label": "Envíos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/shipments",
+              "active": false
+            },
+            {
+              "id": "products",
+              "label": "Productos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/productos",
+              "active": false
+            },
+            {
+              "id": "services",
+              "label": "Servicios",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/services",
+              "active": false
+            },
+            {
+              "id": "categories",
+              "label": "Categorías y unidades",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/categorias",
+              "active": false
+            },
+            {
+              "id": "photos",
+              "label": "Fotos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/photos",
+              "active": false
+            },
+            {
+              "id": "attributes",
+              "label": "Marcas y atributos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/attributes",
+              "active": false
+            },
+            {
+              "id": "price_health",
+              "label": "Diagnóstico de precios",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/price_health",
+              "active": false
+            },
+            {
+              "id": "pricing",
+              "label": "Precios automáticos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/productos/reglas-precio",
+              "active": false
+            },
+            {
+              "id": "decants",
+              "label": "Decants",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/decants",
+              "active": false
+            },
+            {
+              "id": "inventory",
+              "label": "Existencias y movimientos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/inventario",
+              "active": false
+            },
+            {
+              "id": "inventory_adjustments",
+              "label": "Ajustes y conteos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/inventory_adjustments",
+              "active": false
+            },
+            {
+              "id": "fifo",
+              "label": "Lotes FIFO",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/inventario/lotes",
+              "active": false
+            },
+            {
+              "id": "import",
+              "label": "Importar",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/importar",
+              "active": false
+            },
+            {
+              "id": "suppliers",
+              "label": "Proveedores",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/suppliers",
+              "active": false
+            },
+            {
+              "id": "purchase_invoices",
+              "label": "Facturas de compra",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/purchase_invoices",
+              "active": false
+            },
+            {
+              "id": "loads",
+              "label": "Cargas",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/loads",
+              "active": false
+            },
+            {
+              "id": "containers",
+              "label": "Contenedores",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/containers",
+              "active": false
+            },
+            {
+              "id": "customers",
+              "label": "Clientes",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/clientes",
+              "active": false
+            },
+            {
+              "id": "credit",
+              "label": "Cartera y crédito",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/credit",
+              "active": false
+            },
+            {
+              "id": "collections",
+              "label": "Cobros y abonos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/clientes?view=collections",
+              "active": false
+            },
+            {
+              "id": "finance",
+              "label": "Ganancias",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/negocio",
+              "active": false
+            },
+            {
+              "id": "expenses",
+              "label": "Gastos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/gastos",
+              "active": false
+            },
+            {
+              "id": "partners",
+              "label": "Socios",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/partners",
+              "active": false
+            },
+            {
+              "id": "reports",
+              "label": "Reportes operativos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/reports",
+              "active": false
+            },
+            {
+              "id": "storefront",
+              "label": "Vitrina y diseño",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/mi-tienda",
+              "active": false
+            },
+            {
+              "id": "public_catalog",
+              "label": "Compartir catálogo",
+              "url": "http://127.0.0.1:18768/tienda/qa-nav-perfumes",
+              "active": false
+            },
+            {
+              "id": "metrics",
+              "label": "Métricas y QR",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/metricas",
+              "active": false
+            },
+            {
+              "id": "shop_settings",
+              "label": "Negocio",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/editar",
+              "active": false
+            },
+            {
+              "id": "shop_menus",
+              "label": "Menús de la tienda",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/menus",
+              "active": false
+            },
+            {
+              "id": "sellers",
+              "label": "Equipo",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/vendedores",
+              "active": false
+            },
+            {
+              "id": "commissions",
+              "label": "Comisiones",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/commissions",
+              "active": false
+            },
+            {
+              "id": "authorizations",
+              "label": "Autorizaciones",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/authorizations",
+              "active": false
+            },
+            {
+              "id": "accountant",
+              "label": "Contador",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/accountant",
+              "active": false
+            },
+            {
+              "id": "account",
+              "label": "Mi cuenta",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/account",
+              "active": false
+            },
+            {
+              "id": "help",
+              "label": "Ayuda",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/help",
+              "active": false
+            },
+            {
+              "id": "support",
+              "label": "Contactar soporte",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/support",
+              "active": false
+            },
+            {
+              "id": "updates",
+              "label": "Actualizaciones",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/updates",
+              "active": false
+            },
+            {
+              "id": "practice",
+              "label": "Guía de práctica",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/practice",
+              "active": false
+            },
+            {
+              "id": "shop_selector",
+              "label": "Mis tiendas",
+              "url": "http://127.0.0.1:18768/panel",
+              "active": false
+            }
+          ]
+        },
+        "mobile": {
+          "sections": [
+            "sales",
+            "orders",
+            "catalog",
+            "inventory",
+            "purchases",
+            "customers",
+            "finance",
+            "reports",
+            "storefront",
+            "settings"
+          ],
+          "links": [
+            {
+              "id": "summary",
+              "label": "Inicio",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/resumen",
+              "active": true
+            },
+            {
+              "id": "pos",
+              "label": "Vender",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/pos",
+              "active": false
+            },
+            {
+              "id": "sales_history",
+              "label": "Historial de ventas",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/sales",
+              "active": false
+            },
+            {
+              "id": "quotes",
+              "label": "Cotizaciones",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/quotes",
+              "active": false
+            },
+            {
+              "id": "cash",
+              "label": "Caja",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/caja",
+              "active": false
+            },
+            {
+              "id": "day_close",
+              "label": "Cierre de día",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/day_close",
+              "active": false
+            },
+            {
+              "id": "orders",
+              "label": "Pedidos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/orders",
+              "active": false
+            },
+            {
+              "id": "encargos",
+              "label": "Encargos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/encargos",
+              "active": false
+            },
+            {
+              "id": "shipments",
+              "label": "Envíos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/shipments",
+              "active": false
+            },
+            {
+              "id": "products",
+              "label": "Productos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/productos",
+              "active": false
+            },
+            {
+              "id": "services",
+              "label": "Servicios",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/services",
+              "active": false
+            },
+            {
+              "id": "categories",
+              "label": "Categorías y unidades",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/categorias",
+              "active": false
+            },
+            {
+              "id": "photos",
+              "label": "Fotos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/photos",
+              "active": false
+            },
+            {
+              "id": "attributes",
+              "label": "Marcas y atributos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/attributes",
+              "active": false
+            },
+            {
+              "id": "price_health",
+              "label": "Diagnóstico de precios",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/price_health",
+              "active": false
+            },
+            {
+              "id": "pricing",
+              "label": "Precios automáticos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/productos/reglas-precio",
+              "active": false
+            },
+            {
+              "id": "decants",
+              "label": "Decants",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/decants",
+              "active": false
+            },
+            {
+              "id": "inventory",
+              "label": "Existencias y movimientos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/inventario",
+              "active": false
+            },
+            {
+              "id": "inventory_adjustments",
+              "label": "Ajustes y conteos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/inventory_adjustments",
+              "active": false
+            },
+            {
+              "id": "fifo",
+              "label": "Lotes FIFO",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/inventario/lotes",
+              "active": false
+            },
+            {
+              "id": "import",
+              "label": "Importar",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/importar",
+              "active": false
+            },
+            {
+              "id": "suppliers",
+              "label": "Proveedores",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/suppliers",
+              "active": false
+            },
+            {
+              "id": "purchase_invoices",
+              "label": "Facturas de compra",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/purchase_invoices",
+              "active": false
+            },
+            {
+              "id": "loads",
+              "label": "Cargas",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/loads",
+              "active": false
+            },
+            {
+              "id": "containers",
+              "label": "Contenedores",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/containers",
+              "active": false
+            },
+            {
+              "id": "customers",
+              "label": "Clientes",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/clientes",
+              "active": false
+            },
+            {
+              "id": "credit",
+              "label": "Cartera y crédito",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/credit",
+              "active": false
+            },
+            {
+              "id": "collections",
+              "label": "Cobros y abonos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/clientes?view=collections",
+              "active": false
+            },
+            {
+              "id": "finance",
+              "label": "Ganancias",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/negocio",
+              "active": false
+            },
+            {
+              "id": "expenses",
+              "label": "Gastos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/gastos",
+              "active": false
+            },
+            {
+              "id": "partners",
+              "label": "Socios",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/partners",
+              "active": false
+            },
+            {
+              "id": "reports",
+              "label": "Reportes operativos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/reports",
+              "active": false
+            },
+            {
+              "id": "storefront",
+              "label": "Vitrina y diseño",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/mi-tienda",
+              "active": false
+            },
+            {
+              "id": "public_catalog",
+              "label": "Compartir catálogo",
+              "url": "http://127.0.0.1:18768/tienda/qa-nav-perfumes",
+              "active": false
+            },
+            {
+              "id": "metrics",
+              "label": "Métricas y QR",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/metricas",
+              "active": false
+            },
+            {
+              "id": "shop_settings",
+              "label": "Negocio",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/editar",
+              "active": false
+            },
+            {
+              "id": "shop_menus",
+              "label": "Menús de la tienda",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/menus",
+              "active": false
+            },
+            {
+              "id": "sellers",
+              "label": "Equipo",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/vendedores",
+              "active": false
+            },
+            {
+              "id": "commissions",
+              "label": "Comisiones",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/commissions",
+              "active": false
+            },
+            {
+              "id": "authorizations",
+              "label": "Autorizaciones",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/authorizations",
+              "active": false
+            },
+            {
+              "id": "accountant",
+              "label": "Contador",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/accountant",
+              "active": false
+            },
+            {
+              "id": "account",
+              "label": "Mi cuenta",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/account",
+              "active": false
+            },
+            {
+              "id": "help",
+              "label": "Ayuda",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/help",
+              "active": false
+            },
+            {
+              "id": "support",
+              "label": "Contactar soporte",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/support",
+              "active": false
+            },
+            {
+              "id": "updates",
+              "label": "Actualizaciones",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/updates",
+              "active": false
+            },
+            {
+              "id": "practice",
+              "label": "Guía de práctica",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/practice",
+              "active": false
+            },
+            {
+              "id": "shop_selector",
+              "label": "Mis tiendas",
+              "url": "http://127.0.0.1:18768/panel",
+              "active": false
+            }
+          ]
+        }
+      },
+      "comparison": {
+        "desktop_mobile_equal": true,
+        "api_ids": [
+          "summary",
+          "pos",
+          "sales_history",
+          "quotes",
+          "cash",
+          "day_close",
+          "orders",
+          "encargos",
+          "shipments",
+          "products",
+          "services",
+          "categories",
+          "photos",
+          "attributes",
+          "price_health",
+          "pricing",
+          "decants",
+          "inventory",
+          "inventory_adjustments",
+          "fifo",
+          "import",
+          "suppliers",
+          "purchase_invoices",
+          "loads",
+          "containers",
+          "customers",
+          "credit",
+          "collections",
+          "finance",
+          "expenses",
+          "partners",
+          "reports",
+          "storefront",
+          "public_catalog",
+          "metrics",
+          "shop_settings",
+          "shop_menus",
+          "sellers",
+          "commissions",
+          "authorizations",
+          "accountant",
+          "account",
+          "help",
+          "support",
+          "updates",
+          "practice"
+        ],
+        "web_ids": [
+          "summary",
+          "pos",
+          "sales_history",
+          "quotes",
+          "cash",
+          "day_close",
+          "orders",
+          "encargos",
+          "shipments",
+          "products",
+          "services",
+          "categories",
+          "photos",
+          "attributes",
+          "price_health",
+          "pricing",
+          "decants",
+          "inventory",
+          "inventory_adjustments",
+          "fifo",
+          "import",
+          "suppliers",
+          "purchase_invoices",
+          "loads",
+          "containers",
+          "customers",
+          "credit",
+          "collections",
+          "finance",
+          "expenses",
+          "partners",
+          "reports",
+          "storefront",
+          "public_catalog",
+          "metrics",
+          "shop_settings",
+          "shop_menus",
+          "sellers",
+          "commissions",
+          "authorizations",
+          "accountant",
+          "account",
+          "help",
+          "support",
+          "updates",
+          "practice",
+          "shop_selector"
+        ],
+        "web_only": [
+          "shop_selector"
+        ]
+      }
+    },
+    {
+      "role": "manager",
+      "synthetic_account": "manager",
+      "permissions": [
+        "sales",
+        "products",
+        "printers",
+        "quotes",
+        "orders",
+        "encargos",
+        "shipments",
+        "day_close",
+        "containers",
+        "loads",
+        "suppliers",
+        "purchase_invoices",
+        "photos",
+        "storefront",
+        "services",
+        "price_health",
+        "pricing",
+        "decants",
+        "attributes",
+        "import",
+        "customers",
+        "credit",
+        "inventory",
+        "collections",
+        "cash",
+        "finance",
+        "inventory_adjustments",
+        "partners",
+        "expenses",
+        "reports",
+        "commissions",
+        "authorizations",
+        "returns",
+        "routes",
+        "more",
+        "accountant",
+        "account",
+        "updates",
+        "help",
+        "practice",
+        "support",
+        "metrics",
+        "public_catalog"
+      ],
+      "api_navigation": {
+        "schema_version": 1,
+        "sections": [
+          {
+            "id": "home",
+            "label": "Inicio",
+            "items": [
+              {
+                "id": "summary",
+                "key": "",
+                "label": "Resumen",
+                "business_label": "Resumen",
+                "destination": "dashboard",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/resumen",
+                "route": "seller.shops.summary",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.summary"
+                ],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          },
+          {
+            "id": "sales",
+            "label": "Ventas",
+            "items": [
+              {
+                "id": "pos",
+                "key": "sales",
+                "label": "Vender",
+                "business_label": "Vender",
+                "destination": "pos",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/pos",
+                "route": "seller.shops.pos",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.pos"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "sales_history",
+                "key": "sales",
+                "label": "Historial de ventas",
+                "business_label": "Historial de ventas",
+                "destination": "sales_history",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/sales",
+                "route": "seller.shops.feature",
+                "feature": "sales",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "quotes",
+                "key": "quotes",
+                "label": "Cotizaciones",
+                "business_label": "Cotizaciones",
+                "destination": "quotes",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/quotes",
+                "route": "seller.shops.feature",
+                "feature": "quotes",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "returns",
+                "key": "returns",
+                "label": "Devoluciones",
+                "business_label": "Devoluciones",
+                "destination": "returns",
+                "url": null,
+                "route": null,
+                "feature": null,
+                "active_routes": [],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "cash",
+                "key": "cash",
+                "label": "Caja",
+                "business_label": "Caja",
+                "destination": "cash",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/caja",
+                "route": "seller.shops.cash.index",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.cash.*"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "day_close",
+                "key": "day_close",
+                "label": "Cierre de día",
+                "business_label": "Cierre de día",
+                "destination": "day_close",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/day_close",
+                "route": "seller.shops.feature",
+                "feature": "day_close",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          },
+          {
+            "id": "orders",
+            "label": "Pedidos",
+            "items": [
+              {
+                "id": "orders",
+                "key": "orders",
+                "label": "Pedidos",
+                "business_label": "Pedidos",
+                "destination": "orders",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/orders",
+                "route": "seller.shops.feature",
+                "feature": "orders",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "encargos",
+                "key": "encargos",
+                "label": "Encargos",
+                "business_label": "Encargos",
+                "destination": "encargos",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/encargos",
+                "route": "seller.shops.feature",
+                "feature": "encargos",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "shipments",
+                "key": "shipments",
+                "label": "Envíos",
+                "business_label": "Envíos",
+                "destination": "shipments",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/shipments",
+                "route": "seller.shops.feature",
+                "feature": "shipments",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          },
+          {
+            "id": "catalog",
+            "label": "Catálogo",
+            "items": [
+              {
+                "id": "products",
+                "key": "products",
+                "label": "Productos",
+                "business_label": "Perfumes",
+                "destination": "catalog",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/productos",
+                "route": "seller.shops.products.index",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.products.*"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "services",
+                "key": "services",
+                "label": "Servicios",
+                "business_label": "Servicios",
+                "destination": "services",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/services",
+                "route": "seller.shops.feature",
+                "feature": "services",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "categories",
+                "key": "products",
+                "label": "Categorías y unidades",
+                "business_label": "Categorías y unidades",
+                "destination": "categories",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/categorias",
+                "route": "seller.shops.categories.index",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.categories.*"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "photos",
+                "key": "photos",
+                "label": "Fotos",
+                "business_label": "Fotos",
+                "destination": "photos",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/photos",
+                "route": "seller.shops.feature",
+                "feature": "photos",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "attributes",
+                "key": "attributes",
+                "label": "Marcas y atributos",
+                "business_label": "Marcas y atributos",
+                "destination": "attributes",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/attributes",
+                "route": "seller.shops.feature",
+                "feature": "attributes",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "price_health",
+                "key": "price_health",
+                "label": "Diagnóstico de precios",
+                "business_label": "Diagnóstico de precios",
+                "destination": "price_health",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/price_health",
+                "route": "seller.shops.feature",
+                "feature": "price_health",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "pricing",
+                "key": "pricing",
+                "label": "Precios automáticos",
+                "business_label": "Precios automáticos",
+                "destination": "pricing",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/productos/reglas-precio",
+                "route": "seller.shops.pricing.index",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.pricing.*"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "decants",
+                "key": "decants",
+                "label": "Decants",
+                "business_label": "Decants",
+                "destination": "decants",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/decants",
+                "route": "seller.shops.feature",
+                "feature": "decants",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          },
+          {
+            "id": "inventory",
+            "label": "Inventario",
+            "items": [
+              {
+                "id": "inventory",
+                "key": "inventory",
+                "label": "Existencias y movimientos",
+                "business_label": "Existencias y movimientos",
+                "destination": "inventory",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/inventario",
+                "route": "seller.shops.inventory.index",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.inventory.*"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "inventory_adjustments",
+                "key": "inventory_adjustments",
+                "label": "Ajustes y conteos",
+                "business_label": "Ajustes y conteos",
+                "destination": "inventory_adjustments",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/inventory_adjustments",
+                "route": "seller.shops.feature",
+                "feature": "inventory_adjustments",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "fifo",
+                "key": "inventory",
+                "label": "Lotes FIFO",
+                "business_label": "Lotes FIFO",
+                "destination": "inventory",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/inventario/lotes",
+                "route": "seller.shops.inventory.lots",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.inventory.lots"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "import",
+                "key": "import",
+                "label": "Importar",
+                "business_label": "Importar",
+                "destination": "import",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/importar",
+                "route": "seller.shops.products.import.create",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.products.import.*",
+                  "seller.shops.products.bulk.*"
+                ],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          },
+          {
+            "id": "purchases",
+            "label": "Compras",
+            "items": [
+              {
+                "id": "suppliers",
+                "key": "suppliers",
+                "label": "Proveedores",
+                "business_label": "Proveedores",
+                "destination": "suppliers",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/suppliers",
+                "route": "seller.shops.feature",
+                "feature": "suppliers",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "purchase_invoices",
+                "key": "purchase_invoices",
+                "label": "Facturas de compra",
+                "business_label": "Facturas de compra",
+                "destination": "purchase_invoices",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/purchase_invoices",
+                "route": "seller.shops.feature",
+                "feature": "purchase_invoices",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "loads",
+                "key": "loads",
+                "label": "Cargas",
+                "business_label": "Cargas",
+                "destination": "loads",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/loads",
+                "route": "seller.shops.feature",
+                "feature": "loads",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "containers",
+                "key": "containers",
+                "label": "Contenedores",
+                "business_label": "Contenedores",
+                "destination": "containers",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/containers",
+                "route": "seller.shops.feature",
+                "feature": "containers",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          },
+          {
+            "id": "customers",
+            "label": "Clientes y cobros",
+            "items": [
+              {
+                "id": "customers",
+                "key": "customers",
+                "label": "Clientes",
+                "business_label": "Clientes",
+                "destination": "customers",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/clientes",
+                "route": "seller.shops.customers.index",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.customers.*"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "credit",
+                "key": "credit",
+                "label": "Cartera y crédito",
+                "business_label": "Cartera y crédito",
+                "destination": "credit_ledger",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/credit",
+                "route": "seller.shops.feature",
+                "feature": "credit",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "collections",
+                "key": "collections",
+                "label": "Cobros y abonos",
+                "business_label": "Cobros y abonos",
+                "destination": "collections",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/clientes?view=collections",
+                "route": "seller.shops.customers.index",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.customers.index"
+                ],
+                "external": false,
+                "preferred_query": {
+                  "view": "collections"
+                }
+              }
+            ]
+          },
+          {
+            "id": "finance",
+            "label": "Finanzas",
+            "items": [
+              {
+                "id": "finance",
+                "key": "finance",
+                "label": "Ganancias",
+                "business_label": "Ganancias",
+                "destination": "finance",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/negocio",
+                "route": "seller.shops.business",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.business"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "expenses",
+                "key": "expenses",
+                "label": "Gastos",
+                "business_label": "Gastos",
+                "destination": "expenses",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/gastos",
+                "route": "seller.shops.expenses.index",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.expenses.*"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "partners",
+                "key": "partners",
+                "label": "Socios",
+                "business_label": "Socios",
+                "destination": "partners",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/partners",
+                "route": "seller.shops.feature",
+                "feature": "partners",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          },
+          {
+            "id": "reports",
+            "label": "Reportes",
+            "items": [
+              {
+                "id": "reports",
+                "key": "reports",
+                "label": "Reportes operativos",
+                "business_label": "Reportes operativos",
+                "destination": "reports",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/reports",
+                "route": "seller.shops.feature",
+                "feature": "reports",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          },
+          {
+            "id": "storefront",
+            "label": "Mi tienda",
+            "items": [
+              {
+                "id": "storefront",
+                "key": "storefront",
+                "label": "Vitrina y diseño",
+                "business_label": "Vitrina y diseño",
+                "destination": "storefront",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/mi-tienda",
+                "route": "seller.shops.storefront",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.storefront"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "public_catalog",
+                "key": "public_catalog",
+                "label": "Compartir catálogo",
+                "business_label": "Compartir catálogo",
+                "destination": "public_catalog",
+                "url": "http://127.0.0.1:18768/tienda/qa-nav-perfumes",
+                "route": "shops.show",
+                "feature": null,
+                "active_routes": [
+                  "shops.show"
+                ],
+                "external": true,
+                "preferred_query": []
+              },
+              {
+                "id": "metrics",
+                "key": "metrics",
+                "label": "Métricas y QR",
+                "business_label": "Métricas y QR",
+                "destination": "metrics",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/metricas",
+                "route": "seller.shops.metrics.index",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.metrics.*",
+                  "seller.shops.qr.*"
+                ],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          },
+          {
+            "id": "settings",
+            "label": "Configuración",
+            "items": [
+              {
+                "id": "commissions",
+                "key": "commissions",
+                "label": "Comisiones",
+                "business_label": "Comisiones",
+                "destination": "commissions",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/commissions",
+                "route": "seller.shops.feature",
+                "feature": "commissions",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "authorizations",
+                "key": "authorizations",
+                "label": "Autorizaciones",
+                "business_label": "Autorizaciones",
+                "destination": "authorizations",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/authorizations",
+                "route": "seller.shops.feature",
+                "feature": "authorizations",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "accountant",
+                "key": "accountant",
+                "label": "Contador",
+                "business_label": "Contador",
+                "destination": "accountant",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/accountant",
+                "route": "seller.shops.feature",
+                "feature": "accountant",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "printers",
+                "key": "printers",
+                "label": "Impresoras",
+                "business_label": "Impresoras",
+                "destination": "printers",
+                "url": null,
+                "route": null,
+                "feature": null,
+                "active_routes": [],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          }
+        ],
+        "secondary": [
+          {
+            "id": "account",
+            "key": "account",
+            "label": "Mi cuenta",
+            "business_label": "Mi cuenta",
+            "destination": "profile",
+            "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/account",
+            "route": "seller.shops.feature",
+            "feature": "account",
+            "active_routes": [
+              "seller.shops.feature"
+            ],
+            "external": false,
+            "preferred_query": []
+          },
+          {
+            "id": "help",
+            "key": "help",
+            "label": "Ayuda",
+            "business_label": "Ayuda",
+            "destination": "help",
+            "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/help",
+            "route": "seller.shops.feature",
+            "feature": "help",
+            "active_routes": [
+              "seller.shops.feature"
+            ],
+            "external": false,
+            "preferred_query": []
+          },
+          {
+            "id": "support",
+            "key": "support",
+            "label": "Contactar soporte",
+            "business_label": "Contactar soporte",
+            "destination": "support",
+            "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/support",
+            "route": "seller.shops.feature",
+            "feature": "support",
+            "active_routes": [
+              "seller.shops.feature"
+            ],
+            "external": false,
+            "preferred_query": []
+          },
+          {
+            "id": "updates",
+            "key": "updates",
+            "label": "Actualizaciones",
+            "business_label": "Actualizaciones",
+            "destination": "updates",
+            "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/updates",
+            "route": "seller.shops.feature",
+            "feature": "updates",
+            "active_routes": [
+              "seller.shops.feature"
+            ],
+            "external": false,
+            "preferred_query": []
+          },
+          {
+            "id": "practice",
+            "key": "practice",
+            "label": "Guía de práctica",
+            "business_label": "Guía de práctica",
+            "destination": "practice",
+            "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/practice",
+            "route": "seller.shops.feature",
+            "feature": "practice",
+            "active_routes": [
+              "seller.shops.feature"
+            ],
+            "external": false,
+            "preferred_query": []
+          }
+        ],
+        "contextual_sections": [
+          {
+            "id": "distribution",
+            "label": "Distribución",
+            "items": [
+              {
+                "id": "routes",
+                "key": "routes",
+                "label": "Rutas",
+                "business_label": "Rutas",
+                "destination": "routes",
+                "url": null,
+                "route": null,
+                "feature": null,
+                "active_routes": [],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "route_loads",
+                "key": "routes",
+                "label": "Cargas de ruta",
+                "business_label": "Cargas de ruta",
+                "destination": "route_loads",
+                "url": null,
+                "route": null,
+                "feature": null,
+                "active_routes": [],
+                "external": false,
+                "preferred_query": []
+              }
+            ],
+            "requires_local_setting": "routesEnabled"
+          }
+        ]
+      },
+      "formats": {
+        "desktop": {
+          "sections": [
+            "sales",
+            "orders",
+            "catalog",
+            "inventory",
+            "purchases",
+            "customers",
+            "finance",
+            "reports",
+            "storefront",
+            "settings"
+          ],
+          "links": [
+            {
+              "id": "summary",
+              "label": "Inicio",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/resumen",
+              "active": true
+            },
+            {
+              "id": "pos",
+              "label": "Vender",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/pos",
+              "active": false
+            },
+            {
+              "id": "sales_history",
+              "label": "Historial de ventas",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/sales",
+              "active": false
+            },
+            {
+              "id": "quotes",
+              "label": "Cotizaciones",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/quotes",
+              "active": false
+            },
+            {
+              "id": "cash",
+              "label": "Caja",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/caja",
+              "active": false
+            },
+            {
+              "id": "day_close",
+              "label": "Cierre de día",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/day_close",
+              "active": false
+            },
+            {
+              "id": "orders",
+              "label": "Pedidos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/orders",
+              "active": false
+            },
+            {
+              "id": "encargos",
+              "label": "Encargos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/encargos",
+              "active": false
+            },
+            {
+              "id": "shipments",
+              "label": "Envíos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/shipments",
+              "active": false
+            },
+            {
+              "id": "products",
+              "label": "Productos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/productos",
+              "active": false
+            },
+            {
+              "id": "services",
+              "label": "Servicios",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/services",
+              "active": false
+            },
+            {
+              "id": "categories",
+              "label": "Categorías y unidades",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/categorias",
+              "active": false
+            },
+            {
+              "id": "photos",
+              "label": "Fotos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/photos",
+              "active": false
+            },
+            {
+              "id": "attributes",
+              "label": "Marcas y atributos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/attributes",
+              "active": false
+            },
+            {
+              "id": "price_health",
+              "label": "Diagnóstico de precios",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/price_health",
+              "active": false
+            },
+            {
+              "id": "pricing",
+              "label": "Precios automáticos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/productos/reglas-precio",
+              "active": false
+            },
+            {
+              "id": "decants",
+              "label": "Decants",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/decants",
+              "active": false
+            },
+            {
+              "id": "inventory",
+              "label": "Existencias y movimientos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/inventario",
+              "active": false
+            },
+            {
+              "id": "inventory_adjustments",
+              "label": "Ajustes y conteos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/inventory_adjustments",
+              "active": false
+            },
+            {
+              "id": "fifo",
+              "label": "Lotes FIFO",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/inventario/lotes",
+              "active": false
+            },
+            {
+              "id": "import",
+              "label": "Importar",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/importar",
+              "active": false
+            },
+            {
+              "id": "suppliers",
+              "label": "Proveedores",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/suppliers",
+              "active": false
+            },
+            {
+              "id": "purchase_invoices",
+              "label": "Facturas de compra",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/purchase_invoices",
+              "active": false
+            },
+            {
+              "id": "loads",
+              "label": "Cargas",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/loads",
+              "active": false
+            },
+            {
+              "id": "containers",
+              "label": "Contenedores",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/containers",
+              "active": false
+            },
+            {
+              "id": "customers",
+              "label": "Clientes",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/clientes",
+              "active": false
+            },
+            {
+              "id": "credit",
+              "label": "Cartera y crédito",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/credit",
+              "active": false
+            },
+            {
+              "id": "collections",
+              "label": "Cobros y abonos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/clientes?view=collections",
+              "active": false
+            },
+            {
+              "id": "finance",
+              "label": "Ganancias",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/negocio",
+              "active": false
+            },
+            {
+              "id": "expenses",
+              "label": "Gastos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/gastos",
+              "active": false
+            },
+            {
+              "id": "partners",
+              "label": "Socios",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/partners",
+              "active": false
+            },
+            {
+              "id": "reports",
+              "label": "Reportes operativos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/reports",
+              "active": false
+            },
+            {
+              "id": "storefront",
+              "label": "Vitrina y diseño",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/mi-tienda",
+              "active": false
+            },
+            {
+              "id": "public_catalog",
+              "label": "Compartir catálogo",
+              "url": "http://127.0.0.1:18768/tienda/qa-nav-perfumes",
+              "active": false
+            },
+            {
+              "id": "metrics",
+              "label": "Métricas y QR",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/metricas",
+              "active": false
+            },
+            {
+              "id": "commissions",
+              "label": "Comisiones",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/commissions",
+              "active": false
+            },
+            {
+              "id": "authorizations",
+              "label": "Autorizaciones",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/authorizations",
+              "active": false
+            },
+            {
+              "id": "accountant",
+              "label": "Contador",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/accountant",
+              "active": false
+            },
+            {
+              "id": "account",
+              "label": "Mi cuenta",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/account",
+              "active": false
+            },
+            {
+              "id": "help",
+              "label": "Ayuda",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/help",
+              "active": false
+            },
+            {
+              "id": "support",
+              "label": "Contactar soporte",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/support",
+              "active": false
+            },
+            {
+              "id": "updates",
+              "label": "Actualizaciones",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/updates",
+              "active": false
+            },
+            {
+              "id": "practice",
+              "label": "Guía de práctica",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/practice",
+              "active": false
+            },
+            {
+              "id": "shop_selector",
+              "label": "Mis tiendas",
+              "url": "http://127.0.0.1:18768/panel",
+              "active": false
+            }
+          ]
+        },
+        "mobile": {
+          "sections": [
+            "sales",
+            "orders",
+            "catalog",
+            "inventory",
+            "purchases",
+            "customers",
+            "finance",
+            "reports",
+            "storefront",
+            "settings"
+          ],
+          "links": [
+            {
+              "id": "summary",
+              "label": "Inicio",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/resumen",
+              "active": true
+            },
+            {
+              "id": "pos",
+              "label": "Vender",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/pos",
+              "active": false
+            },
+            {
+              "id": "sales_history",
+              "label": "Historial de ventas",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/sales",
+              "active": false
+            },
+            {
+              "id": "quotes",
+              "label": "Cotizaciones",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/quotes",
+              "active": false
+            },
+            {
+              "id": "cash",
+              "label": "Caja",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/caja",
+              "active": false
+            },
+            {
+              "id": "day_close",
+              "label": "Cierre de día",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/day_close",
+              "active": false
+            },
+            {
+              "id": "orders",
+              "label": "Pedidos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/orders",
+              "active": false
+            },
+            {
+              "id": "encargos",
+              "label": "Encargos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/encargos",
+              "active": false
+            },
+            {
+              "id": "shipments",
+              "label": "Envíos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/shipments",
+              "active": false
+            },
+            {
+              "id": "products",
+              "label": "Productos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/productos",
+              "active": false
+            },
+            {
+              "id": "services",
+              "label": "Servicios",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/services",
+              "active": false
+            },
+            {
+              "id": "categories",
+              "label": "Categorías y unidades",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/categorias",
+              "active": false
+            },
+            {
+              "id": "photos",
+              "label": "Fotos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/photos",
+              "active": false
+            },
+            {
+              "id": "attributes",
+              "label": "Marcas y atributos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/attributes",
+              "active": false
+            },
+            {
+              "id": "price_health",
+              "label": "Diagnóstico de precios",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/price_health",
+              "active": false
+            },
+            {
+              "id": "pricing",
+              "label": "Precios automáticos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/productos/reglas-precio",
+              "active": false
+            },
+            {
+              "id": "decants",
+              "label": "Decants",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/decants",
+              "active": false
+            },
+            {
+              "id": "inventory",
+              "label": "Existencias y movimientos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/inventario",
+              "active": false
+            },
+            {
+              "id": "inventory_adjustments",
+              "label": "Ajustes y conteos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/inventory_adjustments",
+              "active": false
+            },
+            {
+              "id": "fifo",
+              "label": "Lotes FIFO",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/inventario/lotes",
+              "active": false
+            },
+            {
+              "id": "import",
+              "label": "Importar",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/importar",
+              "active": false
+            },
+            {
+              "id": "suppliers",
+              "label": "Proveedores",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/suppliers",
+              "active": false
+            },
+            {
+              "id": "purchase_invoices",
+              "label": "Facturas de compra",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/purchase_invoices",
+              "active": false
+            },
+            {
+              "id": "loads",
+              "label": "Cargas",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/loads",
+              "active": false
+            },
+            {
+              "id": "containers",
+              "label": "Contenedores",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/containers",
+              "active": false
+            },
+            {
+              "id": "customers",
+              "label": "Clientes",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/clientes",
+              "active": false
+            },
+            {
+              "id": "credit",
+              "label": "Cartera y crédito",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/credit",
+              "active": false
+            },
+            {
+              "id": "collections",
+              "label": "Cobros y abonos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/clientes?view=collections",
+              "active": false
+            },
+            {
+              "id": "finance",
+              "label": "Ganancias",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/negocio",
+              "active": false
+            },
+            {
+              "id": "expenses",
+              "label": "Gastos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/gastos",
+              "active": false
+            },
+            {
+              "id": "partners",
+              "label": "Socios",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/partners",
+              "active": false
+            },
+            {
+              "id": "reports",
+              "label": "Reportes operativos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/reports",
+              "active": false
+            },
+            {
+              "id": "storefront",
+              "label": "Vitrina y diseño",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/mi-tienda",
+              "active": false
+            },
+            {
+              "id": "public_catalog",
+              "label": "Compartir catálogo",
+              "url": "http://127.0.0.1:18768/tienda/qa-nav-perfumes",
+              "active": false
+            },
+            {
+              "id": "metrics",
+              "label": "Métricas y QR",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/metricas",
+              "active": false
+            },
+            {
+              "id": "commissions",
+              "label": "Comisiones",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/commissions",
+              "active": false
+            },
+            {
+              "id": "authorizations",
+              "label": "Autorizaciones",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/authorizations",
+              "active": false
+            },
+            {
+              "id": "accountant",
+              "label": "Contador",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/accountant",
+              "active": false
+            },
+            {
+              "id": "account",
+              "label": "Mi cuenta",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/account",
+              "active": false
+            },
+            {
+              "id": "help",
+              "label": "Ayuda",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/help",
+              "active": false
+            },
+            {
+              "id": "support",
+              "label": "Contactar soporte",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/support",
+              "active": false
+            },
+            {
+              "id": "updates",
+              "label": "Actualizaciones",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/updates",
+              "active": false
+            },
+            {
+              "id": "practice",
+              "label": "Guía de práctica",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/practice",
+              "active": false
+            },
+            {
+              "id": "shop_selector",
+              "label": "Mis tiendas",
+              "url": "http://127.0.0.1:18768/panel",
+              "active": false
+            }
+          ]
+        }
+      },
+      "comparison": {
+        "desktop_mobile_equal": true,
+        "api_ids": [
+          "summary",
+          "pos",
+          "sales_history",
+          "quotes",
+          "cash",
+          "day_close",
+          "orders",
+          "encargos",
+          "shipments",
+          "products",
+          "services",
+          "categories",
+          "photos",
+          "attributes",
+          "price_health",
+          "pricing",
+          "decants",
+          "inventory",
+          "inventory_adjustments",
+          "fifo",
+          "import",
+          "suppliers",
+          "purchase_invoices",
+          "loads",
+          "containers",
+          "customers",
+          "credit",
+          "collections",
+          "finance",
+          "expenses",
+          "partners",
+          "reports",
+          "storefront",
+          "public_catalog",
+          "metrics",
+          "commissions",
+          "authorizations",
+          "accountant",
+          "account",
+          "help",
+          "support",
+          "updates",
+          "practice"
+        ],
+        "web_ids": [
+          "summary",
+          "pos",
+          "sales_history",
+          "quotes",
+          "cash",
+          "day_close",
+          "orders",
+          "encargos",
+          "shipments",
+          "products",
+          "services",
+          "categories",
+          "photos",
+          "attributes",
+          "price_health",
+          "pricing",
+          "decants",
+          "inventory",
+          "inventory_adjustments",
+          "fifo",
+          "import",
+          "suppliers",
+          "purchase_invoices",
+          "loads",
+          "containers",
+          "customers",
+          "credit",
+          "collections",
+          "finance",
+          "expenses",
+          "partners",
+          "reports",
+          "storefront",
+          "public_catalog",
+          "metrics",
+          "commissions",
+          "authorizations",
+          "accountant",
+          "account",
+          "help",
+          "support",
+          "updates",
+          "practice",
+          "shop_selector"
+        ],
+        "web_only": [
+          "shop_selector"
+        ]
+      }
+    },
+    {
+      "role": "physical",
+      "synthetic_account": "sales",
+      "permissions": [
+        "products",
+        "account",
+        "help"
+      ],
+      "api_navigation": {
+        "schema_version": 1,
+        "sections": [
+          {
+            "id": "home",
+            "label": "Inicio",
+            "items": [
+              {
+                "id": "summary",
+                "key": "",
+                "label": "Resumen",
+                "business_label": "Resumen",
+                "destination": "dashboard",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/resumen",
+                "route": "seller.shops.summary",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.summary"
+                ],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          },
+          {
+            "id": "catalog",
+            "label": "Catálogo",
+            "items": [
+              {
+                "id": "products",
+                "key": "products",
+                "label": "Productos",
+                "business_label": "Perfumes",
+                "destination": "catalog",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/productos",
+                "route": "seller.shops.products.index",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.products.*"
+                ],
+                "external": false,
+                "preferred_query": []
+              },
+              {
+                "id": "categories",
+                "key": "products",
+                "label": "Categorías y unidades",
+                "business_label": "Categorías y unidades",
+                "destination": "categories",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/categorias",
+                "route": "seller.shops.categories.index",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.categories.*"
+                ],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          }
+        ],
+        "secondary": [
+          {
+            "id": "account",
+            "key": "account",
+            "label": "Mi cuenta",
+            "business_label": "Mi cuenta",
+            "destination": "profile",
+            "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/account",
+            "route": "seller.shops.feature",
+            "feature": "account",
+            "active_routes": [
+              "seller.shops.feature"
+            ],
+            "external": false,
+            "preferred_query": []
+          },
+          {
+            "id": "help",
+            "key": "help",
+            "label": "Ayuda",
+            "business_label": "Ayuda",
+            "destination": "help",
+            "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/help",
+            "route": "seller.shops.feature",
+            "feature": "help",
+            "active_routes": [
+              "seller.shops.feature"
+            ],
+            "external": false,
+            "preferred_query": []
+          }
+        ],
+        "contextual_sections": []
+      },
+      "formats": {
+        "desktop": {
+          "sections": [
+            "catalog"
+          ],
+          "links": [
+            {
+              "id": "summary",
+              "label": "Inicio",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/resumen",
+              "active": true
+            },
+            {
+              "id": "products",
+              "label": "Productos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/productos",
+              "active": false
+            },
+            {
+              "id": "categories",
+              "label": "Categorías y unidades",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/categorias",
+              "active": false
+            },
+            {
+              "id": "account",
+              "label": "Mi cuenta",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/account",
+              "active": false
+            },
+            {
+              "id": "help",
+              "label": "Ayuda",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/help",
+              "active": false
+            }
+          ]
+        },
+        "mobile": {
+          "sections": [
+            "catalog"
+          ],
+          "links": [
+            {
+              "id": "summary",
+              "label": "Inicio",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/resumen",
+              "active": true
+            },
+            {
+              "id": "products",
+              "label": "Productos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/productos",
+              "active": false
+            },
+            {
+              "id": "categories",
+              "label": "Categorías y unidades",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/categorias",
+              "active": false
+            },
+            {
+              "id": "account",
+              "label": "Mi cuenta",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/account",
+              "active": false
+            },
+            {
+              "id": "help",
+              "label": "Ayuda",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/help",
+              "active": false
+            }
+          ]
+        }
+      },
+      "comparison": {
+        "desktop_mobile_equal": true,
+        "api_ids": [
+          "summary",
+          "products",
+          "categories",
+          "account",
+          "help"
+        ],
+        "web_ids": [
+          "summary",
+          "products",
+          "categories",
+          "account",
+          "help"
+        ],
+        "web_only": []
+      }
+    },
+    {
+      "role": "services",
+      "synthetic_account": "services",
+      "permissions": [
+        "services",
+        "account",
+        "help"
+      ],
+      "api_navigation": {
+        "schema_version": 1,
+        "sections": [
+          {
+            "id": "home",
+            "label": "Inicio",
+            "items": [
+              {
+                "id": "summary",
+                "key": "",
+                "label": "Resumen",
+                "business_label": "Resumen",
+                "destination": "dashboard",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/resumen",
+                "route": "seller.shops.summary",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.summary"
+                ],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          },
+          {
+            "id": "catalog",
+            "label": "Catálogo",
+            "items": [
+              {
+                "id": "services",
+                "key": "services",
+                "label": "Servicios",
+                "business_label": "Servicios",
+                "destination": "services",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/services",
+                "route": "seller.shops.feature",
+                "feature": "services",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          }
+        ],
+        "secondary": [
+          {
+            "id": "account",
+            "key": "account",
+            "label": "Mi cuenta",
+            "business_label": "Mi cuenta",
+            "destination": "profile",
+            "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/account",
+            "route": "seller.shops.feature",
+            "feature": "account",
+            "active_routes": [
+              "seller.shops.feature"
+            ],
+            "external": false,
+            "preferred_query": []
+          },
+          {
+            "id": "help",
+            "key": "help",
+            "label": "Ayuda",
+            "business_label": "Ayuda",
+            "destination": "help",
+            "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/help",
+            "route": "seller.shops.feature",
+            "feature": "help",
+            "active_routes": [
+              "seller.shops.feature"
+            ],
+            "external": false,
+            "preferred_query": []
+          }
+        ],
+        "contextual_sections": []
+      },
+      "formats": {
+        "desktop": {
+          "sections": [
+            "catalog"
+          ],
+          "links": [
+            {
+              "id": "summary",
+              "label": "Inicio",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/resumen",
+              "active": true
+            },
+            {
+              "id": "services",
+              "label": "Servicios",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/services",
+              "active": false
+            },
+            {
+              "id": "account",
+              "label": "Mi cuenta",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/account",
+              "active": false
+            },
+            {
+              "id": "help",
+              "label": "Ayuda",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/help",
+              "active": false
+            }
+          ]
+        },
+        "mobile": {
+          "sections": [
+            "catalog"
+          ],
+          "links": [
+            {
+              "id": "summary",
+              "label": "Inicio",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/resumen",
+              "active": true
+            },
+            {
+              "id": "services",
+              "label": "Servicios",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/services",
+              "active": false
+            },
+            {
+              "id": "account",
+              "label": "Mi cuenta",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/account",
+              "active": false
+            },
+            {
+              "id": "help",
+              "label": "Ayuda",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/help",
+              "active": false
+            }
+          ]
+        }
+      },
+      "comparison": {
+        "desktop_mobile_equal": true,
+        "api_ids": [
+          "summary",
+          "services",
+          "account",
+          "help"
+        ],
+        "web_ids": [
+          "summary",
+          "services",
+          "account",
+          "help"
+        ],
+        "web_only": []
+      }
+    },
+    {
+      "role": "accountant",
+      "synthetic_account": "accountant",
+      "permissions": [
+        "finance",
+        "reports"
+      ],
+      "api_navigation": {
+        "schema_version": 1,
+        "sections": [
+          {
+            "id": "home",
+            "label": "Inicio",
+            "items": [
+              {
+                "id": "summary",
+                "key": "",
+                "label": "Resumen",
+                "business_label": "Resumen",
+                "destination": "dashboard",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/resumen",
+                "route": "seller.shops.summary",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.summary"
+                ],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          },
+          {
+            "id": "finance",
+            "label": "Finanzas",
+            "items": [
+              {
+                "id": "finance",
+                "key": "finance",
+                "label": "Ganancias",
+                "business_label": "Ganancias",
+                "destination": "finance",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/negocio",
+                "route": "seller.shops.business",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.business"
+                ],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          },
+          {
+            "id": "reports",
+            "label": "Reportes",
+            "items": [
+              {
+                "id": "reports",
+                "key": "reports",
+                "label": "Reportes operativos",
+                "business_label": "Reportes operativos",
+                "destination": "reports",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/reports",
+                "route": "seller.shops.feature",
+                "feature": "reports",
+                "active_routes": [
+                  "seller.shops.feature"
+                ],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          }
+        ],
+        "secondary": [
+          {
+            "id": "account",
+            "key": "account",
+            "label": "Mi cuenta",
+            "business_label": "Mi cuenta",
+            "destination": "profile",
+            "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/account",
+            "route": "seller.shops.feature",
+            "feature": "account",
+            "active_routes": [
+              "seller.shops.feature"
+            ],
+            "external": false,
+            "preferred_query": []
+          },
+          {
+            "id": "help",
+            "key": "help",
+            "label": "Ayuda",
+            "business_label": "Ayuda",
+            "destination": "help",
+            "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/help",
+            "route": "seller.shops.feature",
+            "feature": "help",
+            "active_routes": [
+              "seller.shops.feature"
+            ],
+            "external": false,
+            "preferred_query": []
+          }
+        ],
+        "contextual_sections": []
+      },
+      "formats": {
+        "desktop": {
+          "sections": [
+            "finance",
+            "reports"
+          ],
+          "links": [
+            {
+              "id": "summary",
+              "label": "Inicio",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/resumen",
+              "active": true
+            },
+            {
+              "id": "finance",
+              "label": "Ganancias",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/negocio",
+              "active": false
+            },
+            {
+              "id": "reports",
+              "label": "Reportes operativos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/reports",
+              "active": false
+            },
+            {
+              "id": "account",
+              "label": "Mi cuenta",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/account",
+              "active": false
+            },
+            {
+              "id": "help",
+              "label": "Ayuda",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/help",
+              "active": false
+            },
+            {
+              "id": "shop_selector",
+              "label": "Mis tiendas",
+              "url": "http://127.0.0.1:18768/panel",
+              "active": false
+            }
+          ]
+        },
+        "mobile": {
+          "sections": [
+            "finance",
+            "reports"
+          ],
+          "links": [
+            {
+              "id": "summary",
+              "label": "Inicio",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/resumen",
+              "active": true
+            },
+            {
+              "id": "finance",
+              "label": "Ganancias",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/negocio",
+              "active": false
+            },
+            {
+              "id": "reports",
+              "label": "Reportes operativos",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/reports",
+              "active": false
+            },
+            {
+              "id": "account",
+              "label": "Mi cuenta",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/account",
+              "active": false
+            },
+            {
+              "id": "help",
+              "label": "Ayuda",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/help",
+              "active": false
+            },
+            {
+              "id": "shop_selector",
+              "label": "Mis tiendas",
+              "url": "http://127.0.0.1:18768/panel",
+              "active": false
+            }
+          ]
+        }
+      },
+      "comparison": {
+        "desktop_mobile_equal": true,
+        "api_ids": [
+          "summary",
+          "finance",
+          "reports",
+          "account",
+          "help"
+        ],
+        "web_ids": [
+          "summary",
+          "finance",
+          "reports",
+          "account",
+          "help",
+          "shop_selector"
+        ],
+        "web_only": [
+          "shop_selector"
+        ]
+      }
+    },
+    {
+      "role": "none",
+      "synthetic_account": "reports",
+      "permissions": [
+        "account",
+        "help"
+      ],
+      "api_navigation": {
+        "schema_version": 1,
+        "sections": [
+          {
+            "id": "home",
+            "label": "Inicio",
+            "items": [
+              {
+                "id": "summary",
+                "key": "",
+                "label": "Resumen",
+                "business_label": "Resumen",
+                "destination": "dashboard",
+                "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/resumen",
+                "route": "seller.shops.summary",
+                "feature": null,
+                "active_routes": [
+                  "seller.shops.summary"
+                ],
+                "external": false,
+                "preferred_query": []
+              }
+            ]
+          }
+        ],
+        "secondary": [
+          {
+            "id": "account",
+            "key": "account",
+            "label": "Mi cuenta",
+            "business_label": "Mi cuenta",
+            "destination": "profile",
+            "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/account",
+            "route": "seller.shops.feature",
+            "feature": "account",
+            "active_routes": [
+              "seller.shops.feature"
+            ],
+            "external": false,
+            "preferred_query": []
+          },
+          {
+            "id": "help",
+            "key": "help",
+            "label": "Ayuda",
+            "business_label": "Ayuda",
+            "destination": "help",
+            "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/help",
+            "route": "seller.shops.feature",
+            "feature": "help",
+            "active_routes": [
+              "seller.shops.feature"
+            ],
+            "external": false,
+            "preferred_query": []
+          }
+        ],
+        "contextual_sections": []
+      },
+      "formats": {
+        "desktop": {
+          "sections": [],
+          "links": [
+            {
+              "id": "summary",
+              "label": "Inicio",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/resumen",
+              "active": true
+            },
+            {
+              "id": "account",
+              "label": "Mi cuenta",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/account",
+              "active": false
+            },
+            {
+              "id": "help",
+              "label": "Ayuda",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/help",
+              "active": false
+            }
+          ]
+        },
+        "mobile": {
+          "sections": [],
+          "links": [
+            {
+              "id": "summary",
+              "label": "Inicio",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/resumen",
+              "active": true
+            },
+            {
+              "id": "account",
+              "label": "Mi cuenta",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/account",
+              "active": false
+            },
+            {
+              "id": "help",
+              "label": "Ayuda",
+              "url": "http://127.0.0.1:18768/panel/tiendas/01M4WS4YHD1C4XXATWMPA46QBC/modulo/help",
+              "active": false
+            }
+          ]
+        }
+      },
+      "comparison": {
+        "desktop_mobile_equal": true,
+        "api_ids": [
+          "summary",
+          "account",
+          "help"
+        ],
+        "web_ids": [
+          "summary",
+          "account",
+          "help"
+        ],
+        "web_only": []
+      }
+    }
+  ]
+}

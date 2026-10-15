@@ -1,0 +1,180 @@
+{
+  "captured_at": "2026-10-15T21:14:26.281195+00:00",
+  "backend_head": "f83113180aff61ef5bc184fbea6201d497731c38",
+  "android_head": "4fe66cfe8e35a127b19630c48188b43f59958250",
+  "backend": {
+    "tests": 666,
+    "assertions": 7614,
+    "failures": 0,
+    "errors": 0
+  },
+  "android_unit": {
+    "tests": 147,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "android_unit_reports": 44,
+  "android_instrumented": {
+    "phone": {
+      "declared": 1,
+      "executed": 1,
+      "counts": {
+        "PASS": 1,
+        "FAIL": 0,
+        "SKIP": 0,
+        "ASSUMPTION": 0
+      },
+      "missing": [],
+      "unexpected": [],
+      "gate": "PASS",
+      "tests": [
+        {
+          "test": "com.example.bspos.presentation.emulatorqa.NavigationBaselineTest#captureExistingNavigationForEachRoleAndBusiness",
+          "state": "PASS"
+        }
+      ]
+    },
+    "tablet": {
+      "declared": 1,
+      "executed": 1,
+      "counts": {
+        "PASS": 1,
+        "FAIL": 0,
+        "SKIP": 0,
+        "ASSUMPTION": 0
+      },
+      "missing": [],
+      "unexpected": [],
+      "gate": "PASS",
+      "tests": [
+        {
+          "test": "com.example.bspos.presentation.emulatorqa.NavigationBaselineTest#captureExistingNavigationForEachRoleAndBusiness",
+          "state": "PASS"
+        }
+      ]
+    }
+  },
+  "android_artifact": {
+    "version": 3,
+    "artifactType": {
+      "type": "APK",
+      "kind": "Directory"
+    },
+    "applicationId": "com.bsolutions.micatalogo.offlinecheck.syncqa",
+    "variantName": "debug",
+    "elements": [
+      {
+        "type": "SINGLE",
+        "filters": [],
+        "attributes": [],
+        "versionCode": 114,
+        "versionName": "1.0.113-offlinecheck",
+        "outputFile": "app-debug.apk"
+      }
+    ],
+    "elementType": "File",
+    "minSdkVersionForDexing": 26
+  },
+  "data_comparison": {
+    "sql": {
+      "personal_access_tokens": {
+        "added": 2,
+        "removed": 0,
+        "changed_columns": {}
+      },
+      "shop_sellers": {
+        "added": 0,
+        "removed": 0,
+        "changed_columns": {
+          "updated_at": 2
+        }
+      },
+      "sqlite_sequence": {
+        "added": 1,
+        "removed": 1,
+        "changed_columns": {}
+      },
+      "users": {
+        "added": 0,
+        "removed": 0,
+        "changed_columns": {
+          "updated_at": 10,
+          "last_login_at": 10
+        }
+      }
+    },
+    "room": {
+      "products": {
+        "added": 0,
+        "removed": 0,
+        "changed_columns": {
+          "updated_at": 3,
+          "deleted_at": 3,
+          "is_active": 1
+        }
+      },
+      "units_of_measure": {
+        "added": 0,
+        "removed": 0,
+        "changed_columns": {
+          "updated_at": 1
+        }
+      }
+    }
+  },
+  "evidence_sha256": {
+    "closure-f0-after-menus-data.json": "b181daa5e4587fc8d6a5c6c600abb828c00a16cf4138e1547641a93778856be4",
+    "closure-f0-android-phone/accountant.png": "cc4328be76f3b59536deb1b0aef52f57c31f9ad2c0fdfc9ae55a996254523396",
+    "closure-f0-android-phone/accountant.txt": "08d0d3e9c994a1eebef83d862d7b16560d5e0d16fc369462d3d9f39909b13a3c",
+    "closure-f0-android-phone/manager.png": "5359798e18c915abfd7c62097ddcad69813b442c5b5b89b2f07f855929f070ac",
+    "closure-f0-android-phone/manager.txt": "7bbfd8b72b9f91b94afcd10ee0560e7f3b231261856a0a20ad171ce61fdcbeae",
+    "closure-f0-android-phone/none.png": "7d59132828285e7d1c0ada732dbf6086d3f76cdb305208a5deb90873cb3b85e7",
+    "closure-f0-android-phone/none.txt": "cb1f6db52f20a1058b5b7585f7f2832ea78cc3782621dca5432f644dcad14333",
+    "closure-f0-android-phone/owner.png": "f0d7ca5e68d2a31c19fcf6ac7ba6e537d2ff93889d1cdd66b99551ac6fb7f449",
+    "closure-f0-android-phone/owner.txt": "73b24bf5ffe2830f8fc2d0ad509b2e702192bdd5464ba13feff953661e24195f",
+    "closure-f0-android-phone/physical.png": "65edfa1de2a81786e2e81ca0a587672de586935c1665241bd82c30dfd932baf5",
+    "closure-f0-android-phone/physical.txt": "c07e71bb80b80d4bf9754293015d98059a4db7fe77f75e9c9dc455181ed11acd",
+    "closure-f0-android-phone/qa-results.json": "76d786d2b8bba790477184888a9f1ad203f0fe94f3ef0052db23e297e2e4998b",
+    "closure-f0-android-phone/README.md": "47e4ae90dc83e2364892e35b606912bb2e1080de75fc8bc11edf795ee297ce7d",
+    "closure-f0-android-phone/services.png": "20e8186a55ab8e75f63871233c7043ed21df59373ca259367b6745c72b72e6c7",
+    "closure-f0-android-phone/services.txt": "973c10c983ca2e520ec7c4c81b6942dee14d26bbc07bfa1cc37b4a395522900b",
+    "closure-f0-android-tablet/accountant.png": "7a9639facbd849bcfd83c91498bb67b84b538baae622860ade77eecec65e1257",
+    "closure-f0-android-tablet/accountant.txt": "de49b52329989e61f6f4c1a4970a62ee0e4213a512fcca5b2676fc28d3e89806",
+    "closure-f0-android-tablet/manager.png": "69ce48aa3fba151ff2c939b4503871870c51abc7e19751b8f52bbb7d25bffc55",
+    "closure-f0-android-tablet/manager.txt": "876f9caddbec055093fc03eafcd58af3fad4603615baa5ab43fb0b7deaf5ac1c",
+    "closure-f0-android-tablet/none.png": "c69e3d3e6a6ed97f996ddafd92f34489161a26406ce2fd9bd08d9e17090fcaab",
+    "closure-f0-android-tablet/none.txt": "2b25fb02dc1ccf4664f4ead958978f667bde8fb838847b263d5c4069421cdef8",
+    "closure-f0-android-tablet/owner.png": "19f35500a14aa80e03b179f2e43f400e16010fa1e1f1220ebf966ec196ac33a1",
+    "closure-f0-android-tablet/owner.txt": "0226996632e416f123fa7c67fb49555fb0fccfbeae4327b2c408a2bb5ef8044b",
+    "closure-f0-android-tablet/physical.png": "484a528c56b49cce27d428e4f6882d3fa0969af4c5cc3ce1365d6e4000cdd8d5",
+    "closure-f0-android-tablet/physical.txt": "57f36953a5650b839b813631b76b20a285a1276a542bb2ec0b7bcb4c89948b1d",
+    "closure-f0-android-tablet/qa-results.json": "76d786d2b8bba790477184888a9f1ad203f0fe94f3ef0052db23e297e2e4998b",
+    "closure-f0-android-tablet/README.md": "a256941e9a4a0b0e6c1f3860f75157a4b4bc433a0237e824be76cc5e13133761",
+    "closure-f0-android-tablet/services.png": "bd72ed0cf28b5438a1fbdd347cd9e0ff7b383a3f9876ffed01bb70862f3ed1ab",
+    "closure-f0-android-tablet/services.txt": "472a067263e983449b1a19b80e0385e1481711875f3c42788978f9177fcdca88",
+    "closure-f0-backend.xml": "0d05b61e5398ad93c7798333f15b11615ba90e04776a242b7ffb2690b1968063",
+    "closure-f0-data-comparison.json": "460b5d5e3846111f971748206c32d9fb4973b9a25aa2605407c6f513d3b06dba",
+    "closure-f0-initial-data.json": "35343955bae9f465ebe86329b5ff4f309b4e5a50ac40d53e89409cf3a461b0e5",
+    "closure-f0-reproduction.json": "9f6e13a81d121ed3c09164725bfa7798e4e4b7ed727e919db3ed814449d6896c",
+    "closure-f0-web-desktop-accountant.png": "db2983a58c3007c6198bba6e5ca165342e937190f743d54290956635cd265994",
+    "closure-f0-web-desktop-manager.png": "cbfec0a05a1dfc5b1ddb0192946522ce9bd0dc2b95707e60e8c3b879432ff3fc",
+    "closure-f0-web-desktop-none.png": "68285661a17ecbf1d199db70b6bfe4136437d64da0c859aa1bc75cf0dfa64df8",
+    "closure-f0-web-desktop-owner.png": "017f63d2b5d71fd2db159728120662cb2bbb800e42dd50cb0595d7b31cbd3d8a",
+    "closure-f0-web-desktop-physical.png": "74305cfa6df192c79da1d9188278d118afac9e6037de744297ae4a27806ac7af",
+    "closure-f0-web-desktop-services.png": "98bc10b7a1c1c84558af400ddbab09fd233999af77b0d3e65a16aabb08adbf2f",
+    "closure-f0-web-mobile-accountant.png": "b2ae1a775e0bcf0bb707953b23f1fb66880f74901eb0e084ef7ff111f8d289f3",
+    "closure-f0-web-mobile-manager.png": "8478c974304b11ae7bb91a4721006c1567426ce5987b4db6863053713c3db9ef",
+    "closure-f0-web-mobile-none.png": "2332c9dc2f98bf2d34b8ac57d2d9feed0eb5b767fd11b9e6b949d012bd53da85",
+    "closure-f0-web-mobile-owner.png": "0b841bf2250927cb1fce485646e009b91f6e4ea0b3845015a840d3ad15ffbf2a",
+    "closure-f0-web-mobile-physical.png": "e2de5b1730838e5965b5b68e17ee1bd452b1dedb0ef1e479f8186bd8eb1aaa10",
+    "closure-f0-web-mobile-services.png": "179a994e3a03ddd495c0d812d32b7326ceea85e69eecf3190df4aa6949605465",
+    "closure-f0-web-navigation.json": "dafd2995ee10afea2848c5504434b4c89e227fb444728812d433a7774f22bd4c"
+  },
+  "limits": [
+    "F0 baseline only; no NAV/E2E gate approved",
+    "Room cache status changes recorded as a finding, not hidden",
+    "Historical SENT outboxes preserved byte-for-byte",
+    "Debug 1.0.112 APK retained privately for compatibility"
+  ]
+}

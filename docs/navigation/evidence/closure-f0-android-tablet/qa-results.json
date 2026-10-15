@@ -1,0 +1,19 @@
+{
+  "declared": 1,
+  "executed": 1,
+  "counts": {
+    "PASS": 1,
+    "FAIL": 0,
+    "SKIP": 0,
+    "ASSUMPTION": 0
+  },
+  "missing": [],
+  "unexpected": [],
+  "gate": "PASS",
+  "tests": [
+    {
+      "test": "com.example.bspos.presentation.emulatorqa.NavigationBaselineTest#captureExistingNavigationForEachRoleAndBusiness",
+      "state": "PASS"
+    }
+  ]
+}

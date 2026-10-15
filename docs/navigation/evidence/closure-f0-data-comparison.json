@@ -1,0 +1,47 @@
+{
+  "sql": {
+    "personal_access_tokens": {
+      "added": 2,
+      "removed": 0,
+      "changed_columns": {}
+    },
+    "shop_sellers": {
+      "added": 0,
+      "removed": 0,
+      "changed_columns": {
+        "updated_at": 2
+      }
+    },
+    "sqlite_sequence": {
+      "added": 1,
+      "removed": 1,
+      "changed_columns": {}
+    },
+    "users": {
+      "added": 0,
+      "removed": 0,
+      "changed_columns": {
+        "updated_at": 10,
+        "last_login_at": 10
+      }
+    }
+  },
+  "room": {
+    "products": {
+      "added": 0,
+      "removed": 0,
+      "changed_columns": {
+        "updated_at": 3,
+        "deleted_at": 3,
+        "is_active": 1
+      }
+    },
+    "units_of_measure": {
+      "added": 0,
+      "removed": 0,
+      "changed_columns": {
+        "updated_at": 1
+      }
+    }
+  }
+}
