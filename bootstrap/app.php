@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureApiAppVersion;
 use App\Http\Middleware\EnsureSellerMenuAccess;
+use App\Http\Middleware\EnsureCatalogOperationAccess;
 use App\Http\Middleware\SecurityHeadersMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -24,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'abilities' => CheckAbilities::class,
             'abilities.any' => CheckForAnyAbility::class,
             'menu' => EnsureSellerMenuAccess::class,
+            'catalog.operation' => EnsureCatalogOperationAccess::class,
             'app.version' => EnsureApiAppVersion::class,
         ]);
         $middleware->append(SecurityHeadersMiddleware::class);

@@ -1,0 +1,194 @@
+Printing with useUnmergedTree = 'false'
+Node #2023 at (l=0.0, t=0.0, r=1920.0, b=1200.0)px
+ |-Node #2114 at (l=0.0, t=0.0, r=1920.0, b=1200.0)px
+ | IsContainer = 'true'
+ | Shape = 'RectangleShape'
+ |  |-Node #2246 at (l=0.0, t=194.0, r=1920.0, b=1152.0)px
+ |  |  |-Node #2248 at (l=0.0, t=194.0, r=1920.0, b=1152.0)px
+ |  |    CollectionInfo = 'CollectionInfo(rowCount=3, columnCount=1)'
+ |  |    IsTraversalGroup = 'true'
+ |  |    Shape = 'RectangleShape'
+ |  |    VerticalScrollAxisRange = 'ScrollAxisRange(value=0.0, maxValue=0.0, reverseScrolling=false)'
+ |  |    Actions = [GetScrollViewportLength, IndexForKey, ScrollBy, ScrollByOffset, ScrollToIndex]
+ |  |     |-Node #2250 at (l=24.0, t=218.0, r=1896.0, b=349.0)px
+ |  |     | IsContainer = 'true'
+ |  |     | Shape = 'RoundedCornerShape(topStart = CornerSize(size = 12.0.dp), topEnd = CornerSize(size = 12.0.dp), bottomEnd = CornerSize(size = 12.0.dp), bottomStart = CornerSize(size = 12.0.dp))'
+ |  |     |  |-Node #2253 at (l=54.0, t=248.0, r=241.0, b=274.0)px
+ |  |     |  | Text = '[QA_NAV_Perfumes]'
+ |  |     |  | Actions = [ClearTextSubstitution, GetTextLayoutResult, SetTextSubstitution, ShowTextSubstitution]
+ |  |     |  |-Node #2254 at (l=54.0, t=286.0, r=333.0, b=319.0)px
+ |  |     |    Text = '[Tu espacio de ventas]'
+ |  |     |    Actions = [ClearTextSubstitution, GetTextLayoutResult, SetTextSubstitution, ShowTextSubstitution]
+ |  |     |-Node #2300 at (l=24.0, t=373.0, r=610.0, b=409.0)px
+ |  |       Text = '[Tu administrador no ha habilitado el acceso a Ventas.]'
+ |  |       Actions = [ClearTextSubstitution, GetTextLayoutResult, SetTextSubstitution, ShowTextSubstitution]
+ |  |-Node #2216 at (l=0.0, t=0.0, r=1920.0, b=162.0)px
+ |  | IsTraversalGroup = 'true'
+ |  |  |-Node #2217 at (l=0.0, t=78.0, r=1920.0, b=162.0)px
+ |  |    Shape = 'RectangleShape'
+ |  |     |-Node #2219 at (l=12.0, t=90.0, r=72.0, b=150.0)px
+ |  |     | ContentDescription = '[Abrir menu]'
+ |  |     | Focused = 'false'
+ |  |     | Role = 'Button'
+ |  |     | Shape = 'RoundedCornerShape(topStart = CornerSize(size = 50.0%), topEnd = CornerSize(size = 50.0%), bottomEnd = CornerSize(size = 50.0%), bottomStart = CornerSize(size = 50.0%))'
+ |  |     | Actions = [OnClick, RequestFocus]
+ |  |     | MergeDescendants = 'true'
+ |  |     |-Node #2221 at (l=84.0, t=100.0, r=274.0, b=139.0)px
+ |  |     |  |-Node #2223 at (l=84.0, t=100.0, r=204.0, b=139.0)px
+ |  |     |  | Text = '[Operación / ]'
+ |  |     |  | Actions = [ClearTextSubstitution, GetTextLayoutResult, SetTextSubstitution, ShowTextSubstitution]
+ |  |     |  |-Node #2224 at (l=204.0, t=100.0, r=274.0, b=139.0)px
+ |  |     |    Text = '[Resumen]'
+ |  |     |    Actions = [ClearTextSubstitution, GetTextLayoutResult, SetTextSubstitution, ShowTextSubstitution]
+ |  |     |-Node #2227 at (l=1848.0, t=97.0, r=1914.0, b=142.0)px
+ |  |       IsContainer = 'true'
+ |  |       Shape = 'RoundedCornerShape(topStart = CornerSize(size = 50.0%), topEnd = CornerSize(size = 50.0%), bottomEnd = CornerSize(size = 50.0%), bottomStart = CornerSize(size = 50.0%))'
+ |  |        |-Node #2228 at (l=1866.0, t=108.0, r=1896.0, b=131.0)px
+ |  |          Text = '[Pro]'
+ |  |          Actions = [ClearTextSubstitution, GetTextLayoutResult, SetTextSubstitution, ShowTextSubstitution]
+ |  |-Node #2232 at (l=0.0, t=162.0, r=1920.0, b=194.0)px
+ |    IsContainer = 'true'
+ |    Shape = 'RectangleShape'
+ |     |-Node #2235 at (l=24.0, t=168.0, r=123.0, b=188.0)px
+ |       Text = '[Sincronizado]'
+ |       Actions = [ClearTextSubstitution, GetTextLayoutResult, SetTextSubstitution, ShowTextSubstitution]
+ |-Node #2116 at (l=0.0, t=0.0, r=1920.0, b=1200.0)px
+ | ContentDescription = '[Close navigation menu]'
+ | Actions = [OnClick]
+ | MergeDescendants = 'true'
+ |-Node #2117 at (l=0.0, t=0.0, r=540.0, b=1200.0)px
+   PaneTitle = 'Navigation menu'
+   Actions = [Dismiss]
+    |-Node #2118 at (l=0.0, t=0.0, r=540.0, b=1200.0)px
+      IsContainer = 'true'
+      Shape = 'RoundedCornerShape(topStart = CornerSize(size = 0.0.dp), topEnd = CornerSize(size = 16.0.dp), bottomEnd = CornerSize(size = 16.0.dp), bottomStart = CornerSize(size = 0.0.dp))'
+       |-Node #2119 at (l=0.0, t=78.0, r=540.0, b=1152.0)px
+          |-Node #2122 at (l=30.0, t=114.0, r=108.0, b=192.0)px
+          | Shape = 'RoundedCornerShape(topStart = CornerSize(size = 50.0%), topEnd = CornerSize(size = 50.0%), bottomEnd = CornerSize(size = 50.0%), bottomStart = CornerSize(size = 50.0%))'
+          |  |-Node #2123 at (l=57.0, t=132.0, r=82.0, b=174.0)px
+          |    Text = '[Q]'
+          |    Actions = [ClearTextSubstitution, GetTextLayoutResult, SetTextSubstitution, ShowTextSubstitution]
+          |-Node #2126 at (l=126.0, t=117.0, r=382.0, b=153.0)px
+          | Text = '[QA_NAV_Perfumes]'
+          | Actions = [ClearTextSubstitution, GetTextLayoutResult, SetTextSubstitution, ShowTextSubstitution]
+          |-Node #2127 at (l=126.0, t=153.0, r=361.0, b=189.0)px
+          | Text = '[Tu negocio, siempre contigo]'
+          | Actions = [ClearTextSubstitution, GetTextLayoutResult, SetTextSubstitution, ShowTextSubstitution]
+          |-Node #2129 at (l=30.0, t=210.0, r=510.0, b=294.0)px
+          | Focused = 'false'
+          | Role = 'Button'
+          | Shape = 'RoundedCornerShape(topStart = CornerSize(size = 50.0%), topEnd = CornerSize(size = 50.0%), bottomEnd = CornerSize(size = 50.0%), bottomStart = CornerSize(size = 50.0%))'
+          | Text = '[Tienda activa, QA_NAV_Perfumes, Cambiar]'
+          | Actions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]
+          | MergeDescendants = 'true'
+          |-Node #2135 at (l=30.0, t=312.0, r=510.0, b=396.0)px
+          | ContentDataType = 'AndroidContentDataType(androidAutofillType=1)'
+          | EditableText = ''
+          | FillableData = 'androidx.compose.ui.autofill.AndroidFillableData@76913db'
+          | Focused = 'false'
+          | ImeAction = 'Default'
+          | InputText = ''
+          | IsEditable = 'true'
+          | Text = '[Buscar en el menú…]'
+          | TextSelectionRange = 'TextRange(0, 0)'
+          | Actions = [ClearTextSubstitution, GetTextLayoutResult, InsertTextAtCursor, OnClick, OnFillData, OnLongClick, PasteText, PerformImeAction, RequestFocus, SetSelection, SetText, SetTextSubstitution, ShowTextSubstitution]
+          | MergeDescendants = 'true'
+          |-Node #2147 at (l=18.0, t=408.0, r=522.0, b=1128.0)px
+            IsTraversalGroup = 'true'
+            Shape = 'androidx.compose.foundation.VerticalScrollableClipShape@e25a57'
+            VerticalScrollAxisRange = 'ScrollAxisRange(value=0.0, maxValue=365.0, reverseScrolling=false)'
+            Actions = [ScrollBy, ScrollByOffset]
+             |-Node #2148 at (l=18.0, t=432.0, r=522.0, b=493.0)px
+             | Focused = 'false'
+             | Text = '[Operación, ⌄]'
+             | Actions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]
+             | MergeDescendants = 'true'
+             |-Node #2151 at (l=18.0, t=493.0, r=522.0, b=587.0)px
+             |  |-Node #2152 at (l=18.0, t=493.0, r=522.0, b=587.0)px
+             |    Shape = 'RectangleShape'
+             |     |-Node #2153 at (l=18.0, t=498.0, r=522.0, b=582.0)px
+             |       Focused = 'false'
+             |       Role = 'Tab'
+             |       Selected = 'true'
+             |       Shape = 'RoundedCornerShape(topStart = CornerSize(size = 50.0%), topEnd = CornerSize(size = 50.0%), bottomEnd = CornerSize(size = 50.0%), bottomStart = CornerSize(size = 50.0%))'
+             |       Text = '[Resumen]'
+             |       Actions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]
+             |       MergeDescendants = 'true'
+             |-Node #2171 at (l=18.0, t=587.0, r=522.0, b=648.0)px
+             | Focused = 'false'
+             | Text = '[Finanzas, ⌄]'
+             | Actions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]
+             | MergeDescendants = 'true'
+             |-Node #2175 at (l=18.0, t=648.0, r=522.0, b=742.0)px
+             |  |-Node #2176 at (l=18.0, t=648.0, r=522.0, b=742.0)px
+             |    Shape = 'RectangleShape'
+             |     |-Node #2177 at (l=18.0, t=653.0, r=522.0, b=737.0)px
+             |       Focused = 'false'
+             |       Role = 'Tab'
+             |       Selected = 'false'
+             |       Shape = 'RoundedCornerShape(topStart = CornerSize(size = 50.0%), topEnd = CornerSize(size = 50.0%), bottomEnd = CornerSize(size = 50.0%), bottomStart = CornerSize(size = 50.0%))'
+             |       Text = '[Ganancias]'
+             |       Actions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]
+             |       MergeDescendants = 'true'
+             |-Node #2277 at (l=18.0, t=742.0, r=522.0, b=803.0)px
+             | Focused = 'false'
+             | Text = '[Análisis, ⌄]'
+             | Actions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]
+             | MergeDescendants = 'true'
+             |-Node #2280 at (l=18.0, t=803.0, r=522.0, b=897.0)px
+             |  |-Node #2281 at (l=18.0, t=803.0, r=522.0, b=897.0)px
+             |    Shape = 'RectangleShape'
+             |     |-Node #2282 at (l=18.0, t=808.0, r=522.0, b=892.0)px
+             |       Focused = 'false'
+             |       Role = 'Tab'
+             |       Selected = 'false'
+             |       Shape = 'RoundedCornerShape(topStart = CornerSize(size = 50.0%), topEnd = CornerSize(size = 50.0%), bottomEnd = CornerSize(size = 50.0%), bottomStart = CornerSize(size = 50.0%))'
+             |       Text = '[Reportes]'
+             |       Actions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]
+             |       MergeDescendants = 'true'
+             |-Node #2288 at (l=18.0, t=897.0, r=522.0, b=958.0)px
+             | Focused = 'false'
+             | Text = '[Ajustes, ⌄]'
+             | Actions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]
+             | MergeDescendants = 'true'
+             |-Node #2292 at (l=18.0, t=967.0, r=522.0, b=1061.0)px
+             |  |-Node #2293 at (l=18.0, t=967.0, r=522.0, b=1061.0)px
+             |    Shape = 'RectangleShape'
+             |     |-Node #2294 at (l=18.0, t=972.0, r=522.0, b=1056.0)px
+             |       Focused = 'false'
+             |       Role = 'Tab'
+             |       Selected = 'false'
+             |       Shape = 'RoundedCornerShape(topStart = CornerSize(size = 50.0%), topEnd = CornerSize(size = 50.0%), bottomEnd = CornerSize(size = 50.0%), bottomStart = CornerSize(size = 50.0%))'
+             |       Text = '[Mi cuenta]'
+             |       Actions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]
+             |       MergeDescendants = 'true'
+             |-Node #2189 at (l=36.0, t=1097.0, r=504.0, b=1169.0)px
+             | Shape = 'RoundedCornerShape(topStart = CornerSize(size = 16.0.dp), topEnd = CornerSize(size = 16.0.dp), bottomEnd = CornerSize(size = 16.0.dp), bottomStart = CornerSize(size = 16.0.dp))'
+             |  |-Node #2190 at (l=36.0, t=1106.0, r=90.0, b=1160.0)px
+             |  | Shape = 'RoundedCornerShape(topStart = CornerSize(size = 50.0%), topEnd = CornerSize(size = 50.0%), bottomEnd = CornerSize(size = 50.0%), bottomStart = CornerSize(size = 50.0%))'
+             |  |-Node #2194 at (l=105.0, t=1097.0, r=253.0, b=1133.0)px
+             |  | Text = '[MiCatalogo Pro]'
+             |  | Actions = [ClearTextSubstitution, GetTextLayoutResult, SetTextSubstitution, ShowTextSubstitution]
+             |  |-Node #2195 at (l=105.0, t=1133.0, r=252.0, b=1169.0)px
+             |    Text = '[1 de 1500 productos]'
+             |    Actions = [ClearTextSubstitution, GetTextLayoutResult, SetTextSubstitution, ShowTextSubstitution]
+             |-Node #2196 at (l=30.0, t=1208.0, r=510.0, b=1280.0)px
+             | Focused = 'false'
+             | Text = '[Mi cuenta, qa-nav-accountant@example.test]'
+             | Actions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]
+             | MergeDescendants = 'true'
+             |-Node #2203 at (l=18.0, t=1301.0, r=522.0, b=1367.0)px
+             | Focused = 'false'
+             | Shape = 'RoundedCornerShape(topStart = CornerSize(size = 12.0.dp), topEnd = CornerSize(size = 12.0.dp), bottomEnd = CornerSize(size = 12.0.dp), bottomStart = CornerSize(size = 12.0.dp))'
+             | Text = '[Ver tienda]'
+             | Actions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]
+             | MergeDescendants = 'true'
+             |-Node #2207 at (l=18.0, t=1367.0, r=522.0, b=1433.0)px
+             | Focused = 'false'
+             | Shape = 'RoundedCornerShape(topStart = CornerSize(size = 12.0.dp), topEnd = CornerSize(size = 12.0.dp), bottomEnd = CornerSize(size = 12.0.dp), bottomStart = CornerSize(size = 12.0.dp))'
+             | Text = '[Cerrar sesión]'
+             | Actions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]
+             | MergeDescendants = 'true'
+             |-Node #2211 at (l=30.0, t=1433.0, r=510.0, b=1469.0)px
+               Text = '[Versión 1.0.111-offlinecheck]'
+               Actions = [ClearTextSubstitution, GetTextLayoutResult, SetTextSubstitution, ShowTextSubstitution]

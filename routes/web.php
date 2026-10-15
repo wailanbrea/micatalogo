@@ -130,23 +130,41 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
         Route::get('/tiendas/{shop}/inventario/lotes', [SellerBusinessController::class, 'lots'])->name('shops.inventory.lots');
     });
     Route::scopeBindings()->middleware('can:update,shop')->group(function () {
-        Route::get('/tiendas/{shop}/productos/reglas-precio', [SellerBusinessController::class, 'pricing'])->name('shops.pricing.index');
-        Route::post('/tiendas/{shop}/productos/reglas-precio', [SellerBusinessController::class, 'bulkRule'])->name('shops.pricing.bulk-rule');
-        Route::post('/tiendas/{shop}/productos/{product}/regla-precio', [SellerBusinessController::class, 'rule'])->name('shops.pricing.rule');
-        Route::post('/tiendas/{shop}/productos/{product}/aprobar-precio', [SellerBusinessController::class, 'approve'])->name('shops.pricing.approve');
+        Route::get('/tiendas/{shop}/productos/reglas-precio', [SellerBusinessController::class, 'pricing'])->middleware('menu:pricing')->name('shops.pricing.index');
+        Route::post('/tiendas/{shop}/productos/reglas-precio', [SellerBusinessController::class, 'bulkRule'])->middleware('menu:pricing')->name('shops.pricing.bulk-rule');
+        Route::post('/tiendas/{shop}/productos/{product}/regla-precio', [SellerBusinessController::class, 'rule'])->middleware('menu:pricing')->name('shops.pricing.rule');
+        Route::post('/tiendas/{shop}/productos/{product}/aprobar-precio', [SellerBusinessController::class, 'approve'])->middleware('menu:pricing')->name('shops.pricing.approve');
         Route::post('/tiendas/{shop}/atributos/{attribute}/actualizar', [SellerFeatureController::class, 'updateAttribute'])
             ->withoutScopedBindings()
+            ->middleware('menu:attributes')
             ->name('shops.attributes.update');
     });
     Route::scopeBindings()->middleware(['can:sell,shop', 'menu:products'])->group(function () {
         Route::get('/tiendas/{shop}/productos', [SellerProductController::class, 'index'])->name('shops.products.index');
         Route::get('/tiendas/{shop}/categorias', [ShopCategoryController::class, 'index'])->name('shops.categories.index');
     });
-    Route::scopeBindings()->middleware(['can:sell,shop', 'menu:customers'])->group(function () {
-        Route::get('/tiendas/{shop}/clientes', [SellerCustomerController::class, 'index'])->name('shops.customers.index');
-        Route::post('/tiendas/{shop}/clientes', [SellerCustomerController::class, 'store'])->name('shops.customers.store');
-        Route::post('/tiendas/{shop}/clientes/{customer}/credito', [SellerCustomerController::class, 'charge'])->name('shops.customers.charge');
-        Route::post('/tiendas/{shop}/clientes/{customer}/cobros', [SellerCustomerController::class, 'payment'])->name('shops.customers.payment');
+    Route::scopeBindings()->middleware(['can:sell,shop', 'catalog.operation'])->group(function () {
+        Route::get('/tiendas/{shop}/productos/combos/nuevo', [SellerProductController::class, 'create'])->defaults('combo', true)->name('shops.products.combos.create');
+        Route::get('/tiendas/{shop}/productos/crear', [SellerProductController::class, 'create'])->name('shops.products.create');
+        Route::post('/tiendas/{shop}/productos', [SellerProductController::class, 'store'])->name('shops.products.store');
+        Route::get('/tiendas/{shop}/productos/{product}/editar', [SellerProductController::class, 'edit'])->middleware('can:update,product')->name('shops.products.edit');
+        Route::put('/tiendas/{shop}/productos/{product}', [SellerProductController::class, 'update'])->middleware('can:update,product')->name('shops.products.update');
+        Route::delete('/tiendas/{shop}/productos/{product}', [SellerProductController::class, 'destroy'])->middleware('can:delete,product')->name('shops.products.destroy');
+        Route::post('/tiendas/{shop}/productos/{product}/restaurar', [SellerProductController::class, 'restore'])->name('shops.products.restore');
+    });
+    Route::scopeBindings()->middleware(['can:sell,shop', 'catalog.operation:images'])->group(function () {
+        Route::post('/tiendas/{shop}/productos/{product}/imagenes', [SellerProductController::class, 'uploadImage'])->middleware('can:updateImages,product')->name('shops.products.images.store');
+        Route::post('/tiendas/{shop}/productos/{product}/imagenes/web', [SellerProductController::class, 'importRemoteImage'])->middleware(['can:updateImages,product', 'throttle:catalog-media'])->name('shops.products.images.web.store');
+        Route::delete('/tiendas/{shop}/productos/{product}/imagenes/{image}', [SellerProductController::class, 'destroyImage'])->middleware('can:updateImages,product')->name('shops.products.images.destroy');
+        Route::post('/tiendas/{shop}/productos/{product}/catalog-media/resolve', [ProductCatalogMediaController::class, 'resolve'])->name('shops.products.catalog-media.resolve');
+        Route::post('/tiendas/{shop}/productos/{product}/catalog-media/{catalogImage}/use', [ProductCatalogMediaController::class, 'use'])->middleware('can:updateImages,product')->name('shops.products.catalog-media.use');
+    });
+    Route::get('/tiendas/{shop}/productos/imagenes/buscar', [SellerProductController::class, 'searchImage'])->middleware(['can:sell,shop', 'catalog.operation:image-search', 'throttle:catalog-media'])->name('shops.products.images.search');
+    Route::scopeBindings()->middleware(['can:sell,shop'])->group(function () {
+        Route::get('/tiendas/{shop}/clientes', [SellerCustomerController::class, 'index'])->middleware('menu:customers|credit|collections')->name('shops.customers.index');
+        Route::post('/tiendas/{shop}/clientes', [SellerCustomerController::class, 'store'])->middleware('menu:customers')->name('shops.customers.store');
+        Route::post('/tiendas/{shop}/clientes/{customer}/credito', [SellerCustomerController::class, 'charge'])->middleware('menu:credit')->name('shops.customers.charge');
+        Route::post('/tiendas/{shop}/clientes/{customer}/cobros', [SellerCustomerController::class, 'payment'])->middleware('menu:collections')->name('shops.customers.payment');
     });
     Route::scopeBindings()->middleware(['can:sell,shop', 'menu:metrics'])->group(function () {
         Route::get('/tiendas/{shop}/metricas', [SellerShopMetricController::class, 'index'])->name('shops.metrics.index');
@@ -159,23 +177,23 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
         Route::get('/tiendas/{shop}/modulo/{feature}', [SellerFeatureController::class, 'show'])->name('shops.feature');
         Route::post('/tiendas/{shop}/cierre-diario', [SellerDailyCloseController::class, 'store'])->middleware('menu:day_close')->name('shops.daily-close.store');
         Route::post('/tiendas/{shop}/autorizaciones/{authorizationRequest}/aprobar', [SellerAuthorizationController::class, 'approve'])
-            ->middleware('can:update,shop')->name('shops.authorizations.approve');
+            ->middleware(['can:update,shop', 'menu:authorizations'])->name('shops.authorizations.approve');
         Route::post('/tiendas/{shop}/autorizaciones/{authorizationRequest}/rechazar', [SellerAuthorizationController::class, 'reject'])
-            ->middleware('can:update,shop')->name('shops.authorizations.reject');
+            ->middleware(['can:update,shop', 'menu:authorizations'])->name('shops.authorizations.reject');
         Route::get('/tiendas/{shop}/reportes/exportar', [SellerFeatureController::class, 'exportReports'])
             ->middleware('menu:reports')
             ->name('shops.reports.export');
     });
     Route::scopeBindings()->middleware('can:update,shop')->group(function () {
-        Route::post('/tiendas/{shop}/cotizaciones', [SellerCommerceController::class, 'storeQuote'])->name('shops.quotes.store');
-        Route::post('/tiendas/{shop}/cotizaciones/{quote}/convertir', [SellerCommerceController::class, 'convertQuote'])->name('shops.quotes.convert');
-        Route::post('/tiendas/{shop}/suplidores', [SellerCommerceController::class, 'storeSupplier'])->name('shops.suppliers.store');
-        Route::post('/tiendas/{shop}/compras/deudas', [SellerCommerceController::class, 'storeSupplierDebt'])->name('shops.purchases.debts.store');
+        Route::post('/tiendas/{shop}/cotizaciones', [SellerCommerceController::class, 'storeQuote'])->middleware('menu:quotes')->name('shops.quotes.store');
+        Route::post('/tiendas/{shop}/cotizaciones/{quote}/convertir', [SellerCommerceController::class, 'convertQuote'])->middleware('menu:quotes')->name('shops.quotes.convert');
+        Route::post('/tiendas/{shop}/suplidores', [SellerCommerceController::class, 'storeSupplier'])->middleware('menu:suppliers')->name('shops.suppliers.store');
+        Route::post('/tiendas/{shop}/compras/deudas', [SellerCommerceController::class, 'storeSupplierDebt'])->middleware('menu:suppliers')->name('shops.purchases.debts.store');
         Route::post('/tiendas/{shop}/compras/previsualizar', [SellerCommerceController::class, 'previewPurchaseInvoice'])->name('shops.purchases.preview');
         Route::post('/tiendas/{shop}/compras', [SellerCommerceController::class, 'storePurchaseDocument'])->name('shops.purchases.store');
         Route::post('/tiendas/{shop}/compras/{document}/recibir', [SellerCommerceController::class, 'receivePurchaseDocument'])->name('shops.purchases.receive');
-        Route::post('/tiendas/{shop}/socios', [SellerCommerceController::class, 'storePartner'])->name('shops.partners.store');
-        Route::post('/tiendas/{shop}/socios/{partner}/movimientos', [SellerCommerceController::class, 'storePartnerTransaction'])->name('shops.partners.transactions.store');
+        Route::post('/tiendas/{shop}/socios', [SellerCommerceController::class, 'storePartner'])->middleware('menu:partners')->name('shops.partners.store');
+        Route::post('/tiendas/{shop}/socios/{partner}/movimientos', [SellerCommerceController::class, 'storePartnerTransaction'])->middleware('menu:partners')->name('shops.partners.transactions.store');
         Route::get('/tiendas/{shop}/vendedores', [SellerManagementController::class, 'index'])
             ->middleware('menu:sellers')->name('shops.sellers.index');
         Route::get('/tiendas/{shop}/menus', [SellerShopMenuController::class, 'edit'])
@@ -188,40 +206,27 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
             ->middleware('menu:sellers')->name('shops.sellers.update');
         Route::delete('/tiendas/{shop}/vendedores/{seller}', [SellerManagementController::class, 'destroy'])
             ->middleware('menu:sellers')->name('shops.sellers.destroy');
-        Route::post('/tiendas/{shop}/usuarios', [ShopMemberController::class, 'store'])->name('shops.members.store');
-        Route::delete('/tiendas/{shop}/usuarios/{member}', [ShopMemberController::class, 'destroy'])->name('shops.members.destroy');
-        Route::post('/tiendas/{shop}/contador', [AccountantAccessController::class, 'store'])->name('shops.accountant.store');
-        Route::delete('/tiendas/{shop}/contador/{member}', [AccountantAccessController::class, 'destroy'])->name('shops.accountant.destroy');
-        Route::post('/tiendas/{shop}/cuentas-pago', [ShopPaymentAccountController::class, 'store'])->name('shops.payment-accounts.store');
-        Route::put('/tiendas/{shop}/cuentas-pago/{paymentAccount}', [ShopPaymentAccountController::class, 'update'])->name('shops.payment-accounts.update');
-        Route::delete('/tiendas/{shop}/cuentas-pago/{paymentAccount}', [ShopPaymentAccountController::class, 'destroy'])->name('shops.payment-accounts.destroy');
-        Route::post('/tiendas/{shop}/categorias', [ShopCategoryController::class, 'store'])->name('shops.categories.store');
-        Route::put('/tiendas/{shop}/categorias/{category}', [ShopCategoryController::class, 'update'])->middleware('can:update,category')->name('shops.categories.update');
-        Route::delete('/tiendas/{shop}/categorias/{category}', [ShopCategoryController::class, 'destroy'])->middleware('can:delete,category')->name('shops.categories.destroy');
+        Route::post('/tiendas/{shop}/usuarios', [ShopMemberController::class, 'store'])->middleware('menu:sellers')->name('shops.members.store');
+        Route::delete('/tiendas/{shop}/usuarios/{member}', [ShopMemberController::class, 'destroy'])->middleware('menu:sellers')->name('shops.members.destroy');
+        Route::post('/tiendas/{shop}/contador', [AccountantAccessController::class, 'store'])->middleware('menu:accountant')->name('shops.accountant.store');
+        Route::delete('/tiendas/{shop}/contador/{member}', [AccountantAccessController::class, 'destroy'])->middleware('menu:accountant')->name('shops.accountant.destroy');
+        Route::post('/tiendas/{shop}/cuentas-pago', [ShopPaymentAccountController::class, 'store'])->middleware('menu:shop_settings')->name('shops.payment-accounts.store');
+        Route::put('/tiendas/{shop}/cuentas-pago/{paymentAccount}', [ShopPaymentAccountController::class, 'update'])->middleware('menu:shop_settings')->name('shops.payment-accounts.update');
+        Route::delete('/tiendas/{shop}/cuentas-pago/{paymentAccount}', [ShopPaymentAccountController::class, 'destroy'])->middleware('menu:shop_settings')->name('shops.payment-accounts.destroy');
+        Route::post('/tiendas/{shop}/categorias', [ShopCategoryController::class, 'store'])->middleware('menu:products')->name('shops.categories.store');
+        Route::put('/tiendas/{shop}/categorias/{category}', [ShopCategoryController::class, 'update'])->middleware(['can:update,category', 'menu:products'])->name('shops.categories.update');
+        Route::delete('/tiendas/{shop}/categorias/{category}', [ShopCategoryController::class, 'destroy'])->middleware(['can:delete,category', 'menu:products'])->name('shops.categories.destroy');
 
-        Route::get('/tiendas/{shop}/productos/combos/nuevo', [SellerProductController::class, 'create'])->defaults('combo', true)->name('shops.products.combos.create');
-        Route::get('/tiendas/{shop}/productos/crear', [SellerProductController::class, 'create'])->name('shops.products.create');
-        Route::post('/tiendas/{shop}/productos', [SellerProductController::class, 'store'])->name('shops.products.store');
-        Route::get('/tiendas/{shop}/subida-masiva', [SellerBulkProductController::class, 'create'])->name('shops.products.bulk.create');
-        Route::post('/tiendas/{shop}/subida-masiva', [SellerBulkProductController::class, 'store'])->name('shops.products.bulk.store');
-        Route::get('/tiendas/{shop}/importar', [SellerInventoryImportController::class, 'create'])->name('shops.products.import.create');
-        Route::post('/tiendas/{shop}/importar/previsualizar', [SellerInventoryImportController::class, 'preview'])->name('shops.products.import.preview');
-        Route::post('/tiendas/{shop}/importar', [SellerInventoryImportController::class, 'store'])->name('shops.products.import.store');
-        Route::get('/tiendas/{shop}/productos/{product}/editar', [SellerProductController::class, 'edit'])->middleware('can:update,product')->name('shops.products.edit');
-        Route::put('/tiendas/{shop}/productos/{product}', [SellerProductController::class, 'update'])->middleware('can:update,product')->name('shops.products.update');
-        Route::delete('/tiendas/{shop}/productos/{product}', [SellerProductController::class, 'destroy'])->middleware('can:delete,product')->name('shops.products.destroy');
-        Route::post('/tiendas/{shop}/productos/{product}/restaurar', [SellerProductController::class, 'restore'])->name('shops.products.restore');
-        Route::post('/tiendas/{shop}/productos/{product}/imagenes', [SellerProductController::class, 'uploadImage'])->middleware('can:update,product')->name('shops.products.images.store');
-        Route::get('/tiendas/{shop}/productos/imagenes/buscar', [SellerProductController::class, 'searchImage'])->middleware('throttle:catalog-media')->name('shops.products.images.search');
-        Route::post('/tiendas/{shop}/productos/{product}/imagenes/web', [SellerProductController::class, 'importRemoteImage'])->middleware(['can:update,product', 'throttle:catalog-media'])->name('shops.products.images.web.store');
-        Route::delete('/tiendas/{shop}/productos/{product}/imagenes/{image}', [SellerProductController::class, 'destroyImage'])->middleware('can:update,product')->name('shops.products.images.destroy');
-        Route::post('/tiendas/{shop}/productos/{product}/catalog-media/resolve', [ProductCatalogMediaController::class, 'resolve'])->name('shops.products.catalog-media.resolve');
-        Route::post('/tiendas/{shop}/productos/{product}/catalog-media/{catalogImage}/use', [ProductCatalogMediaController::class, 'use'])->middleware('can:update,product')->name('shops.products.catalog-media.use');
+        Route::get('/tiendas/{shop}/subida-masiva', [SellerBulkProductController::class, 'create'])->middleware('menu:import')->name('shops.products.bulk.create');
+        Route::post('/tiendas/{shop}/subida-masiva', [SellerBulkProductController::class, 'store'])->middleware('menu:import')->name('shops.products.bulk.store');
+        Route::get('/tiendas/{shop}/importar', [SellerInventoryImportController::class, 'create'])->middleware('menu:import')->name('shops.products.import.create');
+        Route::post('/tiendas/{shop}/importar/previsualizar', [SellerInventoryImportController::class, 'preview'])->middleware('menu:import')->name('shops.products.import.preview');
+        Route::post('/tiendas/{shop}/importar', [SellerInventoryImportController::class, 'store'])->middleware('menu:import')->name('shops.products.import.store');
 
-        Route::post('/tiendas/{shop}/productos/{product}/inventario/reposicion', [SellerInventoryController::class, 'recordRestock'])->middleware('can:update,product')->name('shops.inventory.restock');
-        Route::post('/tiendas/{shop}/productos/{product}/inventario/abrir-botella', [SellerInventoryController::class, 'openBottle'])->middleware('can:update,product')->name('shops.inventory.open-bottle');
-        Route::post('/tiendas/{shop}/productos/{product}/inventario/ajuste', [SellerInventoryController::class, 'adjustStock'])->middleware('can:update,product')->name('shops.inventory.adjustment');
-        Route::get('/tiendas/{shop}/productos/{product}/inventario/movimientos', [SellerInventoryController::class, 'movements'])->middleware('can:update,product')->name('shops.inventory.movements');
+        Route::post('/tiendas/{shop}/productos/{product}/inventario/reposicion', [SellerInventoryController::class, 'recordRestock'])->middleware(['can:update,product', 'menu:inventory'])->name('shops.inventory.restock');
+        Route::post('/tiendas/{shop}/productos/{product}/inventario/abrir-botella', [SellerInventoryController::class, 'openBottle'])->middleware(['can:update,product', 'menu:decants'])->name('shops.inventory.open-bottle');
+        Route::post('/tiendas/{shop}/productos/{product}/inventario/ajuste', [SellerInventoryController::class, 'adjustStock'])->middleware(['can:update,product', 'menu:inventory_adjustments'])->name('shops.inventory.adjustment');
+        Route::get('/tiendas/{shop}/productos/{product}/inventario/movimientos', [SellerInventoryController::class, 'movements'])->middleware(['can:update,product', 'menu:inventory'])->name('shops.inventory.movements');
     });
 });
 

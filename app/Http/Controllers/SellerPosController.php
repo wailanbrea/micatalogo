@@ -101,12 +101,16 @@ class SellerPosController extends Controller
             ])
             ->values();
 
+        $effectivePresentation = $presentation->resolve($shop);
+        $effectivePresentation['pos']['show_credit'] = ($effectivePresentation['pos']['show_credit'] ?? false)
+            && in_array('credit', app(\App\Services\SellerMenuService::class)->visibleForUser($shop, request()->user()), true);
+
         return view('seller.pos.index', [
             'shop' => $shop,
             'products' => $products,
             'customers' => $customers,
             'paymentAccounts' => $shop->paymentAccounts()->where('is_active', true)->get(),
-            'presentation' => $presentation->resolve($shop),
+            'presentation' => $effectivePresentation,
             'paymentMethods' => config('catalog.payment_methods', []),
             'clientSaleUuid' => old('client_sale_uuid') ?: (string) Str::uuid(),
             'posSummary' => [

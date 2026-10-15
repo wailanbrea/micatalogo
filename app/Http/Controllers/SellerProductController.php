@@ -9,11 +9,13 @@ use App\Jobs\ResolveProductCatalogMediaJob;
 use App\Models\AttributeDefinition;
 use App\Models\GlobalCategory;
 use App\Models\InventoryLot;
+use App\Models\InvoiceItem;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductInventory;
 use App\Models\Shop;
 use App\Services\BusinessCapabilityService;
+use App\Services\CatalogAccessService;
 use App\Services\CatalogMediaService;
 use App\Services\DecantInventoryService;
 use App\Services\FifoCostService;
@@ -46,6 +48,7 @@ class SellerProductController extends Controller
             : $shop->products();
 
         $products = $productsQuery
+            ->where(fn ($query) => $query->whereNull('sale_unit')->orWhere('sale_unit', '!=', 'service'))
             ->with(['globalCategory', 'shopCategory', 'images', 'inventory', 'comboItems.component.inventory'])
             ->when($search, fn ($q) => $q->where('name', 'like', "%{$search}%"))
             ->when($status, fn ($q) => $q->where('availability_status', $status))
@@ -58,7 +61,7 @@ class SellerProductController extends Controller
         $totalProducts = $shop->products()->count();
         $trashedCount = $shop->products()->onlyTrashed()->count();
         $trackedProducts = $shop->products()->whereHas('inventory', fn ($query) => $query->where('track_inventory', true));
-        $inventoryRows = $shop->products()->with('inventory')->get(['id', 'price']);
+        $inventoryRows = $shop->products()->where(fn ($query) => $query->whereNull('sale_unit')->orWhere('sale_unit', '!=', 'service'))->with('inventory')->get(['id', 'price']);
         $capitalCost = $inventoryRows->sum(fn (Product $product): float => (float) ($product->inventory?->stock_quantity ?? 0) * (float) ($product->inventory?->cost_price ?? 0));
         $totalUnits = $inventoryRows->sum(fn (Product $product): int => (int) ($product->inventory?->stock_quantity ?? 0));
         $marginRows = $inventoryRows->filter(fn (Product $product): bool => $product->inventory?->cost_price !== null && (float) $product->price > 0);
@@ -74,6 +77,8 @@ class SellerProductController extends Controller
             'view' => $view,
             'totalProducts' => $totalProducts,
             'maxProducts' => $maxProducts,
+            'canWriteProducts' => app(CatalogAccessService::class)->canWrite($shop, $request->user(), 'unit'),
+            'showCosts' => app(CatalogAccessService::class)->canReadCosts($shop, $request->user()),
             'trashedCount' => $trashedCount,
             'catalogStats' => [
                 'without_photo' => $shop->products()->whereDoesntHave('images')->count(),
@@ -103,15 +108,19 @@ class SellerProductController extends Controller
         if ($isCombo) {
             $requestedUnit = 'unit';
         }
+        $access = app(CatalogAccessService::class);
+        $actor = request()->user();
+        $canReadSources = $access->canWrite($shop, $actor, 'unit') || $access->canWrite($shop, $actor, 'decant');
 
         return view('seller.products.form', [
             'shop' => $shop,
             'product' => new Product(['currency' => config('catalog.currency', 'DOP'), 'sale_unit' => $requestedUnit, 'is_combo' => $isCombo]),
             'globalCategories' => GlobalCategory::query()->where('status', 'active')->orderBy('sort_order')->orderBy('name')->get(),
             'shopCategories' => $shop->categories()->where('status', 'active')->orderBy('name')->get(),
-            'sourceProducts' => $shop->products()->with('inventory')->where('sale_unit', 'bottle')->orderBy('name')->get(),
-            'componentProducts' => $shop->products()->with('inventory')->where('is_combo', false)->where('sale_unit', '!=', 'service')->orderBy('name')->get(),
+            'sourceProducts' => $canReadSources ? $shop->products()->with('inventory')->where('sale_unit', 'bottle')->orderBy('name')->get() : collect(),
+            'componentProducts' => $canReadSources ? $shop->products()->with('inventory')->where('is_combo', false)->where('sale_unit', '!=', 'service')->orderBy('name')->get() : collect(),
             'attributeDefinitions' => $shop->attributeDefinitions()->get(),
+            'canReadCosts' => $access->canReadCosts($shop, $actor),
         ]);
     }
 
@@ -203,21 +212,25 @@ class SellerProductController extends Controller
             $imageService->storeRemoteAndDispatch($product, $response->body(), (string) $response->header('Content-Type'));
         }
 
-        return to_route('seller.shops.products.index', $shop)->with('status', 'Producto creado exitosamente.');
+        return $this->catalogRedirect($shop, $product)->with('status', 'Producto creado exitosamente.');
     }
 
     public function edit(Shop $shop, Product $product): View
     {
         $product->loadMissing(['inventory', 'attributeValues.attributeDefinition', 'catalogProduct.images']);
+        $access = app(CatalogAccessService::class);
+        $actor = request()->user();
+        $canReadSources = $access->canWrite($shop, $actor, 'unit') || $access->canWrite($shop, $actor, 'decant');
 
         return view('seller.products.form', [
             'shop' => $shop,
             'product' => $product,
             'globalCategories' => GlobalCategory::query()->where('status', 'active')->orderBy('sort_order')->orderBy('name')->get(),
             'shopCategories' => $shop->categories()->where('status', 'active')->orderBy('name')->get(),
-            'sourceProducts' => $shop->products()->with('inventory')->whereKeyNot($product->id)->where('sale_unit', 'bottle')->orderBy('name')->get(),
-            'componentProducts' => $shop->products()->with('inventory')->whereKeyNot($product->id)->where('is_combo', false)->where('sale_unit', '!=', 'service')->orderBy('name')->get(),
+            'sourceProducts' => $canReadSources ? $shop->products()->with('inventory')->whereKeyNot($product->id)->where('sale_unit', 'bottle')->orderBy('name')->get() : collect(),
+            'componentProducts' => $canReadSources ? $shop->products()->with('inventory')->whereKeyNot($product->id)->where('is_combo', false)->where('sale_unit', '!=', 'service')->orderBy('name')->get() : collect(),
             'attributeDefinitions' => $shop->attributeDefinitions()->get(),
+            'canReadCosts' => $access->canReadCosts($shop, $actor),
         ]);
     }
 
@@ -258,6 +271,9 @@ class SellerProductController extends Controller
             $lowStockThreshold = (int) ($validated['low_stock_threshold'] ?? 3);
 
             $inventory = $product->inventory()->lockForUpdate()->first();
+            if (! app(CatalogAccessService::class)->canReadCosts($lockedShop, $request->user())) {
+                $costPrice = $inventory?->getRawOriginal('cost_price');
+            }
             $createdInventory = $inventory === null;
 
             if ($createdInventory) {
@@ -275,6 +291,10 @@ class SellerProductController extends Controller
             $oldStock = $inventory->stock_quantity;
             $fifo = app(FifoCostService::class);
             $hadLots = InventoryLot::where('product_id', $product->id)->exists();
+            if ($presentation->isService() !== $product->isService()
+                && ((int) $inventory->stock_quantity > 0 || $hadLots || InvoiceItem::where('product_id', $product->id)->exists())) {
+                throw ValidationException::withMessages(['sale_unit' => 'Crea una oferta nueva para cambiar entre producto y servicio cuando existen stock, lotes o ventas.']);
+            }
             $presentationChanged = $presentation->sale_unit !== ($product->sale_unit ?: 'unit')
                 || $presentation->volume_ml !== $product->volume_ml;
             if ($hadLots && $presentationChanged && ! $this->canConfigureUnitAsBottle($product, $presentation)) {
@@ -351,14 +371,14 @@ class SellerProductController extends Controller
             ResolveProductCatalogMediaJob::dispatch($product->id)->afterCommit();
         }
 
-        return to_route('seller.shops.products.index', $shop)->with('status', 'Producto actualizado.');
+        return $this->catalogRedirect($shop, $product)->with('status', 'Producto actualizado.');
     }
 
     public function destroy(Shop $shop, Product $product): RedirectResponse
     {
         $product->delete();
 
-        return to_route('seller.shops.products.index', $shop)->with('status', 'Producto enviado a la papelera.');
+        return $this->catalogRedirect($shop, $product)->with('status', 'Producto enviado a la papelera.');
     }
 
     public function restore(Request $request, Shop $shop, int|string $product, PlanLimitsService $limits): RedirectResponse
@@ -376,6 +396,13 @@ class SellerProductController extends Controller
         });
 
         return to_route('seller.shops.products.index', $shop)->with('status', 'Producto restaurado.');
+    }
+
+    private function catalogRedirect(Shop $shop, Product $product): RedirectResponse
+    {
+        return $product->isService()
+            ? to_route('seller.shops.feature', ['shop' => $shop, 'feature' => 'services'])
+            : to_route('seller.shops.products.index', $shop);
     }
 
     public function uploadImage(Request $request, Shop $shop, Product $product, ImageProcessingService $imageService, PlanLimitsService $limits): RedirectResponse

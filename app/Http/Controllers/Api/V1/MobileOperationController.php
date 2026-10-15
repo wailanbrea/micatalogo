@@ -21,7 +21,7 @@ class MobileOperationController extends Controller
         // Otherwise an external actor could probe validation details for a shop
         // they cannot access, even though no mutation would be committed.
         abort_unless($request->user()->canSellAtShop($shop), 404);
-        $type = $request->validate(['type' => ['required', 'in:'.implode(',', array_merge(ShopRecordSyncService::TYPES, ShopRouteSyncService::TYPES, FinancialMobileOperationService::TYPES, OnlineMobileOperationService::TYPES, ShopAdministrationMobileOperationService::TYPES, ['product_upsert','product_archive','restock','adjustment','open_bottle','customer_upsert','return','decant_setup','decant_vial_receive','decant_vial_update','decant_prepare','decant_presentation_update','decant_discard','decant_undo_open','decant_sell_remainder','decant_reconcile_opening']))]])['type'];
+        $type = $request->validate(['type' => ['required', 'in:'.implode(',', array_merge(ShopRecordSyncService::TYPES, ShopRouteSyncService::TYPES, FinancialMobileOperationService::TYPES, OnlineMobileOperationService::TYPES, ShopAdministrationMobileOperationService::TYPES, ['product_upsert','product_archive','product_photo_update','restock','adjustment','open_bottle','customer_upsert','return','decant_setup','decant_vial_receive','decant_vial_update','decant_prepare','decant_presentation_update','decant_discard','decant_undo_open','decant_sell_remainder','decant_reconcile_opening']))]])['type'];
         $rules = ['type' => ['required'], 'client_operation_uuid' => ['required', 'uuid'], 'notes' => ['nullable', 'string', 'max:1000']];
         if (in_array($type, array_merge(FinancialMobileOperationService::TYPES, OnlineMobileOperationService::TYPES, ShopAdministrationMobileOperationService::TYPES), true)) {
             $rules += ['request' => ['required', 'array'], 'resource_id' => ['required_if:type,cash_close,cash_movement,expense_payment,quote_convert,order_confirm,purchase_receive,partner_transaction,seller_menu_permissions_update,authorization_approve,authorization_reject', 'nullable', 'string', 'max:80']];
@@ -101,6 +101,14 @@ class MobileOperationController extends Controller
             ];
         } else {
             $rules['product_id'] = ['required', 'ulid'];
+            if ($type === 'product_photo_update') {
+                $rules += ['image_base64' => ['required', 'string', 'max:699052'], 'image_sha256' => ['required', 'regex:/^[a-f0-9]{64}$/']];
+                foreach (['name', 'price', 'expected_price', 'cost_price', 'sale_unit', 'stock', 'quantity', 'is_combo',
+                    'category_uuid', 'category_name', 'unit_uuid', 'internal_code', 'barcode', 'description', 'combo_items',
+                    'volume_ml', 'inventory_source_product_id', 'minimum_stock', 'published'] as $field) {
+                    $rules[$field] = ['prohibited'];
+                }
+            }
             if ($type === 'product_upsert') {
                 $rules += ['name' => ['sometimes', 'required', 'string', 'max:255'],
                     'internal_code' => ['nullable', 'string', 'max:120'], 'barcode' => ['nullable', 'regex:/^[0-9]{8,14}$/'],

@@ -8,8 +8,10 @@ use App\Models\Shop;
 use App\Services\PlanLimitsService;
 use App\Services\BusinessCapabilityService;
 use App\Services\BusinessPresentationService;
+use App\Services\DecantInventoryService;
 use App\Services\SellerMenuService;
 use App\Services\ShopRecordSyncService;
+use App\Services\CatalogAccessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -22,9 +24,12 @@ class CatalogController extends Controller
         BusinessCapabilityService $capabilities,
         BusinessPresentationService $presentation,
         SellerMenuService $menus,
+        DecantInventoryService $decants,
     ): JsonResponse
     {
         abort_unless($request->user()->canSellAtShop($shop), 404);
+        $snapshotAccess = app(CatalogAccessService::class)->snapshotAccess($shop, $request->user());
+        abort_unless($snapshotAccess['physical'] || $snapshotAccess['services'] || $snapshotAccess['decants'], 403);
 
         // Cost is an internal financial datum. Keep the response shape stable
         // for Android, but never expose it to a seller without finance access.
@@ -57,11 +62,22 @@ class CatalogController extends Controller
         $routeSync = app(\App\Services\ShopRouteSyncService::class);
         $routeStock = $routeSync->stock($shop);
         $products = $shop->products()
+            ->when(! ($snapshotAccess['physical'] && $snapshotAccess['services'] && $snapshotAccess['decants']), fn ($query) => $query->where(function ($types) use ($snapshotAccess): void {
+                if ($snapshotAccess['physical']) {
+                    $types->orWhereNull('sale_unit')->orWhereNotIn('sale_unit', ['service', 'decant']);
+                }
+                if ($snapshotAccess['services']) {
+                    $types->orWhere('sale_unit', 'service');
+                }
+                if ($snapshotAccess['decants']) {
+                    $types->orWhere('sale_unit', 'decant');
+                }
+            }))
             ->with(['inventory', 'sourceProduct', 'primaryImage', 'comboItems.component.inventory'])
             ->orderBy('name')
             ->get()
-            ->map(function (Product $product) use ($canViewSensitiveFinance, $productUnits, $routeStock) {
-                $payload = $this->productPayload($product, $canViewSensitiveFinance);
+            ->map(function (Product $product) use ($canViewSensitiveFinance, $productUnits, $routeStock, $decants) {
+                $payload = $this->productPayload($product, $canViewSensitiveFinance, $decants);
                 $reserved = $routeStock->where('product_id', $product->public_id)->sum('quantity');
                 if ($reserved > 0) $payload['inventory']['stock_quantity'] = max(0, $payload['inventory']['stock_quantity'] - $reserved);
                 return [...$payload, 'unit_uuid' => $productUnits[$product->public_id] ?? null];
@@ -75,12 +91,12 @@ class CatalogController extends Controller
                 'slug' => $shop->slug,
                 ...$capabilities->payload($shop),
                 'presentation' => $presentation->resolve($shop),
-                'quota' => $limits->shopQuota($shop, $products->count()),
+                'quota' => $limits->shopQuota($shop, $snapshotAccess['physical'] && $snapshotAccess['services'] && $snapshotAccess['decants'] ? $products->count() : $shop->products()->count()),
             ],
             'categories' => $categories,
             'products' => $products,
-            'store_records' => array_merge($recordSync->snapshot($shop), $routeSync->snapshot($shop, $canViewSensitiveFinance)),
-            'route_stock' => $routeStock->map(fn ($row) => $canViewSensitiveFinance ? $row : array_replace($row, ['unit_cost_cents' => 0]))->all(),
+            'store_records' => array_merge($recordSync->snapshot($shop), $snapshotAccess['routes'] ? $routeSync->snapshot($shop, $canViewSensitiveFinance) : []),
+            'route_stock' => $snapshotAccess['routes'] ? $routeStock->map(fn ($row) => $canViewSensitiveFinance ? $row : array_replace($row, ['unit_cost_cents' => 0]))->all() : [],
             'generated_at' => now()->toISOString(),
         ]);
     }
@@ -88,16 +104,20 @@ class CatalogController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function productPayload(Product $product, bool $canViewSensitiveFinance = false): array
+    private function productPayload(Product $product, bool $canViewSensitiveFinance = false, ?DecantInventoryService $decants = null): array
     {
         $inventory = $product->inventory;
         $stockQuantity = $product->isCombo() ? $product->comboAvailableQuantity() : $inventory?->stock_quantity;
+        if ($decants && $product->isDecant() && $product->sourceProduct && $decants->managed($product->sourceProduct)) {
+            $stockQuantity = $decants->sellable($product);
+        }
 
         return [
             'id' => $product->public_id,
             'slug' => $product->slug,
             'category_id' => $product->shop_category_id ? (string) $product->shop_category_id : null,
             'source_product_id' => $product->sourceProduct?->public_id,
+            'source_product_name' => $product->sourceProduct?->name,
             'name' => $product->name,
             'internal_code' => $product->product_code,
             'barcode' => $product->barcode,

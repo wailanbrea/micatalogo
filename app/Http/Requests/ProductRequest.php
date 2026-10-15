@@ -25,9 +25,10 @@ class ProductRequest extends FormRequest
     public function authorize(): bool
     {
         $shop = $this->route('shop');
-        if (! $shop || ! $this->user()->ownsShop($shop)) {
+        if (! $shop) {
             return false;
         }
+        app(\App\Services\CatalogAccessService::class)->assertWrite($shop, $this->user(), $this->route('product'), $this->all());
 
         return $this->user()->can($this->isMethod('post') ? 'create' : 'update', $this->route('product') ?? Product::class);
     }
@@ -94,6 +95,7 @@ class ProductRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
+            $shop = $this->route('shop');
             $saleUnit = $this->input('sale_unit', 'unit');
             $tracksInventory = $this->boolean('track_inventory');
 

@@ -144,7 +144,9 @@ class InventoryImportController extends Controller
 
     private function authorizeImport(Shop $shop, Request $request, PlanLimitsService $limits, SellerMenuService $menus): void
     {
+        abort_unless($request->user()->canSellAtShop($shop), 403);
         abort_unless($menus->canManage($shop, $request->user()), 403);
+        abort_unless(in_array('import', $menus->visibleForUser($shop, $request->user()), true), 403);
         $limits->assertFeature($shop->user, 'bulk_import');
     }
 }

@@ -197,7 +197,8 @@ test('summary and profits are distinct destinations with exactly one selected si
     $xpath = new DOMXPath($dom);
     $active = $xpath->query('//aside//a[@aria-current="page"]');
     expect($active->length)->toBe(1)
-        ->and(trim($active->item(0)->textContent))->toBe('Resumen')
+        ->and(trim($active->item(0)->textContent))->toBe('Inicio')
+        ->and($active->item(0)->getAttribute('href'))->toBe(route('seller.shops.summary', $shop))
         ->and(route('seller.shops.summary', $shop))->not->toBe(route('seller.shops.business', $shop));
 });
 

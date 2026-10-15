@@ -73,6 +73,27 @@ test('order envelopes preserve the existing numeric key contract and reject anot
         onlineCommand('order_confirm', ['payment_kind' => 'cash', 'payment_method' => 'cash'], (string) $order->id))->assertNotFound();
 });
 
+test('credit order envelopes require current credit authority even for an existing receipt', function () {
+    $actor = User::factory()->create();
+    $assignment = \App\Models\ShopSeller::create(['shop_id' => $this->shop->id, 'user_id' => $actor->id, 'is_active' => true,
+        'commission_type' => 'percentage', 'commission_value' => 5, 'menu_permissions' => ['orders', 'collections']]);
+    $customer = \App\Models\Customer::create(['shop_id' => $this->shop->id, 'name' => 'QA_NAV_OrderCredit', 'credit_limit' => '1000.00', 'balance' => '0.00']);
+    $order = $this->shop->orders()->create(['order_number' => 'QA_NAV_Order-'.Str::uuid(), 'customer_name' => 'QA_NAV_Buyer',
+        'currency' => 'DOP', 'subtotal' => '300.00', 'total' => '300.00', 'status' => 'sent_to_whatsapp']);
+    $order->items()->create(['product_id' => $this->product->id, 'product_name' => $this->product->name, 'quantity' => 1,
+        'unit_price' => '300.00', 'line_total' => '300.00']);
+    Sanctum::actingAs($actor, ['pos:write']);
+    $request = onlineCommand('order_confirm', ['payment_kind' => 'credit', 'customer_id' => $customer->public_id], (string) $order->id);
+    $this->postJson($this->url, $request)->assertForbidden();
+    expect($customer->fresh()->balance)->toBe('0.00')->and($this->product->inventory->fresh()->stock_quantity)->toBe(20);
+    $assignment->update(['menu_permissions' => ['orders', 'credit']]);
+    $this->postJson($this->url, $request)->assertCreated();
+    $assignment->update(['menu_permissions' => ['orders', 'collections']]);
+    $this->postJson($this->url, $request)->assertForbidden();
+    expect($customer->fresh()->balance)->toBe('300.00')->and($this->product->inventory->fresh()->stock_quantity)->toBe(19)
+        ->and($this->shop->invoices()->count())->toBe(1);
+});
+
 test('partner creation and money movements replay exactly once in the authoritative cash session', function () {
     $this->postJson($this->url, onlineCommand('cash_open', ['opening_amount' => '0.00']))->assertCreated();
     $create = onlineCommand('partner_create', ['name' => 'Socio QA', 'ownership_percent' => '20']);

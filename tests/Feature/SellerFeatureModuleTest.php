@@ -292,7 +292,7 @@ test('reports expose current inventory value and navigation actions', function (
         ->assertSee('Enlaces')
         ->assertSee('Ver ganancias y resumen')
         ->assertSee('Abrir métricas')
-        ->assertSee('Operativo');
+        ->assertSee('Consulta');
 });
 
 test('reports export csv and xlsx without mutating the shop', function () {
@@ -525,7 +525,7 @@ test('every panel feature route renders for a shop owner', function () {
         $response = $this->actingAs($user)
             ->get(route('seller.shops.feature', [$shop, 'feature' => $feature]))
             ->assertOk()
-            ->assertSee('Operativo');
+            ->assertSee(in_array($feature, ['price_health', 'reports', 'commissions', 'account', 'updates', 'help', 'practice'], true) ? 'Consulta' : 'Operativo');
 
         if ($feature === 'credit') {
             $response->assertSee('Por cobrar')->assertSee('Pagados');

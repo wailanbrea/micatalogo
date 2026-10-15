@@ -29,6 +29,7 @@
     $isAdminMenuVisibility = request()->routeIs('admin.menus.*');
     $activeShop = request()->route('shop');
     $activeShop = $activeShop instanceof \App\Models\Shop ? $activeShop : null;
+    $navigationShop = $user ? app(\App\Services\SellerNavigationService::class)->contextShop($user, $activeShop) : null;
     $isAccountantContext = (bool) ($activeShop && $user?->isActiveShopAccountant($activeShop));
     $contextRoleLabel = $ownerStoreMode
         ? 'Administrador de tienda'
@@ -56,6 +57,11 @@
         request()->routeIs('seller.shops.business') => 'Ganancias',
         default => null,
     };
+    $navigationManifest = $navigationShop ? app(\App\Services\SellerNavigationService::class)->forUser($navigationShop, $user, 'web') : ['sections' => []];
+    $navigationSection = collect($navigationManifest['sections'])->firstWhere('active', true);
+    $navigationItem = $navigationSection ? collect($navigationSection['items'])->firstWhere('active', true) : null;
+    $contextLabel = $navigationItem['label'] ?? $contextLabel;
+    $contextArea = $navigationSection['label'] ?? 'Inicio';
 @endphp
 
 <!-- Main Unified Topbar -->
@@ -223,7 +229,7 @@
     </div>
 
     <!-- Mobile navigation is intentionally on demand, leaving workspace actions unobstructed. -->
-    <div class="panel-mobile-navigation relative border-t border-slate-100 bg-slate-50 lg:hidden" x-data="{ open: false }">
+    <div class="panel-mobile-navigation relative border-t border-slate-100 bg-slate-50 lg:hidden" x-data="{ open: false }" @open-store-menu.window="open = true">
         <button
             type="button"
             @click="open = !open"
@@ -240,9 +246,10 @@
             x-cloak
             @click.outside="open = false"
             x-transition
-            class="absolute inset-x-0 top-full z-40 grid gap-1 border-b border-slate-200 bg-white p-3 text-sm font-semibold shadow-lg"
+            class="absolute inset-x-0 top-full z-40 grid max-h-[75dvh] gap-1 overflow-y-auto border-b border-slate-200 bg-white p-3 text-sm font-semibold shadow-lg"
             aria-label="Navegación principal"
         >
+            @if (! $navigationShop)
             <div>
                 <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Inicio</p>
                 <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ $isDashboard ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ $dashboardUrl }}">Dashboard</a>
@@ -253,66 +260,8 @@
                     <a wire:navigate class="block rounded-lg px-3 py-2 text-slate-700 transition hover:bg-slate-100" href="{{ route('seller.shops.create') }}">Crear tienda</a>
                 @endif
             </div>
-            @if ($activeShop)
-                <div class="border-t border-slate-100 pt-2">
-                    <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Operacion</p>
-                    @if ($canSeeMenu('sales'))
-                        <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.pos') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.pos', $activeShop) }}">Punto de venta</a>
-                        <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.inventory.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.inventory.index', $activeShop) }}">Inventario</a>
-                    @endif
-                    @if ($canSeeMenu('inventory') && $canSeeMenu('sales'))
-                        <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.inventory.*') && request('stock') === 'low' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.inventory.index', [$activeShop, 'stock' => 'low']) }}">Stock bajo</a>
-                        <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.inventory.*') && request('stock') === 'out' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.inventory.index', [$activeShop, 'stock' => 'out']) }}">Agotados</a>
-                    @endif
-                    @if ($canSeeMenu('cash'))
-                        <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.cash.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.cash.index', $activeShop) }}">Control de caja</a>
-                    @endif
-                    @if ($canSeeMenu('expenses'))
-                        <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.expenses.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.expenses.index', $activeShop) }}">Gastos operativos</a>
-                    @endif
-                    @if ($canSeeMenu('customers'))
-                        <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.customers.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.customers.index', $activeShop) }}">Clientes y cobros</a>
-                    @endif
-                    @if ($canSeeMenu('sellers') && ($isAdmin || $user->ownsShop($activeShop)))
-                        <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.sellers.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.sellers.index', $activeShop) }}">Vendedores</a>
-                    @endif
-                </div>
-                <div class="border-t border-slate-100 pt-2">
-                    <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Catalogo</p>
-                    @if ($canSeeMenu('products'))
-                        <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.products.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.products.index', $activeShop) }}">Productos</a>
-                        <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.categories.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.categories.index', $activeShop) }}">Categorías</a>
-                        @if ($canSeeMenu('storefront'))
-                            <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.storefront') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.storefront', $activeShop) }}">Mi tienda</a>
-                        @endif
-                        @if ($isAdmin || $user->ownsShop($activeShop))
-                            <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.products.bulk.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.products.bulk.create', $activeShop) }}">Subida masiva</a>
-                            <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.products.import.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.products.import.create', $activeShop) }}">Importar inventario</a>
-                            <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.pricing.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.pricing.index', $activeShop) }}">Precios automáticos</a>
-                        @endif
-                        @if ($canSeeMenu('inventory'))
-                            <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.inventory.lots') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.inventory.lots', $activeShop) }}">Lotes y costos FIFO</a>
-                        @endif
-                    @endif
-                </div>
-                <div class="border-t border-slate-100 pt-2">
-                    <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Analisis</p>
-                    @if ($canSeeMenu('finance'))
-                        <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.business') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.business', $activeShop) }}">Negocio y ganancias</a>
-                    @endif
-                    @if ($canSeeMenu('metrics'))
-                        <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.metrics.*') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.metrics.index', $activeShop) }}">Métricas y QR</a>
-                    @endif
-                    @if ($canSeeMenu('public_catalog'))
-                        <a class="block rounded-lg px-3 py-2 text-slate-700 transition hover:bg-slate-100" href="{{ route('shops.show', $activeShop) }}" target="_blank">Compartir catálogo</a>
-                    @endif
-                </div>
-                <div class="border-t border-slate-100 pt-2">
-                    <p class="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Configuracion</p>
-                    @if ($canSeeMenu('shop_settings') && ($isAdmin || $user->ownsShop($activeShop)))
-                        <a wire:navigate class="block rounded-lg px-3 py-2 transition {{ request()->routeIs('seller.shops.edit') ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" href="{{ route('seller.shops.edit', $activeShop) }}">Configuración de tienda</a>
-                    @endif
-                </div>
+            @else
+                <x-admin.navigation-tree :shop="$navigationShop" :user="$user" :mobile="true" />
             @endif
             @if ($isAdmin && ! $ownerStoreMode)
                 <div class="border-t border-blue-200 pt-2" aria-label="Menú Administrativo">
@@ -361,7 +310,7 @@
     @if ($activeShop && $contextLabel)
         <div class="hidden border-t border-slate-200/70 bg-white px-4 py-2 sm:px-6 md:block">
             <div class="mx-auto flex max-w-[1600px] items-center gap-2 text-[11px] text-slate-400">
-                <span>Operación</span>
+                <span>{{ $contextArea }}</span>
                 <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 5 7 7-7 7"/></svg>
                 <span class="font-semibold text-slate-700">{{ $contextLabel }}</span>
             </div>

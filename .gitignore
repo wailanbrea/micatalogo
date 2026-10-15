@@ -30,6 +30,7 @@ Thumbs.db
 /graphify-out
 /qa/artifacts/*.xml
 /qa/artifacts/*.txt
+/qa/artifacts/
 /.ofb-deploy
 /production-*-requests.txt
 /public/downloads/*.apk

@@ -12,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class SellerBulkProductController extends Controller
@@ -45,7 +46,7 @@ class SellerBulkProductController extends Controller
             'products' => ['required', 'array', 'min:1', 'max:30'],
             'products.*.name' => ['required', 'string', 'max:120'],
             'products.*.price' => ['required', 'numeric', 'min:0', 'max:9999999.99'],
-            'products.*.shop_category_id' => ['nullable', 'exists:shop_categories,id'],
+            'products.*.shop_category_id' => ['nullable', Rule::exists('shop_categories', 'id')->where('shop_id', $shop->id)],
             'products.*.global_category_id' => ['nullable', 'exists:global_categories,id'],
             'products.*.description' => ['nullable', 'string', 'max:2000'],
             'products.*.image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:10240'],

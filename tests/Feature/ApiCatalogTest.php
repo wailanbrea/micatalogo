@@ -6,7 +6,9 @@ use App\Models\ProductInventory;
 use App\Models\Shop;
 use App\Models\ShopCategory;
 use App\Models\User;
+use App\Enums\ProductModerationStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
@@ -91,6 +93,53 @@ test('the catalog snapshot preserves bottle and decant presentation metadata', f
         ->assertJsonPath('products.0.sale_unit', 'decant')
         ->assertJsonPath('products.0.volume_ml', 10)
         ->assertJsonPath('products.0.source_product_id', $source->public_id)
+        ->assertJsonPath('products.0.source_product_name', 'Perfume fuente 100 ml')
         ->assertJsonPath('products.1.sale_unit', 'bottle')
         ->assertJsonPath('products.1.volume_ml', 100);
+});
+
+test('the catalog snapshot reports sellable decant units when vial inventory is managed', function () {
+    $user = User::factory()->create();
+    $shop = Shop::factory()->create(['user_id' => $user->id]);
+    $source = Product::factory()->for($shop)->create([
+        'name' => 'Baccarat Rouge botella 100 ml',
+        'sale_unit' => 'bottle',
+        'volume_ml' => 100,
+    ]);
+    $decant = Product::factory()->for($shop)->create([
+        'name' => 'Baccarat Rouge decant 10 ml',
+        'sale_unit' => 'decant',
+        'volume_ml' => 10,
+        'inventory_source_product_id' => $source->id,
+        'price' => 500,
+        'moderation_status' => ProductModerationStatus::Active,
+    ]);
+    ProductInventory::create(['product_id' => $source->id, 'track_inventory' => true, 'stock_quantity' => 1, 'available_ml' => 100]);
+    ProductInventory::create(['product_id' => $decant->id, 'track_inventory' => true, 'stock_quantity' => 99]);
+    $vialId = DB::table('decant_vials')->insertGetId([
+        'public_id' => (string) \Illuminate\Support\Str::ulid(),
+        'shop_id' => $shop->id,
+        'volume_ml' => 10,
+        'name' => 'Frasco decant 10 ml',
+        'active' => true,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    DB::table('decant_vial_lots')->insert([
+        'vial_id' => $vialId,
+        'received_quantity' => 4,
+        'remaining_quantity' => 4,
+        'received_cost_cents' => 400,
+        'remaining_cost_cents' => 400,
+        'received_at' => now(),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    $token = $user->createToken('BSPOS', ['catalog:read'])->plainTextToken;
+
+    $this->withToken($token)
+        ->getJson("/api/v1/shops/{$shop->public_id}/catalog")
+        ->assertOk()
+        ->assertJsonPath('products.1.inventory.stock_quantity', 4)
+        ->assertJsonPath('products.1.source_product_name', 'Baccarat Rouge botella 100 ml');
 });

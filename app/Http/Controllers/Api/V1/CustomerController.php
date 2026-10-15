@@ -20,7 +20,7 @@ class CustomerController extends Controller
 {
     public function index(Request $request, Shop $shop): JsonResponse
     {
-        $this->ensureShopOwner($request, $shop);
+        $this->ensureShopOwner($request, $shop, ['customers', 'credit', 'collections']);
         $validated = $request->validate([
             'q' => ['nullable', 'string', 'max:120'],
             'updated_since' => ['nullable', 'date'],
@@ -77,7 +77,7 @@ class CustomerController extends Controller
 
     public function show(Request $request, Shop $shop, Customer $customer): JsonResponse
     {
-        $this->ensureCustomerOwner($request, $shop, $customer);
+        $this->ensureCustomerOwner($request, $shop, $customer, ['customers', 'credit', 'collections']);
         $entries = $customer->accountEntries()
             ->where('shop_id', $shop->id)
             ->with([
@@ -102,7 +102,7 @@ class CustomerController extends Controller
         Customer $customer,
         PaymentService $paymentService
     ): JsonResponse {
-        $this->ensureCustomerOwner($request, $shop, $customer);
+        $this->ensureCustomerOwner($request, $shop, $customer, ['collections']);
         $validated = $request->validate([
             'client_transaction_uuid' => ['required', 'uuid'],
             'amount' => ['required', 'decimal:0,2', 'gt:0'],
@@ -148,7 +148,7 @@ class CustomerController extends Controller
 
     public function adjustment(Request $request, Shop $shop, Customer $customer, CustomerAccountService $accountService): JsonResponse
     {
-        $this->ensureCustomerOwner($request, $shop, $customer);
+        $this->ensureCustomerOwner($request, $shop, $customer, ['credit']);
         $validated = $request->validate([
             'client_transaction_uuid' => ['required', 'uuid'],
             'amount' => ['required', 'regex:/^-?\d+(\.\d{1,2})?$/', 'not_in:0,0.0,0.00,-0,-0.0,-0.00'],
@@ -206,15 +206,15 @@ class CustomerController extends Controller
         return $validated;
     }
 
-    private function ensureShopOwner(Request $request, Shop $shop): void
+    private function ensureShopOwner(Request $request, Shop $shop, array $keys = ['customers']): void
     {
         abort_unless($request->user()->canSellAtShop($shop), 404);
-        abort_unless(in_array('customers', app(SellerMenuService::class)->visibleForUser($shop, $request->user()), true), 403);
+        abort_unless(array_intersect($keys, app(SellerMenuService::class)->visibleForUser($shop, $request->user())) !== [], 403);
     }
 
-    private function ensureCustomerOwner(Request $request, Shop $shop, Customer $customer): void
+    private function ensureCustomerOwner(Request $request, Shop $shop, Customer $customer, array $keys = ['customers']): void
     {
-        $this->ensureShopOwner($request, $shop);
+        $this->ensureShopOwner($request, $shop, $keys);
         abort_unless($customer->shop_id === $shop->id, 404);
     }
 

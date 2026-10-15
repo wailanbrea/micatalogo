@@ -32,7 +32,7 @@
                         <div><h1 class="text-xl font-bold text-slate-900">Clientes y cuentas por cobrar</h1><p class="mt-1 text-xs text-slate-500">El saldo sólo cambia al registrar un crédito o un cobro.</p></div>
                         <div class="customer-list-tools">
                             <form method="GET" class="flex gap-2"><input name="q" value="{{ $search }}" type="search" placeholder="Nombre o teléfono" class="w-44 rounded-lg border border-slate-300 px-3 py-2 text-xs focus:border-blue-600 focus:outline-none"><button class="rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white">Buscar</button></form>
-                            <button type="button" class="customer-new-button" @click="$refs.customerDialog.showModal(); $nextTick(() => $refs.customerFirstName.focus())">+ Nuevo cliente</button>
+                            @if ($canCreateCustomer)<button type="button" class="customer-new-button" @click="$refs.customerDialog.showModal(); $nextTick(() => $refs.customerFirstName.focus())">+ Nuevo cliente</button>@endif
                         </div>
                     </div>
 
@@ -59,8 +59,8 @@
                                         @endforeach
                                     </dl>
                                 <div class="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2">
-                                    <form method="POST" action="{{ route('seller.shops.customers.charge', [$shop, $customer]) }}" class="flex flex-wrap gap-2">@csrf<input name="amount" required min="0.01" step="0.01" type="number" placeholder="Monto crédito" class="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-xs"><input name="notes" required maxlength="255" placeholder="Motivo" class="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-xs"><button class="rounded-lg bg-amber-600 px-3 py-2 text-xs font-bold text-white hover:bg-amber-700">Registrar crédito</button></form>
-                                    <form method="POST" action="{{ route('seller.shops.customers.payment', [$shop, $customer]) }}" class="flex flex-wrap items-center gap-2">
+                                    @if ($canChargeCredit)<form method="POST" action="{{ route('seller.shops.customers.charge', [$shop, $customer]) }}" class="flex flex-wrap gap-2">@csrf<input name="amount" required min="0.01" step="0.01" type="number" placeholder="Monto crédito" class="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-xs"><input name="notes" required maxlength="255" placeholder="Motivo" class="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-xs"><button class="rounded-lg bg-amber-600 px-3 py-2 text-xs font-bold text-white hover:bg-amber-700">Registrar crédito</button></form>@endif
+                                    @if ($canCollect)<form method="POST" action="{{ route('seller.shops.customers.payment', [$shop, $customer]) }}" class="flex flex-wrap items-center gap-2">
                                         @csrf
                                         <input name="amount" required min="0.01" step="0.01" type="number" placeholder="Monto cobrado" class="min-w-0 w-28 rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold tabular-nums">
                                         <select name="payment_method" class="rounded-lg border border-slate-300 bg-white px-2 py-2 text-xs font-medium text-slate-700">
@@ -72,7 +72,7 @@
                                         <input name="reference" maxlength="120" placeholder="Ref." class="min-w-0 w-20 rounded-lg border border-slate-300 px-2 py-2 text-xs">
                                         <input name="notes" maxlength="255" placeholder="Nota" class="min-w-0 flex-1 rounded-lg border border-slate-300 px-2 py-2 text-xs">
                                         <button class="whitespace-nowrap rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700">Registrar cobro</button>
-                                    </form>
+                                    </form>@endif
                                 </div>
                                 @if ($customer->accountEntries->isNotEmpty())
                                     <section class="customer-movements" aria-label="Últimos movimientos de {{ $customer->name }}">
@@ -118,7 +118,7 @@
                     <div class="mt-5">{{ $customers->links() }}</div>
                 </section>
 
-                <dialog x-ref="customerDialog" class="customer-create-dialog" aria-labelledby="customer-create-title" @cancel="if (creatingCustomer) $event.preventDefault()">
+                @if ($canCreateCustomer)<dialog x-ref="customerDialog" class="customer-create-dialog" aria-labelledby="customer-create-title" @cancel="if (creatingCustomer) $event.preventDefault()">
                     <header class="customer-dialog-header"><div><h2 id="customer-create-title" class="text-lg font-bold text-slate-900">Nuevo cliente</h2><p class="mt-1 text-xs text-slate-500">El límite inicia en RD$ 0 si no autorizas crédito.</p></div><button type="button" @click="$refs.customerDialog.close()" :disabled="creatingCustomer" aria-label="Cerrar nuevo cliente" class="customer-dialog-close">×</button></header>
                     @if ($errors->any() && old('first_name') !== null)<div class="p-4 text-sm text-rose-700" role="alert">{{ $errors->first() }}</div>@endif
                     <form method="POST" action="{{ route('seller.shops.customers.store', $shop) }}" class="customer-create-form" @submit="if (creatingCustomer) $event.preventDefault(); else creatingCustomer = true">@csrf
@@ -134,7 +134,7 @@
                         <div><label class="text-xs font-bold text-slate-700" for="customer-notes">Notas</label><textarea id="customer-notes" name="notes" rows="2" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-600 focus:outline-none">{{ old('notes') }}</textarea></div>
                         <footer class="customer-dialog-footer"><button type="button" @click="$refs.customerDialog.close()" :disabled="creatingCustomer" class="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-600">Cancelar</button><button type="submit" :disabled="creatingCustomer" class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-700" x-text="creatingCustomer ? 'Guardando…' : 'Crear cliente'">Crear cliente</button></footer>
                     </form>
-                </dialog>
+                </dialog>@endif
             </div>
         </div>
     </main>

@@ -21,7 +21,8 @@ class EnsureSellerMenuAccess
             ? app(SellerMenuService::class)->visibleForUser($shop, $user)
             : [];
 
-        abort_unless(in_array($menu, $visibleMenus, true), 403);
+        // A union is used only for shared read contexts; mutations retain their individual key.
+        abort_unless(array_intersect(explode('|', $menu), $visibleMenus) !== [], 403);
 
         return $next($request);
     }

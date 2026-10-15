@@ -176,7 +176,7 @@
                             @error('wholesale_price') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>@endif
 
-                        @if ($showInventory)<div>
+                        @if ($showInventory && ($canReadCosts ?? true))<div>
                             <label class="block text-sm font-semibold text-slate-800" for="cost_price">
                                 <span x-text="saleUnit === 'bottle' ? 'Costo de compra por botella (RD$)' : (saleUnit === 'decant' ? 'Costo del decant (se calcula)' : 'Precio de Compra / Costo (RD$)')"></span>
                                 <span class="text-xs font-normal text-slate-500">(Privado)</span>
@@ -221,11 +221,14 @@
                         <div class="mt-4 grid gap-4 sm:grid-cols-2">
                             <div>
                                 <select @change="if (saleUnit === 'service') { trackInventory = false; }" class="w-full rounded-md border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="sale_unit" name="sale_unit" x-model="saleUnit">
-                                    <option value="unit">Unidad</option>
-                                    <option value="bottle">Botella completa</option>
-                                    <option value="ml">Por mililitro (ml)</option>
-                                    <option value="decant">Decant</option>
-                                    @if ($showServices)<option value="service">Servicio (sin inventario)</option>@endif
+                                    @php $formMenus = app(\App\Services\SellerMenuService::class)->visibleForUser($shop, auth()->user()); @endphp
+                                    @if (in_array('products', $formMenus, true))
+                                        <option value="unit">Unidad</option>
+                                        <option value="bottle">Botella completa</option>
+                                        <option value="ml">Por mililitro (ml)</option>
+                                    @endif
+                                    @if (in_array('decants', $formMenus, true))<option value="decant">Decant</option>@endif
+                                    @if ($showServices && in_array('services', $formMenus, true))<option value="service">Servicio (sin inventario)</option>@endif
                                 </select>
                             </div>
 

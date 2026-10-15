@@ -31,6 +31,7 @@ test('SALE-008 POS failure after invoice creation rolls back upload invoice inve
     ]);
 
     $this->mock(PaymentService::class, function ($mock): void {
+        $mock->makePartial();
         $mock->shouldReceive('processInvoicePayments')
             ->once()
             ->andThrow(new RuntimeException('QA injected failure after invoice creation'));

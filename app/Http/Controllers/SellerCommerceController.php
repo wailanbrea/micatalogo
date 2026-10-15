@@ -216,6 +216,7 @@ class SellerCommerceController extends Controller
 
     public function previewPurchaseInvoice(Request $request, Shop $shop, PurchaseInvoiceReader $reader): JsonResponse
     {
+        app(\App\Services\PurchaseAccessService::class)->assertPreview($shop, $request->user());
         $request->validate([
             'file' => ['required', 'file', 'mimes:csv,txt,xlsx,xls,pdf,jpg,jpeg,png,webp', 'extensions:csv,txt,xlsx,xls,pdf,jpg,jpeg,png,webp', 'max:10240'],
         ]);
@@ -225,6 +226,7 @@ class SellerCommerceController extends Controller
 
     public function storePurchaseDocument(Request $request, Shop $shop, InventoryService $inventory): RedirectResponse
     {
+        app(\App\Services\PurchaseAccessService::class)->assertType($shop, $request->user(), $request->input('type'));
         $data = $request->validate([
             'type' => ['required', 'in:container,load,purchase_invoice'],
             'document_number' => ['required', 'string', 'max:80'],
@@ -346,6 +348,7 @@ class SellerCommerceController extends Controller
 
     public function receivePurchaseDocument(Request $request, Shop $shop, PurchaseDocument $document, InventoryService $inventory): RedirectResponse
     {
+        app(\App\Services\PurchaseAccessService::class)->assertDocument($shop, $request->user(), $document);
         abort_unless($document->shop_id === $shop->id, 404);
         $feature = match ($document->type) {
             'container' => 'containers',

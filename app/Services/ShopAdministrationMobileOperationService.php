@@ -25,6 +25,16 @@ class ShopAdministrationMobileOperationService
         'authorization_reject',
     ];
 
+    public function authorize(Shop $shop, User $user, array $data): void
+    {
+        $requiredMenu = match ($data['type']) {
+            'shop_settings_update', 'shop_menu_visibility_update' => 'shop_settings',
+            'seller_menu_permissions_update', 'seller_create' => 'sellers',
+            'authorization_approve', 'authorization_reject' => 'authorizations',
+        };
+        abort_unless(in_array($requiredMenu, app(SellerMenuService::class)->visibleForUser($shop, $user), true), 403);
+    }
+
     public function apply(Shop $shop, User $user, array $data): array
     {
         if (($data['request']['client_operation_uuid'] ?? null) !== null
@@ -34,13 +44,7 @@ class ShopAdministrationMobileOperationService
             ]);
         }
 
-        $menus = app(SellerMenuService::class);
-        $requiredMenu = match ($data['type']) {
-            'shop_settings_update', 'shop_menu_visibility_update' => 'shop_settings',
-            'seller_menu_permissions_update', 'seller_create' => 'sellers',
-            'authorization_approve', 'authorization_reject' => 'authorizations',
-        };
-        abort_unless(in_array($requiredMenu, $menus->visibleForUser($shop, $user), true), 403);
+        $this->authorize($shop, $user, $data);
 
         $request = Request::create('/api/v1/mobile-shop-administration', 'POST', $data['request']);
         $request->headers->set('Accept', 'application/json');

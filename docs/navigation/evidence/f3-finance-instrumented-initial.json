@@ -1,0 +1,47 @@
+{
+  "declared": 8,
+  "executed": 8,
+  "counts": {
+    "PASS": 7,
+    "FAIL": 1,
+    "SKIP": 0,
+    "ASSUMPTION": 0
+  },
+  "missing": [],
+  "unexpected": [],
+  "gate": "NOT_APPROVED",
+  "tests": [
+    {
+      "test": "com.example.bspos.presentation.finance.FinancePermissionTabsTest#revocationReindexesTabsAndRemovesForbiddenContent",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.finance.FinancePermissionTabsTest#cashOnlyDoesNotComposeFinancialOrExpenseTabs",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.finance.CashContractScreenTest#readOnlyRoleDoesNotSeeCashMutationControls",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.finance.CashContractScreenTest#realExpectedBalanceIsDisplayedAndNoOpenSessionCanBeOpened",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.finance.FinanceContentTest#missingCashFlowShowsUnavailableStateInsteadOfFakeZero",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.finance.FinanceContentTest#missingSummaryShowsUnavailableStateInsteadOfFakeZero",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.finance.FinanceContentTest#periodKpiOpensFullExplanationDialog",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.emulatorqa.NavigationRoleAccessTest#cashAndExpensesOnlyCannotComposeSiblingFinancialData",
+      "state": "FAIL"
+    }
+  ]
+}

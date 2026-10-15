@@ -1,0 +1,791 @@
+{
+  "declared": 194,
+  "executed": 194,
+  "counts": {
+    "PASS": 183,
+    "FAIL": 3,
+    "SKIP": 0,
+    "ASSUMPTION": 8
+  },
+  "missing": [],
+  "unexpected": [],
+  "gate": "NOT_APPROVED",
+  "tests": [
+    {
+      "test": "com.example.bspos.ExampleInstrumentedTest#useAppContext",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.BackupHistoryDatabaseTest#primaryKeyIsNeverReplaced",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.BackupHistoryDatabaseTest#recordPersistsAndFiltersAuditEntries",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.BackupHistoryDatabaseTest#invalidAuditEntryIsRejectedWithoutWrite",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.CashSessionDatabaseTest#invalidOpeningAndMovementAreRejected",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.CashSessionDatabaseTest#openingMovementsAndCloseCalculateExpectedAmount",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.CashSessionDatabaseTest#oneOpenSessionAndNoMovementAfterClose",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.CatalogDatabaseTest#repositoriesRoundTripEveryFieldAndStoreUuidAsText",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.CatalogDatabaseTest#reorderIsAtomicAndRejectsMissingOrDuplicateIds",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.CatalogDatabaseTest#unitProductAndSupplierSupportUpdateAndSoftDelete",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.CatalogDatabaseTest#databaseStartsEmptyWithoutHardcodedCatalogs",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.CatalogDatabaseTest#duplicatePrimaryKeyDoesNotReplaceCategoryOrItsReferences",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.CatalogDatabaseTest#missingRecordUpdatesReportFailureWithoutCreatingRows",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.CatalogDatabaseTest#duplicateInternalCodeDoesNotReplaceExistingProduct",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.CatalogDatabaseTest#productRequiresBothCategoryAndUnit",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.CatalogDatabaseTest#flowPublishesCommittedChangesToAnExistingCollector",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.CatalogDatabaseTest#transactorRollsBackAllTablesOnConstraintFailure",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.CatalogDatabaseTest#referencedParentsCannotBePhysicallyDeleted",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.CatalogDatabaseTest#softDeletePreservesHistoricalReferencesAndInactiveRowsStayVisible",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.CustomerMigrationTest#migrationPreservesCustomerAndEnforcesUniqueRemoteId",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.CustomerRouteDatabaseTest#inactiveOrDeletedCustomerAndInactiveRouteCannotBeAssigned",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.CustomerRouteDatabaseTest#reorderingIsAtomicAndRouteDeletionCascadesAssignments",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.CustomerRouteDatabaseTest#customersRoundTripMoneyCoordinatesAndSoftDelete",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.CustomerRouteDatabaseTest#routeCodeAndCustomerAssignmentAreUnique",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.FinancialOutboxTest#financialRetryPreservesPayloadAndAckConflictBlocks",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.FinancialReceiptMigrationTest#migrationKeepsImmutableOldRowsAndAddsNullableReceipts",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.InventoryDatabaseTest#concurrentStaleWritersCannotLoseAnInventoryChange",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.InventoryDatabaseTest#referencedReasonHasForeignKeyProtection",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.InventoryDatabaseTest#stockEqualsLedgerSumAndAllAuditFieldsRoundTrip",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.InventoryDatabaseTest#stockUniqueIndexRejectsSecondRowForSameProductAndLocation",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.InventoryDatabaseTest#sqlCannotUpdateOrDeleteLedgerOrItsReferencedProduct",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.InventoryDatabaseTest#duplicateMovementRollsBackStockWriteRatherThanReplacingHistory",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.InventoryDatabaseTest#outerTransactionCanRollbackCatalogAndInventoryTogether",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.InventoryDatabaseTest#kardexDateBoundsAreHalfOpenAndTimestampTiesKeepAppendOrder",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.InventoryDatabaseTest#warehouseAndRoutesHaveIndependentBalancesAndStableStockIds",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.InventoryDatabaseTest#adjustmentsRequireExistingActiveCompatibleReasonAndNotes",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.InventoryDatabaseTest#stockFlowNotifiesAnExistingCollectorAfterCommit",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.InventoryDatabaseTest#failureInSecondMovementRollsBackTheWholeBatch",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.InventoryDatabaseTest#negativeStockRequiresExplicitOptIn",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.InventoryDatabaseTest#existingLedgerCannotBeReinitializedOrBackdated",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.InventoryDatabaseTest#invalidArithmeticSignsAndReferencesNeverCreateStock",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.InventoryDatabaseTest#newDatabaseHasNoInventedStockOrReasons",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.InventoryDocumentDatabaseTest#invalidDocumentsDoNotCreateHeadersOrLines",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.InventoryDocumentDatabaseTest#deletingHeaderCascadesOnlyItsLines",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.InventoryDocumentDatabaseTest#supplierAndProductForeignKeysProtectPurchaseButEntrySupplierCanBeNull",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.InventoryDocumentDatabaseTest#countLifecycleAndDifferenceAreStrict",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.InventoryDocumentDatabaseTest#purchasePersistsTotalsAndLinesAtomically",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.InventoryMigrationTest#publishedV15UpgradePreservesSaleIdsPayloadsAndHistoricalCosts",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.InventoryMigrationTest#migrationPreservesV1DataValidatesV2AndAllowsAuditedInventory",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.PaymentDatabaseTest#receiptAndFullAllocationPersist",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.PaymentDatabaseTest#allocationsRequireExactAmountMatchingCustomerAndPendingBalance",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.PaymentDatabaseTest#receiptNumberAndReferencesAreProtected",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.ReturnDatabaseTest#returnNumberAndSaleReferencesAreProtected",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.ReturnDatabaseTest#returnCannotExceedSoldQuantityOrAlterSnapshots",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.ReturnDatabaseTest#returnPersistsHistoricalValuesAndLines",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.RouteLoadDatabaseTest#invalidDocumentsRollbackAndForeignKeysProtectReferences",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.RouteLoadDatabaseTest#loadCapturesCostAndFollowsLifecycle",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.SaleDatabaseTest#cashSalePersistsHistoricalCostAndTotals",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.SaleDatabaseTest#foreignKeysAndInvoiceUniquenessProtectHistory",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.SaleDatabaseTest#creditRequiresCustomerAndPendingBalance",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.SaleDatabaseTest#invalidOrDuplicateLinesRollbackHeader",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.tenant.ShopReadModelTest#aMatchingEnvelopeUuidWithoutTheExpectedRecordIsNotAnAcknowledgement",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.tenant.ShopReadModelTest#authoritativeCatalogRestoresCustomUnitsRoutesAssignmentsAndStockWithoutDuplicatingHistory",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.tenant.StoreRecordSyncTest#failedReorderRollsBackBothPositionsAndEveryEnqueuedMutation",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.tenant.StoreRecordSyncTest#catalogDefinitionsCommitWithOutboxAndStaleReadBackNeverOverwritesPendingEdits",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.tenant.TenantCashTest#rejectLeavesNoPhantomAndTwoRemoteBoxesNeverCrossShop",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.tenant.TenantCashTest#historicalLocalOpenBoxCannotOverrideServerWithoutOpenSession",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.tenant.TenantMigrationTest#publishedV15AndEarliestSchemaMigrateWithoutChangingHistoricalValues",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.tenant.TenantMigrationTest#migrationPreservesEveryOldColumnAndSeparatesTwoShops",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.tenant.TenantMigrationTest#contradictoryOutboxAndSharedParentsStayQuarantined",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.tenant.TenantMigrationTest#tenantTriggersRejectCrossShopRelationsAndPreserveInventoryImmutability",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.tenant.TenantSyncTest#switchClearsObservedCustomersAndMutationKeepsOneTenantUntilCommit",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.tenant.TenantSyncTest#remoteClientUuidFromAnotherShopNeverReassignsTheCachedCustomer",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.tenant.TenantSyncTest#acknowledgementDuringDownloadDoesNotOverwritePendingCustomerProjection",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.tenant.TenantSyncTest#sameRemoteIdentifiersAndRepeatedBootstrapStaySeparate",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.tenant.TenantSyncTest#missingCustomersAreArchivedOnlyInTheirShopAndPendingEditsSurvive",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.tenant.TenantSyncTest#onlineCustomerCreatePersistsOnServerBeforeRoomAndRejectDoesNotLeavePhantom",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#repeatedSyncKeepsIdsPricesAndStockWithoutDuplicateMovements",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#bottleReceiptUpdatesSharedMlAndDecantsWithoutDoubleUploading",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#acknowledgedSaleRemainsReplaySafeIfProcessStopsBeforeMarkingSent",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#pendingMutationSurvivesStaleMetadataAndRetirementSnapshot",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#acknowledgedReceiptRefreshesPriceAndCostAndFailedDownloadRemainsDurable",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#catalogRefreshDoesNotUndoStockOfAPendingLocalSale",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#permissionRevocationBlocksQueuedSaleAndDoesNotReplay",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#futureRetryKeepsWorkerAliveButBlockedHeadDoesNotSpin",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#photoOnlyQueueSurvivesRevocationAndRequiresMatchingImageReceipt",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#equalOrBackdatedTimesCannotReorderCommittedEvents",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#blockedOriginalSaleStopsLaterMutationAndSale",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#selectedPhotoIsCopiedIntoBoundedImmutableQueuePayload",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#pendingSalesStayBoundToTheirOriginalShopWhenTheActiveShopChanges",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#wrongShopSnapshotIsRejectedWithoutImportingAnything",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#acknowledgedEventDuringDownloadDoesNotRestoreStaleDataOrClearNewerRefresh",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#mutationsAndSalesAreUploadedInCreationOrder",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#receiptAndCountCommitOutboxWithLedgerOrRollbackTogether",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.InventoryImportLiveIntegrationTest#anonymousRowEightWorkbookTravelsFromAndroidToRealLaravelAndConfirmsBySession",
+      "state": "ASSUMPTION"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.PaymentSyncResilienceTest#transientAndDefinitiveResponsesKeepReplaySafeState",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.PosSaleLiveIntegrationTest#offlineQueuedDecantConsumesSourceMillilitersAndSyncsExactlyOnce",
+      "state": "ASSUMPTION"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.PosSaleLiveIntegrationTest#offlineQueuedSalesSurviveDatabaseRestartAndSyncExactlyOnce",
+      "state": "ASSUMPTION"
+    },
+    {
+      "test": "com.example.bspos.data.repository.SettingsRepositoryTest#defaultsAreSafeAndUpdatesAreAtomic",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.domain.usecase.CompleteCashReturnUseCaseTest#decantReturnRestoresSourceAndSiblingsWithCapturedCost",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.domain.usecase.CompleteCashReturnUseCaseTest#discountedPartialReturnsKeepCentsAndOriginalCostAndCannotRepeat",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.domain.usecase.CompleteCashReturnUseCaseTest#absentCashSessionRollsBackRefundStockAndQueue",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.domain.usecase.CompleteCashReturnUseCaseTest#changedPresentationRequiresReconciliationBeforeRestocking",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.domain.usecase.CompleteSaleUseCaseTest#cashSaleDoesNotRequireLocalSessionForRemoteCashSync",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.domain.usecase.CompleteSaleUseCaseTest#insufficientStockRollsBackSale",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.domain.usecase.CompleteSaleUseCaseTest#linkedDecantSaleConsumesSourceMlAndUpdatesSiblingStock",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.domain.usecase.CompleteSaleUseCaseTest#creditSaleUpdatesInvoiceStockAndCustomerBalance",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.domain.usecase.CompleteSaleUseCaseTest#cashSaleCommitsInvoiceAndKardexWithoutLocalCashMovement",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.domain.usecase.CompleteSaleUseCaseTest#collectionAuthorityCannotIssueCreditOrConsumeStockButCanKeepPaidSales",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.domain.usecase.CompleteSaleUseCaseTest#exceedingCreditLimitLeavesInvoiceBalanceAndStockUntouched",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.domain.usecase.RecordPaymentUseCaseTest#overpaymentRollsBackReceiptAndBalances",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.domain.usecase.RecordPaymentUseCaseTest#remoteCustomerCannotBeCollectedWithoutCurrentMenuAuthority",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.domain.usecase.RecordPaymentUseCaseTest#paymentUpdatesReceiptAllocationSaleAndCashTogether",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.domain.usecase.RecordPaymentUseCaseTest#collectionsOnlyCanPayAnExistingDebtWhenNewCreditIsDisabled",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.domain.usecase.RecordPaymentUseCaseTest#cashCollectionRequiresAnOpenSession",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.auth.LoginScreenTest#rememberedBiometricSessionShowsFingerprintBesidePasswordEye",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.collection.CollectionAuthorizationTest#customerOrCreditPermissionDoesNotLoadOrCollectExistingDebts",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.collection.CollectionAuthorizationTest#collectionOnlyQueuesOnceButFreshCacheRevocationOverridesAnOpenStaleScreen",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.collection.CustomerPickerTest#selectedCustomerCanBeReplacedWithAnotherCustomer",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.common.BSPOSModalTest#sharedAlertKeepsContentAndActionsFunctional",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.common.BSPOSModalTest#sharedSheetDisplaysItsContent",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.customer.CustomerAccountScreenTest#compactCardOpensDetailsAndActionsDoNotOpenTheCard",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.customer.CustomerAccountScreenTest#aCustomerWithoutDebtStillShowsAnEmptyMovementHistory",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.customer.CustomerAccountScreenTest#loadingAndFailureNeverPretendThereAreNoMovements",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.customer.CustomerAccountScreenTest#accountShowsInvoiceOriginAndPaymentsWithRemainingBalance",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.customer.CustomerDetailViewModelTest#closingPendingDetailsPreventsALateResponseFromReopeningThem",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.customer.CustomerDetailViewModelTest#anotherShopsCustomerNeverCallsTheEndpoint",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.customer.CustomerDetailViewModelTest#detailsUseTheSelectedShopAndCloseOnShopChange",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.dashboard.ResumenOverviewTest#existingRemoteSaleHidesFirstStepsDespiteEmptyDeviceHistory",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.dashboard.ResumenOverviewTest#switchingPeriodIncludesYesterdayAndUsesActualSaleCount",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.dashboard.ResumenOverviewTest#unknownRemoteStatusDoesNotTellAnExistingOwnerToMakeTheirFirstSale",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.dashboard.ResumenOverviewTest#newShopKeepsTheFirstSaleInstruction",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.dashboard.ResumenOverviewTest#emptyOverviewKeepsEveryOperationalSectionVisible",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.dayclose.DayCloseContentTest#neverShowsWrongDateDataAsCurrentDay",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.dayclose.DayCloseContentTest#closedDayHasRealSnapshotAndNoFakeReopenAction",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.dayclose.DayCloseContentTest#showsReferenceCardsWithRealValuesAndReachableSave",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.decants.DecantsWorkspaceTest#sourcePickerShowsOnlyCompleteBottlesFromInventory",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.decants.DecantsWorkspaceTest#availableVialWithoutCatalogPresentationIsShownAsNewPreparationOption",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.decants.DecantsWorkspaceTest#noVialsPreventsPreparationEvenWhenThereIsPerfume",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.decants.DecantsWorkspaceTest#preparationLimitsQuantityByPhysicalEmptyVialsAndPreservesTheRemainingPerfume",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.decants.DecantsWorkspaceTest#sourcePickerDoesNotHideSealedBottlesWhenThereIsAnUnreconciledRemainder",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.decants.DecantsWorkspaceTest#cardsShowPreparedUnitsRatherThanSummingCompetingCapacities",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.emulatorqa.EmulatorJourneyTest#compactCustomersOpenMovementsAndExplainTheirDebt",
+      "state": "ASSUMPTION"
+    },
+    {
+      "test": "com.example.bspos.presentation.emulatorqa.EmulatorJourneyTest#ordersEntryAndReturnDoNotShowTheEmptyLandingForExistingOrders",
+      "state": "ASSUMPTION"
+    },
+    {
+      "test": "com.example.bspos.presentation.emulatorqa.EmulatorJourneyTest#ownerSummaryReadsServerForEachShop",
+      "state": "ASSUMPTION"
+    },
+    {
+      "test": "com.example.bspos.presentation.emulatorqa.EmulatorJourneyTest#loginSharedCustomerCreditOrderCollectionAndShopSwitch",
+      "state": "ASSUMPTION"
+    },
+    {
+      "test": "com.example.bspos.presentation.emulatorqa.NavigationBaselineTest#captureExistingNavigationForEachRoleAndBusiness",
+      "state": "ASSUMPTION"
+    },
+    {
+      "test": "com.example.bspos.presentation.emulatorqa.NavigationLiveRevocationTest#serverRevocationClosesTheOpenWorkspaceAndBackDoesNotRestoreIt",
+      "state": "FAIL"
+    },
+    {
+      "test": "com.example.bspos.presentation.emulatorqa.NavigationLiveRevocationTest#photoOnlyWorkspaceOpensImagePickerWithoutProductEditor",
+      "state": "FAIL"
+    },
+    {
+      "test": "com.example.bspos.presentation.emulatorqa.NavigationRoleAccessTest#cashAndExpensesOnlyCannotComposeSiblingFinancialData",
+      "state": "FAIL"
+    },
+    {
+      "test": "com.example.bspos.presentation.finance.CashContractScreenTest#readOnlyRoleDoesNotSeeCashMutationControls",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.finance.CashContractScreenTest#realExpectedBalanceIsDisplayedAndNoOpenSessionCanBeOpened",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.finance.FinanceContentTest#missingCashFlowShowsUnavailableStateInsteadOfFakeZero",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.finance.FinanceContentTest#missingSummaryShowsUnavailableStateInsteadOfFakeZero",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.finance.FinanceContentTest#periodKpiOpensFullExplanationDialog",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.finance.FinancePermissionTabsTest#revocationReindexesTabsAndRemovesForbiddenContent",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.finance.FinancePermissionTabsTest#cashOnlyDoesNotComposeFinancialOrExpenseTabs",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.orders.OrderConfirmDialogTest#creditModeOffersCreatingCustomerWithoutLeavingTheOrder",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.orders.OrderConfirmDialogTest#mixedTransferAsksForDownPaymentAndSendsTheCalculatedCredit",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.orders.OrderConfirmDialogTest#createdCustomerIsSelectedBeforeItsFormCloses",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.orders.OrderConfirmDialogTest#creatingCustomerKeepsTheMixedOrderConfirmationOpen",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.orders.OrderConfirmDialogTest#inactiveAndPendingCustomersAreVisibleButCannotBeSelectedForCredit",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.orders.OrdersEntryTest#emptyLandingAppearsOnlyAfterServerConfirmsAnEmptyList",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.orders.OrdersEntryTest#shipmentsDoNotDownloadUnrelatedCreditCustomers",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.orders.OrdersEntryTest#firstResumeDoesNotShowEmptyLandingBeforeExistingOrdersArrive",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.orders.OrdersEntryTest#encargosDoNotDownloadUnrelatedCreditCustomers",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.orders.OrdersEntryTest#returningToLoadedOrdersRetainsTheListWhileRefreshing",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.orders.OrdersEntryTest#anotherShopDoesNotDisplayThePreviousShopOrdersDuringLoading",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.pos.CheckoutReviewSheetTest#longCartAndDiscountKeepConfirmationAccessible",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.pos.CheckoutReviewSheetTest#creditAsksForTheInitialPaymentAndComputesTheDebt",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.pos.CheckoutReviewSheetTest#compactCheckoutKeepsHeaderAndConfirmVisibleWhileBodyScrolls",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.pos.InvoicePdfGeneratorTest#longCartCreatesMoreThanOnePdfPage",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.pos.InvoicePdfGeneratorTest#createsReadablePdfThroughFileProvider",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.pos.MixedCreditSaleTest#mixedCashAndCreditAreRecordedAtomicallyWithoutCashSession",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.pos.MixedCreditSaleTest#insufficientCreditDoesNotLeaveAPartialSaleOrConsumeStock",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.pos.ProductGridScrollTest#productGridCanScrollToItemsBeyondTheInitialViewport",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.pos.SplitPaymentDialogTest#creditExpansionAndConfirmationPreserveTheFormOnError",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.pos.SplitPaymentDialogTest#aCreditPaymentWithoutCustomerCannotBeSubmitted",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.purchase.PurchaseAuthorizationTest#revocationClearsWorkspaceAndDiscardsAnAlreadyStartedResponse",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.purchase.PurchaseAuthorizationTest#noPurchasePermissionsMeansNoReadOrQueuedMutation",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.purchase.PurchaseAuthorizationTest#invoicePermissionCannotCreateOrReceiveAContainer",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.purchase.PurchaseAuthorizationTest#switchingAwayAndBackDoesNotAcceptTheFirstShopsOldResponse",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.purchase.PurchaseAuthorizationTest#supplierCreationReloadsOnlySuppliers",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.quote.QuoteTerminalContentTest#longQuotationKeepsSaveFixedAndReturnsToSavedQuotes",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.quote.QuoteTerminalContentTest#savedQuoteShowsItsCapturedDetailsWithoutConvertingIt",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.quote.QuoteTerminalContentTest#selectsExistingCustomerOrGenericWithOptionalName",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.quote.QuoteTerminalContentTest#compactCatalogFiltersAndAddsOutOfStockProductsWithoutSelling",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.sales.SalesSummaryScreenTest#summaryRendersCountSalesAverageAndOutstandingPercentageInGrid",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.sync.SyncStatusBannerTest#statusIsVisibleAndRetryDoesNotTurnPendingWorkIntoASuccess",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.update.AppUpdateDialogTest#optionalUpdateIsAlsoBlocking",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.update.AppUpdateDialogTest#requiredUpdateDoesNotOfferSkip",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.update.PendingAppUpdateTest#pendingUpdateSurvivesStoreRecreationAndIsClearedAfterInstall",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.update.PendingAppUpdateTest#optionalAndRequiredUpdatesUseTheInstalledVersionAndMinimumVersion",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.update.PendingAppUpdateTest#invalidManifestCannotCreateAnUpdate",
+      "state": "PASS"
+    }
+  ]
+}

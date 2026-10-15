@@ -207,7 +207,9 @@ class SellerMenuService
             'inventory' => 'inventory',
             'sales' => 'sales',
             'customers' => 'customers',
-            'collections' => 'credit',
+            'credit' => 'credit',
+            // Collecting an existing debt remains available even where issuing new credit is disabled.
+            'collections' => 'customers',
             'cash' => 'cash',
             'finance' => 'finance',
             'expenses' => 'expenses',

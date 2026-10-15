@@ -1,0 +1,31 @@
+{
+  "declared": 4,
+  "executed": 4,
+  "counts": {
+    "PASS": 1,
+    "FAIL": 3,
+    "SKIP": 0,
+    "ASSUMPTION": 0
+  },
+  "missing": [],
+  "unexpected": [],
+  "gate": "NOT_APPROVED",
+  "tests": [
+    {
+      "test": "com.example.bspos.presentation.purchase.PurchaseAuthorizationTest#revocationClearsWorkspaceAndDiscardsAnAlreadyStartedResponse",
+      "state": "FAIL"
+    },
+    {
+      "test": "com.example.bspos.presentation.purchase.PurchaseAuthorizationTest#noPurchasePermissionsMeansNoReadOrQueuedMutation",
+      "state": "FAIL"
+    },
+    {
+      "test": "com.example.bspos.presentation.purchase.PurchaseAuthorizationTest#invoicePermissionCannotCreateOrReceiveAContainer",
+      "state": "FAIL"
+    },
+    {
+      "test": "com.example.bspos.presentation.purchase.PurchaseAuthorizationTest#supplierCreationReloadsOnlySuppliers",
+      "state": "PASS"
+    }
+  ]
+}

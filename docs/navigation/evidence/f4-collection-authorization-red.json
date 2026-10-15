@@ -1,0 +1,31 @@
+{
+  "declared": 4,
+  "executed": 4,
+  "counts": {
+    "PASS": 3,
+    "FAIL": 1,
+    "SKIP": 0,
+    "ASSUMPTION": 0
+  },
+  "missing": [],
+  "unexpected": [],
+  "gate": "NOT_APPROVED",
+  "tests": [
+    {
+      "test": "com.example.bspos.domain.usecase.RecordPaymentUseCaseTest#overpaymentRollsBackReceiptAndBalances",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.domain.usecase.RecordPaymentUseCaseTest#remoteCustomerCannotBeCollectedWithoutCurrentMenuAuthority",
+      "state": "FAIL"
+    },
+    {
+      "test": "com.example.bspos.domain.usecase.RecordPaymentUseCaseTest#paymentUpdatesReceiptAllocationSaleAndCashTogether",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.domain.usecase.RecordPaymentUseCaseTest#cashCollectionRequiresAnOpenSession",
+      "state": "PASS"
+    }
+  ]
+}

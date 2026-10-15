@@ -80,12 +80,12 @@ Route::prefix('v1')->group(function (): void {
             ->middleware('menu:partners');
         Route::get('/shops/{shop}/reports/export', [SellerFeatureController::class, 'exportReports'])
             ->middleware('menu:reports');
-        Route::get('/shops/{shop}/purchases', [PurchaseController::class, 'index'])->middleware('menu:containers');
+        Route::get('/shops/{shop}/purchases', [PurchaseController::class, 'index']);
         Route::get('/shops/{shop}/suppliers', [PurchaseController::class, 'suppliers'])->middleware('menu:suppliers');
         Route::post('/shops/{shop}/suppliers', [PurchaseController::class, 'storeSupplier'])->middleware('menu:suppliers');
-        Route::post('/shops/{shop}/purchases/preview', [PurchaseController::class, 'preview'])->middleware('menu:containers');
-        Route::post('/shops/{shop}/purchases', [PurchaseController::class, 'store'])->middleware('menu:containers');
-        Route::post('/shops/{shop}/purchases/{document}/receive', [PurchaseController::class, 'receive'])->middleware('menu:containers');
+        Route::post('/shops/{shop}/purchases/preview', [PurchaseController::class, 'preview']);
+        Route::post('/shops/{shop}/purchases', [PurchaseController::class, 'store']);
+        Route::post('/shops/{shop}/purchases/{document}/receive', [PurchaseController::class, 'receive']);
         Route::post('/shops/{shop}/inventory-import/preview', [InventoryImportController::class, 'preview']);
         Route::post('/shops/{shop}/inventory-import', [InventoryImportController::class, 'store']);
         Route::post('/shops/{shop}/inventory-import/{session}/confirm', [InventoryImportController::class, 'confirm']);
@@ -101,13 +101,13 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/shops/{shop}/sales/export', [\App\Http\Controllers\Api\V1\SalesExportController::class, 'show'])->middleware('menu:sales');
         Route::post('/shops/{shop}/orders/{order}/confirm', [OrderController::class, 'confirm'])->middleware(['abilities:pos:write', 'menu:orders']);
         Route::post('/shops/{shop}/mobile-operations', [MobileOperationController::class, 'store'])->middleware(['abilities:pos:write', 'throttle:60,1']);
-        Route::get('/shops/{shop}/customers', [CustomerController::class, 'index'])->middleware(['abilities:customers:read', 'menu:customers']);
+        Route::get('/shops/{shop}/customers', [CustomerController::class, 'index'])->middleware(['abilities:customers:read', 'menu:customers|credit|collections']);
         // A POS seller may create the customer needed for the current sale,
         // while payments and account adjustments remain customers:write-only.
         Route::post('/shops/{shop}/customers', [CustomerController::class, 'store'])->middleware(['abilities.any:customers:write,pos:write', 'menu:customers']);
-        Route::get('/shops/{shop}/customers/{customer}', [CustomerController::class, 'show'])->middleware(['abilities:customers:read', 'menu:customers']);
-        Route::post('/shops/{shop}/customers/{customer}/payments', [CustomerController::class, 'payment'])->middleware(['abilities:customers:write', 'menu:customers']);
-        Route::post('/shops/{shop}/customers/{customer}/adjustments', [CustomerController::class, 'adjustment'])->middleware(['abilities:customers:write', 'menu:customers']);
+        Route::get('/shops/{shop}/customers/{customer}', [CustomerController::class, 'show'])->middleware(['abilities:customers:read', 'menu:customers|credit|collections']);
+        Route::post('/shops/{shop}/customers/{customer}/payments', [CustomerController::class, 'payment'])->middleware(['abilities:customers:write', 'menu:collections']);
+        Route::post('/shops/{shop}/customers/{customer}/adjustments', [CustomerController::class, 'adjustment'])->middleware(['abilities:customers:write', 'menu:credit']);
 
         // Financial & Cash Control API
         Route::get('/shops/{shop}/finance/summary', [FinanceReportController::class, 'summary']);

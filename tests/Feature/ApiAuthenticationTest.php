@@ -132,10 +132,14 @@ test('a verified active seller can connect BSPOS and retrieve only their shops',
             'role' => 'seller',
         ]);
 
-    $this->withToken($token)
+    $shopsResponse = $this->withToken($token)
         ->getJson('/api/v1/shops')
         ->assertOk()
-        ->assertExactJson([[
+        ->assertJsonPath('0.navigation.schema_version', 1)
+        ->assertJsonPath('0.catalog_permissions.manage_products', true);
+    // Keep an exact comparison of the legacy payload while allowing only the documented additive field.
+    expect(array_map(fn (array $record): array => \Illuminate\Support\Arr::except($record, ['navigation', 'catalog_permissions']), $shopsResponse->json()))
+        ->toEqual([[
             'id' => $shop->public_id,
             'name' => $shop->name,
             'slug' => $shop->slug,

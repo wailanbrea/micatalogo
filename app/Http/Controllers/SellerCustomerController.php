@@ -34,7 +34,13 @@ class SellerCustomerController extends Controller
             'total_credit_limit' => (float) $shop->customers()->where('is_active', true)->sum('credit_limit'),
         ];
 
-        return view('seller.customers.index', compact('shop', 'customers', 'search', 'summary'));
+        $visible = app(\App\Services\SellerMenuService::class)->visibleForUser($shop, $request->user());
+
+        return view('seller.customers.index', compact('shop', 'customers', 'search', 'summary') + [
+            'canCreateCustomer' => in_array('customers', $visible, true),
+            'canChargeCredit' => in_array('credit', $visible, true),
+            'canCollect' => in_array('collections', $visible, true),
+        ]);
     }
 
     public function store(Request $request, Shop $shop): RedirectResponse

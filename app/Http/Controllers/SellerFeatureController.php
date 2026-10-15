@@ -86,9 +86,10 @@ class SellerFeatureController extends Controller
     ): View {
         abort_unless(isset(self::FEATURES[$feature]), 404);
         $visibleMenus = $menus->visibleForUser($shop, $request->user());
-        abort_unless(in_array($feature, $visibleMenus, true), 403);
-        $showSensitiveFinance = $menus->canManage($shop, $request->user())
-            || in_array('finance', $visibleMenus, true);
+        // Account/help belong to the authenticated actor, not administration of the shop.
+        abort_unless(in_array($feature, ['account', 'help'], true) || in_array($feature, $visibleMenus, true), 403);
+        $showSensitiveFinance = in_array('finance', $visibleMenus, true)
+            || ($feature !== 'reports' && $menus->canManage($shop, $request->user()));
 
         $related = match ($feature) {
             'sales', 'quotes', 'orders', 'encargos', 'shipments', 'day_close' => [
@@ -173,10 +174,25 @@ class SellerFeatureController extends Controller
             return $menu === null || in_array($menu, $visibleMenus, true);
         }));
 
+        $featureDefinition = self::FEATURES[$feature];
+        foreach (config('seller-navigation.sections') as $section) {
+            if (collect($section['items'])->contains(fn (array $item): bool => ($item['feature'] ?? null) === $feature)) {
+                $featureDefinition['group'] = $section['label'];
+                break;
+            }
+        }
+        if (in_array($feature, ['account', 'help', 'updates', 'practice', 'support'], true)) {
+            $featureDefinition['group'] = $feature === 'account' ? 'Mi cuenta' : 'Ayuda';
+        }
+        if ($feature === 'practice') {
+            $featureDefinition['title'] = 'Guía de práctica';
+            $featureDefinition['description'] = 'Consulta las guías de operación. Los enlaces abren pantallas reales y mantienen sus permisos; no son un sandbox de ventas.';
+        }
+
         return view('seller.features.show', [
             'shop' => $shop,
             'featureKey' => $feature,
-            'feature' => self::FEATURES[$feature],
+            'feature' => $featureDefinition,
             'related' => $related,
             'module' => $module,
             'showSensitiveFinance' => $showSensitiveFinance,
@@ -208,8 +224,8 @@ class SellerFeatureController extends Controller
         abort_unless(isset(self::FEATURES[$feature]), 404);
         $visibleMenus = $menus->visibleForUser($shop, $request->user());
         abort_unless(in_array($feature, $visibleMenus, true), 403);
-        $showSensitiveFinance = $menus->canManage($shop, $request->user())
-            || in_array('finance', $visibleMenus, true);
+        $showSensitiveFinance = in_array('finance', $visibleMenus, true)
+            || ($feature !== 'reports' && $menus->canManage($shop, $request->user()));
 
         return response()->json([
             'feature_key' => $feature,
@@ -280,33 +296,44 @@ class SellerFeatureController extends Controller
         $from = $range['from'] ?? now()->startOfMonth()->toDateString();
         $to = $range['to'] ?? now()->toDateString();
         $format = $range['format'] ?? 'csv';
+        $showSensitiveFinance = in_array('finance', app(SellerMenuService::class)->visibleForUser($shop, $request->user()), true);
         $summary = $dashboard->getSummary($shop, $from, $to, 'profit', 'desc');
+        $headers = ['Producto', 'Unidades', 'Ventas netas'];
+        if ($showSensitiveFinance) {
+            $headers = [...$headers, 'Costo FIFO', 'Ganancia bruta', 'Margen %', 'Estado'];
+        }
         $rows = collect($summary['profitability'])->map(fn (array $product): array => [
-            $product['product_name'],
+            preg_match('/^\s*[=+\-@]/u', $product['product_name']) ? "'".$product['product_name'] : $product['product_name'],
             (int) $product['units'],
             round((float) $product['revenue'], 2),
+            ...($showSensitiveFinance ? [
             round((float) $product['cost'], 2),
             round((float) $product['gross_profit'], 2),
             round((float) $product['margin_percent'], 1),
             $product['has_unknown_cost'] ? 'Costo pendiente' : 'Calculada',
+            ] : []),
         ])->values()->all();
+        $footer = [
+            ['Resumen del período'], ['Desde', $summary['from']], ['Hasta', $summary['to']],
+            ['Ventas netas', $summary['period']['net_sales']],
+        ];
+        if ($showSensitiveFinance) {
+            $footer[] = ['Costo FIFO', $summary['period']['fifo_cogs']];
+            $footer[] = ['Ganancia bruta', $summary['period']['gross_profit']];
+        }
         $filename = 'micatalogo-reportes-'.$shop->slug.'-'.$from.'-'.$to.'.'.$format;
 
         if ($format === 'xlsx') {
-            return response()->streamDownload(function () use ($summary, $rows): void {
+            return response()->streamDownload(function () use ($headers, $footer, $rows, $showSensitiveFinance): void {
                 $spreadsheet = new Spreadsheet();
                 $sheet = $spreadsheet->getActiveSheet();
-                $sheet->setTitle('Rentabilidad');
+                $sheet->setTitle($showSensitiveFinance ? 'Rentabilidad' : 'Operaciones');
                 $sheet->fromArray([
-                    ['Producto', 'Unidades', 'Ventas netas', 'Costo FIFO', 'Ganancia bruta', 'Margen %', 'Estado'],
+                    $headers,
                     ...$rows,
                 ]);
-                $sheet->fromArray([
-                    ['Resumen del período', null, null, null, null, null, null],
-                    ['Desde', $summary['from'], 'Hasta', $summary['to'], null, null, null],
-                    ['Ventas netas', $summary['period']['net_sales'], 'Costo FIFO', $summary['period']['fifo_cogs'], 'Ganancia bruta', $summary['period']['gross_profit'], null],
-                ], null, 'A'.(count($rows) + 3));
-                foreach (range('A', 'G') as $column) {
+                $sheet->fromArray($footer, null, 'A'.(count($rows) + 3));
+                foreach (range('A', $showSensitiveFinance ? 'G' : 'C') as $column) {
                     $sheet->getColumnDimension($column)->setAutoSize(true);
                 }
                 (new Xlsx($spreadsheet))->save('php://output');
@@ -315,17 +342,17 @@ class SellerFeatureController extends Controller
             ]);
         }
 
-        return response()->streamDownload(function () use ($summary, $rows): void {
+        return response()->streamDownload(function () use ($headers, $footer, $rows): void {
             $handle = fopen('php://output', 'wb');
             fwrite($handle, "\xEF\xBB\xBF");
-            fputcsv($handle, ['Producto', 'Unidades', 'Ventas netas', 'Costo FIFO', 'Ganancia bruta', 'Margen %', 'Estado']);
+            fputcsv($handle, $headers);
             foreach ($rows as $row) {
                 fputcsv($handle, $row);
             }
             fputcsv($handle, []);
-            fputcsv($handle, ['Resumen del período']);
-            fputcsv($handle, ['Desde', $summary['from'], 'Hasta', $summary['to']]);
-            fputcsv($handle, ['Ventas netas', $summary['period']['net_sales'], 'Costo FIFO', $summary['period']['fifo_cogs'], 'Ganancia bruta', $summary['period']['gross_profit']]);
+            foreach ($footer as $row) {
+                fputcsv($handle, $row);
+            }
             fclose($handle);
         }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
@@ -356,14 +383,14 @@ class SellerFeatureController extends Controller
             'day_close' => $this->dayCloseData($shop, $period),
             'containers', 'loads', 'suppliers', 'purchase_invoices' => $this->purchasingData($shop, $feature),
             'photos' => $this->photosData($shop),
-            'services' => $this->servicesData($shop, $search),
+            'services' => $this->servicesData($shop, $search, $showSensitiveFinance),
             'price_health' => $this->priceHealthData($shop, $status, $search, $showSensitiveFinance),
             'decants' => $this->decantsData($shop, $showSensitiveFinance),
             'attributes' => $this->attributesData($shop, $search),
             'credit' => $this->creditData($shop),
             'inventory_adjustments' => $this->inventoryAdjustmentsData($shop),
             'partners' => $this->partnersData($shop),
-            'reports' => $this->reportsData($shop, $dashboard),
+            'reports' => $this->reportsData($shop, $dashboard, $showSensitiveFinance),
             'commissions' => $this->commissionsData($shop, $period),
             'authorizations' => $this->authorizationsData($shop),
             'accountant' => $this->accountantData($shop, $dashboard),
@@ -758,7 +785,7 @@ class SellerFeatureController extends Controller
         ];
     }
 
-    private function servicesData(Shop $shop, ?string $search = null): array
+    private function servicesData(Shop $shop, ?string $search = null, bool $showSensitiveFinance = true): array
     {
         $search = trim((string) $search);
         $products = $shop->products()
@@ -787,13 +814,15 @@ class SellerFeatureController extends Controller
             'kpis' => [
                 ['label' => 'Servicios', 'value' => number_format($products->count()), 'tone' => 'blue'],
                 ['label' => 'Cobrado · 30 días', 'value' => $this->money($revenue), 'tone' => 'emerald'],
-                ['label' => 'Ganancia · 30 días', 'value' => $this->money($revenue - $cost), 'tone' => 'amber'],
+                $showSensitiveFinance
+                    ? ['label' => 'Ganancia · 30 días', 'value' => $this->money($revenue - $cost), 'tone' => 'amber']
+                    : ['label' => 'Ofertas activas', 'value' => number_format($products->where('moderation_status', \App\Enums\ProductModerationStatus::Active)->count()), 'tone' => 'amber'],
             ],
             'rows' => $products->map(fn (Product $product) => [
                 'id' => (string) $product->id,
                 'primary' => $product->name,
                 'secondary' => 'Precio RD$ '.number_format($product->currentPrice(), 2).' · '.($product->description ?: 'Sin descripción'),
-                'value' => $product->inventory?->cost_price !== null ? 'Insumos RD$ '.number_format((float) $product->inventory->cost_price, 2) : 'Sin costo de insumos',
+                'value' => $showSensitiveFinance ? ($product->inventory?->cost_price !== null ? 'Insumos RD$ '.number_format((float) $product->inventory->cost_price, 2) : 'Sin costo de insumos') : 'Servicio',
                 'status' => $product->moderation_status->value === 'active' ? 'Publicado · cobrable' : 'Borrador · oculto en Terminal',
                 'edit_url' => route('seller.shops.products.edit', [$shop, $product]),
             ])->all(),
@@ -1601,7 +1630,7 @@ class SellerFeatureController extends Controller
         ];
     }
 
-    private function reportsData(Shop $shop, BusinessDashboardService $dashboard): array
+    private function reportsData(Shop $shop, BusinessDashboardService $dashboard, bool $showSensitiveFinance = true): array
     {
         $summary = $dashboard->getSummary($shop, now()->startOfMonth()->toDateString(), now()->toDateString(), 'profit', 'desc');
         $currentState = $summary['current_state'] ?? [];
@@ -1610,16 +1639,18 @@ class SellerFeatureController extends Controller
         $rows = collect($summary['profitability'])->take(20)->map(fn (array $product) => [
             'primary' => $product['product_name'],
             'secondary' => number_format($product['units']).' unidad(es) · Ventas '.$this->money($product['revenue']),
-            'value' => $this->money($product['gross_profit']),
-            'status' => $product['has_unknown_cost'] ? 'Costo pendiente' : 'Calculada',
+            'value' => $this->money($showSensitiveFinance ? $product['gross_profit'] : $product['revenue']),
+            'status' => $showSensitiveFinance ? ($product['has_unknown_cost'] ? 'Costo pendiente' : 'Calculada') : 'Ventas',
         ]);
-        $rows->prepend([
+        if ($showSensitiveFinance) {
+            $rows->prepend([
             'primary' => 'Inventario al costo',
             'secondary' => number_format((int) ($currentState['active_products_count'] ?? 0)).' productos activos · Valor FIFO actual',
             'value' => $this->money($currentState['inventory_cost_value'] ?? 0),
             'status' => 'Actual',
-        ]);
-        $serviceData = $this->servicesData($shop);
+            ]);
+        }
+        $serviceData = $this->servicesData($shop, null, $showSensitiveFinance);
         $sections = [
             [
                 'key' => 'sales',
@@ -1671,7 +1702,7 @@ class SellerFeatureController extends Controller
             ],
         ];
 
-        return [
+        $module = [
             'kind' => 'table',
             'kpis' => [
                 ['label' => 'Ventas netas', 'value' => $this->money($summary['period']['net_sales']), 'tone' => 'blue'],
@@ -1688,6 +1719,26 @@ class SellerFeatureController extends Controller
             ],
             'note' => 'Este reporte usa el costo capturado por lote y distingue ventas, costos, devoluciones y descuentos. El inventario al costo refleja los lotes FIFO que aún quedan disponibles.',
         ];
+        if (! $showSensitiveFinance) {
+            $module['kpis'] = [
+                ['label' => 'Ventas netas', 'value' => $this->money($period['net_sales'] ?? 0), 'tone' => 'blue'],
+                ['label' => 'Transacciones', 'value' => number_format((int) ($period['sales_count'] ?? 0)), 'tone' => 'emerald'],
+                ['label' => 'Unidades', 'value' => number_format((int) ($period['units_sold'] ?? 0)), 'tone' => 'slate'],
+            ];
+            $module['sections'][0]['kpis'] = array_values(array_filter($module['sections'][0]['kpis'], fn ($kpi) => $kpi['label'] !== 'Ganancia bruta'));
+            $module['sections'][0]['note'] = 'Resumen operativo de ventas del período.';
+            $module['note'] = 'Reporte operativo de ventas, servicios y visitas.';
+            foreach ($module['sections'] as &$section) {
+                $section['rows'] = array_map(fn (array $row): array => array_diff_key($row, ['edit_url' => true]), $section['rows']);
+            }
+            unset($section);
+        }
+        $visible = app(SellerMenuService::class)->visibleForUser($shop, request()->user());
+        $module['actions'] = array_values(array_filter($module['actions'], fn (array $action): bool =>
+            ($action['label'] !== 'Ver ganancias y resumen' || $showSensitiveFinance)
+            && ($action['label'] !== 'Abrir métricas' || in_array('metrics', $visible, true))));
+
+        return $module;
     }
 
     private function commissionsData(Shop $shop, ?string $period = null): array

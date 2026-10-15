@@ -1,0 +1,251 @@
+Printing with useUnmergedTree = 'false'
+Node #10 at (l=0.0, t=0.0, r=1344.0, b=2992.0)px
+ |-Node #232 at (l=0.0, t=0.0, r=1344.0, b=2992.0)px
+ | IsContainer = 'true'
+ | Shape = 'RectangleShape'
+ |  |-Node #384 at (l=0.0, t=392.0, r=1344.0, b=2734.0)px
+ |  |  |-Node #385 at (l=0.0, t=392.0, r=1344.0, b=2734.0)px
+ |  |    IsContainer = 'true'
+ |  |    Shape = 'RectangleShape'
+ |  |     |-Node #398 at (l=0.0, t=551.0, r=1344.0, b=2662.0)px
+ |  |       Shape = 'RectangleShape'
+ |  |        |-Node #422 at (l=0.0, t=551.0, r=1344.0, b=743.0)px
+ |  |        | HorizontalScrollAxisRange = 'ScrollAxisRange(value=0.0, maxValue=0.0, reverseScrolling=false)'
+ |  |        | IsTraversalGroup = 'true'
+ |  |        | Shape = 'androidx.compose.foundation.HorizontalScrollableClipShape@5a105ae'
+ |  |        | Actions = [ScrollBy, ScrollByOffset]
+ |  |        |  |-Node #423 at (l=48.0, t=599.0, r=325.0, b=695.0)px
+ |  |        |  | Focused = 'false'
+ |  |        |  | Role = 'Checkbox'
+ |  |        |  | Selected = 'true'
+ |  |        |  | Shape = 'RoundedCornerShape(topStart = CornerSize(size = 8.0.dp), topEnd = CornerSize(size = 8.0.dp), bottomEnd = CornerSize(size = 8.0.dp), bottomStart = CornerSize(size = 8.0.dp))'
+ |  |        |  | Text = '[Este mes]'
+ |  |        |  | Actions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]
+ |  |        |  | MergeDescendants = 'true'
+ |  |        |  |-Node #427 at (l=349.0, t=599.0, r=526.0, b=695.0)px
+ |  |        |  | Focused = 'false'
+ |  |        |  | Role = 'Checkbox'
+ |  |        |  | Selected = 'false'
+ |  |        |  | Shape = 'RoundedCornerShape(topStart = CornerSize(size = 8.0.dp), topEnd = CornerSize(size = 8.0.dp), bottomEnd = CornerSize(size = 8.0.dp), bottomStart = CornerSize(size = 8.0.dp))'
+ |  |        |  | Text = '[Hoy]'
+ |  |        |  | Actions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]
+ |  |        |  | MergeDescendants = 'true'
+ |  |        |  |-Node #431 at (l=550.0, t=599.0, r=900.0, b=695.0)px
+ |  |        |  | Focused = 'false'
+ |  |        |  | Role = 'Checkbox'
+ |  |        |  | Selected = 'false'
+ |  |        |  | Shape = 'RoundedCornerShape(topStart = CornerSize(size = 8.0.dp), topEnd = CornerSize(size = 8.0.dp), bottomEnd = CornerSize(size = 8.0.dp), bottomStart = CornerSize(size = 8.0.dp))'
+ |  |        |  | Text = '[Esta semana]'
+ |  |        |  | Actions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]
+ |  |        |  | MergeDescendants = 'true'
+ |  |        |  |-Node #435 at (l=924.0, t=599.0, r=1275.0, b=695.0)px
+ |  |        |    Focused = 'false'
+ |  |        |    Role = 'Checkbox'
+ |  |        |    Selected = 'false'
+ |  |        |    Shape = 'RoundedCornerShape(topStart = CornerSize(size = 8.0.dp), topEnd = CornerSize(size = 8.0.dp), bottomEnd = CornerSize(size = 8.0.dp), bottomStart = CornerSize(size = 8.0.dp))'
+ |  |        |    Text = '[Mes anterior]'
+ |  |        |    Actions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]
+ |  |        |    MergeDescendants = 'true'
+ |  |        |-Node #439 at (l=0.0, t=743.0, r=1344.0, b=887.0)px, Tag: 'finance-permission-tabs'
+ |  |        | IsContainer = 'true'
+ |  |        | Shape = 'RectangleShape'
+ |  |        |  |-Node #442 at (l=0.0, t=743.0, r=455.0, b=887.0)px
+ |  |        |    HorizontalScrollAxisRange = 'ScrollAxisRange(value=0.0, maxValue=0.0, reverseScrolling=false)'
+ |  |        |    IsTraversalGroup = 'true'
+ |  |        |    Shape = 'androidx.compose.foundation.HorizontalScrollableClipShape@5a105ae'
+ |  |        |    [SelectableGroup]
+ |  |        |    Actions = [ScrollBy, ScrollByOffset]
+ |  |        |     |-Node #444 at (l=48.0, t=743.0, r=407.0, b=887.0)px
+ |  |        |     | Focused = 'false'
+ |  |        |     | Role = 'Tab'
+ |  |        |     | Selected = 'true'
+ |  |        |     | Text = '[Caja en línea]'
+ |  |        |     | Actions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]
+ |  |        |     | MergeDescendants = 'true'
+ |  |        |     |-Node #449 at (l=96.0, t=878.0, r=359.0, b=887.0)px
+ |  |        |       Shape = 'RoundedCornerShape(topStart = CornerSize(size = 3.0.dp), topEnd = CornerSize(size = 3.0.dp), bottomEnd = CornerSize(size = 3.0.dp), bottomStart = CornerSize(size = 3.0.dp))'
+ |  |        |-Node #451 at (l=0.0, t=887.0, r=1344.0, b=2662.0)px
+ |  |          IsTraversalGroup = 'true'
+ |  |          Shape = 'androidx.compose.foundation.VerticalScrollableClipShape@7de9f4f'
+ |  |          VerticalScrollAxisRange = 'ScrollAxisRange(value=0.0, maxValue=0.0, reverseScrolling=false)'
+ |  |          Actions = [ScrollBy, ScrollByOffset]
+ |  |           |-Node #452 at (l=48.0, t=935.0, r=617.0, b=1009.0)px
+ |  |           | Text = '[Caja de MiCatalogo]'
+ |  |           | Actions = [ClearTextSubstitution, GetTextLayoutResult, SetTextSubstitution, ShowTextSubstitution]
+ |  |           |-Node #453 at (l=48.0, t=1051.0, r=1296.0, b=1143.0)px
+ |  |           | Text = '[Esta caja se sincroniza con el panel web. La caja local del POS sigue disponible para ventas sin conexión.]'
+ |  |           | Actions = [ClearTextSubstitution, GetTextLayoutResult, SetTextSubstitution, ShowTextSubstitution]
+ |  |           |-Node #454 at (l=48.0, t=1185.0, r=1296.0, b=1989.0)px
+ |  |             IsContainer = 'true'
+ |  |             Shape = 'RoundedCornerShape(topStart = CornerSize(size = 12.0.dp), topEnd = CornerSize(size = 12.0.dp), bottomEnd = CornerSize(size = 12.0.dp), bottomStart = CornerSize(size = 12.0.dp))'
+ |  |              |-Node #457 at (l=96.0, t=1233.0, r=881.0, b=1305.0)px
+ |  |              | Text = '[No hay una sesión de caja abierta]'
+ |  |              | Actions = [ClearTextSubstitution, GetTextLayoutResult, SetTextSubstitution, ShowTextSubstitution]
+ |  |              |-Node #458 at (l=96.0, t=1341.0, r=1248.0, b=1533.0)px
+ |  |              | ContentDataType = 'AndroidContentDataType(androidAutofillType=1)'
+ |  |              | EditableText = ''
+ |  |              | FillableData = 'androidx.compose.ui.autofill.AndroidFillableData@46e16dc'
+ |  |              | Focused = 'false'
+ |  |              | ImeAction = 'Default'
+ |  |              | InputText = ''
+ |  |              | IsEditable = 'true'
+ |  |              | Text = '[Fondo inicial]'
+ |  |              | TextSelectionRange = 'TextRange(0, 0)'
+ |  |              | Actions = [ClearTextSubstitution, GetTextLayoutResult, InsertTextAtCursor, OnClick, OnFillData, OnLongClick, PasteText, PerformImeAction, RequestFocus, SetSelection, SetText, SetTextSubstitution, ShowTextSubstitution]
+ |  |              | MergeDescendants = 'true'
+ |  |              |-Node #468 at (l=96.0, t=1569.0, r=1248.0, b=1761.0)px
+ |  |              | ContentDataType = 'AndroidContentDataType(androidAutofillType=1)'
+ |  |              | EditableText = ''
+ |  |              | FillableData = 'androidx.compose.ui.autofill.AndroidFillableData@7fef3e5'
+ |  |              | Focused = 'false'
+ |  |              | ImeAction = 'Default'
+ |  |              | InputText = ''
+ |  |              | IsEditable = 'true'
+ |  |              | Text = '[Nota (opcional)]'
+ |  |              | TextSelectionRange = 'TextRange(0, 0)'
+ |  |              | Actions = [ClearTextSubstitution, GetTextLayoutResult, InsertTextAtCursor, OnClick, OnFillData, OnLongClick, PasteText, PerformImeAction, RequestFocus, SetSelection, SetText, SetTextSubstitution, ShowTextSubstitution]
+ |  |              | MergeDescendants = 'true'
+ |  |              |-Node #478 at (l=96.0, t=1809.0, r=1248.0, b=1929.0)px
+ |  |                Role = 'Button'
+ |  |                Shape = 'RoundedCornerShape(topStart = CornerSize(size = 50.0%), topEnd = CornerSize(size = 50.0%), bottomEnd = CornerSize(size = 50.0%), bottomStart = CornerSize(size = 50.0%))'
+ |  |                Text = '[Abrir caja]'
+ |  |                [Disabled]
+ |  |                Actions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, SetTextSubstitution, ShowTextSubstitution]
+ |  |                MergeDescendants = 'true'
+ |  |-Node #332 at (l=0.0, t=0.0, r=1344.0, b=327.0)px
+ |  | IsTraversalGroup = 'true'
+ |  |  |-Node #333 at (l=0.0, t=159.0, r=1344.0, b=327.0)px
+ |  |    Shape = 'RectangleShape'
+ |  |     |-Node #335 at (l=24.0, t=183.0, r=144.0, b=303.0)px
+ |  |     | ContentDescription = '[Abrir menu]'
+ |  |     | Focused = 'false'
+ |  |     | Role = 'Button'
+ |  |     | Shape = 'RoundedCornerShape(topStart = CornerSize(size = 50.0%), topEnd = CornerSize(size = 50.0%), bottomEnd = CornerSize(size = 50.0%), bottomStart = CornerSize(size = 50.0%))'
+ |  |     | Actions = [OnClick, RequestFocus]
+ |  |     | MergeDescendants = 'true'
+ |  |     |-Node #337 at (l=168.0, t=204.0, r=428.0, b=282.0)px
+ |  |     |  |-Node #339 at (l=168.0, t=204.0, r=348.0, b=282.0)px
+ |  |     |  | Text = '[Ventas / ]'
+ |  |     |  | Actions = [ClearTextSubstitution, GetTextLayoutResult, SetTextSubstitution, ShowTextSubstitution]
+ |  |     |  |-Node #340 at (l=348.0, t=204.0, r=428.0, b=282.0)px
+ |  |     |    Text = '[Caja]'
+ |  |     |    Actions = [ClearTextSubstitution, GetTextLayoutResult, SetTextSubstitution, ShowTextSubstitution]
+ |  |     |-Node #343 at (l=997.0, t=200.0, r=1128.0, b=286.0)px
+ |  |     | IsContainer = 'true'
+ |  |     | Shape = 'RoundedCornerShape(topStart = CornerSize(size = 50.0%), topEnd = CornerSize(size = 50.0%), bottomEnd = CornerSize(size = 50.0%), bottomStart = CornerSize(size = 50.0%))'
+ |  |     |  |-Node #344 at (l=1033.0, t=221.0, r=1092.0, b=265.0)px
+ |  |     |    Text = '[Pro]'
+ |  |     |    Actions = [ClearTextSubstitution, GetTextLayoutResult, SetTextSubstitution, ShowTextSubstitution]
+ |  |     |-Node #345 at (l=1128.0, t=183.0, r=1332.0, b=303.0)px
+ |  |       Focused = 'false'
+ |  |       Role = 'Button'
+ |  |       Shape = 'RoundedCornerShape(topStart = CornerSize(size = 50.0%), topEnd = CornerSize(size = 50.0%), bottomEnd = CornerSize(size = 50.0%), bottomStart = CornerSize(size = 50.0%))'
+ |  |       Text = '[Ayuda]'
+ |  |       Actions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]
+ |  |       MergeDescendants = 'true'
+ |  |-Node #348 at (l=0.0, t=327.0, r=1344.0, b=392.0)px
+ |  | IsContainer = 'true'
+ |  | Shape = 'RectangleShape'
+ |  |  |-Node #351 at (l=48.0, t=339.0, r=252.0, b=380.0)px
+ |  |    Text = '[Sincronizado]'
+ |  |    Actions = [ClearTextSubstitution, GetTextLayoutResult, SetTextSubstitution, ShowTextSubstitution]
+ |  |-Node #359 at (l=0.0, t=2746.0, r=1344.0, b=2908.0)px
+ |    Shape = 'RectangleShape'
+ |     |-Node #360 at (l=0.0, t=2746.0, r=672.0, b=2908.0)px
+ |     | ContentDescription = '[Inicio]'
+ |     | Focused = 'false'
+ |     | Text = '[Inicio]'
+ |     | Actions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]
+ |     | MergeDescendants = 'true'
+ |     |-Node #364 at (l=672.0, t=2746.0, r=1344.0, b=2908.0)px
+ |       ContentDescription = '[Abrir menú]'
+ |       Focused = 'false'
+ |       Text = '[Más]'
+ |       Actions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]
+ |       MergeDescendants = 'true'
+ |-Node #235 at (l=-968.0, t=0.0, r=0.0, b=2992.0)px
+   PaneTitle = 'Navigation menu'
+    |-Node #236 at (l=-968.0, t=0.0, r=0.0, b=2992.0)px
+      IsContainer = 'true'
+      Shape = 'RoundedCornerShape(topStart = CornerSize(size = 0.0.dp), topEnd = CornerSize(size = 16.0.dp), bottomEnd = CornerSize(size = 16.0.dp), bottomStart = CornerSize(size = 0.0.dp))'
+       |-Node #237 at (l=-968.0, t=159.0, r=0.0, b=2920.0)px
+          |-Node #240 at (l=-908.0, t=231.0, r=-752.0, b=387.0)px
+          | Shape = 'RoundedCornerShape(topStart = CornerSize(size = 50.0%), topEnd = CornerSize(size = 50.0%), bottomEnd = CornerSize(size = 50.0%), bottomStart = CornerSize(size = 50.0%))'
+          |  |-Node #241 at (l=-855.0, t=268.0, r=-804.0, b=350.0)px
+          |    Text = '[Q]'
+          |    Actions = [ClearTextSubstitution, GetTextLayoutResult, SetTextSubstitution, ShowTextSubstitution]
+          |-Node #244 at (l=-716.0, t=237.0, r=-190.0, b=309.0)px
+          | Text = '[QA_NAV_Perfumes]'
+          | Actions = [ClearTextSubstitution, GetTextLayoutResult, SetTextSubstitution, ShowTextSubstitution]
+          |-Node #245 at (l=-716.0, t=309.0, r=-248.0, b=381.0)px
+          | Text = '[Tu negocio, siempre contigo]'
+          | Actions = [ClearTextSubstitution, GetTextLayoutResult, SetTextSubstitution, ShowTextSubstitution]
+          |-Node #247 at (l=-908.0, t=423.0, r=-60.0, b=591.0)px
+          | Focused = 'false'
+          | Role = 'Button'
+          | Shape = 'RoundedCornerShape(topStart = CornerSize(size = 50.0%), topEnd = CornerSize(size = 50.0%), bottomEnd = CornerSize(size = 50.0%), bottomStart = CornerSize(size = 50.0%))'
+          | Text = '[Tienda activa, QA_NAV_Perfumes, Cambiar]'
+          | Actions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]
+          | MergeDescendants = 'true'
+          |-Node #253 at (l=-908.0, t=627.0, r=-60.0, b=795.0)px
+          | ContentDataType = 'AndroidContentDataType(androidAutofillType=1)'
+          | EditableText = 'Caja'
+          | FillableData = 'androidx.compose.ui.autofill.AndroidFillableData@dfbceba'
+          | Focused = 'true'
+          | ImeAction = 'Default'
+          | InputText = 'Caja'
+          | IsEditable = 'true'
+          | TextSelectionRange = 'TextRange(4, 4)'
+          | Actions = [GetTextLayoutResult, InsertTextAtCursor, MagnifierPositionInRoot, OnClick, OnFillData, OnLongClick, PasteText, PerformImeAction, RequestFocus, SetSelection, SetText]
+          | MergeDescendants = 'true'
+          |-Node #265 at (l=-932.0, t=819.0, r=-36.0, b=2872.0)px
+            IsTraversalGroup = 'true'
+            Shape = 'androidx.compose.foundation.VerticalScrollableClipShape@7de9f4f'
+            VerticalScrollAxisRange = 'ScrollAxisRange(value=0.0, maxValue=0.0, reverseScrolling=false)'
+            Actions = [ScrollBy, ScrollByOffset]
+             |-Node #277 at (l=-932.0, t=867.0, r=-36.0, b=989.0)px
+             | Focused = 'false'
+             | Text = '[Ventas, ⌄]'
+             | Actions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]
+             | MergeDescendants = 'true'
+             |-Node #280 at (l=-932.0, t=989.0, r=-36.0, b=1175.0)px
+             |  |-Node #281 at (l=-932.0, t=989.0, r=-36.0, b=1175.0)px
+             |    Shape = 'RectangleShape'
+             |     |-Node #282 at (l=-932.0, t=998.0, r=-36.0, b=1166.0)px
+             |       Focused = 'false'
+             |       Role = 'Tab'
+             |       Selected = 'true'
+             |       Shape = 'RoundedCornerShape(topStart = CornerSize(size = 50.0%), topEnd = CornerSize(size = 50.0%), bottomEnd = CornerSize(size = 50.0%), bottomStart = CornerSize(size = 50.0%))'
+             |       Text = '[Caja]'
+             |       Actions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]
+             |       MergeDescendants = 'true'
+             |-Node #305 at (l=-896.0, t=1247.0, r=-72.0, b=1391.0)px
+             | Shape = 'RoundedCornerShape(topStart = CornerSize(size = 16.0.dp), topEnd = CornerSize(size = 16.0.dp), bottomEnd = CornerSize(size = 16.0.dp), bottomStart = CornerSize(size = 16.0.dp))'
+             |  |-Node #306 at (l=-896.0, t=1265.0, r=-788.0, b=1373.0)px
+             |  | Shape = 'RoundedCornerShape(topStart = CornerSize(size = 50.0%), topEnd = CornerSize(size = 50.0%), bottomEnd = CornerSize(size = 50.0%), bottomStart = CornerSize(size = 50.0%))'
+             |  |-Node #310 at (l=-758.0, t=1247.0, r=-458.0, b=1319.0)px
+             |  | Text = '[MiCatalogo Pro]'
+             |  | Actions = [ClearTextSubstitution, GetTextLayoutResult, SetTextSubstitution, ShowTextSubstitution]
+             |  |-Node #311 at (l=-758.0, t=1319.0, r=-458.0, b=1391.0)px
+             |    Text = '[1 de 1500 productos]'
+             |    Actions = [ClearTextSubstitution, GetTextLayoutResult, SetTextSubstitution, ShowTextSubstitution]
+             |-Node #312 at (l=-908.0, t=1469.0, r=-60.0, b=1613.0)px
+             | Focused = 'false'
+             | Text = '[Mi cuenta, qa-nav-cash@example.test]'
+             | Actions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]
+             | MergeDescendants = 'true'
+             |-Node #319 at (l=-932.0, t=1655.0, r=-36.0, b=1787.0)px
+             | Focused = 'false'
+             | Shape = 'RoundedCornerShape(topStart = CornerSize(size = 12.0.dp), topEnd = CornerSize(size = 12.0.dp), bottomEnd = CornerSize(size = 12.0.dp), bottomStart = CornerSize(size = 12.0.dp))'
+             | Text = '[Ver tienda]'
+             | Actions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]
+             | MergeDescendants = 'true'
+             |-Node #323 at (l=-932.0, t=1787.0, r=-36.0, b=1919.0)px
+             | Focused = 'false'
+             | Shape = 'RoundedCornerShape(topStart = CornerSize(size = 12.0.dp), topEnd = CornerSize(size = 12.0.dp), bottomEnd = CornerSize(size = 12.0.dp), bottomStart = CornerSize(size = 12.0.dp))'
+             | Text = '[Cerrar sesión]'
+             | Actions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]
+             | MergeDescendants = 'true'
+             |-Node #327 at (l=-908.0, t=1919.0, r=-60.0, b=1991.0)px
+               Text = '[Versión 1.0.111-offlinecheck]'
+               Actions = [ClearTextSubstitution, GetTextLayoutResult, SetTextSubstitution, ShowTextSubstitution]

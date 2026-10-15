@@ -21,6 +21,17 @@ class PaymentService
         protected CashRegisterService $cashRegisterService
     ) {}
 
+    public function assertCanIssueCredit(Shop $shop, User $user, string|float $creditAmount, array $payments = []): void
+    {
+        $newCredit = Money::toCents($creditAmount) > 0 || collect($payments)->contains(
+            fn (array $payment): bool => ($payment['method'] ?? $payment['payment_method'] ?? '') === 'credit'
+                && Money::toCents($payment['amount'] ?? 0) > 0
+        );
+        if ($newCredit) {
+            abort_unless(in_array('credit', app(SellerMenuService::class)->visibleForUser($shop, $user), true), 403);
+        }
+    }
+
     /**
      * Process payments for a newly created or existing invoice.
      * Enforces the rule: sum(payments) + credit = invoice total (in cents).
@@ -42,6 +53,7 @@ class PaymentService
         ?string $clientOperationUuid = null,
         ?string $payloadHash = null
     ): array {
+        $this->assertCanIssueCredit($shop, $user, $creditAmount, $payments);
         return DB::transaction(function () use (
             $shop, $invoice, $user, $payments, $creditAmount, $customer, $clientOperationUuid, $payloadHash
         ): array {

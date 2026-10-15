@@ -284,7 +284,12 @@ test('ACL-019 every global admin mutation rejects a normal user and reaches the 
         })
         ->values();
 
-    expect($routes)->toHaveCount(10, 'La matriz runtime debe cubrir todas las mutaciones administrativas globales.');
+    expect($routes->map->getName()->sort()->values()->all())->toBe([
+        'admin.categories.destroy', 'admin.categories.store', 'admin.categories.update',
+        'admin.menus.update', 'admin.products.toggle-status', 'admin.reports.resolve',
+        'admin.shops.toggle-status', 'admin.support.resolve', 'admin.users.toggle-role',
+        'admin.users.toggle-status', 'admin.users.update-plan',
+    ], 'La matriz runtime debe cubrir por nombre todas las mutaciones administrativas globales.');
 
     $placeholderValues = [
         'category' => 'missing-qa-global-category',
@@ -317,7 +322,7 @@ test('ACL-019 every global admin mutation rejects a normal user and reaches the 
                 ->call($method, '/'.$uri, [], [], [], ['HTTP_ACCEPT' => 'text/html']);
 
             expect($response->status())->toBeIn(
-                [200, 302, 404, 422],
+                $route->getName() === 'admin.menus.update' ? [403, 404] : [200, 302, 404, 422],
                 $method.' '.$route->uri().' blocked an administrator with status '.$response->status(),
             );
         }

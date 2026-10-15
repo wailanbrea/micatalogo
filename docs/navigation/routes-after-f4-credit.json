@@ -1,0 +1,4920 @@
+{
+    "environment": "testing",
+    "driver": "sqlite",
+    "database": ":memory:",
+    "menu_keys": {
+        "sales": "Ventas",
+        "products": "Productos",
+        "printers": "Impresoras (app)",
+        "quotes": "Cotizaciones",
+        "orders": "Pedidos",
+        "encargos": "Encargos",
+        "shipments": "Envíos",
+        "day_close": "Cierre de día",
+        "containers": "Contenedores",
+        "loads": "Cargas",
+        "suppliers": "Suplidores",
+        "purchase_invoices": "Facturas",
+        "photos": "Fotos",
+        "storefront": "Mi tienda",
+        "services": "Servicios",
+        "price_health": "Salud de precios",
+        "pricing": "Precios automáticos",
+        "decants": "Decants",
+        "attributes": "Marcas y atributos",
+        "import": "Importar",
+        "customers": "Clientes",
+        "credit": "Crédito",
+        "inventory": "Inventario",
+        "collections": "Cobros",
+        "cash": "Caja",
+        "finance": "Finanzas \/ Ganancias",
+        "inventory_adjustments": "Ajustes de inventario",
+        "partners": "Socios",
+        "expenses": "Gastos",
+        "reports": "Reportes",
+        "commissions": "Comisiones",
+        "authorizations": "Autorizaciones",
+        "returns": "Devoluciones",
+        "routes": "Rutas",
+        "more": "Más herramientas",
+        "settings": "Ajustes",
+        "accountant": "Contador",
+        "account": "Mi cuenta",
+        "updates": "Novedades",
+        "help": "Ayuda",
+        "practice": "Practicar sin miedo",
+        "support": "Soporte",
+        "metrics": "Métricas y QR",
+        "public_catalog": "Compartir catálogo",
+        "shop_settings": "Configuración de tienda",
+        "sellers": "Vendedores"
+    },
+    "owner_only_keys": [
+        "settings",
+        "shop_settings",
+        "sellers"
+    ],
+    "routes": [
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "login",
+            "name": "login",
+            "action": "Laravel\\Fortify\\Http\\Controllers\\AuthenticatedSessionController@create",
+            "middleware": [
+                "web",
+                "App\\Http\\Middleware\\ThrottleAccountRequests",
+                "guest:web"
+            ],
+            "source": "vendor\\laravel\\fortify\\src\\Http\\Controllers\\AuthenticatedSessionController.php",
+            "line": 47,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "login",
+            "name": "login.store",
+            "action": "Laravel\\Fortify\\Http\\Controllers\\AuthenticatedSessionController@store",
+            "middleware": [
+                "web",
+                "App\\Http\\Middleware\\ThrottleAccountRequests",
+                "guest:web",
+                "throttle:login"
+            ],
+            "source": "vendor\\laravel\\fortify\\src\\Http\\Controllers\\AuthenticatedSessionController.php",
+            "line": 58,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "logout",
+            "name": "logout",
+            "action": "Laravel\\Fortify\\Http\\Controllers\\AuthenticatedSessionController@destroy",
+            "middleware": [
+                "web",
+                "App\\Http\\Middleware\\ThrottleAccountRequests",
+                "auth:web"
+            ],
+            "source": "vendor\\laravel\\fortify\\src\\Http\\Controllers\\AuthenticatedSessionController.php",
+            "line": 100,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "forgot-password",
+            "name": "password.request",
+            "action": "Laravel\\Fortify\\Http\\Controllers\\PasswordResetLinkController@create",
+            "middleware": [
+                "web",
+                "App\\Http\\Middleware\\ThrottleAccountRequests",
+                "guest:web"
+            ],
+            "source": "vendor\\laravel\\fortify\\src\\Http\\Controllers\\PasswordResetLinkController.php",
+            "line": 22,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "reset-password\/{token}",
+            "name": "password.reset",
+            "action": "Laravel\\Fortify\\Http\\Controllers\\NewPasswordController@create",
+            "middleware": [
+                "web",
+                "App\\Http\\Middleware\\ThrottleAccountRequests",
+                "guest:web"
+            ],
+            "source": "vendor\\laravel\\fortify\\src\\Http\\Controllers\\NewPasswordController.php",
+            "line": 45,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "forgot-password",
+            "name": "password.email",
+            "action": "Laravel\\Fortify\\Http\\Controllers\\PasswordResetLinkController@store",
+            "middleware": [
+                "web",
+                "App\\Http\\Middleware\\ThrottleAccountRequests",
+                "guest:web"
+            ],
+            "source": "vendor\\laravel\\fortify\\src\\Http\\Controllers\\PasswordResetLinkController.php",
+            "line": 30,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "reset-password",
+            "name": "password.update",
+            "action": "Laravel\\Fortify\\Http\\Controllers\\NewPasswordController@store",
+            "middleware": [
+                "web",
+                "App\\Http\\Middleware\\ThrottleAccountRequests",
+                "guest:web"
+            ],
+            "source": "vendor\\laravel\\fortify\\src\\Http\\Controllers\\NewPasswordController.php",
+            "line": 56,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "register",
+            "name": "register",
+            "action": "Laravel\\Fortify\\Http\\Controllers\\RegisteredUserController@create",
+            "middleware": [
+                "web",
+                "App\\Http\\Middleware\\ThrottleAccountRequests",
+                "guest:web"
+            ],
+            "source": "vendor\\laravel\\fortify\\src\\Http\\Controllers\\RegisteredUserController.php",
+            "line": 41,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "register",
+            "name": "register.store",
+            "action": "Laravel\\Fortify\\Http\\Controllers\\RegisteredUserController@store",
+            "middleware": [
+                "web",
+                "App\\Http\\Middleware\\ThrottleAccountRequests",
+                "guest:web"
+            ],
+            "source": "vendor\\laravel\\fortify\\src\\Http\\Controllers\\RegisteredUserController.php",
+            "line": 53,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "email\/verify",
+            "name": "verification.notice",
+            "action": "App\\Http\\Controllers\\EmailVerificationCodeController@show",
+            "middleware": [
+                "web"
+            ],
+            "source": "app\\Http\\Controllers\\EmailVerificationCodeController.php",
+            "line": 17,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "email\/verify\/{id}\/{hash}",
+            "name": "verification.verify",
+            "action": "Laravel\\Fortify\\Http\\Controllers\\VerifyEmailController@__invoke",
+            "middleware": [
+                "web",
+                "App\\Http\\Middleware\\ThrottleAccountRequests",
+                "auth:web",
+                "signed",
+                "throttle:6,1"
+            ],
+            "source": "vendor\\laravel\\fortify\\src\\Http\\Controllers\\VerifyEmailController.php",
+            "line": 18,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "email\/verification-notification",
+            "name": "verification.send",
+            "action": "Laravel\\Fortify\\Http\\Controllers\\EmailVerificationNotificationController@store",
+            "middleware": [
+                "web",
+                "App\\Http\\Middleware\\ThrottleAccountRequests",
+                "auth:web",
+                "throttle:6,1"
+            ],
+            "source": "vendor\\laravel\\fortify\\src\\Http\\Controllers\\EmailVerificationNotificationController.php",
+            "line": 19,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "user\/confirm-password",
+            "name": "password.confirm",
+            "action": "Laravel\\Fortify\\Http\\Controllers\\ConfirmablePasswordController@show",
+            "middleware": [
+                "web",
+                "App\\Http\\Middleware\\ThrottleAccountRequests",
+                "auth:web"
+            ],
+            "source": "vendor\\laravel\\fortify\\src\\Http\\Controllers\\ConfirmablePasswordController.php",
+            "line": 40,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "user\/confirmed-password-status",
+            "name": "password.confirmation",
+            "action": "Laravel\\Fortify\\Http\\Controllers\\ConfirmedPasswordStatusController@show",
+            "middleware": [
+                "web",
+                "App\\Http\\Middleware\\ThrottleAccountRequests",
+                "auth:web"
+            ],
+            "source": "vendor\\laravel\\fortify\\src\\Http\\Controllers\\ConfirmedPasswordStatusController.php",
+            "line": 17,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "user\/confirm-password",
+            "name": "password.confirm.store",
+            "action": "Laravel\\Fortify\\Http\\Controllers\\ConfirmablePasswordController@store",
+            "middleware": [
+                "web",
+                "App\\Http\\Middleware\\ThrottleAccountRequests",
+                "auth:web"
+            ],
+            "source": "vendor\\laravel\\fortify\\src\\Http\\Controllers\\ConfirmablePasswordController.php",
+            "line": 51,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "sanctum\/csrf-cookie",
+            "name": "sanctum.csrf-cookie",
+            "action": "Laravel\\Sanctum\\Http\\Controllers\\CsrfCookieController@show",
+            "middleware": [
+                "web"
+            ],
+            "source": "vendor\\laravel\\sanctum\\src\\Http\\Controllers\\CsrfCookieController.php",
+            "line": 17,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "livewire-5c589461\/update",
+            "name": "default-livewire.update",
+            "action": "Livewire\\Mechanisms\\HandleRequests\\HandleRequests@handleUpdate",
+            "middleware": [
+                "web",
+                "Livewire\\Mechanisms\\HandleRequests\\RequireLivewireHeaders"
+            ],
+            "source": "vendor\\livewire\\livewire\\src\\Mechanisms\\HandleRequests\\HandleRequests.php",
+            "line": 153,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "livewire-5c589461\/livewire.js",
+            "name": null,
+            "action": "Livewire\\Mechanisms\\FrontendAssets\\FrontendAssets@returnJavaScriptAsFile",
+            "middleware": [],
+            "source": "vendor\\livewire\\livewire\\src\\Mechanisms\\FrontendAssets\\FrontendAssets.php",
+            "line": 81,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "livewire-5c589461\/livewire.min.js.map",
+            "name": null,
+            "action": "Livewire\\Mechanisms\\FrontendAssets\\FrontendAssets@maps",
+            "middleware": [],
+            "source": "vendor\\livewire\\livewire\\src\\Mechanisms\\FrontendAssets\\FrontendAssets.php",
+            "line": 94,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "livewire-5c589461\/livewire.csp.min.js.map",
+            "name": null,
+            "action": "Livewire\\Mechanisms\\FrontendAssets\\FrontendAssets@cspMaps",
+            "middleware": [],
+            "source": "vendor\\livewire\\livewire\\src\\Mechanisms\\FrontendAssets\\FrontendAssets.php",
+            "line": 103,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "livewire-5c589461\/upload-file",
+            "name": "livewire.upload-file",
+            "action": "Livewire\\Features\\SupportFileUploads\\FileUploadController@handle",
+            "middleware": [
+                "web",
+                "throttle:60,1"
+            ],
+            "source": "vendor\\livewire\\livewire\\src\\Features\\SupportFileUploads\\FileUploadController.php",
+            "line": 27,
+            "guard_evidence": [
+                "abort_unless(request()->hasValidRelativeSignature(), 401);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "livewire-5c589461\/preview-file\/{filename}",
+            "name": "livewire.preview-file",
+            "action": "Livewire\\Features\\SupportFileUploads\\FilePreviewController@handle",
+            "middleware": [
+                "web"
+            ],
+            "source": "vendor\\livewire\\livewire\\src\\Features\\SupportFileUploads\\FilePreviewController.php",
+            "line": 18,
+            "guard_evidence": [
+                "abort_unless(request()->hasValidRelativeSignature(), 401);"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "livewire-5c589461\/js\/{component}.js",
+            "name": null,
+            "action": "Closure",
+            "middleware": [],
+            "source": null,
+            "line": null,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "livewire-5c589461\/css\/{component}.css",
+            "name": null,
+            "action": "Closure",
+            "middleware": [],
+            "source": null,
+            "line": null,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "livewire-5c589461\/css\/{component}.global.css",
+            "name": null,
+            "action": "Closure",
+            "middleware": [],
+            "source": null,
+            "line": null,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/app-updates\/android",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\AndroidUpdateController@show",
+            "middleware": [
+                "api"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\AndroidUpdateController.php",
+            "line": 10,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/auth\/login",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\AuthController@login",
+            "middleware": [
+                "api",
+                "throttle:login",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\AuthController.php",
+            "line": 17,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/me",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\AuthController@me",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\AuthController.php",
+            "line": 50,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/me\/mobile-operations",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\AccountMobileOperationController@store",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\AccountMobileOperationController.php",
+            "line": 13,
+            "guard_evidence": [
+                "'shop_id' => ['required_if:type,support_create', 'nullable', 'ulid'],",
+                "abort_unless($data['actor_id'] === (string) $request->user()->id, 403);",
+                "$this->authorizeResource($request, $data);",
+                "if ($data['type'] === 'support_create') $parameters['shop'] = Shop::where('public_id', $data['shop_id'])->firstOrFail();"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/me\/mobile-operations\/{uuid}",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\AccountMobileOperationController@show",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\AccountMobileOperationController.php",
+            "line": 51,
+            "guard_evidence": [
+                "$this->authorizeResource($request, $operation->payload);"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/auth\/logout",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\AuthController@logout",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\AuthController.php",
+            "line": 55,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "PUT"
+            ],
+            "uri": "api\/v1\/me",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\AuthController@update",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\AuthController.php",
+            "line": 68,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/shops",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\ShopController@index",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\ShopController.php",
+            "line": 23,
+            "guard_evidence": [
+                "$canManageMenuVisibility = $menus->canManageMenuVisibility($shop, $request->user());",
+                "'can_manage_sellers' => $canManageMenuVisibility,",
+                "'can_manage_menu_visibility' => $canManageMenuVisibility,",
+                "'menu_options' => $canManageMenuVisibility",
+                "'sellers' => $canManageMenuVisibility ? $shop->sellers->map(fn ($seller): array => ["
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/seller-summary",
+            "name": null,
+            "action": "App\\Http\\Controllers\\SellerSummaryController@api",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "menu:sales"
+            ],
+            "source": "app\\Http\\Controllers\\SellerSummaryController.php",
+            "line": 15,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/admin\/shops",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\AdminShopController@index",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\AdminShopController.php",
+            "line": 13,
+            "guard_evidence": [
+                "$this->authorizeAdmin($request);"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "PUT"
+            ],
+            "uri": "api\/v1\/admin\/shops\/{shop}",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\AdminShopController@update",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\AdminShopController.php",
+            "line": 28,
+            "guard_evidence": [
+                "$this->authorizeAdmin($request);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/sellers",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\ShopController@storeSeller",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\ShopController.php",
+            "line": 120,
+            "guard_evidence": [
+                "abort_unless($menus->canManageMenuVisibility($shop, $request->user()), 403);",
+                "$limits->assertCanAddSeller($shop);",
+                "abort_if($seller->id === $shop->user_id, 422, 'El propietario no puede asignarse como vendedor.');"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/accountant-access",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\AccountantAccessController@store",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\AccountantAccessController.php",
+            "line": 13,
+            "guard_evidence": [
+                "abort_unless($request->user()->canSellAtShop($shop), 404);",
+                "abort_unless($request->user()->can('update', $shop)"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "PUT"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/sellers\/{seller}\/menus",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\ShopController@updateSellerMenus",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\ShopController.php",
+            "line": 82,
+            "guard_evidence": [
+                "abort_unless($menus->canManageMenuVisibility($shop, $request->user()), 403);",
+                "abort_unless($seller->shop_id === $shop->id, 404);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "PUT"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/menu-visibility",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\ShopController@updateMenuVisibility",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "menu:shop_settings"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\ShopController.php",
+            "line": 98,
+            "guard_evidence": [
+                "abort_unless($menus->canManageMenuVisibility($shop, $request->user()), 403);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/catalog",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\CatalogController@show",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\CatalogController.php",
+            "line": 20,
+            "guard_evidence": [
+                "abort_unless($request->user()->canSellAtShop($shop), 404);",
+                "abort_unless($snapshotAccess['physical'] || $snapshotAccess['services'] || $snapshotAccess['decants'], 403);",
+                "$canViewSensitiveFinance = $menus->canManage($shop, $request->user())",
+                "|| $request->user()->ownsShop($shop)"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/decants",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\DecantController@index",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "menu:decants"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\DecantController.php",
+            "line": 23,
+            "guard_evidence": [
+                "abort_unless($request->user()->canSellAtShop($shop), 404);",
+                "return response()->json($service->snapshot($shop, $finance) + ['can_manage' => \\Illuminate\\Support\\Facades\\Gate::forUser($request->user())->allows('update', $shop)]);"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/inventory-value",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\DecantController@inventoryValue",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "menu:inventory"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\DecantController.php",
+            "line": 14,
+            "guard_evidence": [
+                "abort_unless($request->user()->canSellAtShop($shop), 404);"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/settings",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\ShopSettingsController@show",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "menu:shop_settings"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\ShopSettingsController.php",
+            "line": 21,
+            "guard_evidence": [
+                "abort_unless($menus->canManage($shop, $request->user()), 403);"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "PUT"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/settings",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\ShopSettingsController@update",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "menu:shop_settings"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\ShopSettingsController.php",
+            "line": 28,
+            "guard_evidence": [
+                "abort_unless($menus->canManage($shop, $request->user()), 403);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/media\/logo",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\ShopSettingsController@uploadLogo",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "menu:shop_settings"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\ShopSettingsController.php",
+            "line": 69,
+            "guard_evidence": [
+                "abort_unless($menus->canManage($shop, $request->user()), 403);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/features\/{feature}",
+            "name": null,
+            "action": "App\\Http\\Controllers\\SellerFeatureController@api",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\SellerFeatureController.php",
+            "line": 208,
+            "guard_evidence": [
+                "abort_unless(",
+                "|| $request->user()->canSellAtShop($shop)",
+                "abort_unless(isset(self::FEATURES[$feature]), 404);",
+                "abort_unless(in_array($feature, $visibleMenus, true), 403);",
+                "|| ($feature !== 'reports' && $menus->canManage($shop, $request->user()));"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/support\/conversations",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\SupportChatController@index",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\SupportChatController.php",
+            "line": 16,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/support\/conversations\/{conversation}",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\SupportChatController@show",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\SupportChatController.php",
+            "line": 90,
+            "guard_evidence": [
+                "$this->authorizeConversation($conversation, $user);"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/support\/conversations\/{conversation}\/messages",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\SupportChatController@storeMessage",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\SupportChatController.php",
+            "line": 107,
+            "guard_evidence": [
+                "$this->authorizeConversation($conversation, $user);",
+                "abort_if($conversation->status === 'closed', 422, 'Este chat ya fue concluido. Inicia una nueva conversación para continuar.');"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/support\/conversations\/{conversation}\/read",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\SupportChatController@markRead",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\SupportChatController.php",
+            "line": 132,
+            "guard_evidence": [
+                "$this->authorizeConversation($conversation, $user);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/support\/conversations\/{conversation}\/close",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\SupportChatController@close",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\SupportChatController.php",
+            "line": 141,
+            "guard_evidence": [
+                "$this->authorizeConversation($conversation, $user);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/support\/conversations",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\SupportChatController@store",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\SupportChatController.php",
+            "line": 50,
+            "guard_evidence": [
+                "abort_unless($this->isSupportOwner($user) || $user->canSellAtShop($shop), 404);",
+                "'shop_id' => $shop->id,"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/authorization-requests",
+            "name": null,
+            "action": "App\\Http\\Controllers\\SellerAuthorizationController@storeApi",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\SellerAuthorizationController.php",
+            "line": 13,
+            "guard_evidence": [
+                "abort_unless($request->user()->canSellAtShop($shop), 404);",
+                "->where('shop_id', $shop->id)",
+                "'shop_id' => $shop->id,"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/authorization-requests\/{authorizationRequest}\/approve",
+            "name": null,
+            "action": "App\\Http\\Controllers\\SellerAuthorizationController@approveApi",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\SellerAuthorizationController.php",
+            "line": 58,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/authorization-requests\/{authorizationRequest}\/reject",
+            "name": null,
+            "action": "App\\Http\\Controllers\\SellerAuthorizationController@rejectApi",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\SellerAuthorizationController.php",
+            "line": 63,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/pricing\/recalculate",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\PricingController@recalculate",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "menu:pricing"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\PricingController.php",
+            "line": 18,
+            "guard_evidence": [
+                "abort_unless($menus->canManage($shop, $request->user()), 403);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "PUT"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/attributes\/{attribute}",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\AttributeController@update",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "menu:attributes"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\AttributeController.php",
+            "line": 16,
+            "guard_evidence": [
+                "abort_unless($menus->canManage($shop, $request->user()), 403);",
+                "abort_unless($attribute->shop_id === $shop->id, 404);",
+                "abort_if($name === '', 422, 'El nombre del atributo no puede estar vacío.');",
+                "->where('shop_id', $shop->id)",
+                "abort_if($duplicate, 422, 'Ya existe otro atributo con ese nombre. Cambia el nombre para conservar sus valores separados.');"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/products\/{product}\/pricing-rule",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\PricingController@storeRule",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "menu:pricing"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\PricingController.php",
+            "line": 52,
+            "guard_evidence": [
+                "$this->authorizeProduct($request, $shop, $product, $menus);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/products\/{product}\/pricing-approval",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\PricingController@approve",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "menu:pricing"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\PricingController.php",
+            "line": 86,
+            "guard_evidence": [
+                "$this->authorizeProduct($request, $shop, $product, $menus);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/partners",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\PartnerController@store",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "menu:partners"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\PartnerController.php",
+            "line": 18,
+            "guard_evidence": [
+                "$this->authorizeShop($request, $shop, $menus);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/partners\/{partner}\/transactions",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\PartnerController@transaction",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "menu:partners"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\PartnerController.php",
+            "line": 35,
+            "guard_evidence": [
+                "$this->authorizeShop($request, $shop, $menus);",
+                "abort_unless($partner->shop_id === $shop->id && $partner->is_active, 404);",
+                "abort_unless($session, 422, 'Abre la caja antes de registrar un movimiento de socio.');",
+                "'shop_id' => $shop->id,"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/reports\/export",
+            "name": null,
+            "action": "App\\Http\\Controllers\\SellerFeatureController@exportReports",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "menu:reports"
+            ],
+            "source": "app\\Http\\Controllers\\SellerFeatureController.php",
+            "line": 286,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/purchases",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\PurchaseController@index",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\PurchaseController.php",
+            "line": 28,
+            "guard_evidence": [
+                "abort_unless(array_intersect(['containers', 'loads', 'purchase_invoices'], $visible) !== [], 403);"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/suppliers",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\PurchaseController@suppliers",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "menu:suppliers"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\PurchaseController.php",
+            "line": 60,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/suppliers",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\PurchaseController@storeSupplier",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "menu:suppliers"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\PurchaseController.php",
+            "line": 82,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/purchases\/preview",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\PurchaseController@preview",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\PurchaseController.php",
+            "line": 18,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/purchases",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\PurchaseController@store",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\PurchaseController.php",
+            "line": 109,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/purchases\/{document}\/receive",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\PurchaseController@receive",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\PurchaseController.php",
+            "line": 151,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/inventory-import\/preview",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\InventoryImportController@preview",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\InventoryImportController.php",
+            "line": 17,
+            "guard_evidence": [
+                "$this->authorizeImport($shop, $request, $limits, $menus);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/inventory-import",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\InventoryImportController@store",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\InventoryImportController.php",
+            "line": 66,
+            "guard_evidence": [
+                "$this->authorizeImport($shop, $request, $limits, $menus);",
+                "->where('shop_id', $shop->id)"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/inventory-import\/{session}\/confirm",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\InventoryImportController@confirm",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\InventoryImportController.php",
+            "line": 102,
+            "guard_evidence": [
+                "$this->authorizeImport($shop, $request, $limits, $menus);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/catalog\/media\/{barcode}",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\CatalogMediaController@show",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "throttle:catalog-media",
+                "abilities:catalog:read"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\CatalogMediaController.php",
+            "line": 11,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/pos-sales",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\PosSaleController@store",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "abilities:pos:write",
+                "menu:sales"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\PosSaleController.php",
+            "line": 24,
+            "guard_evidence": [
+                "abort_unless($request->user()->canSellAtShop($shop), 404);",
+                "$paymentService->assertCanIssueCredit($shop, $request->user(), $validated['credit_amount'] ?? '0.00', $validated['payments'] ?? []);",
+                "->where('shop_id', $shop->id)",
+                "->where('shop_id', $shop->id)",
+                "->where('shop_id', $shop->id)",
+                "'shop_id' => $shop->id,",
+                "->where('shop_id', $shop->id)"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/quotes",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\QuoteController@store",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "abilities:pos:write",
+                "menu:quotes"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\QuoteController.php",
+            "line": 26,
+            "guard_evidence": [
+                "abort_unless($request->user()->canSellAtShop($shop), 404);",
+                "'shop_id' => $shop->id,"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/quotes\/{quote}\/pdf",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\QuoteController@pdf",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "menu:quotes"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\QuoteController.php",
+            "line": 19,
+            "guard_evidence": [
+                "abort_unless($request->user()->canSellAtShop($shop) && $quote->shop_id === $shop->id, 404);"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/quotes\/{quote}\/convert",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\QuoteController@convert",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "abilities:pos:write",
+                "menu:quotes"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\QuoteController.php",
+            "line": 105,
+            "guard_evidence": [
+                "abort_unless($request->user()->canSellAtShop($shop), 404);",
+                "abort_unless($quote->shop_id === $shop->id, 404);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/returns\/eligible",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\ReturnController@eligible",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "menu:returns"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\ReturnController.php",
+            "line": 19,
+            "guard_evidence": [
+                "abort_unless($request->user()->canSellAtShop($shop), 404);"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/sales\/export",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\SalesExportController@show",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "menu:sales"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\SalesExportController.php",
+            "line": 12,
+            "guard_evidence": [
+                "abort_unless($request->user()->canSellAtShop($shop), 404);"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/orders\/{order}\/confirm",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\OrderController@confirm",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "abilities:pos:write",
+                "menu:orders"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\OrderController.php",
+            "line": 15,
+            "guard_evidence": [
+                "abort_unless($request->user()->canSellAtShop($shop), 404);",
+                "abort_unless($order->shop_id === $shop->id, 404);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/mobile-operations",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\MobileOperationController@store",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "abilities:pos:write",
+                "throttle:60,1"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\MobileOperationController.php",
+            "line": 18,
+            "guard_evidence": [
+                "abort_unless($request->user()->canSellAtShop($shop), 404);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/customers",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\CustomerController@index",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "abilities:customers:read",
+                "menu:customers|credit|collections"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\CustomerController.php",
+            "line": 21,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/customers",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\CustomerController@store",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "abilities.any:customers:write,pos:write",
+                "menu:customers"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\CustomerController.php",
+            "line": 46,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/customers\/{customer}",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\CustomerController@show",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "abilities:customers:read",
+                "menu:customers|credit|collections"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\CustomerController.php",
+            "line": 78,
+            "guard_evidence": [
+                "->where('shop_id', $shop->id)",
+                "'invoice' => fn ($query) => $query->where('shop_id', $shop->id)->where('customer_id', $customer->id)->select('id', 'invoice_number'),",
+                "'invoicePayments' => fn ($query) => $query->where('shop_id', $shop->id)",
+                "->whereHas('invoice', fn ($invoiceQuery) => $invoiceQuery->where('shop_id', $shop->id)->where('customer_id', $customer->id))"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/customers\/{customer}\/payments",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\CustomerController@payment",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "abilities:customers:write",
+                "menu:collections"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\CustomerController.php",
+            "line": 99,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/customers\/{customer}\/adjustments",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\CustomerController@adjustment",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "abilities:customers:write",
+                "menu:credit"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\CustomerController.php",
+            "line": 149,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/finance\/summary",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\FinanceReportController@summary",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\FinanceReportController.php",
+            "line": 15,
+            "guard_evidence": [
+                "abort_unless($menus->canManage($shop, $request->user()) || $request->user()->canSellAtShop($shop) || $request->user()->isActiveShopAccountant($shop), 403);",
+                "abort_unless(in_array('finance', $menus->visibleForUser($shop, $request->user()), true), 403);",
+                "$canViewSensitiveFinance = $menus->canManage($shop, $request->user())",
+                "|| $request->user()->ownsShop($shop)"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/reports\/income-statement",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\FinanceReportController@incomeStatement",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\FinanceReportController.php",
+            "line": 50,
+            "guard_evidence": [
+                "abort_unless(($request->user()->isAdmin() || $request->user()->canSellAtShop($shop) || $request->user()->isActiveShopAccountant($shop)) && in_array('finance', $menus->visibleForUser($shop, $request->user()), true), 403);"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/reports\/cash-flow",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\FinanceReportController@cashFlow",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\FinanceReportController.php",
+            "line": 62,
+            "guard_evidence": [
+                "abort_unless(($request->user()->isAdmin() || $request->user()->canSellAtShop($shop) || $request->user()->isActiveShopAccountant($shop)) && in_array('finance', $menus->visibleForUser($shop, $request->user()), true), 403);"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/finance\/day-close",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\FinanceReportController@dayClose",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\FinanceReportController.php",
+            "line": 74,
+            "guard_evidence": [
+                "$this->authorizeDayClose($request, $shop, $menus);"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/finance\/day-close",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\FinanceReportController@closeDay",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\FinanceReportController.php",
+            "line": 84,
+            "guard_evidence": [
+                "$this->authorizeDayClose($request, $shop, $menus, true);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/cash-sessions\/current",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\CashRegisterController@current",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "menu:cash"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\CashRegisterController.php",
+            "line": 15,
+            "guard_evidence": [
+                "abort_unless(($request->user()->isAdmin() || $request->user()->canSellAtShop($shop)), 403);",
+                "$limits->assertFeature($shop->user, 'cash_registers');"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/cash-sessions\/open",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\CashRegisterController@open",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "menu:cash"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\CashRegisterController.php",
+            "line": 44,
+            "guard_evidence": [
+                "abort_unless(($request->user()->isAdmin() || $request->user()->canSellAtShop($shop)), 403);",
+                "$limits->assertFeature($shop->user, 'cash_registers');"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/cash-sessions\/{session}\/close",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\CashRegisterController@close",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "menu:cash"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\CashRegisterController.php",
+            "line": 85,
+            "guard_evidence": [
+                "abort_unless(($request->user()->isAdmin() || $request->user()->canSellAtShop($shop)), 403);",
+                "abort_unless($session->shop_id === $shop->id, 404);",
+                "$limits->assertFeature($shop->user, 'cash_registers');",
+                "abort_unless($service->canManageSession($shop, $request->user(), $session), 403, 'No tienes permiso para cerrar la sesión de caja de otro usuario.');"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/cash-sessions\/{session}\/movements",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\CashRegisterController@movement",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "menu:cash"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\CashRegisterController.php",
+            "line": 134,
+            "guard_evidence": [
+                "abort_unless(($request->user()->isAdmin() || $request->user()->canSellAtShop($shop)), 403);",
+                "abort_unless($session->shop_id === $shop->id, 404);",
+                "$limits->assertFeature($shop->user, 'cash_registers');",
+                "abort_unless($service->canManageSession($shop, $request->user(), $session), 403, 'No tienes permiso para registrar movimientos en la sesión de caja de otro usuario.');"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/expenses",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\ExpenseController@index",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "menu:expenses"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\ExpenseController.php",
+            "line": 15,
+            "guard_evidence": [
+                "abort_unless(($request->user()->isAdmin() || $request->user()->canSellAtShop($shop)), 403);",
+                "$limits->assertFeature($shop->user, 'expenses');"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/expense-categories",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\ExpenseController@categories",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "menu:expenses"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\ExpenseController.php",
+            "line": 42,
+            "guard_evidence": [
+                "abort_unless(($request->user()->isAdmin() || $request->user()->canSellAtShop($shop)), 403);",
+                "$limits->assertFeature($shop->user, 'expenses');"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/expenses",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\ExpenseController@store",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "menu:expenses"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\ExpenseController.php",
+            "line": 56,
+            "guard_evidence": [
+                "abort_unless(($request->user()->isAdmin() || $request->user()->canSellAtShop($shop)), 403);",
+                "$limits->assertFeature($shop->user, 'expenses');"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "api\/v1\/shops\/{shop}\/expenses\/{expense}\/payments",
+            "name": null,
+            "action": "App\\Http\\Controllers\\Api\\V1\\ExpenseController@pay",
+            "middleware": [
+                "api",
+                "auth:sanctum",
+                "App\\Http\\Middleware\\EnsureApiAccountIsActive",
+                "app.version",
+                "menu:expenses"
+            ],
+            "source": "app\\Http\\Controllers\\Api\\V1\\ExpenseController.php",
+            "line": 105,
+            "guard_evidence": [
+                "abort_unless(($request->user()->isAdmin() || $request->user()->canSellAtShop($shop)), 403);",
+                "abort_unless($expense->shop_id === $shop->id, 404);",
+                "$limits->assertFeature($shop->user, 'expenses');"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "up",
+            "name": null,
+            "action": "Closure",
+            "middleware": [],
+            "source": null,
+            "line": null,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "\/",
+            "name": "home",
+            "action": "App\\Http\\Controllers\\CatalogHomeController",
+            "middleware": [
+                "web"
+            ],
+            "source": null,
+            "line": null,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "sitemap.xml",
+            "name": "sitemap",
+            "action": "App\\Http\\Controllers\\SitemapController",
+            "middleware": [
+                "web"
+            ],
+            "source": null,
+            "line": null,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "tienda\/{shop}",
+            "name": "shops.show",
+            "action": "App\\Http\\Controllers\\PublicShopController@show",
+            "middleware": [
+                "web"
+            ],
+            "source": "app\\Http\\Controllers\\PublicShopController.php",
+            "line": 16,
+            "guard_evidence": [
+                "abort_unless($shop->status === 'active', 404);",
+                "->where('shop_id', $shop->id)",
+                "->where('shop_id', $shop->id)"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "tienda\/{shop}\/producto\/{product}",
+            "name": "products.show",
+            "action": "App\\Http\\Controllers\\PublicProductController@show",
+            "middleware": [
+                "web"
+            ],
+            "source": "app\\Http\\Controllers\\PublicProductController.php",
+            "line": 15,
+            "guard_evidence": [
+                "abort_unless($shop->status === 'active' && $product->shop_id === $shop->id && $product->moderation_status === ProductModerationStatus::Active, 404);"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "tienda\/{shop}\/pedido",
+            "name": "orders.store",
+            "action": "App\\Http\\Controllers\\PublicOrderController@store",
+            "middleware": [
+                "web"
+            ],
+            "source": "app\\Http\\Controllers\\PublicOrderController.php",
+            "line": 33,
+            "guard_evidence": [
+                "abort_unless($shop->status === 'active', 404);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "tienda\/{shop}\/pedido\/{order}\/recibido",
+            "name": "orders.received",
+            "action": "App\\Http\\Controllers\\PublicOrderController@received",
+            "middleware": [
+                "web",
+                "signed"
+            ],
+            "source": "app\\Http\\Controllers\\PublicOrderController.php",
+            "line": 22,
+            "guard_evidence": [
+                "abort_unless($shop->status === 'active' && $order->shop_id === $shop->id, 404);"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "r\/wa\/tienda\/{shop}",
+            "name": "track.wa.shop",
+            "action": "App\\Http\\Controllers\\WhatsAppRedirectController@shop",
+            "middleware": [
+                "web"
+            ],
+            "source": "app\\Http\\Controllers\\WhatsAppRedirectController.php",
+            "line": 17,
+            "guard_evidence": [
+                "abort_unless($shop->status === 'active', 404);",
+                "abort_unless($request->hasValidSignature(), 403);",
+                "->where('shop_id', $shop->id)"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "r\/wa\/tienda\/{shop}\/producto\/{product}",
+            "name": "track.wa.product",
+            "action": "App\\Http\\Controllers\\WhatsAppRedirectController@product",
+            "middleware": [
+                "web"
+            ],
+            "source": "app\\Http\\Controllers\\WhatsAppRedirectController.php",
+            "line": 65,
+            "guard_evidence": [
+                "abort_unless(",
+                "&& $product->shop_id === $shop->id"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "reportar",
+            "name": "reports.store",
+            "action": "App\\Http\\Controllers\\PublicReportController@store",
+            "middleware": [
+                "web",
+                "throttle:report"
+            ],
+            "source": "app\\Http\\Controllers\\PublicReportController.php",
+            "line": 15,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "soporte",
+            "name": "support.create",
+            "action": "App\\Http\\Controllers\\PublicSupportController@create",
+            "middleware": [
+                "web"
+            ],
+            "source": "app\\Http\\Controllers\\PublicSupportController.php",
+            "line": 14,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "soporte",
+            "name": "support.store",
+            "action": "App\\Http\\Controllers\\PublicSupportController@store",
+            "middleware": [
+                "web",
+                "throttle:report"
+            ],
+            "source": "app\\Http\\Controllers\\PublicSupportController.php",
+            "line": 19,
+            "guard_evidence": [
+                "'shop_id' => $shop?->id,"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "descargas",
+            "name": "downloads.index",
+            "action": "App\\Http\\Controllers\\PublicDownloadController@index",
+            "middleware": [
+                "web"
+            ],
+            "source": "app\\Http\\Controllers\\PublicDownloadController.php",
+            "line": 14,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "descargas\/android\/{versionCode}",
+            "name": "downloads.android",
+            "action": "App\\Http\\Controllers\\PublicDownloadController@android",
+            "middleware": [
+                "web"
+            ],
+            "source": "app\\Http\\Controllers\\PublicDownloadController.php",
+            "line": 29,
+            "guard_evidence": [
+                "abort_unless((int) ($update['version_code'] ?? 0) === $versionCode, 404);",
+                "abort_unless(Str::startsWith((string) ($update['apk_url'] ?? ''), 'https:\/\/'), 404);"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "terminos",
+            "name": "legal.terms",
+            "action": "App\\Http\\Controllers\\PublicLegalController@terms",
+            "middleware": [
+                "web"
+            ],
+            "source": "app\\Http\\Controllers\\PublicLegalController.php",
+            "line": 9,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "privacidad",
+            "name": "legal.privacy",
+            "action": "App\\Http\\Controllers\\PublicLegalController@privacy",
+            "middleware": [
+                "web"
+            ],
+            "source": "app\\Http\\Controllers\\PublicLegalController.php",
+            "line": 23,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "email\/verify-code",
+            "name": "verification.verify-code",
+            "action": "App\\Http\\Controllers\\EmailVerificationCodeController@verify",
+            "middleware": [
+                "web",
+                "throttle:10,1"
+            ],
+            "source": "app\\Http\\Controllers\\EmailVerificationCodeController.php",
+            "line": 62,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "email\/verification-code",
+            "name": "verification.send-code",
+            "action": "App\\Http\\Controllers\\EmailVerificationCodeController@resend",
+            "middleware": [
+                "web",
+                "throttle:5,10"
+            ],
+            "source": "app\\Http\\Controllers\\EmailVerificationCodeController.php",
+            "line": 121,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "email\/activar\/{id}\/{hash}",
+            "name": "verification.verify-link",
+            "action": "App\\Http\\Controllers\\EmailVerificationCodeController@verifyDirectLink",
+            "middleware": [
+                "web",
+                "throttle:10,1"
+            ],
+            "source": "app\\Http\\Controllers\\EmailVerificationCodeController.php",
+            "line": 34,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "invitacion\/vendedor\/{user}\/{hash}\/{shop}",
+            "name": "seller.invitation.show",
+            "action": "App\\Http\\Controllers\\SellerInvitationController@show",
+            "middleware": [
+                "web",
+                "throttle:10,1"
+            ],
+            "source": "app\\Http\\Controllers\\SellerInvitationController.php",
+            "line": 17,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "invitacion\/vendedor\/{user}\/{hash}\/{shop}",
+            "name": "seller.invitation.activate",
+            "action": "App\\Http\\Controllers\\SellerInvitationController@activate",
+            "middleware": [
+                "web",
+                "throttle:10,1"
+            ],
+            "source": "app\\Http\\Controllers\\SellerInvitationController.php",
+            "line": 33,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel",
+            "name": "seller.dashboard",
+            "action": "App\\Http\\Controllers\\SellerShopController@index",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified"
+            ],
+            "source": "app\\Http\\Controllers\\SellerShopController.php",
+            "line": 27,
+            "guard_evidence": [
+                "->whereIn('products.shop_id', $shops->getCollection()->map->getKey())",
+                "->selectRaw('products.shop_id, COALESCE(SUM(product_images.size_bytes), 0) as storage_bytes, COUNT(product_images.id) as storage_image_count')",
+                "->groupBy('products.shop_id')",
+                "->keyBy('shop_id');"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/modo-panel",
+            "name": "seller.panel-mode.update",
+            "action": "App\\Http\\Controllers\\SellerPanelModeController@update",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:admin"
+            ],
+            "source": "app\\Http\\Controllers\\SellerPanelModeController.php",
+            "line": 11,
+            "guard_evidence": [
+                "abort_unless($request->user()?->isAdmin(), 403);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/crear",
+            "name": "seller.shops.create",
+            "action": "App\\Http\\Controllers\\SellerShopController@create",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:create,App\\Models\\Shop"
+            ],
+            "source": "app\\Http\\Controllers\\SellerShopController.php",
+            "line": 132,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas",
+            "name": "seller.shops.store",
+            "action": "App\\Http\\Controllers\\SellerShopController@store",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:create,App\\Models\\Shop"
+            ],
+            "source": "app\\Http\\Controllers\\SellerShopController.php",
+            "line": 137,
+            "guard_evidence": [
+                "abort_if($activeShops >= $limit, 422, \"Tu plan {$limits->planFor($user)->label()} permite {$limit} tienda activa.\");"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/editar",
+            "name": "seller.shops.edit",
+            "action": "App\\Http\\Controllers\\SellerShopController@edit",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:shop_settings"
+            ],
+            "source": "app\\Http\\Controllers\\SellerShopController.php",
+            "line": 165,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/mi-tienda",
+            "name": "seller.shops.storefront",
+            "action": "App\\Http\\Controllers\\SellerShopController@storefront",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:storefront"
+            ],
+            "source": "app\\Http\\Controllers\\SellerShopController.php",
+            "line": 173,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "PUT"
+            ],
+            "uri": "panel\/tiendas\/{shop}",
+            "name": "seller.shops.update",
+            "action": "App\\Http\\Controllers\\SellerShopController@update",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:shop_settings"
+            ],
+            "source": "app\\Http\\Controllers\\SellerShopController.php",
+            "line": 256,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "DELETE"
+            ],
+            "uri": "panel\/tiendas\/{shop}",
+            "name": "seller.shops.destroy",
+            "action": "App\\Http\\Controllers\\SellerShopController@destroy",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:delete,shop"
+            ],
+            "source": "app\\Http\\Controllers\\SellerShopController.php",
+            "line": 285,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/resumen",
+            "name": "seller.shops.summary",
+            "action": "App\\Http\\Controllers\\SellerSummaryController@index",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop"
+            ],
+            "source": "app\\Http\\Controllers\\SellerSummaryController.php",
+            "line": 37,
+            "guard_evidence": [
+                "$canManage = $menus->canManage($shop, $request->user());",
+                "$base = Invoice::query()->where('shop_id', $shop->id)",
+                "->when(! $canManage && ! $isAccountant, fn ($query) => $query->where('salesperson_id', $request->user()->id))",
+                "$sellerTotals = ($canManage || $isAccountant)",
+                "$sellerSummary = ($canManage || $isAccountant)",
+                "return view('seller.summary', compact('shop', 'visibleMenus', 'canManage', 'isAccountant', 'sales', 'sellerSummary', 'period', 'periodLabel', 'metrics', 'chart'));"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/negocio",
+            "name": "seller.shops.business",
+            "action": "App\\Http\\Controllers\\SellerBusinessController@index",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "can:viewFinance,shop",
+                "menu:finance"
+            ],
+            "source": "app\\Http\\Controllers\\SellerBusinessController.php",
+            "line": 24,
+            "guard_evidence": [
+                "$refundBase = DB::table('invoice_returns')->join('invoices', 'invoices.id', '=', 'invoice_returns.invoice_id')->where('invoices.shop_id', $shop->id);",
+                "$today = Invoice::where('shop_id', $shop->id)->whereDate('issued_at', today())->where('status', '!=', 'void')->sum('total') - $todayRefunds;"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/pedidos\/{order}\/confirmar",
+            "name": "seller.shops.orders.confirm.show",
+            "action": "App\\Http\\Controllers\\SellerBusinessController@confirmForm",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:sales",
+                "signed"
+            ],
+            "source": "app\\Http\\Controllers\\SellerBusinessController.php",
+            "line": 200,
+            "guard_evidence": [
+                "abort_unless($order->shop_id === $shop->id, 404);"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/pedidos\/{order}\/confirmar",
+            "name": "seller.shops.orders.confirm",
+            "action": "App\\Http\\Controllers\\SellerBusinessController@confirm",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:sales"
+            ],
+            "source": "app\\Http\\Controllers\\SellerBusinessController.php",
+            "line": 180,
+            "guard_evidence": [
+                "abort_unless($order->shop_id === $shop->id, 404);",
+                "Rule::exists('customers', 'id')->where(fn ($query) => $query->where('shop_id', $shop->id)->where('is_active', true)),"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/pos",
+            "name": "seller.shops.pos",
+            "action": "App\\Http\\Controllers\\SellerPosController@index",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:sales"
+            ],
+            "source": "app\\Http\\Controllers\\SellerPosController.php",
+            "line": 19,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/pos",
+            "name": "seller.shops.pos.store",
+            "action": "App\\Http\\Controllers\\SellerPosController@store",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:sales"
+            ],
+            "source": "app\\Http\\Controllers\\SellerPosController.php",
+            "line": 123,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/inventario\/cobro",
+            "name": "seller.shops.inventory.checkout",
+            "action": "App\\Http\\Controllers\\SellerInventoryController@checkout",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:sales"
+            ],
+            "source": "app\\Http\\Controllers\\SellerInventoryController.php",
+            "line": 146,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/productos\/{product}\/inventario\/venta",
+            "name": "seller.shops.inventory.sale",
+            "action": "App\\Http\\Controllers\\SellerInventoryController@recordSale",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:sales"
+            ],
+            "source": "app\\Http\\Controllers\\SellerInventoryController.php",
+            "line": 121,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/gastos",
+            "name": "seller.shops.expenses.index",
+            "action": "App\\Http\\Controllers\\SellerExpenseController@index",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:expenses"
+            ],
+            "source": "app\\Http\\Controllers\\SellerExpenseController.php",
+            "line": 16,
+            "guard_evidence": [
+                "$limits->assertFeature($shop->user, 'expenses');"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/gastos",
+            "name": "seller.shops.expenses.store",
+            "action": "App\\Http\\Controllers\\SellerExpenseController@store",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:expenses"
+            ],
+            "source": "app\\Http\\Controllers\\SellerExpenseController.php",
+            "line": 91,
+            "guard_evidence": [
+                "$limits->assertFeature($shop->user, 'expenses');"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/gastos\/{expense}\/pagos",
+            "name": "seller.shops.expenses.payments.store",
+            "action": "App\\Http\\Controllers\\SellerExpenseController@storePayment",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:expenses"
+            ],
+            "source": "app\\Http\\Controllers\\SellerExpenseController.php",
+            "line": 123,
+            "guard_evidence": [
+                "abort_unless($expense->shop_id === $shop->id, 404);",
+                "$limits->assertFeature($shop->user, 'expenses');"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/gastos\/categorias",
+            "name": "seller.shops.expenses.categories.store",
+            "action": "App\\Http\\Controllers\\SellerExpenseController@storeCategory",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:expenses"
+            ],
+            "source": "app\\Http\\Controllers\\SellerExpenseController.php",
+            "line": 150,
+            "guard_evidence": [
+                "$limits->assertFeature($shop->user, 'expenses');"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/caja",
+            "name": "seller.shops.cash.index",
+            "action": "App\\Http\\Controllers\\SellerCashRegisterController@index",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:cash"
+            ],
+            "source": "app\\Http\\Controllers\\SellerCashRegisterController.php",
+            "line": 16,
+            "guard_evidence": [
+                "$limits->assertFeature($shop->user, 'cash_registers');",
+                "$canManageAll = $cashRegisterService->canManageAllCashRegisters($shop, $user);",
+                "->where('shop_id', $shop->id)",
+                "if (! $canManageAll) {",
+                "'canManageAll'"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/caja\/abrir",
+            "name": "seller.shops.cash.open",
+            "action": "App\\Http\\Controllers\\SellerCashRegisterController@open",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:cash"
+            ],
+            "source": "app\\Http\\Controllers\\SellerCashRegisterController.php",
+            "line": 63,
+            "guard_evidence": [
+                "$limits->assertFeature($shop->user, 'cash_registers');"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/caja\/{session}\/cerrar",
+            "name": "seller.shops.cash.close",
+            "action": "App\\Http\\Controllers\\SellerCashRegisterController@close",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:cash"
+            ],
+            "source": "app\\Http\\Controllers\\SellerCashRegisterController.php",
+            "line": 86,
+            "guard_evidence": [
+                "abort_unless($session->shop_id === $shop->id, 404);",
+                "$limits->assertFeature($shop->user, 'cash_registers');",
+                "abort_unless($cashRegisterService->canManageSession($shop, $request->user(), $session), 403, 'No tienes permiso para cerrar la sesión de caja de otro usuario.');"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/caja\/{session}\/movimientos",
+            "name": "seller.shops.cash.movement",
+            "action": "App\\Http\\Controllers\\SellerCashRegisterController@movement",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:cash"
+            ],
+            "source": "app\\Http\\Controllers\\SellerCashRegisterController.php",
+            "line": 120,
+            "guard_evidence": [
+                "abort_unless($session->shop_id === $shop->id, 404);",
+                "$limits->assertFeature($shop->user, 'cash_registers');",
+                "abort_unless($cashRegisterService->canManageSession($shop, $request->user(), $session), 403, 'No tienes permiso para registrar movimientos en la caja de otro usuario.');"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/inventario",
+            "name": "seller.shops.inventory.index",
+            "action": "App\\Http\\Controllers\\SellerInventoryController@index",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:inventory"
+            ],
+            "source": "app\\Http\\Controllers\\SellerInventoryController.php",
+            "line": 39,
+            "guard_evidence": [
+                "$showCosts = $menus->canManage($shop, $request->user())"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/inventario\/movimientos",
+            "name": "seller.shops.inventory.movements.index",
+            "action": "App\\Http\\Controllers\\SellerInventoryController@movementsIndex",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:inventory"
+            ],
+            "source": "app\\Http\\Controllers\\SellerInventoryController.php",
+            "line": 19,
+            "guard_evidence": [
+                "->whereHas('product', fn ($query) => $query->withTrashed()->where('shop_id', $shop->id))"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/inventario\/lotes",
+            "name": "seller.shops.inventory.lots",
+            "action": "App\\Http\\Controllers\\SellerBusinessController@lots",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:inventory"
+            ],
+            "source": "app\\Http\\Controllers\\SellerBusinessController.php",
+            "line": 87,
+            "guard_evidence": [
+                "$showCosts = $menus->canManage($shop, $request->user())"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/productos\/reglas-precio",
+            "name": "seller.shops.pricing.index",
+            "action": "App\\Http\\Controllers\\SellerBusinessController@pricing",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:pricing"
+            ],
+            "source": "app\\Http\\Controllers\\SellerBusinessController.php",
+            "line": 101,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/productos\/reglas-precio",
+            "name": "seller.shops.pricing.bulk-rule",
+            "action": "App\\Http\\Controllers\\SellerBusinessController@bulkRule",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:pricing"
+            ],
+            "source": "app\\Http\\Controllers\\SellerBusinessController.php",
+            "line": 132,
+            "guard_evidence": [
+                "$products = $shop->products()->where(fn ($query) => $query->whereNull('sale_unit')->orWhere('sale_unit', '!=', 'decant'))->get(['id', 'shop_id']);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/productos\/{product}\/regla-precio",
+            "name": "seller.shops.pricing.rule",
+            "action": "App\\Http\\Controllers\\SellerBusinessController@rule",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:pricing"
+            ],
+            "source": "app\\Http\\Controllers\\SellerBusinessController.php",
+            "line": 109,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/productos\/{product}\/aprobar-precio",
+            "name": "seller.shops.pricing.approve",
+            "action": "App\\Http\\Controllers\\SellerBusinessController@approve",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:pricing"
+            ],
+            "source": "app\\Http\\Controllers\\SellerBusinessController.php",
+            "line": 162,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/atributos\/{attribute}\/actualizar",
+            "name": "seller.shops.attributes.update",
+            "action": "App\\Http\\Controllers\\SellerFeatureController@updateAttribute",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:attributes"
+            ],
+            "source": "app\\Http\\Controllers\\SellerFeatureController.php",
+            "line": 245,
+            "guard_evidence": [
+                "abort_unless($menus->canManage($shop, $request->user()), 403);",
+                "abort_unless($attribute->shop_id === $shop->id, 404);",
+                "abort_if($name === '', 422, 'El nombre del atributo no puede estar vacío.');",
+                "->where('shop_id', $shop->id)",
+                "abort_if($duplicate, 422, 'Ya existe otro atributo con ese nombre.');"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/productos",
+            "name": "seller.shops.products.index",
+            "action": "App\\Http\\Controllers\\SellerProductController@index",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:products"
+            ],
+            "source": "app\\Http\\Controllers\\SellerProductController.php",
+            "line": 40,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/categorias",
+            "name": "seller.shops.categories.index",
+            "action": "App\\Http\\Controllers\\ShopCategoryController@index",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:products"
+            ],
+            "source": "app\\Http\\Controllers\\ShopCategoryController.php",
+            "line": 14,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/productos\/combos\/nuevo",
+            "name": "seller.shops.products.combos.create",
+            "action": "App\\Http\\Controllers\\SellerProductController@create",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "catalog.operation"
+            ],
+            "source": "app\\Http\\Controllers\\SellerProductController.php",
+            "line": 95,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/productos\/crear",
+            "name": "seller.shops.products.create",
+            "action": "App\\Http\\Controllers\\SellerProductController@create",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "catalog.operation"
+            ],
+            "source": "app\\Http\\Controllers\\SellerProductController.php",
+            "line": 95,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/productos",
+            "name": "seller.shops.products.store",
+            "action": "App\\Http\\Controllers\\SellerProductController@store",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "catalog.operation"
+            ],
+            "source": "app\\Http\\Controllers\\SellerProductController.php",
+            "line": 127,
+            "guard_evidence": [
+                "abort_if(",
+                "abort_unless($response->successful(), 422, 'No se pudo descargar la imagen seleccionada. Vuelve a intentarlo.');"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/productos\/{product}\/editar",
+            "name": "seller.shops.products.edit",
+            "action": "App\\Http\\Controllers\\SellerProductController@edit",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "catalog.operation",
+                "can:update,product"
+            ],
+            "source": "app\\Http\\Controllers\\SellerProductController.php",
+            "line": 218,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "PUT"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/productos\/{product}",
+            "name": "seller.shops.products.update",
+            "action": "App\\Http\\Controllers\\SellerProductController@update",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "catalog.operation",
+                "can:update,product"
+            ],
+            "source": "app\\Http\\Controllers\\SellerProductController.php",
+            "line": 237,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "DELETE"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/productos\/{product}",
+            "name": "seller.shops.products.destroy",
+            "action": "App\\Http\\Controllers\\SellerProductController@destroy",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "catalog.operation",
+                "can:delete,product"
+            ],
+            "source": "app\\Http\\Controllers\\SellerProductController.php",
+            "line": 377,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/productos\/{product}\/restaurar",
+            "name": "seller.shops.products.restore",
+            "action": "App\\Http\\Controllers\\SellerProductController@restore",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "catalog.operation"
+            ],
+            "source": "app\\Http\\Controllers\\SellerProductController.php",
+            "line": 384,
+            "guard_evidence": [
+                "Gate::authorize('restore', $productModel);",
+                "$limits->assertCanAddProducts($lockedShop, 1);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/productos\/{product}\/imagenes",
+            "name": "seller.shops.products.images.store",
+            "action": "App\\Http\\Controllers\\SellerProductController@uploadImage",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "catalog.operation:images",
+                "can:updateImages,product"
+            ],
+            "source": "app\\Http\\Controllers\\SellerProductController.php",
+            "line": 408,
+            "guard_evidence": [
+                "abort_if("
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/productos\/{product}\/imagenes\/web",
+            "name": "seller.shops.products.images.web.store",
+            "action": "App\\Http\\Controllers\\SellerProductController@importRemoteImage",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "catalog.operation:images",
+                "can:updateImages,product",
+                "throttle:catalog-media"
+            ],
+            "source": "app\\Http\\Controllers\\SellerProductController.php",
+            "line": 434,
+            "guard_evidence": [
+                "abort_unless($product->shop_id === $shop->id, 404);",
+                "abort_if($product->images()->count() >= $limits->imageLimit($shop), 422, 'Has alcanzado el límite de imágenes de este producto.');",
+                "abort_unless($response->successful(), 422, 'No se pudo descargar la imagen seleccionada. Vuelve a intentarlo.');"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "DELETE"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/productos\/{product}\/imagenes\/{image}",
+            "name": "seller.shops.products.images.destroy",
+            "action": "App\\Http\\Controllers\\SellerProductController@destroyImage",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "catalog.operation:images",
+                "can:updateImages,product"
+            ],
+            "source": "app\\Http\\Controllers\\SellerProductController.php",
+            "line": 451,
+            "guard_evidence": [
+                "abort_unless($image->product_id === $product->id && $product->shop_id === $shop->id, 404);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/productos\/{product}\/catalog-media\/resolve",
+            "name": "seller.shops.products.catalog-media.resolve",
+            "action": "App\\Http\\Controllers\\ProductCatalogMediaController@resolve",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "catalog.operation:images"
+            ],
+            "source": "app\\Http\\Controllers\\ProductCatalogMediaController.php",
+            "line": 14,
+            "guard_evidence": [
+                "abort_unless($product->shop_id === $shop->id, 404);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/productos\/{product}\/catalog-media\/{catalogImage}\/use",
+            "name": "seller.shops.products.catalog-media.use",
+            "action": "App\\Http\\Controllers\\ProductCatalogMediaController@use",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "catalog.operation:images",
+                "can:updateImages,product"
+            ],
+            "source": "app\\Http\\Controllers\\ProductCatalogMediaController.php",
+            "line": 25,
+            "guard_evidence": [
+                "abort_unless($product->shop_id === $shop->id, 404);",
+                "abort_if($product->images()->count() >= $shop->imageLimit(), 422, 'Has alcanzado el límite de imágenes de este producto.');"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/productos\/imagenes\/buscar",
+            "name": "seller.shops.products.images.search",
+            "action": "App\\Http\\Controllers\\SellerProductController@searchImage",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "catalog.operation:image-search",
+                "throttle:catalog-media"
+            ],
+            "source": "app\\Http\\Controllers\\SellerProductController.php",
+            "line": 427,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/clientes",
+            "name": "seller.shops.customers.index",
+            "action": "App\\Http\\Controllers\\SellerCustomerController@index",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:customers|credit|collections"
+            ],
+            "source": "app\\Http\\Controllers\\SellerCustomerController.php",
+            "line": 17,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/clientes",
+            "name": "seller.shops.customers.store",
+            "action": "App\\Http\\Controllers\\SellerCustomerController@store",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:customers"
+            ],
+            "source": "app\\Http\\Controllers\\SellerCustomerController.php",
+            "line": 46,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/clientes\/{customer}\/credito",
+            "name": "seller.shops.customers.charge",
+            "action": "App\\Http\\Controllers\\SellerCustomerController@charge",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:credit"
+            ],
+            "source": "app\\Http\\Controllers\\SellerCustomerController.php",
+            "line": 72,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/clientes\/{customer}\/cobros",
+            "name": "seller.shops.customers.payment",
+            "action": "App\\Http\\Controllers\\SellerCustomerController@payment",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:collections"
+            ],
+            "source": "app\\Http\\Controllers\\SellerCustomerController.php",
+            "line": 95,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/metricas",
+            "name": "seller.shops.metrics.index",
+            "action": "App\\Http\\Controllers\\SellerShopMetricController@index",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:metrics"
+            ],
+            "source": "app\\Http\\Controllers\\SellerShopMetricController.php",
+            "line": 13,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/qr\/descargar",
+            "name": "seller.shops.qr.download",
+            "action": "App\\Http\\Controllers\\SellerShopMetricController@downloadQr",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:metrics"
+            ],
+            "source": "app\\Http\\Controllers\\SellerShopMetricController.php",
+            "line": 27,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/qr\/imprimir",
+            "name": "seller.shops.qr.print",
+            "action": "App\\Http\\Controllers\\SellerShopMetricController@print",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:metrics"
+            ],
+            "source": "app\\Http\\Controllers\\SellerShopMetricController.php",
+            "line": 38,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/cotizaciones\/{quote}",
+            "name": "seller.shops.quotes.show",
+            "action": "App\\Http\\Controllers\\SellerCommerceController@showQuote",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:quotes"
+            ],
+            "source": "app\\Http\\Controllers\\SellerCommerceController.php",
+            "line": 26,
+            "guard_evidence": [
+                "abort_unless($quote->shop_id === $shop->id, 404);"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/cotizaciones\/{quote}\/pdf",
+            "name": "seller.shops.quotes.pdf",
+            "action": "App\\Http\\Controllers\\SellerCommerceController@quotePdf",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:quotes"
+            ],
+            "source": "app\\Http\\Controllers\\SellerCommerceController.php",
+            "line": 35,
+            "guard_evidence": [
+                "abort_unless($quote->shop_id === $shop->id, 404);"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/modulo\/{feature}",
+            "name": "seller.shops.feature",
+            "action": "App\\Http\\Controllers\\SellerFeatureController@show",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop"
+            ],
+            "source": "app\\Http\\Controllers\\SellerFeatureController.php",
+            "line": 80,
+            "guard_evidence": [
+                "abort_unless(isset(self::FEATURES[$feature]), 404);",
+                "abort_unless(in_array($feature, ['account', 'help'], true) || in_array($feature, $visibleMenus, true), 403);",
+                "|| ($feature !== 'reports' && $menus->canManage($shop, $request->user()));",
+                "'canManageMenuVisibility' => $menus->canManageMenuVisibility($shop, $request->user()),"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/cierre-diario",
+            "name": "seller.shops.daily-close.store",
+            "action": "App\\Http\\Controllers\\SellerDailyCloseController@store",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:day_close"
+            ],
+            "source": "app\\Http\\Controllers\\SellerDailyCloseController.php",
+            "line": 13,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/autorizaciones\/{authorizationRequest}\/aprobar",
+            "name": "seller.shops.authorizations.approve",
+            "action": "App\\Http\\Controllers\\SellerAuthorizationController@approve",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "can:update,shop",
+                "menu:authorizations"
+            ],
+            "source": "app\\Http\\Controllers\\SellerAuthorizationController.php",
+            "line": 44,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/autorizaciones\/{authorizationRequest}\/rechazar",
+            "name": "seller.shops.authorizations.reject",
+            "action": "App\\Http\\Controllers\\SellerAuthorizationController@reject",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "can:update,shop",
+                "menu:authorizations"
+            ],
+            "source": "app\\Http\\Controllers\\SellerAuthorizationController.php",
+            "line": 51,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/reportes\/exportar",
+            "name": "seller.shops.reports.export",
+            "action": "App\\Http\\Controllers\\SellerFeatureController@exportReports",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:sell,shop",
+                "menu:reports"
+            ],
+            "source": "app\\Http\\Controllers\\SellerFeatureController.php",
+            "line": 286,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/cotizaciones",
+            "name": "seller.shops.quotes.store",
+            "action": "App\\Http\\Controllers\\SellerCommerceController@storeQuote",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:quotes"
+            ],
+            "source": "app\\Http\\Controllers\\SellerCommerceController.php",
+            "line": 45,
+            "guard_evidence": [
+                "->where('shop_id', $shop->id)",
+                "'shop_id' => $shop->id,"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/cotizaciones\/{quote}\/convertir",
+            "name": "seller.shops.quotes.convert",
+            "action": "App\\Http\\Controllers\\SellerCommerceController@convertQuote",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:quotes"
+            ],
+            "source": "app\\Http\\Controllers\\SellerCommerceController.php",
+            "line": 125,
+            "guard_evidence": [
+                "abort_unless($quote->shop_id === $shop->id, 404);",
+                "$products = Product::query()->where('shop_id', $shop->id)->whereIn('id', $quote->items->pluck('product_id'))->get()->keyBy('id');"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/suplidores",
+            "name": "seller.shops.suppliers.store",
+            "action": "App\\Http\\Controllers\\SellerCommerceController@storeSupplier",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:suppliers"
+            ],
+            "source": "app\\Http\\Controllers\\SellerCommerceController.php",
+            "line": 168,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/compras\/deudas",
+            "name": "seller.shops.purchases.debts.store",
+            "action": "App\\Http\\Controllers\\SellerCommerceController@storeSupplierDebt",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:suppliers"
+            ],
+            "source": "app\\Http\\Controllers\\SellerCommerceController.php",
+            "line": 183,
+            "guard_evidence": [
+                "'shop_id' => $shop->id,"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/compras\/previsualizar",
+            "name": "seller.shops.purchases.preview",
+            "action": "App\\Http\\Controllers\\SellerCommerceController@previewPurchaseInvoice",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop"
+            ],
+            "source": "app\\Http\\Controllers\\SellerCommerceController.php",
+            "line": 217,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/compras",
+            "name": "seller.shops.purchases.store",
+            "action": "App\\Http\\Controllers\\SellerCommerceController@storePurchaseDocument",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop"
+            ],
+            "source": "app\\Http\\Controllers\\SellerCommerceController.php",
+            "line": 227,
+            "guard_evidence": [
+                "->where('shop_id', $shop->id)",
+                "'shop_id' => $shop->id,"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/compras\/{document}\/recibir",
+            "name": "seller.shops.purchases.receive",
+            "action": "App\\Http\\Controllers\\SellerCommerceController@receivePurchaseDocument",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop"
+            ],
+            "source": "app\\Http\\Controllers\\SellerCommerceController.php",
+            "line": 349,
+            "guard_evidence": [
+                "abort_unless($document->shop_id === $shop->id, 404);",
+                "->where('shop_id', $shop->id)"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/socios",
+            "name": "seller.shops.partners.store",
+            "action": "App\\Http\\Controllers\\SellerCommerceController@storePartner",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:partners"
+            ],
+            "source": "app\\Http\\Controllers\\SellerCommerceController.php",
+            "line": 396,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/socios\/{partner}\/movimientos",
+            "name": "seller.shops.partners.transactions.store",
+            "action": "App\\Http\\Controllers\\SellerCommerceController@storePartnerTransaction",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:partners"
+            ],
+            "source": "app\\Http\\Controllers\\SellerCommerceController.php",
+            "line": 409,
+            "guard_evidence": [
+                "abort_unless($partner->shop_id === $shop->id, 404);",
+                "'shop_id' => $shop->id,"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/vendedores",
+            "name": "seller.shops.sellers.index",
+            "action": "App\\Http\\Controllers\\SellerManagementController@index",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:sellers"
+            ],
+            "source": "app\\Http\\Controllers\\SellerManagementController.php",
+            "line": 20,
+            "guard_evidence": [
+                "->where('shop_id', $shop->id)",
+                "->where('shop_id', $shop->id)"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/menus",
+            "name": "seller.shops.menus.edit",
+            "action": "App\\Http\\Controllers\\SellerShopMenuController@edit",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:shop_settings"
+            ],
+            "source": "app\\Http\\Controllers\\SellerShopMenuController.php",
+            "line": 14,
+            "guard_evidence": [
+                "abort_unless($menus->canManageMenuVisibility($shop, $request->user()), 403);"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "PUT"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/menus",
+            "name": "seller.shops.menus.update",
+            "action": "App\\Http\\Controllers\\SellerShopMenuController@update",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:shop_settings"
+            ],
+            "source": "app\\Http\\Controllers\\SellerShopMenuController.php",
+            "line": 26,
+            "guard_evidence": [
+                "abort_unless($menus->canManageMenuVisibility($shop, $request->user()), 403);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/vendedores",
+            "name": "seller.shops.sellers.store",
+            "action": "App\\Http\\Controllers\\SellerManagementController@store",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:sellers"
+            ],
+            "source": "app\\Http\\Controllers\\SellerManagementController.php",
+            "line": 42,
+            "guard_evidence": [
+                "$limits->assertCanAddSeller($shop);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "PATCH"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/vendedores\/{seller}",
+            "name": "seller.shops.sellers.update",
+            "action": "App\\Http\\Controllers\\SellerManagementController@update",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:sellers"
+            ],
+            "source": "app\\Http\\Controllers\\SellerManagementController.php",
+            "line": 93,
+            "guard_evidence": [
+                "abort_unless($seller->shop_id === $shop->id, 404);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "DELETE"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/vendedores\/{seller}",
+            "name": "seller.shops.sellers.destroy",
+            "action": "App\\Http\\Controllers\\SellerManagementController@destroy",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:sellers"
+            ],
+            "source": "app\\Http\\Controllers\\SellerManagementController.php",
+            "line": 110,
+            "guard_evidence": [
+                "abort_unless($seller->shop_id === $shop->id, 404);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/usuarios",
+            "name": "seller.shops.members.store",
+            "action": "App\\Http\\Controllers\\ShopMemberController@store",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:sellers"
+            ],
+            "source": "app\\Http\\Controllers\\ShopMemberController.php",
+            "line": 16,
+            "guard_evidence": [
+                "$limits->assertCanAddUser($shop);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "DELETE"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/usuarios\/{member}",
+            "name": "seller.shops.members.destroy",
+            "action": "App\\Http\\Controllers\\ShopMemberController@destroy",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:sellers"
+            ],
+            "source": "app\\Http\\Controllers\\ShopMemberController.php",
+            "line": 54,
+            "guard_evidence": [
+                "abort_unless($member->shop_id === $shop->id, 404);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/contador",
+            "name": "seller.shops.accountant.store",
+            "action": "App\\Http\\Controllers\\AccountantAccessController@store",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:accountant"
+            ],
+            "source": "app\\Http\\Controllers\\AccountantAccessController.php",
+            "line": 13,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "DELETE"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/contador\/{member}",
+            "name": "seller.shops.accountant.destroy",
+            "action": "App\\Http\\Controllers\\AccountantAccessController@destroy",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:accountant"
+            ],
+            "source": "app\\Http\\Controllers\\AccountantAccessController.php",
+            "line": 25,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/cuentas-pago",
+            "name": "seller.shops.payment-accounts.store",
+            "action": "App\\Http\\Controllers\\ShopPaymentAccountController@store",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:shop_settings"
+            ],
+            "source": "app\\Http\\Controllers\\ShopPaymentAccountController.php",
+            "line": 12,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "PUT"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/cuentas-pago\/{paymentAccount}",
+            "name": "seller.shops.payment-accounts.update",
+            "action": "App\\Http\\Controllers\\ShopPaymentAccountController@update",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:shop_settings"
+            ],
+            "source": "app\\Http\\Controllers\\ShopPaymentAccountController.php",
+            "line": 27,
+            "guard_evidence": [
+                "abort_unless($paymentAccount->shop_id === $shop->id, 404);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "DELETE"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/cuentas-pago\/{paymentAccount}",
+            "name": "seller.shops.payment-accounts.destroy",
+            "action": "App\\Http\\Controllers\\ShopPaymentAccountController@destroy",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:shop_settings"
+            ],
+            "source": "app\\Http\\Controllers\\ShopPaymentAccountController.php",
+            "line": 43,
+            "guard_evidence": [
+                "abort_unless($paymentAccount->shop_id === $shop->id, 404);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/categorias",
+            "name": "seller.shops.categories.store",
+            "action": "App\\Http\\Controllers\\ShopCategoryController@store",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:products"
+            ],
+            "source": "app\\Http\\Controllers\\ShopCategoryController.php",
+            "line": 19,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "PUT"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/categorias\/{category}",
+            "name": "seller.shops.categories.update",
+            "action": "App\\Http\\Controllers\\ShopCategoryController@update",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "can:update,category",
+                "menu:products"
+            ],
+            "source": "app\\Http\\Controllers\\ShopCategoryController.php",
+            "line": 26,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "DELETE"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/categorias\/{category}",
+            "name": "seller.shops.categories.destroy",
+            "action": "App\\Http\\Controllers\\ShopCategoryController@destroy",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "can:delete,category",
+                "menu:products"
+            ],
+            "source": "app\\Http\\Controllers\\ShopCategoryController.php",
+            "line": 33,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/subida-masiva",
+            "name": "seller.shops.products.bulk.create",
+            "action": "App\\Http\\Controllers\\SellerBulkProductController@create",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:import"
+            ],
+            "source": "app\\Http\\Controllers\\SellerBulkProductController.php",
+            "line": 20,
+            "guard_evidence": [
+                "$limits->assertFeature($shop->user, 'bulk_import');"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/subida-masiva",
+            "name": "seller.shops.products.bulk.store",
+            "action": "App\\Http\\Controllers\\SellerBulkProductController@store",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:import"
+            ],
+            "source": "app\\Http\\Controllers\\SellerBulkProductController.php",
+            "line": 41,
+            "guard_evidence": [
+                "$limits->assertFeature($shop->user, 'bulk_import');",
+                "'products.*.shop_category_id' => ['nullable', Rule::exists('shop_categories', 'id')->where('shop_id', $shop->id)],",
+                "$limits->assertCanAddProducts($lockedShop, $batchCount);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/importar",
+            "name": "seller.shops.products.import.create",
+            "action": "App\\Http\\Controllers\\SellerInventoryImportController@create",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:import"
+            ],
+            "source": "app\\Http\\Controllers\\SellerInventoryImportController.php",
+            "line": 18,
+            "guard_evidence": [
+                "abort_unless($menus->canManage($shop, $request->user()), 403);",
+                "$limits->assertFeature($shop->user, 'bulk_import');"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/importar\/previsualizar",
+            "name": "seller.shops.products.import.preview",
+            "action": "App\\Http\\Controllers\\SellerInventoryImportController@preview",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:import"
+            ],
+            "source": "app\\Http\\Controllers\\SellerInventoryImportController.php",
+            "line": 40,
+            "guard_evidence": [
+                "abort_unless($menus->canManage($shop, $request->user()), 403);",
+                "$limits->assertFeature($shop->user, 'bulk_import');"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/importar",
+            "name": "seller.shops.products.import.store",
+            "action": "App\\Http\\Controllers\\SellerInventoryImportController@store",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "menu:import"
+            ],
+            "source": "app\\Http\\Controllers\\SellerInventoryImportController.php",
+            "line": 94,
+            "guard_evidence": [
+                "abort_unless($menus->canManage($shop, $request->user()), 403);",
+                "$limits->assertFeature($shop->user, 'bulk_import');",
+                "->where('shop_id', $shop->id)"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/productos\/{product}\/inventario\/reposicion",
+            "name": "seller.shops.inventory.restock",
+            "action": "App\\Http\\Controllers\\SellerInventoryController@recordRestock",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "can:update,product",
+                "menu:inventory"
+            ],
+            "source": "app\\Http\\Controllers\\SellerInventoryController.php",
+            "line": 186,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/productos\/{product}\/inventario\/abrir-botella",
+            "name": "seller.shops.inventory.open-bottle",
+            "action": "App\\Http\\Controllers\\SellerInventoryController@openBottle",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "can:update,product",
+                "menu:decants"
+            ],
+            "source": "app\\Http\\Controllers\\SellerInventoryController.php",
+            "line": 203,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/productos\/{product}\/inventario\/ajuste",
+            "name": "seller.shops.inventory.adjustment",
+            "action": "App\\Http\\Controllers\\SellerInventoryController@adjustStock",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "can:update,product",
+                "menu:inventory_adjustments"
+            ],
+            "source": "app\\Http\\Controllers\\SellerInventoryController.php",
+            "line": 224,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "panel\/tiendas\/{shop}\/productos\/{product}\/inventario\/movimientos",
+            "name": "seller.shops.inventory.movements",
+            "action": "App\\Http\\Controllers\\SellerInventoryController@movements",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:update,shop",
+                "can:update,product",
+                "menu:inventory"
+            ],
+            "source": "app\\Http\\Controllers\\SellerInventoryController.php",
+            "line": 240,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "admin",
+            "name": "admin.dashboard",
+            "action": "App\\Http\\Controllers\\AdminDashboardController",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:admin"
+            ],
+            "source": null,
+            "line": null,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "admin\/categorias",
+            "name": "admin.categories.index",
+            "action": "App\\Http\\Controllers\\AdminGlobalCategoryController@index",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:admin",
+                "can:viewAny,App\\Models\\GlobalCategory"
+            ],
+            "source": "app\\Http\\Controllers\\AdminGlobalCategoryController.php",
+            "line": 13,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "admin\/categorias",
+            "name": "admin.categories.store",
+            "action": "App\\Http\\Controllers\\AdminGlobalCategoryController@store",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:admin",
+                "can:create,App\\Models\\GlobalCategory"
+            ],
+            "source": "app\\Http\\Controllers\\AdminGlobalCategoryController.php",
+            "line": 25,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "PUT"
+            ],
+            "uri": "admin\/categorias\/{category}",
+            "name": "admin.categories.update",
+            "action": "App\\Http\\Controllers\\AdminGlobalCategoryController@update",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:admin",
+                "can:update,category"
+            ],
+            "source": "app\\Http\\Controllers\\AdminGlobalCategoryController.php",
+            "line": 32,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "DELETE"
+            ],
+            "uri": "admin\/categorias\/{category}",
+            "name": "admin.categories.destroy",
+            "action": "App\\Http\\Controllers\\AdminGlobalCategoryController@destroy",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:admin",
+                "can:delete,category"
+            ],
+            "source": "app\\Http\\Controllers\\AdminGlobalCategoryController.php",
+            "line": 39,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "admin\/reportes",
+            "name": "admin.reports.index",
+            "action": "App\\Http\\Controllers\\AdminModerationController@index",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:admin"
+            ],
+            "source": "app\\Http\\Controllers\\AdminModerationController.php",
+            "line": 16,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "admin\/reportes\/{report}",
+            "name": "admin.reports.show",
+            "action": "App\\Http\\Controllers\\AdminModerationController@show",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:admin"
+            ],
+            "source": "app\\Http\\Controllers\\AdminModerationController.php",
+            "line": 33,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "admin\/reportes\/{report}\/resolver",
+            "name": "admin.reports.resolve",
+            "action": "App\\Http\\Controllers\\AdminModerationController@resolve",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:admin"
+            ],
+            "source": "app\\Http\\Controllers\\AdminModerationController.php",
+            "line": 40,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "admin\/tiendas\/{shop}\/toggle-status",
+            "name": "admin.shops.toggle-status",
+            "action": "App\\Http\\Controllers\\AdminModerationController@toggleShopStatus",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:admin"
+            ],
+            "source": "app\\Http\\Controllers\\AdminModerationController.php",
+            "line": 68,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "admin\/productos\/{product}\/toggle-status",
+            "name": "admin.products.toggle-status",
+            "action": "App\\Http\\Controllers\\AdminModerationController@toggleProductStatus",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:admin"
+            ],
+            "source": "app\\Http\\Controllers\\AdminModerationController.php",
+            "line": 78,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "admin\/soporte",
+            "name": "admin.support.index",
+            "action": "App\\Http\\Controllers\\AdminSupportController@index",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:admin"
+            ],
+            "source": "app\\Http\\Controllers\\AdminSupportController.php",
+            "line": 12,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "admin\/soporte\/{support}",
+            "name": "admin.support.show",
+            "action": "App\\Http\\Controllers\\AdminSupportController@show",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:admin"
+            ],
+            "source": "app\\Http\\Controllers\\AdminSupportController.php",
+            "line": 25,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "admin\/soporte\/{support}\/resolver",
+            "name": "admin.support.resolve",
+            "action": "App\\Http\\Controllers\\AdminSupportController@resolve",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:admin"
+            ],
+            "source": "app\\Http\\Controllers\\AdminSupportController.php",
+            "line": 32,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "admin\/usuarios",
+            "name": "admin.users.index",
+            "action": "App\\Http\\Controllers\\AdminUserController@index",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:admin"
+            ],
+            "source": "app\\Http\\Controllers\\AdminUserController.php",
+            "line": 16,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "admin\/usuarios\/{user}\/toggle-status",
+            "name": "admin.users.toggle-status",
+            "action": "App\\Http\\Controllers\\AdminUserController@toggleStatus",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:admin"
+            ],
+            "source": "app\\Http\\Controllers\\AdminUserController.php",
+            "line": 57,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "admin\/usuarios\/{user}\/toggle-role",
+            "name": "admin.users.toggle-role",
+            "action": "App\\Http\\Controllers\\AdminUserController@toggleRole",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:admin"
+            ],
+            "source": "app\\Http\\Controllers\\AdminUserController.php",
+            "line": 92,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "uri": "admin\/usuarios\/{user}\/plan",
+            "name": "admin.users.update-plan",
+            "action": "App\\Http\\Controllers\\AdminUserController@updatePlan",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:admin"
+            ],
+            "source": "app\\Http\\Controllers\\AdminUserController.php",
+            "line": 109,
+            "guard_evidence": [],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "admin\/menus",
+            "name": "admin.menus.index",
+            "action": "App\\Http\\Controllers\\AdminMenuVisibilityController@index",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:admin"
+            ],
+            "source": "app\\Http\\Controllers\\AdminMenuVisibilityController.php",
+            "line": 14,
+            "guard_evidence": [
+                "abort_unless($menus->isPlatformOwner($request->user()), 403);"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "admin\/menus\/{shop}",
+            "name": "admin.menus.edit",
+            "action": "App\\Http\\Controllers\\AdminMenuVisibilityController@edit",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:admin"
+            ],
+            "source": "app\\Http\\Controllers\\AdminMenuVisibilityController.php",
+            "line": 47,
+            "guard_evidence": [
+                "abort_unless($menus->isPlatformOwner($request->user()), 403);"
+            ],
+            "writes": false
+        },
+        {
+            "methods": [
+                "PUT"
+            ],
+            "uri": "admin\/menus\/{shop}",
+            "name": "admin.menus.update",
+            "action": "App\\Http\\Controllers\\AdminMenuVisibilityController@update",
+            "middleware": [
+                "web",
+                "auth",
+                "App\\Http\\Middleware\\EnsureWebAccountIsActive",
+                "verified",
+                "can:admin"
+            ],
+            "source": "app\\Http\\Controllers\\AdminMenuVisibilityController.php",
+            "line": 59,
+            "guard_evidence": [
+                "abort_unless($menus->isPlatformOwner($request->user()), 403);"
+            ],
+            "writes": true
+        },
+        {
+            "methods": [
+                "GET",
+                "HEAD"
+            ],
+            "uri": "storage\/{path}",
+            "name": "storage.local",
+            "action": "Closure",
+            "middleware": [],
+            "source": null,
+            "line": null,
+            "guard_evidence": [],
+            "writes": false
+        },
+        {
+            "methods": [
+                "PUT"
+            ],
+            "uri": "storage\/{path}",
+            "name": "storage.local.upload",
+            "action": "Closure",
+            "middleware": [],
+            "source": null,
+            "line": null,
+            "guard_evidence": [],
+            "writes": true
+        }
+    ]
+}

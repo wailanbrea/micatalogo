@@ -12,7 +12,9 @@ class AccountantAccessController extends Controller
 {
     public function store(Request $request, Shop $shop, AccountantAccessService $access): JsonResponse
     {
-        abort_unless($request->user()->isAdmin() || $request->user()->ownsShop($shop), 403);
+        abort_unless($request->user()->canSellAtShop($shop), 404);
+        abort_unless($request->user()->can('update', $shop)
+            && in_array('accountant', app(\App\Services\SellerMenuService::class)->visibleForUser($shop, $request->user()), true), 403);
         $validated = $request->validate(['email' => ['required', 'email:rfc', 'max:255']]);
         $result = $access->grant($shop, $validated['email']);
 

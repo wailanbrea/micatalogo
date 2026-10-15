@@ -56,6 +56,9 @@ class PosSaleController extends Controller
             'items.*.expected_volume_ml' => ['nullable', 'integer', 'min:1'],
             'items.*.expected_source_product_id' => ['nullable', 'ulid'],
         ]);
+        // Collecting existing debt is distinct from issuing a new credit sale.
+        // Revalidate before the UUID lookup, including a successful replay.
+        $paymentService->assertCanIssueCredit($shop, $request->user(), $validated['credit_amount'] ?? '0.00', $validated['payments'] ?? []);
         if (! array_key_exists('tax', $validated)) {
             $taxRateBasisPoints = $operational->taxRateBasisPoints($shop);
             if ($taxRateBasisPoints > 0) {

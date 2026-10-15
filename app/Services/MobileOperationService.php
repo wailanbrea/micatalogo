@@ -33,10 +33,35 @@ class MobileOperationService
             abort_unless(in_array('customers', app(SellerMenuService::class)->visibleForUser($shop, $user), true), 403);
         } elseif (in_array($data['type'], array_merge(FinancialMobileOperationService::TYPES, OnlineMobileOperationService::TYPES), true)) {
             // The financial controllers enforce their own menu/plan/session boundaries.
+        } elseif (in_array($data['type'], ['product_upsert', 'product_archive'], true)) {
+            $product = $shop->products()->withTrashed()->where('public_id', $data['product_id'])->first();
+            app(CatalogAccessService::class)->assertWrite($shop, $user, $product, $data);
+        } elseif ($data['type'] === 'product_photo_update') {
+            $product = $shop->products()->where('public_id', $data['product_id'])->firstOrFail();
+            abort_unless(app(CatalogAccessService::class)->canManagePhotos($shop, $user, $product), 403);
         } elseif ($data['type'] !== 'return') {
             Gate::forUser($user)->authorize('update', $shop);
+            if (in_array($data['type'], ['restock', 'adjustment', 'open_bottle'], true)) {
+                $key = match ($data['type']) {
+                    'restock' => 'inventory', 'adjustment' => 'inventory_adjustments', 'open_bottle' => 'decants',
+                };
+                abort_unless(in_array($key, app(SellerMenuService::class)->visibleForUser($shop, $user), true), 403);
+            }
         } else {
             abort_unless(in_array('returns', app(SellerMenuService::class)->visibleForUser($shop, $user), true), 403);
+        }
+        // A previous successful receipt does not bypass current permission checks.
+        // Perform these before looking up the UUID, including administrative envelopes.
+        if (in_array($data['type'], FinancialMobileOperationService::TYPES, true)) {
+            app(FinancialMobileOperationService::class)->authorize($shop, $user, $data);
+        } elseif (in_array($data['type'], OnlineMobileOperationService::TYPES, true)) {
+            app(OnlineMobileOperationService::class)->authorize($shop, $user, $data);
+        } elseif (in_array($data['type'], ShopAdministrationMobileOperationService::TYPES, true)) {
+            app(ShopAdministrationMobileOperationService::class)->authorize($shop, $user, $data);
+        } elseif (in_array($data['type'], array_merge(ShopRecordSyncService::TYPES, ShopRouteSyncService::TYPES), true)) {
+            $menu = in_array($data['type'], ShopRouteSyncService::TYPES, true) ? 'routes'
+                : ($data['type'] === 'adjustment_reason_upsert' ? 'inventory_adjustments' : 'products');
+            abort_unless(in_array($menu, app(SellerMenuService::class)->visibleForUser($shop, $user), true), 403);
         }
         $hash = hash('sha256', json_encode($data, JSON_THROW_ON_ERROR));
 
@@ -48,12 +73,16 @@ class MobileOperationService
                 if (! hash_equals($old->payload_sha256, $hash)) {
                     throw new InvalidArgumentException('El identificador ya fue utilizado con otro contenido.', 409);
                 }
+                if (in_array($data['type'], FinancialMobileOperationService::TYPES, true)) {
+                    app(FinancialMobileOperationService::class)->authorizeReceipt($shop, $user, $data, $old->result);
+                }
 
                 return $old->result;
             }
             $operation = MobileOperation::create(['shop_id' => $shop->id, 'client_operation_uuid' => $data['client_operation_uuid'],
                 'type' => $data['type'], 'payload_sha256' => $hash, 'result' => []]);
             $result = match ($data['type']) {
+                'product_photo_update' => $this->photoOperation($shop, $data),
                 'quote_create', 'quote_convert', 'order_confirm', 'purchase_create', 'purchase_receive', 'supplier_create', 'inventory_import_confirm', 'day_close', 'partner_create', 'partner_transaction' => app(OnlineMobileOperationService::class)->apply($shop, $user, $data),
                 'shop_settings_update', 'seller_menu_permissions_update', 'shop_menu_visibility_update', 'seller_create', 'authorization_approve', 'authorization_reject' => app(ShopAdministrationMobileOperationService::class)->apply($shop, $user, $data),
                 'cash_open', 'cash_close', 'cash_movement', 'expense_create', 'expense_payment' => app(FinancialMobileOperationService::class)->apply($shop, $user, $data),
@@ -144,6 +173,9 @@ class MobileOperationService
     private function productOperation(Shop $shop, User $user, array $data): array
     {
         $product = $shop->products()->withTrashed()->where('public_id', $data['product_id'])->lockForUpdate()->first();
+        if (in_array($data['type'], ['product_upsert', 'product_archive'], true)) {
+            app(CatalogAccessService::class)->assertWrite($shop, $user, $product, $data);
+        }
         if ($data['type'] === 'product_upsert') {
             $hasPresentationInput = array_key_exists('sale_unit', $data)
                 || array_key_exists('volume_ml', $data)
@@ -159,6 +191,12 @@ class MobileOperationService
                     'volume_ml' => $product->volume_ml,
                     'inventory_source_product_id' => $product->inventory_source_product_id,
                 ];
+            if ($product && ($presentation['sale_unit'] === 'service') !== $product->isService()
+                && ((int) ($product->inventory?->stock_quantity ?? 0) > 0
+                    || InventoryLot::where('product_id', $product->id)->exists()
+                    || \App\Models\InvoiceItem::where('product_id', $product->id)->exists())) {
+                throw ValidationException::withMessages(['sale_unit' => 'Crea una oferta nueva para cambiar entre producto y servicio cuando existen stock, lotes o ventas.']);
+            }
             if (! $product) {
                 abort_if(Product::withTrashed()->where('public_id', $data['product_id'])->exists(), 409);
                 app(PlanLimitsService::class)->assertCanAddProducts($shop, 1);
@@ -322,6 +360,14 @@ class MobileOperationService
             'opened_bottles' => $fresh->inventory?->opened_bottles,
             'available_ml' => $fresh->inventory?->available_ml,
             'reserved_decant_ml' => $fresh->inventory?->reserved_decant_ml];
+    }
+
+    private function photoOperation(Shop $shop, array $data): array
+    {
+        $product = $shop->products()->where('public_id', $data['product_id'])->lockForUpdate()->firstOrFail();
+        $this->productImage($shop, $product, $data);
+
+        return ['product_id' => $product->public_id, 'image_sha256' => $data['image_sha256']];
     }
 
     private function isGeneratedMobileCode(string $code): bool

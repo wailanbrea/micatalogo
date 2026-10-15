@@ -5,6 +5,10 @@
         <div class="mx-auto max-w-[1600px] space-y-5">
             <x-seller.shop-header :shop="$shop" activeTab="feature" />
 
+            @if (in_array($featureKey, ['services', 'photos', 'attributes', 'price_health', 'pricing', 'decants'], true))
+                <x-seller.catalog-tabs :shop="$shop" :active="$featureKey === 'services' ? 'services' : ''" />
+            @endif
+
             <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-100 px-6 py-6 sm:px-8">
                     <p class="text-[11px] font-black uppercase tracking-[0.2em] text-blue-600">{{ $feature['group'] }}</p>
@@ -15,7 +19,7 @@
                         </div>
                         <span class="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800">
                             <span class="h-2 w-2 rounded-full bg-amber-400"></span>
-                            {{ $module['kind'] === 'prepared' ? $feature['status'] : 'Operativo' }}
+                            {{ $module['kind'] === 'prepared' ? $feature['status'] : (in_array($featureKey, ['account', 'help', 'updates', 'practice', 'metrics', 'public_catalog', 'reports', 'price_health', 'commissions'], true) ? 'Consulta' : 'Operativo') }}
                         </span>
                     </div>
                 </div>

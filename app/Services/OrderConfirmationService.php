@@ -23,6 +23,10 @@ class OrderConfirmationService
      */
     public function confirm(Shop $shop, Order $order, User $user, array $data): ?string
     {
+        abort_unless($order->shop_id === $shop->id && $user->canSellAtShop($shop), 404);
+        if (in_array($data['payment_kind'] ?? 'paid', ['credit', 'mixed'], true)) {
+            abort_unless(in_array('credit', app(SellerMenuService::class)->visibleForUser($shop, $user), true), 403);
+        }
         return DB::transaction(function () use ($shop, $order, $user, $data): ?string {
             $lockedOrder = Order::query()->with('items')->lockForUpdate()->findOrFail($order->id);
             if ($lockedOrder->shop_id !== $shop->id) {

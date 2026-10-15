@@ -11,6 +11,8 @@ use App\Services\BusinessCapabilityService;
 use App\Services\BusinessPresentationService;
 use App\Services\PlanLimitsService;
 use App\Services\SellerMenuService;
+use App\Services\SellerNavigationService;
+use App\Services\CatalogAccessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -18,7 +20,7 @@ use Illuminate\Validation\Rule;
 
 class ShopController extends Controller
 {
-    public function index(Request $request, PlanLimitsService $limits, SellerMenuService $menus, BusinessCapabilityService $capabilities, BusinessPresentationService $presentation): JsonResponse
+    public function index(Request $request, PlanLimitsService $limits, SellerMenuService $menus, BusinessCapabilityService $capabilities, BusinessPresentationService $presentation, SellerNavigationService $navigation, CatalogAccessService $catalogAccess): JsonResponse
     {
         $query = Shop::query()
             ->with(['user', 'sellers.user'])
@@ -38,7 +40,7 @@ class ShopController extends Controller
         });
 
         $shops = $query->get(['id', 'user_id', 'public_id', 'name', 'slug', 'enabled_menu_keys'])
-            ->map(function ($shop) use ($limits, $menus, $request, $capabilities, $presentation): array {
+            ->map(function ($shop) use ($limits, $menus, $request, $capabilities, $presentation, $navigation, $catalogAccess): array {
                 $canManageMenuVisibility = $menus->canManageMenuVisibility($shop, $request->user());
 
                 return [
@@ -49,6 +51,8 @@ class ShopController extends Controller
                     'presentation' => $presentation->resolve($shop),
                     'quota' => $limits->shopQuota($shop, $shop->products_count),
                     'menu_permissions' => $menus->visibleForUser($shop, $request->user()),
+                    'navigation' => $navigation->forUser($shop, $request->user()),
+                    'catalog_permissions' => $catalogAccess->payload($shop, $request->user()),
                     // Seller/team administration is an owner-only control
                     // surface. Managers retain operational access but must
                     // not receive a misleading write capability here.

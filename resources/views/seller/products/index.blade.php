@@ -3,6 +3,7 @@
     $productsLabel = $presentation['terminology']['products'] ?? 'Productos';
     $newProductLabel = $presentation['terminology']['new_product'] ?? 'Nuevo producto';
     $showStock = $presentation['catalog']['show_stock'] ?? true;
+    $catalogMenus = app(\App\Services\SellerMenuService::class)->visibleForUser($shop, auth()->user());
 @endphp
 <x-layouts.app :title="$productsLabel . ' | ' . $shop->name">
     <!-- Persistent Unified Navigation -->
@@ -17,6 +18,8 @@
         <div class="mx-auto max-w-7xl">
             <!-- Shop Context & Local Navigation Tabs -->
             <x-seller.shop-header :shop="$shop" activeTab="products" />
+
+            <x-seller.catalog-tabs :shop="$shop" active="products" />
 
             <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
                 @if (session('status'))
@@ -33,25 +36,25 @@
                         </p>
                     </div>
 
-                    @if ($totalProducts < $maxProducts)
+                    @if ($totalProducts < $maxProducts && $canWriteProducts)
                         <div class="flex flex-wrap items-center justify-end gap-2">
-                            <a class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-xs hover:bg-slate-50" href="{{ route('seller.shops.inventory.movements.index', $shop) }}">
+                            @if (in_array('inventory', $catalogMenus, true))<a class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-xs hover:bg-slate-50" href="{{ route('seller.shops.inventory.movements.index', $shop) }}">
                                 Movimientos
-                            </a>
-                            <a class="rounded-md border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 shadow-xs hover:bg-indigo-100" href="{{ route('seller.shops.products.import.create', $shop) }}">
+                            </a>@endif
+                            @if (in_array('import', $catalogMenus, true))<a class="rounded-md border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 shadow-xs hover:bg-indigo-100" href="{{ route('seller.shops.products.import.create', $shop) }}">
                                 Importar CSV/XLSX
-                            </a>
+                            </a>@endif
                             <a class="rounded-md border border-violet-200 bg-violet-50 px-3 py-2 text-sm font-semibold text-violet-700 shadow-xs hover:bg-violet-100" href="{{ route('seller.shops.products.combos.create', $shop) }}">
                                 Nuevo combo
                             </a>
-                            <a class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-xs hover:bg-slate-50" href="{{ route('seller.shops.products.bulk.create', $shop) }}">
+                            @if (in_array('import', $catalogMenus, true))<a class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-xs hover:bg-slate-50" href="{{ route('seller.shops.products.bulk.create', $shop) }}">
                                 Subida masiva
-                            </a>
+                            </a>@endif
                             <a class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-blue-700" href="{{ route('seller.shops.products.create', $shop) }}">
                                 + {{ $newProductLabel }}
                             </a>
                         </div>
-                    @else
+                    @elseif ($totalProducts >= $maxProducts)
                         <span class="rounded-md bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">Límite alcanzado ({{ $maxProducts }}/{{ $maxProducts }})</span>
                     @endif
                 </div>
@@ -68,21 +71,21 @@
                         <p class="mt-2 text-2xl font-black tabular-nums text-slate-950">{{ number_format($totalProducts) }}</p>
                         <p class="mt-1 text-xs font-semibold text-slate-500">{{ number_format($trashedCount) }} archivado(s)</p>
                     </div>
-                    <div class="rounded-2xl border border-blue-100 bg-blue-50/60 p-4">
+                    @if ($showCosts)<div class="rounded-2xl border border-blue-100 bg-blue-50/60 p-4">
                         <p class="text-[11px] font-black uppercase tracking-[0.14em] text-blue-700">Capital al costo</p>
                         <p class="mt-2 text-2xl font-black tabular-nums text-blue-950">RD$ {{ number_format((float) $catalogStats['capital_cost'], 2) }}</p>
                         <p class="mt-1 text-xs font-semibold text-blue-700">{{ number_format($catalogStats['total_units']) }} unidades controladas</p>
-                    </div>
+                    </div>@endif
                     <div class="rounded-2xl border border-amber-100 bg-amber-50/70 p-4">
                         <p class="text-[11px] font-black uppercase tracking-[0.14em] text-amber-700">Nivel bajo</p>
                         <p class="mt-2 text-2xl font-black tabular-nums text-amber-950">{{ number_format($catalogStats['low_stock']) }}</p>
                         <p class="mt-1 text-xs font-semibold text-amber-700">{{ number_format($catalogStats['out_of_stock']) }} agotado(s)</p>
                     </div>
-                    <div class="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4">
+                    @if ($showCosts)<div class="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4">
                         <p class="text-[11px] font-black uppercase tracking-[0.14em] text-emerald-700">Margen promedio</p>
                         <p class="mt-2 text-2xl font-black tabular-nums text-emerald-950">{{ $catalogStats['average_margin'] === null ? '—' : number_format((float) $catalogStats['average_margin'], 1).'%' }}</p>
                         <p class="mt-1 text-xs font-semibold text-emerald-700">{{ number_format($catalogStats['without_photo']) }} sin fotografía</p>
-                    </div>
+                    </div>@endif
                 </div>
 
                 <!-- Filtros -->
@@ -211,19 +214,21 @@
                                     </td>
                                     <td class="px-4 py-3.5 text-right whitespace-nowrap">
                                         <div class="flex items-center justify-end gap-2">
-                                            @if ($view === 'archived')
+                                            @php $canWriteRow = $canWriteProducts && app(\App\Services\CatalogAccessService::class)->canWrite($shop, auth()->user(), $product->sale_unit); @endphp
+                                            @if ($view === 'archived' && $canWriteRow)
                                                 <form method="POST" action="{{ route('seller.shops.products.restore', [$shop, $product->public_id]) }}">
                                                     @csrf
                                                     <button class="text-xs font-semibold text-emerald-700 hover:text-emerald-900" type="submit">Restaurar</button>
                                                 </form>
-                                            @else
+                                            @elseif ($view !== 'archived')
                                                 <a class="text-xs font-semibold text-blue-700 hover:text-blue-900" href="{{ route('products.show', [$shop, $product]) }}" target="_blank">Ver</a>
-                                                <a class="text-xs font-semibold text-slate-700 hover:text-slate-950" href="{{ route('seller.shops.products.edit', [$shop, $product]) }}">Editar</a>
+                                                @if ($canWriteRow)<a class="text-xs font-semibold text-slate-700 hover:text-slate-950" href="{{ route('seller.shops.products.edit', [$shop, $product]) }}">Editar</a>
                                                 <form method="POST" action="{{ route('seller.shops.products.destroy', [$shop, $product]) }}" onsubmit="return confirm('¿Deseas enviar este producto a la papelera?')">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button class="text-xs font-semibold text-red-600 hover:text-red-800" type="submit">Eliminar</button>
                                                 </form>
+                                                @endif
                                             @endif
                                         </div>
                                     </td>

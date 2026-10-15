@@ -7,6 +7,8 @@ use App\Models\Shop;
 use App\Models\Supplier;
 use App\Services\PurchaseDocumentService;
 use App\Services\PurchaseInvoiceReader;
+use App\Services\PurchaseAccessService;
+use App\Services\SellerMenuService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
@@ -15,6 +17,7 @@ class PurchaseController
 {
     public function preview(Request $request, Shop $shop, PurchaseInvoiceReader $reader): JsonResponse
     {
+        app(PurchaseAccessService::class)->assertPreview($shop, $request->user());
         $request->validate([
             'file' => ['required', 'file', 'mimes:csv,txt,xlsx,xls,pdf,jpg,jpeg,png,webp', 'extensions:csv,txt,xlsx,xls,pdf,jpg,jpeg,png,webp', 'max:10240'],
         ]);
@@ -22,9 +25,25 @@ class PurchaseController
         return response()->json($reader->preview($request->file('file'), $shop, $request->user()));
     }
 
-    public function index(Shop $shop, PurchaseDocumentService $purchases): JsonResponse
+    public function index(Request $request, Shop $shop, PurchaseDocumentService $purchases): JsonResponse
     {
+        app(PurchaseAccessService::class)->assertType($shop, $request->user(), null);
+        $visible = app(SellerMenuService::class)->visibleForUser($shop, $request->user());
+        abort_unless(array_intersect(['containers', 'loads', 'purchase_invoices'], $visible) !== [], 403);
         $documents = $shop->purchaseDocuments()
+            ->where(function ($query) use ($visible): void {
+                foreach (['containers' => 'container', 'loads' => 'load'] as $key => $type) {
+                    if (in_array($key, $visible, true)) {
+                        $query->orWhere('type', $type);
+                    }
+                }
+                if (in_array('purchase_invoices', $visible, true)) {
+                    $query->orWhere('type', 'purchase_invoice');
+                }
+                if (in_array('suppliers', $visible, true)) {
+                    $query->orWhere('status', 'debt');
+                }
+            })
             ->with(['supplier', 'items.product', 'parentDocument'])
             ->latest()
             ->limit(100)
@@ -41,6 +60,8 @@ class PurchaseController
     public function suppliers(Shop $shop): JsonResponse
     {
         return response()->json([
+            'documents' => $shop->purchaseDocuments()->where('status', 'debt')->with(['supplier', 'items.product', 'parentDocument'])->latest()->limit(100)->get()
+                ->map(fn (PurchaseDocument $document): array => app(PurchaseDocumentService::class)->payload($document))->values()->all(),
             'suppliers' => $shop->suppliers()
                 ->where('is_active', true)
                 ->orderBy('name')
@@ -87,6 +108,7 @@ class PurchaseController
 
     public function store(Request $request, Shop $shop, PurchaseDocumentService $purchases): JsonResponse
     {
+        app(PurchaseAccessService::class)->assertType($shop, $request->user(), $request->input('type'));
         $data = $request->validate([
             'type' => ['required', 'in:container,load,purchase_invoice,supplier_debt'],
             'document_number' => ['required', 'string', 'max:80'],
@@ -128,6 +150,7 @@ class PurchaseController
 
     public function receive(Request $request, Shop $shop, PurchaseDocument $document, PurchaseDocumentService $purchases): JsonResponse
     {
+        app(PurchaseAccessService::class)->assertDocument($shop, $request->user(), $document);
         try {
             $document = $purchases->receive($shop, $document, $request->user());
         } catch (InvalidArgumentException $exception) {

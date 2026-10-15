@@ -24,17 +24,23 @@ class ProductPolicy
 
     public function update(User $user, Product $product): bool
     {
-        return $user->ownsShop($product->shop);
+        return $user->ownsShop($product->shop) || $user->isActiveShopManager($product->shop)
+            || ($product->isService() && app(\App\Services\CatalogAccessService::class)->canWrite($product->shop, $user, 'service'));
     }
 
     public function delete(User $user, Product $product): bool
     {
-        return $user->ownsShop($product->shop);
+        return $this->update($user, $product);
     }
 
     public function restore(User $user, Product $product): bool
     {
-        return $user->ownsShop($product->shop);
+        return $this->update($user, $product);
+    }
+
+    public function updateImages(User $user, Product $product): bool
+    {
+        return app(\App\Services\CatalogAccessService::class)->canManagePhotos($product->shop, $user, $product);
     }
 
     public function forceDelete(User $user, Product $product): bool

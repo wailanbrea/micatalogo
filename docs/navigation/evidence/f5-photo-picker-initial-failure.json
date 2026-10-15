@@ -1,0 +1,103 @@
+{
+  "declared": 22,
+  "executed": 22,
+  "counts": {
+    "PASS": 21,
+    "FAIL": 1,
+    "SKIP": 0,
+    "ASSUMPTION": 0
+  },
+  "missing": [],
+  "unexpected": [],
+  "gate": "NOT_APPROVED",
+  "tests": [
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#repeatedSyncKeepsIdsPricesAndStockWithoutDuplicateMovements",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#bottleReceiptUpdatesSharedMlAndDecantsWithoutDoubleUploading",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#acknowledgedSaleRemainsReplaySafeIfProcessStopsBeforeMarkingSent",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#pendingMutationSurvivesStaleMetadataAndRetirementSnapshot",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#acknowledgedReceiptRefreshesPriceAndCostAndFailedDownloadRemainsDurable",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#catalogRefreshDoesNotUndoStockOfAPendingLocalSale",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#permissionRevocationBlocksQueuedSaleAndDoesNotReplay",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#futureRetryKeepsWorkerAliveButBlockedHeadDoesNotSpin",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#photoOnlyQueueSurvivesRevocationAndRequiresMatchingImageReceipt",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#equalOrBackdatedTimesCannotReorderCommittedEvents",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#blockedOriginalSaleStopsLaterMutationAndSale",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#selectedPhotoIsCopiedIntoBoundedImmutableQueuePayload",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#pendingSalesStayBoundToTheirOriginalShopWhenTheActiveShopChanges",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#wrongShopSnapshotIsRejectedWithoutImportingAnything",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#acknowledgedEventDuringDownloadDoesNotRestoreStaleDataOrClearNewerRefresh",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#mutationsAndSalesAreUploadedInCreationOrder",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.CatalogSyncIntegrationTest#receiptAndCountCommitOutboxWithLedgerOrRollbackTogether",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.local.FinancialOutboxTest#financialRetryPreservesPayloadAndAckConflictBlocks",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.finance.FinancePermissionTabsTest#revocationReindexesTabsAndRemovesForbiddenContent",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.finance.FinancePermissionTabsTest#cashOnlyDoesNotComposeFinancialOrExpenseTabs",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.emulatorqa.NavigationLiveRevocationTest#serverRevocationClosesTheOpenWorkspaceAndBackDoesNotRestoreIt",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.emulatorqa.NavigationLiveRevocationTest#photoOnlyWorkspaceOpensImagePickerWithoutProductEditor",
+      "state": "FAIL"
+    }
+  ]
+}

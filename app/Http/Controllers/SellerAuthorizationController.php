@@ -76,6 +76,7 @@ class SellerAuthorizationController extends Controller
     {
         abort_unless($authorizationRequest->shop_id === $shop->id, 404);
         abort_unless($request->user()->can('update', $shop), 403);
+        abort_unless(in_array('authorizations', app(\App\Services\SellerMenuService::class)->visibleForUser($shop, $request->user()), true), 403);
 
         if ($authorizationRequest->status !== 'pending') {
             abort(409, 'Esta solicitud ya fue resuelta.');
