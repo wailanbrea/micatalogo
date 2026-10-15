@@ -1,5 +1,9 @@
 # QA — navegación Web/API/Android
 
+## Entrega 15/10/2026 — actualización de evidencia
+
+Se publicó Web y Android1.0.112/113. Backend666PASS/7.614 aserciones, Android147JVM PASS y194 identidades instrumentadas PASS entre las configuraciones QA18768/18767. Se navegaron46 destinos Web internos con HTTP200. Ver `../RELEASE_1.0.112_2026-10-15.md` y `evidence/release-1.0.112-combined-final.json` para fallos iniciales del arnés, repeticiones, hashes, publicación y límites. Las matrices siguientes son históricas: no se convierten todos sus recorridos manuales/accesibilidad en aprobados por ejecutar estas suites.
+
 ## Corte actual: Compras, Cobros y crédito POS
 
 Este reporte registra cobertura y evidencia; no aprueba todavía los gates F4–F6. `PASS` corresponde al resultado específico descrito. `BLOCKED` en la matriz significa que falta una comprobación para certificar el caso completo, aunque existan componentes aprobados; no indica que haya que solicitar permisos adicionales para continuar el QA aislado.

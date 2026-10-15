@@ -1,0 +1,31 @@
+{
+  "declared": 4,
+  "executed": 4,
+  "counts": {
+    "PASS": 4,
+    "FAIL": 0,
+    "SKIP": 0,
+    "ASSUMPTION": 0
+  },
+  "missing": [],
+  "unexpected": [],
+  "gate": "PASS",
+  "tests": [
+    {
+      "test": "com.example.bspos.presentation.emulatorqa.EmulatorJourneyTest#compactCustomersOpenMovementsAndExplainTheirDebt",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.emulatorqa.EmulatorJourneyTest#ordersEntryAndReturnDoNotShowTheEmptyLandingForExistingOrders",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.emulatorqa.EmulatorJourneyTest#ownerSummaryReadsServerForEachShop",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.emulatorqa.EmulatorJourneyTest#loginSharedCustomerCreditOrderCollectionAndShopSwitch",
+      "state": "PASS"
+    }
+  ]
+}

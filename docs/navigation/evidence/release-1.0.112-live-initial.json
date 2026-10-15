@@ -1,0 +1,43 @@
+{
+  "declared": 7,
+  "executed": 7,
+  "counts": {
+    "PASS": 5,
+    "FAIL": 2,
+    "SKIP": 0,
+    "ASSUMPTION": 0
+  },
+  "missing": [],
+  "unexpected": [],
+  "gate": "NOT_APPROVED",
+  "tests": [
+    {
+      "test": "com.example.bspos.data.micatalogo.PosSaleLiveIntegrationTest#offlineQueuedDecantConsumesSourceMillilitersAndSyncsExactlyOnce",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.PosSaleLiveIntegrationTest#offlineQueuedSalesSurviveDatabaseRestartAndSyncExactlyOnce",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.data.micatalogo.InventoryImportLiveIntegrationTest#anonymousRowEightWorkbookTravelsFromAndroidToRealLaravelAndConfirmsBySession",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.emulatorqa.EmulatorJourneyTest#compactCustomersOpenMovementsAndExplainTheirDebt",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.emulatorqa.EmulatorJourneyTest#ordersEntryAndReturnDoNotShowTheEmptyLandingForExistingOrders",
+      "state": "FAIL"
+    },
+    {
+      "test": "com.example.bspos.presentation.emulatorqa.EmulatorJourneyTest#ownerSummaryReadsServerForEachShop",
+      "state": "PASS"
+    },
+    {
+      "test": "com.example.bspos.presentation.emulatorqa.EmulatorJourneyTest#loginSharedCustomerCreditOrderCollectionAndShopSwitch",
+      "state": "FAIL"
+    }
+  ]
+}
