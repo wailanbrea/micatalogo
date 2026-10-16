@@ -1,5 +1,7 @@
 # Ejecución QA y evidencia
 
+> **Corte anterior supersedido en el cierre 2026-10-16.** Los conteos de este documento son evidencia histórica del día/runner descrito y no certifican QA-001..048, E2E A–H ni NAV-001..070 en los SHA actuales. Consultar `docs/closure-real/FINAL_REPORT.md` y `ACCEPTANCE_MATRIX.csv` para el cierre actual.
+
 Fecha de ejecución: 2026-10-16 (entorno del proceso; el contexto del workspace mostraba 2026-10-15). Alcance: QA local aislada. Ninguna operación comercial o base de datos productiva fue utilizada.
 
 ## Resultado real

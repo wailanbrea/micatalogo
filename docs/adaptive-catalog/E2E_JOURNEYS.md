@@ -1,5 +1,7 @@
 # Recorridos E2E de Calidad (Journeys A .. H)
 
+> **HISTÓRICO / PENDIENTE DE CERTIFICACIÓN.** Los resultados narrativos anteriores no prueban A–H en una API QA compartida ni en ambas aplicaciones. Ningún journey debe contarse PASS por reutilizar pruebas de dominio; consulte `docs/closure-real/ACCEPTANCE_MATRIX.csv`.
+
 Evidencia y descripción de los 8 recorridos integrales del sistema.
 
 ---

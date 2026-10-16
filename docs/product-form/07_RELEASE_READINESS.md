@@ -1,5 +1,7 @@
 # Release readiness — formulario adaptativo
 
+> **Estado del cierre 2026-10-16:** NO-GO para nueva aprobación/publicación. El estado publicado que se menciona abajo pertenece a una entrega histórica; esta tarea no publicó APK/backend. Ver `docs/closure-real/RELEASE_READINESS.md`.
+
 ## Estado
 
 **Release Android publicada bajo orden del usuario:** `1.0.116` (`versionCode 117`). Solo se desplegaron el APK y su manifiesto de actualización; el resto del backend/API no se desplegó. Los gates funcionales que siguen abiertos no se consideran resueltos por esta publicación.

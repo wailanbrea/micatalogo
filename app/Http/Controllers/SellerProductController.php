@@ -265,6 +265,20 @@ class SellerProductController extends Controller
                 $validated['sale_unit'] = 'unit';
             }
             $this->validatePresentation($validated, $lockedShop, $product);
+            app(\App\Services\ProductPresentationChangeGuard::class)->assertMayChange(
+                $lockedShop,
+                $product,
+                $product->inventory()->lockForUpdate()->first(),
+                [
+                    'sale_unit' => $validated['sale_unit'],
+                    'volume_ml' => array_key_exists('volume_ml', $validated) ? $validated['volume_ml'] : $product->volume_ml,
+                    'inventory_source_product_id' => array_key_exists('inventory_source_product_id', $validated)
+                        ? $validated['inventory_source_product_id']
+                        : $product->inventory_source_product_id,
+                ],
+                filled($validated['unit_uuid'] ?? null) ? (string) $validated['unit_uuid'] : null,
+                $isCombo,
+            );
 
             $attributes = $this->attributes($validated, $lockedShop, $product);
             if ($product->barcode !== $validated['barcode']) {

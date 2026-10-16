@@ -236,6 +236,16 @@ class MobileOperationService
                 }
             } else {
                 abort_if($product->trashed(), 409, 'El producto está en la papelera.');
+                if ($hasPresentationInput || array_key_exists('unit_uuid', $data) || array_key_exists('is_combo', $data)) {
+                    app(ProductPresentationChangeGuard::class)->assertMayChange(
+                        $shop,
+                        $product,
+                        $product->inventory,
+                        $presentation,
+                        isset($data['unit_uuid']) ? (string) $data['unit_uuid'] : null,
+                        $isCombo,
+                    );
+                }
                 $currentPrice = $product->isOnSale()
                     ? ($product->getRawOriginal('sale_price') ?? $product->sale_price)
                     : ($product->getRawOriginal('price') ?? $product->price);

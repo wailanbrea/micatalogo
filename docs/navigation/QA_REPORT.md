@@ -1,5 +1,7 @@
 # QA — navegación Web/API/Android
 
+> **Estado fuente para navegación:** este documento conserva 70 IDs individualizados. El último corte previo reporta 11 PASS y 59 BLOCKED; ese estado se considera evidencia histórica y cada PASS se vuelve a evaluar contra el SHA final. El reporte resumido `adaptive-catalog/FINAL_REPORT.md` queda supersedido. Ver la matriz de este cierre en `docs/closure-real/ACCEPTANCE_MATRIX.csv`.
+
 ## Entrega 15/10/2026 — actualización de evidencia
 
 Se publicó Web y Android1.0.112/113. Backend666PASS/7.614 aserciones, Android147JVM PASS y194 identidades instrumentadas PASS entre las configuraciones QA18768/18767. Se navegaron46 destinos Web internos con HTTP200. Ver `../RELEASE_1.0.112_2026-10-15.md` y `evidence/release-1.0.112-combined-final.json` para fallos iniciales del arnés, repeticiones, hashes, publicación y límites. Las matrices siguientes son históricas: no se convierten todos sus recorridos manuales/accesibilidad en aprobados por ejecutar estas suites.

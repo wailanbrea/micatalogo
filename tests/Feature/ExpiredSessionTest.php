@@ -1,14 +1,23 @@
 <?php
 
 use Illuminate\Session\TokenMismatchException;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Services\Turnstile;
 
 beforeEach(function () {
-    Route::post('/login', fn () => throw new TokenMismatchException())->middleware('web');
     Route::post('/test-expired-form', fn () => throw new TokenMismatchException())->middleware('web');
 });
 
 it('returns an expired login to a fresh GET without flashing passwords', function () {
+    app()->instance(Turnstile::class, new class extends Turnstile
+    {
+        public function validate(?string $token, Request $request, string $action): void
+        {
+            throw new TokenMismatchException();
+        }
+    });
+
     $this->post('/login', ['email' => 'qa@example.test', 'password' => 'private-test-value'])
         ->assertStatus(303)
         ->assertRedirect('/login')

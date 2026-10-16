@@ -26,6 +26,7 @@
         <env name="DB_CONNECTION" value="sqlite" force="true"/>
         <env name="DB_DATABASE" value=":memory:" force="true"/>
         <env name="DB_URL" value="" force="true"/>
+        <env name="TURNSTILE_ENABLED" value="false" force="true"/>
         <env name="R2_ACCESS_KEY_ID" value="" force="true"/>
         <env name="R2_SECRET_ACCESS_KEY" value="" force="true"/>
         <env name="R2_BUCKET" value="" force="true"/>

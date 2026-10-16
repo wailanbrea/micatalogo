@@ -245,6 +245,55 @@ test('a seller can update their product', function () {
         ->and($product->availability_status)->toBe(ProductAvailabilityStatus::OutOfStock);
 });
 
+test('a product with inventory history cannot change its sale unit or volume', function () {
+    $seller = User::factory()->create(['email_verified_at' => now()]);
+    $shop = Shop::factory()->for($seller)->create(['business_type' => 'perfume_store']);
+    $product = Product::factory()->for($shop)->create([
+        'name' => 'Perfume histórico',
+        'sale_unit' => 'unit',
+        'volume_ml' => null,
+        'price' => 2800,
+        'availability_status' => ProductAvailabilityStatus::Available,
+    ]);
+    ProductInventory::create([
+        'product_id' => $product->id,
+        'track_inventory' => true,
+        'stock_quantity' => 2,
+        'sold_quantity' => 0,
+        'cost_price' => 1200,
+        'low_stock_threshold' => 1,
+    ]);
+    InventoryMovement::create([
+        'product_id' => $product->id,
+        'user_id' => $seller->id,
+        'type' => 'restock',
+        'quantity' => 2,
+        'stock_before' => 0,
+        'stock_after' => 2,
+        'unit_price' => 2800,
+        'unit_cost' => 1200,
+        'notes' => 'Fixture sintético de QA',
+        'created_at' => now(),
+    ]);
+
+    $this->actingAs($seller)->put(route('seller.shops.products.update', [$shop, $product]), [
+        'name' => 'Perfume histórico',
+        'price' => '2800.00',
+        'sale_unit' => 'bottle',
+        'volume_ml' => 100,
+        'track_inventory' => 1,
+        'stock_quantity' => 2,
+        'cost_price' => '1200.00',
+        'availability_status' => ProductAvailabilityStatus::Available->value,
+        'moderation_status' => ProductModerationStatus::Active->value,
+    ])->assertSessionHasErrors('sale_unit');
+
+    expect($product->fresh()->sale_unit)->toBe('unit')
+        ->and($product->fresh()->volume_ml)->toBeNull()
+        ->and($product->inventory()->value('stock_quantity'))->toBe(2)
+        ->and($product->inventoryMovements()->count())->toBe(1);
+});
+
 test('a seller can delete and restore their product', function () {
     $seller = User::factory()->create(['email_verified_at' => now()]);
     $shop = Shop::factory()->for($seller)->create();

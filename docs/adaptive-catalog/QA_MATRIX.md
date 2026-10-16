@@ -1,5 +1,7 @@
 # Matriz de Verificación de Calidad (QA-001 .. QA-048)
 
+> **CORTE HISTÓRICO / NO USAR COMO CERTIFICACIÓN ACTUAL.** Las marcas PASS que siguen fueron compiladas en un corte anterior y algunas se basaban en inspección de código o pruebas parecidas, no en la categoría exacta que requiere el criterio. Para el cierre verificable de 2026-10-16 usar `docs/closure-real/ACCEPTANCE_MATRIX.csv` y `docs/closure-real/FINAL_REPORT.md`. La ejecución completa de Pest de este cierre no convierte automáticamente recorridos de UI/E2E en PASS.
+
 Estado de verificación real con comando, entorno y aserciones.
 
 | ID | Área | Caso de prueba | Entorno | Resultado | Evidencia / Comando |

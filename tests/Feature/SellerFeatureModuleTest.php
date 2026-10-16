@@ -349,7 +349,7 @@ test('services module exposes Puntto-style offers without inventory', function (
     $this->actingAs($user)
         ->get(route('seller.shops.products.create', $shop).'?sale_unit=service')
         ->assertOk()
-        ->assertSee('Servicio (sin inventario)')
+        ->assertSee('Servicio (sin inventario físico)')
         ->assertSee('Servicio sin inventario');
 });
 

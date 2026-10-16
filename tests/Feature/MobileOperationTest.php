@@ -334,7 +334,7 @@ test('mobile rekeys legacy generated AUTO SKU conflicts but keeps explicit SKU c
         ->and(Product::where('shop_id', $shop->id)->where('product_code', 'AUTO-PRODUCTO-AUTOMATICO')->count())->toBe(1);
 });
 
-test('mobile can configure a unit product with existing lots as a bottle source', function () {
+test('mobile cannot change a legacy unit product with FIFO lots into a bottle', function () {
     [$user, $shop, $product, $token] = mobileFixture();
     InventoryLot::create([
         'product_id' => $product->id,
@@ -347,19 +347,19 @@ test('mobile can configure a unit product with existing lots as a bottle source'
         'received_at' => now(),
     ]);
 
-    $response = $this->withToken($token)->postJson('/api/v1/shops/'.$shop->public_id.'/mobile-operations', [
+    $this->withToken($token)->postJson('/api/v1/shops/'.$shop->public_id.'/mobile-operations', [
         'client_operation_uuid' => (string) Str::uuid(),
         'type' => 'product_upsert',
         'product_id' => $product->public_id,
         'sale_unit' => 'bottle',
         'volume_ml' => 100,
-    ])->assertCreated();
+    ])->assertUnprocessable()->assertJsonValidationErrors('sale_unit');
 
-    expect($product->fresh()->sale_unit)->toBe('bottle')
-        ->and($product->fresh()->volume_ml)->toBe(100)
+    expect($product->fresh()->sale_unit)->toBe('unit')
+        ->and($product->fresh()->volume_ml)->toBeNull()
         ->and($product->fresh()->inventory->stock_quantity)->toBe(5)
         ->and(InventoryLot::where('product_id', $product->id)->count())->toBe(1)
-        ->and($response->json('product_id'))->toBe($product->public_id);
+        ->and(InventoryLot::where('product_id', $product->id)->value('remaining_quantity'))->toBe(5);
 });
 
 test('mobile product creation supports validated decant presentations linked to a complete bottle', function () {
