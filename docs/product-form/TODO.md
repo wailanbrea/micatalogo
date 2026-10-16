@@ -58,10 +58,12 @@ Estados: `[x]` ejecutado con evidencia, `[~]` parcial, `[ ]` pendiente/BLOCKED. 
 ## F8 — Revisión y entrega
 - [x] Crear entregables `00` a `07`, con hallazgos, paridad y gates.
 - [x] Repetir suite Web tras último ajuste del contrato, unit/instrumented Android y `git diff --check`.
-- [ ] Revisar dos diffs completos y estado final limpio luego de commits.
-- [ ] Crear commits descriptivos separados y push solo a las ramas de trabajo `work/navigation-closure-20261015` de cada repo.
+- [x] Revisar dos diffs completos y `git diff --check`; ambos commits focalizados quedaron en ramas de trabajo.
+- [x] Crear commits separados y push a `work/navigation-closure-20261015` de cada repo.
 - [x] No desplegar, publicar APK, migrar producción ni modificar datos comerciales.
 
 ## Estado honesto
 
 Implementación focalizada lista, con QA parcial real. No se declara cumplimiento completo de los seis E2E comerciales. No publicar release hasta cerrar los gates marcados `[ ]` y solicitar autorización explícita.
+
+Commits publicados en ramas de trabajo: Web `37e03fe`; Android `d36f9ea`. La rama productiva `master`/`main` no se modificó.

@@ -12,7 +12,7 @@ La lista viva y la evidencia de esta fase están en `docs/product-form/TODO.md`;
 - [x] F5: adaptación Web y prueba local aislada de alta appliance.
 - [~] F6: regresiones de perfil/formulario ejecutadas; los flujos E2E financieros/Decants permanecen pendientes.
 - [~] F7: QA aislada Web/Android ejecutada; E2E-A..F explícitamente no aprobados.
-- [ ] F8: revisión final, commits y push de ramas de trabajo pendientes; no deploy ni release.
+- [x] F8: revisión final, commits separados y push a `work/navigation-closure-20261015` (Web `37e03fe`, Android `d36f9ea`); sin deploy ni release.
 
 ## Implementación vigente — importador adaptativo (2026-10-05)
 
