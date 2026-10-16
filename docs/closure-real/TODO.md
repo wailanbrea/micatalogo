@@ -13,7 +13,7 @@
 - [x] Generar matriz individual de 48 QA + 8 E2E + 70 NAV con estados honestos.
 - [x] Documentar paridad, limitaciones, evidencias y decisión de salida.
 - [x] `git diff --check`, lint Android, PHP syntax lint y route:list local QA.
-- [ ] Commit y push a la rama de trabajo en ambos repositorios; verificar SHA remoto.
+- [x] Commit y push a la rama de trabajo en ambos repositorios; verificar SHA remoto.
 
 ## No cubierto / sin marcar como terminado
 

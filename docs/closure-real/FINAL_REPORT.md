@@ -10,8 +10,8 @@ Se corrigieron defectos reproducibles en la protección de presentación/unidad 
 
 | Repositorio | Rama | Base inicial | Estado de cambios |
 |---|---|---|---|
-| Web/API | `work/navigation-closure-20261015` | `d1cb137` | cambios locales de esta tarea; commit/push pendiente al redactar |
-| Android | `work/navigation-closure-20261015` | `4f03ca9` | cambios locales de esta tarea; commit/push pendiente al redactar |
+| Web/API | `work/navigation-closure-20261015` | `d1cb137` | `0111b97` — commit y push verificados |
+| Android | `work/navigation-closure-20261015` | `4f03ca9` | `03d18b4` — commit y push verificados |
 
 Los heads locales coincidían con su rama remota de trabajo antes de editar. Remotos main/master no fueron modificados. La publicación de backend y APK quedó expresamente fuera del alcance.
 

@@ -7,6 +7,8 @@
 | Web/API | `work/navigation-closure-20261015` | `d1cb137` | igual al HEAD local | limpio |
 | Android | `work/navigation-closure-20261015` | `4f03ca9` | igual al HEAD local | limpio |
 
+Commits finales de esta ejecución, empujados a las mismas ramas de trabajo: Web `0111b97`; Android `03d18b4`.
+
 Web estaba 7 commits por delante de `origin/master` y Android 4 commits por delante de `origin/main`; ambos HEAD coincidían con su rama remota de trabajo. No se cambió de rama ni se consultó/modificó la base productiva.
 
 Web ejecuta Pest con `APP_ENV=testing`, `DB_CONNECTION=sqlite`, `DB_DATABASE=:memory:` y `DB_URL` vacío. El archivo `phpunit.xml` fuerza SQLite en memoria y Turnstile desactivado para la suite; no se hacen llamadas a servicios externos. Android usa el AVD conectado y el perfil `ui`/paquete aislado `.offlinecheck.syncqa`, URL local no enrutable `127.0.0.1:9` y ningún perfil `syncQaLive`.

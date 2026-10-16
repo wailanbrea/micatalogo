@@ -10,6 +10,6 @@ Actualizado: 2026-10-16 (America/Santo_Domingo).
 - E2E A–H: no ejecutados como journeys cruzados contra backend+Android QA; siguen bloqueados.
 - NAV-001..070: estado anterior documentado 11 PASS / 59 BLOCKED; solo cambia tras probar cada criterio.
 - Producción: sin cambios; no hubo migraciones, seeders, ventas, pedidos o despliegues.
-- Entrega Git: commits/push todavía pendientes.
+- Entrega Git: commits y push verificados en ambas ramas de trabajo; Web `0111b97`, Android `03d18b4`.
 
 La decisión de preparación se mantiene **NO-GO** hasta cerrar las pruebas críticas bloqueadas y publicar evidencia vinculada a los SHA finales.
