@@ -94,10 +94,23 @@ class SellerProductController extends Controller
 
     public function create(Shop $shop): View
     {
+        $profile = app(\App\Services\BusinessProfileService::class)->profile($shop);
+        $formProfile = app(\App\Services\ProductFormPresentationService::class)->resolve($shop, $profile);
+        $visibleMenus = app(\App\Services\SellerMenuService::class)->visibleForUser($shop, request()->user());
+        $allowedSaleUnits = array_values(array_filter($formProfile['available_sale_units'], static function (string $unit) use ($visibleMenus): bool {
+            return match ($unit) {
+                'service' => in_array('services', $visibleMenus, true),
+                'decant' => in_array('decants', $visibleMenus, true),
+                default => in_array('products', $visibleMenus, true),
+            };
+        }));
         $requestedUnit = request()->query('sale_unit');
         $requestedUnit = in_array($requestedUnit, ['unit', 'bottle', 'ml', 'decant', 'service'], true)
             ? $requestedUnit
-            : 'unit';
+            : ($formProfile['default_sale_unit'] ?? 'unit');
+        if (! in_array($requestedUnit, $allowedSaleUnits, true)) {
+            $requestedUnit = $allowedSaleUnits[0] ?? 'unit';
+        }
         $isCombo = request()->boolean('combo');
         if ($requestedUnit === 'service') {
             app(BusinessCapabilityService::class)->assert($shop, 'services');
@@ -407,11 +420,13 @@ class SellerProductController extends Controller
         $currentUnit = $product ? (app(\App\Services\ShopRecordSyncService::class)->productUnits($shop)[$product->public_id] ?? null) : null;
         return ['shopCategories' => $shop->categories()->orderBy('name')->get()->filter(fn ($category) =>
             ($category->status->value === 'active' || $product?->shop_category_id === $category->id)
-            && $access->canReadCategory($category, $actor) && $access->compatible($access->categoryScope($category), $saleUnit)),
+            && $access->canReadCategory($category, $actor))
+            ->each(fn ($category) => $category->setAttribute('form_scope', $access->categoryScope($category))),
             'taxonomyUnits' => $access->records($shop)->where('kind', 'unit')->filter(fn ($record) =>
                 (($record->payload['is_active'] && ! $record->payload['is_deleted']) || $record->record_uuid === $currentUnit)
-                && in_array($access->unitScope($shop, $record->record_uuid), $access->readableScopes($shop, $actor), true)
-                && $access->compatible($access->unitScope($shop, $record->record_uuid), $saleUnit)), 'currentUnitUuid' => $currentUnit];
+                && in_array($access->unitScope($shop, $record->record_uuid), $access->readableScopes($shop, $actor), true))
+                ->each(fn ($record) => $record->setAttribute('form_scope', $access->unitScope($shop, $record->record_uuid))),
+            'currentUnitUuid' => $currentUnit];
     }
 
     private function catalogRedirect(Shop $shop, Product $product): RedirectResponse

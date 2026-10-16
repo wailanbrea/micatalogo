@@ -1,5 +1,19 @@
 # Project TODO
 
+## Formulario adaptativo Web/Android — ejecución 2026-10-16
+
+La lista viva y la evidencia de esta fase están en `docs/product-form/TODO.md`; el resumen refleja estados reales, no sustituye esa matriz.
+
+- [x] F0: baseline de código y los 23 perfiles; límites de fixture/QA documentados.
+- [x] F1: regresión `/api/v1/shops` confirma perfil/version/override/tenant; no se reprodujo la omisión citada.
+- [x] F2: contrato aditivo versionado y tolerante a clientes previos.
+- [x] F3: unidad automática para altas nuevas, preservación UUID existente y sin tocar ledger/FIFO.
+- [~] F4: formulario Android adaptativo y probado de forma focalizada; falta la matriz completa de dispositivo y hay campos no paritarios documentados.
+- [x] F5: adaptación Web y prueba local aislada de alta appliance.
+- [~] F6: regresiones de perfil/formulario ejecutadas; los flujos E2E financieros/Decants permanecen pendientes.
+- [~] F7: QA aislada Web/Android ejecutada; E2E-A..F explícitamente no aprobados.
+- [ ] F8: revisión final, commits y push de ramas de trabajo pendientes; no deploy ni release.
+
 ## Implementación vigente — importador adaptativo (2026-10-05)
 
 - [x] 1. Auditoría del lector, sesiones, cupos, API/Web y Android.

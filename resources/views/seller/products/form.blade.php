@@ -1,5 +1,6 @@
 @php
     $presentation = app(\App\Services\BusinessPresentationService::class)->resolve($shop);
+    $productForm = $presentation['product_form'] ?? [];
     $terminology = $presentation['terminology'] ?? [];
     $productLabel = $terminology['product'] ?? 'Producto';
     $newProductLabel = $terminology['new_product'] ?? 'Nuevo producto';
@@ -12,6 +13,21 @@
     $showBarcode = in_array('barcode', $productFields, true);
     $showBrand = in_array('brand', $productFields, true);
     $showPerfumePresentation = ($capabilities['perfume_fields'] ?? 'disabled') === 'enabled' || ($capabilities['decants'] ?? 'disabled') === 'enabled';
+    $formMenus = app(\App\Services\SellerMenuService::class)->visibleForUser($shop, auth()->user());
+    $saleUnitLabels = $productForm['sale_unit_labels'] ?? [];
+    $availableSaleUnits = array_values(array_filter($productForm['available_sale_units'] ?? ['unit'], static function (string $unit) use ($formMenus): bool {
+        return match ($unit) {
+            'service' => in_array('services', $formMenus, true),
+            'decant' => in_array('decants', $formMenus, true),
+            default => in_array('products', $formMenus, true),
+        };
+    }));
+    $initialSaleUnit = old('sale_unit', $product->sale_unit ?? ($productForm['default_sale_unit'] ?? 'unit'));
+    if (! in_array($initialSaleUnit, $availableSaleUnits, true) && ! $product->exists) {
+        $initialSaleUnit = $availableSaleUnits[0] ?? 'unit';
+    }
+    $initialUnitUuid = old('unit_uuid', $currentUnitUuid ?? '');
+    $showSaleUnitPicker = count($availableSaleUnits) > 1 || in_array($initialSaleUnit, ['bottle', 'ml', 'decant', 'service'], true);
     $sourceOptions = $sourceProducts->map(function ($source) {
         $inventory = $source->inventory;
         $availableMl = $inventory?->available_ml;
@@ -77,7 +93,7 @@
                     </div>
                 @endif
 
-                <form class="mt-6 space-y-6" method="POST" enctype="multipart/form-data" action="{{ $product->exists ? route('seller.shops.products.update', [$shop, $product]) : route('seller.shops.products.store', $shop) }}" x-data="{ trackInventory: {{ $showInventory && old('track_inventory', $product->exists ? ($product->inventory?->track_inventory ?? false) : true) && $product->sale_unit !== 'service' && ! $product->isCombo() ? 'true' : 'false' }}, saleUnit: '{{ old('sale_unit', $product->sale_unit ?? 'unit') }}', isCombo: {{ old('is_combo', $product->isCombo()) ? 'true' : 'false' }}, comboRows: @js(old('combo_items', $savedComboItems->all())), comboOptions: @js($comboOptions), sourceProductId: '{{ old('inventory_source_product_id', $product->inventory_source_product_id) }}', sourceProducts: @js($sourceOptions), get selectedSource() { return this.sourceProducts.find(source => String(source.id) === String(this.sourceProductId)) || null }, imagePreview: null, imageSearch: { query: '', results: [], selected: null, loading: false, error: '', endpoint: '{{ route('seller.shops.products.images.search', $shop) }}' }, async searchImages() { const query = (this.imageSearch.query || document.getElementById('name')?.value || '').trim(); if (query.length < 2) { this.imageSearch.error = 'Escribe primero el nombre del producto.'; return; } this.imageSearch.query = query; this.imageSearch.loading = true; this.imageSearch.error = ''; try { const response = await fetch(`${this.imageSearch.endpoint}?q=${encodeURIComponent(query)}`, { headers: { Accept: 'application/json' } }); const payload = await response.json(); if (!response.ok) throw new Error(payload.message || 'No se pudieron consultar imágenes.'); this.imageSearch.results = payload.results || []; if (!this.imageSearch.results.length) this.imageSearch.error = 'No encontramos imágenes para ese nombre. Prueba con otra búsqueda.'; } catch (error) { this.imageSearch.error = error.message; } finally { this.imageSearch.loading = false; } } }">
+                <form class="mt-6 space-y-6" method="POST" enctype="multipart/form-data" action="{{ $product->exists ? route('seller.shops.products.update', [$shop, $product]) : route('seller.shops.products.store', $shop) }}" x-data="{ trackInventory: {{ $showInventory && old('track_inventory', $product->exists ? ($product->inventory?->track_inventory ?? false) : true) && $product->sale_unit !== 'service' && ! $product->isCombo() ? 'true' : 'false' }}, saleUnit: @js($initialSaleUnit), saleUnitLabels: @js($saleUnitLabels), saleUnitToInventoryUnit: @js($productForm['sale_unit_to_inventory_unit'] ?? []), inventoryUnitUuids: @js($productForm['inventory_unit_uuids'] ?? []), inventoryUnitLabels: @js($productForm['inventory_unit_labels'] ?? []), defaultInventoryUnitKey: @js($productForm['default_inventory_unit_key'] ?? 'unit'), unitUuid: @js($initialUnitUuid), advancedUnitOverride: @js($product->exists || filled(old('unit_uuid'))), unitKey() { return this.saleUnitToInventoryUnit[this.saleUnit] || ({ bottle: 'bottle', ml: 'ml', decant: 'decant', service: 'service' }[this.saleUnit] || this.defaultInventoryUnitKey || 'unit') }, automaticUnitUuid() { return this.inventoryUnitUuids[this.unitKey()] || '' }, automaticUnitLabel() { return this.inventoryUnitLabels[this.unitKey()] || 'Unidades' }, categoryCompatible(scope) { return scope === 'shared' || scope === (this.saleUnit === 'service' ? 'service' : 'product') }, unitCompatible(scope) { return scope === 'shared' || scope === (this.saleUnit === 'service' ? 'service' : 'product') }, isCombo: {{ old('is_combo', $product->isCombo()) ? 'true' : 'false' }}, comboRows: @js(old('combo_items', $savedComboItems->all())), comboOptions: @js($comboOptions), sourceProductId: '{{ old('inventory_source_product_id', $product->inventory_source_product_id) }}', sourceProducts: @js($sourceOptions), get selectedSource() { return this.sourceProducts.find(source => String(source.id) === String(this.sourceProductId)) || null }, imagePreview: null, imageSearch: { query: '', results: [], selected: null, loading: false, error: '', endpoint: '{{ route('seller.shops.products.images.search', $shop) }}' }, async searchImages() { const query = (this.imageSearch.query || document.getElementById('name')?.value || '').trim(); if (query.length < 2) { this.imageSearch.error = 'Escribe primero el nombre del producto.'; return; } this.imageSearch.query = query; this.imageSearch.loading = true; this.imageSearch.error = ''; try { const response = await fetch(`${this.imageSearch.endpoint}?q=${encodeURIComponent(query)}`, { headers: { Accept: 'application/json' } }); const payload = await response.json(); if (!response.ok) throw new Error(payload.message || 'No se pudieron consultar imágenes.'); this.imageSearch.results = payload.results || []; if (!this.imageSearch.results.length) this.imageSearch.error = 'No encontramos imágenes para ese nombre. Prueba con otra búsqueda.'; } catch (error) { this.imageSearch.error = error.message; } finally { this.imageSearch.loading = false; } } }">
                     @csrf
                     @if ($product->exists)
                         @method('PUT')
@@ -97,7 +113,7 @@
                     @if ($showBarcode)<div>
                         <label class="block text-sm font-semibold text-slate-800" for="barcode">Barcode / EAN / GTIN</label>
                         <input class="mt-1.5 w-full rounded-md border border-slate-300 px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="barcode" name="barcode" type="text" inputmode="numeric" value="{{ old('barcode', $product->barcode) }}" placeholder="Ej: 7501234567890">
-                        <p class="mt-1 text-xs text-slate-500">Se usa para consultar Open Beauty Facts. No reemplaza tu SKU interno.</p>
+                        <p class="mt-1 text-xs text-slate-500">Se usa para escanear e identificar este artículo en inventario y ventas. No reemplaza el código interno.</p>
                         @error('barcode') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                     </div>@endif
 
@@ -211,24 +227,22 @@
                         @error('sale_ends_at') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                     </div>
 
-                    @if ($showPerfumePresentation || $showServices)
+                    @if ($showSaleUnitPicker)
                     <!-- Presentación y unidad de venta -->
                     <div class="rounded-xl border border-blue-200 bg-blue-50/50 p-4 sm:p-5">
                         <div>
                             <label class="block text-sm font-bold text-slate-900" for="sale_unit">¿Cómo se vende este producto?</label>
-                            <p class="mt-0.5 text-xs text-slate-600">Elige una unidad de venta o registra una oferta de servicio sin inventario.</p>
+                            <p class="mt-0.5 text-xs text-slate-600">El formulario adapta el inventario a la modalidad elegida.</p>
                         </div>
                         <div class="mt-4 grid gap-4 sm:grid-cols-2">
                             <div>
-                                <select @change="if (saleUnit === 'service') { trackInventory = false; }" class="w-full rounded-md border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="sale_unit" name="sale_unit" x-model="saleUnit">
-                                    @php $formMenus = app(\App\Services\SellerMenuService::class)->visibleForUser($shop, auth()->user()); @endphp
-                                    @if (in_array('products', $formMenus, true))
-                                        <option value="unit">Unidad</option>
-                                        <option value="bottle">Botella completa</option>
-                                        <option value="ml">Por mililitro (ml)</option>
+                                <select @change="if (saleUnit === 'service') { trackInventory = false; } const category = document.getElementById('shop_category_id'); if (category?.selectedOptions[0]?.hidden) category.value = ''; const unitSelect = document.getElementById('unit_uuid_override'); if (advancedUnitOverride && unitSelect?.selectedOptions[0]?.hidden) unitUuid = automaticUnitUuid();" class="w-full rounded-md border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="sale_unit" name="sale_unit" x-model="saleUnit">
+                                    @foreach ($availableSaleUnits as $saleUnitOption)
+                                        <option value="{{ $saleUnitOption }}">{{ $saleUnitLabels[$saleUnitOption] ?? match ($saleUnitOption) { 'unit' => 'Artículo completo', 'bottle' => 'Botella completa', 'ml' => 'Por mililitro (ml)', 'service' => 'Servicio (sin inventario)', 'decant' => 'Decant', default => ucfirst($saleUnitOption) } }}</option>
+                                    @endforeach
+                                    @if ($product->exists && !in_array($product->sale_unit, $availableSaleUnits, true))
+                                        <option value="{{ $product->sale_unit }}">{{ $product->saleUnitLabel() }} (actual)</option>
                                     @endif
-                                    @if (in_array('decants', $formMenus, true))<option value="decant">Decant</option>@endif
-                                    @if ($showServices && in_array('services', $formMenus, true))<option value="service">Servicio (sin inventario)</option>@endif
                                 </select>
                             </div>
 
@@ -274,6 +288,8 @@
                             @error('inventory_source_product_id') <p class="mt-1 text-xs font-semibold text-red-600">{{ $message }}</p> @enderror
                         </div>
                     </div>
+                    @else
+                        <input type="hidden" id="sale_unit" name="sale_unit" value="{{ $initialSaleUnit }}">
                     @endif
 
                     <section class="rounded-xl border border-violet-200 bg-violet-50/50 p-4 sm:p-5">
@@ -334,7 +350,7 @@
                             <select class="mt-1.5 w-full rounded-md border border-slate-300 px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" id="shop_category_id" name="shop_category_id">
                                 <option value="">Sin categoría interna</option>
                                 @foreach ($shopCategories as $cat)
-                                    <option value="{{ $cat->id }}" @selected(old('shop_category_id', $product->shop_category_id) == $cat->id)>
+                                    <option value="{{ $cat->id }}" data-scope="{{ $cat->form_scope }}" x-bind:hidden="!categoryCompatible($el.dataset.scope)" @selected(old('shop_category_id', $product->shop_category_id) == $cat->id)>
                                         {{ $cat->name }}
                                     </option>
                                 @endforeach
@@ -342,19 +358,30 @@
                         </div>
                     </div>
 
-                    <div>
-                        <div class="flex items-center justify-between gap-3">
-                            <label class="block text-sm font-semibold text-slate-800" for="unit_uuid">Unidad de taxonomía</label>
-                            <a class="text-xs font-semibold text-blue-700" href="{{ route('seller.shops.categories.index', [$shop, 'tab' => 'units']) }}" target="_blank" rel="noopener">+ Crear unidad</a>
-                        </div>
-                        <select id="unit_uuid" name="unit_uuid" class="mt-1.5 w-full rounded-md border border-slate-300 px-3.5 py-2 text-sm">
-                            <option value="">Conservar unidad actual o predeterminada</option>
-                            @foreach ($taxonomyUnits as $unit)
-                                <option value="{{ $unit->record_uuid }}" @selected(old('unit_uuid', $currentUnitUuid) === $unit->record_uuid)>{{ $unit->payload['name'] }} ({{ $unit->payload['abbreviation'] }})</option>
-                            @endforeach
-                        </select>
+                    <section class="rounded-xl border border-slate-200 bg-slate-50 p-4" data-testid="product-inventory-unit">
+                        <input type="hidden" name="unit_uuid" :value="advancedUnitOverride ? unitUuid : ({{ $product->exists ? 'true' : 'false' }} ? unitUuid : automaticUnitUuid())" :disabled="advancedUnitOverride">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Inventario contado en</p>
+                        <p class="mt-1 text-sm font-bold text-slate-900" x-text="advancedUnitOverride ? (unitUuid ? 'Unidad personalizada seleccionada' : 'Unidad actual o predeterminada') : automaticUnitLabel()"></p>
+                        @if (($productForm['allow_advanced_unit_override'] ?? false) || $product->exists)
+                        <button type="button" class="mt-2 text-xs font-semibold text-blue-700 hover:text-blue-900" @click="advancedUnitOverride = !advancedUnitOverride; if (advancedUnitOverride && !unitUuid) unitUuid = automaticUnitUuid()" x-text="advancedUnitOverride ? 'Ocultar unidad avanzada' : 'Cambiar unidad (avanzado)'"></button>
+                            <div x-show="advancedUnitOverride" x-cloak class="mt-3">
+                                <label class="block text-xs font-semibold text-slate-700" for="unit_uuid_override">Unidad compatible de esta tienda</label>
+                                <select id="unit_uuid_override" x-model="unitUuid" :name="advancedUnitOverride ? 'unit_uuid' : null" class="mt-1.5 w-full rounded-md border border-slate-300 bg-white px-3.5 py-2 text-sm">
+                                    <option value="">Conservar unidad actual o usar predeterminada</option>
+                                    @foreach (($productForm['inventory_unit_uuids'] ?? []) as $unitKey => $unitUuid)
+                                        <option value="{{ $unitUuid }}" data-scope="{{ $unitKey === 'service' ? 'service' : 'product' }}" x-bind:hidden="!unitCompatible($el.dataset.scope)">{{ $productForm['inventory_unit_labels'][$unitKey] ?? ucfirst($unitKey) }}</option>
+                                    @endforeach
+                                    @foreach ($taxonomyUnits as $unit)
+                                        @if (!in_array($unit->record_uuid, array_values($productForm['inventory_unit_uuids'] ?? []), true))
+                                        <option value="{{ $unit->record_uuid }}" data-scope="{{ $unit->form_scope }}" x-bind:hidden="!unitCompatible($el.dataset.scope)">{{ $unit->payload['name'] }} ({{ $unit->payload['abbreviation'] }})</option>
+                                        @endif
+                                    @endforeach
+                                </select>
+                                <a class="mt-2 inline-block text-xs font-semibold text-blue-700" href="{{ route('seller.shops.categories.index', [$shop, 'tab' => 'units']) }}" target="_blank" rel="noopener">Administrar unidades</a>
+                            </div>
+                        @endif
                         @error('unit_uuid')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-                    </div>
+                    </section>
                     @php
                         $savedAttributeValues = $product->attributeValues->keyBy('attribute_definition_id');
                         $attributeRows = $attributeDefinitions->map(fn ($definition) => [
@@ -369,7 +396,7 @@
                         <div class="flex flex-wrap items-start justify-between gap-3">
                             <div>
                                 <h2 class="text-sm font-bold text-slate-900">Características del producto</h2>
-                                <p class="mt-1 text-xs text-slate-500">Crea atributos como marca, talla, concentración o almacenamiento. Se podrán usar como filtros en la vitrina.</p>
+                                <p class="mt-1 text-xs text-slate-500">Añade especificaciones de esta ficha y filtros para la vitrina. No crea variantes ni existencias separadas por talla o color.</p>
                             </div>
                             <button type="button" @click="rows.push({ name: '', value: '', filterable: true })" class="rounded-lg border border-indigo-200 bg-white px-3 py-1.5 text-xs font-bold text-indigo-700 hover:bg-indigo-50">+ Agregar atributo</button>
                         </div>

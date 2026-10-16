@@ -38,6 +38,7 @@ class BusinessPresentationService
         $presentation['catalog']['show_stock'] = $this->enabled($capabilities, 'inventory') && ($presentation['catalog']['show_stock'] ?? true);
         $presentation['inventory']['enabled'] = $this->enabled($capabilities, 'inventory');
         $presentation['customers']['show_credit'] = $this->enabled($capabilities, 'credit');
+        $presentation['product_form'] = app(ProductFormPresentationService::class)->resolve($shop, $profile);
 
         return $presentation;
     }
