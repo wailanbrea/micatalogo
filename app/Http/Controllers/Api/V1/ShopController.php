@@ -39,7 +39,7 @@ class ShopController extends Controller
                     ->where('is_active', true));
         });
 
-        $shops = $query->get(['id', 'user_id', 'public_id', 'name', 'slug', 'enabled_menu_keys'])
+        $shops = $query->get()
             ->map(function ($shop) use ($limits, $menus, $request, $capabilities, $presentation, $navigation, $catalogAccess): array {
                 $canManageMenuVisibility = $menus->canManageMenuVisibility($shop, $request->user());
 
