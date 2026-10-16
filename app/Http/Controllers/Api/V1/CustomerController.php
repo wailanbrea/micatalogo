@@ -58,6 +58,11 @@ class CustomerController extends Controller
                         ->first();
 
                     if ($existing) {
+                        if ($existing->payload_sha256 === null || $existing->payload_sha256 === '') {
+                            $existing->forceFill(['payload_sha256' => $payloadHash])->save();
+
+                            return $existing;
+                        }
                         if (! hash_equals((string) $existing->payload_sha256, $payloadHash)) {
                             throw new InvalidArgumentException('Este identificador de cliente ya fue usado con datos distintos.', 409);
                         }

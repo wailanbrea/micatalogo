@@ -650,16 +650,15 @@ class BusinessDashboardService
             ->groupBy('payment_method')
             ->get()
             ->keyBy('payment_method');
-        $debtCollectionsCents = (int) $debtPaymentCollections->sum('total_cents');
-        if ($debtCollectionsCents === 0) {
-            $legacyDebtAmount = DB::table('customer_account_entries')
-                ->where('shop_id', $shop->id)
-                ->whereBetween('created_at', [$fromDatetime, $toDatetime])
-                ->where('type', 'payment')
-                ->sum('amount');
-            $debtCollectionsCents = abs(Money::toCents($legacyDebtAmount));
-        }
-        $debtCollectionsCashCents = (int) ($debtPaymentCollections->get('cash')?->total_cents ?? 0);
+        $allocatedDebtCents = (int) $debtPaymentCollections->sum('total_cents');
+        $legacyDebtAmount = DB::table('customer_account_entries')
+            ->where('shop_id', $shop->id)
+            ->whereBetween('created_at', [$fromDatetime, $toDatetime])
+            ->where('type', 'payment')
+            ->sum('amount');
+        $allCustomerPaymentsCents = abs(Money::toCents($legacyDebtAmount));
+        $debtCollectionsCents = max($allocatedDebtCents, $allCustomerPaymentsCents);
+        $debtCollectionsCashCents = (int) ($debtPaymentCollections->get('cash')?->total_cents ?? 0) + max(0, $allCustomerPaymentsCents - $allocatedDebtCents);
 
         // Standalone cash register ins and owner contributions (excluding movements from sales/customer payments)
         $cashInMovementsCents = (int) DB::table('cash_movements')

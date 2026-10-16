@@ -27,7 +27,9 @@
         $initialSaleUnit = $availableSaleUnits[0] ?? 'unit';
     }
     $initialUnitUuid = old('unit_uuid', $currentUnitUuid ?? '');
-    $showSaleUnitPicker = count($availableSaleUnits) > 1 || in_array($initialSaleUnit, ['bottle', 'ml', 'decant', 'service'], true);
+    // A fixed choice is not a control. Keep the resolved value in the form,
+    // but only render the selector when the business profile offers a choice.
+    $showSaleUnitPicker = count($availableSaleUnits) > 1;
     $sourceOptions = $sourceProducts->map(function ($source) {
         $inventory = $source->inventory;
         $availableMl = $inventory?->available_ml;
@@ -95,6 +97,9 @@
 
                 <form class="mt-6 space-y-6" method="POST" enctype="multipart/form-data" action="{{ $product->exists ? route('seller.shops.products.update', [$shop, $product]) : route('seller.shops.products.store', $shop) }}" x-data="{ trackInventory: {{ $showInventory && old('track_inventory', $product->exists ? ($product->inventory?->track_inventory ?? false) : true) && $product->sale_unit !== 'service' && ! $product->isCombo() ? 'true' : 'false' }}, saleUnit: @js($initialSaleUnit), saleUnitLabels: @js($saleUnitLabels), saleUnitToInventoryUnit: @js($productForm['sale_unit_to_inventory_unit'] ?? []), inventoryUnitUuids: @js($productForm['inventory_unit_uuids'] ?? []), inventoryUnitLabels: @js($productForm['inventory_unit_labels'] ?? []), defaultInventoryUnitKey: @js($productForm['default_inventory_unit_key'] ?? 'unit'), unitUuid: @js($initialUnitUuid), advancedUnitOverride: @js($product->exists || filled(old('unit_uuid'))), unitKey() { return this.saleUnitToInventoryUnit[this.saleUnit] || ({ bottle: 'bottle', ml: 'ml', decant: 'decant', service: 'service' }[this.saleUnit] || this.defaultInventoryUnitKey || 'unit') }, automaticUnitUuid() { return this.inventoryUnitUuids[this.unitKey()] || '' }, automaticUnitLabel() { return this.inventoryUnitLabels[this.unitKey()] || 'Unidades' }, categoryCompatible(scope) { return scope === 'shared' || scope === (this.saleUnit === 'service' ? 'service' : 'product') }, unitCompatible(scope) { return scope === 'shared' || scope === (this.saleUnit === 'service' ? 'service' : 'product') }, isCombo: {{ old('is_combo', $product->isCombo()) ? 'true' : 'false' }}, comboRows: @js(old('combo_items', $savedComboItems->all())), comboOptions: @js($comboOptions), sourceProductId: '{{ old('inventory_source_product_id', $product->inventory_source_product_id) }}', sourceProducts: @js($sourceOptions), get selectedSource() { return this.sourceProducts.find(source => String(source.id) === String(this.sourceProductId)) || null }, imagePreview: null, imageSearch: { query: '', results: [], selected: null, loading: false, error: '', endpoint: '{{ route('seller.shops.products.images.search', $shop) }}' }, async searchImages() { const query = (this.imageSearch.query || document.getElementById('name')?.value || '').trim(); if (query.length < 2) { this.imageSearch.error = 'Escribe primero el nombre del producto.'; return; } this.imageSearch.query = query; this.imageSearch.loading = true; this.imageSearch.error = ''; try { const response = await fetch(`${this.imageSearch.endpoint}?q=${encodeURIComponent(query)}`, { headers: { Accept: 'application/json' } }); const payload = await response.json(); if (!response.ok) throw new Error(payload.message || 'No se pudieron consultar imágenes.'); this.imageSearch.results = payload.results || []; if (!this.imageSearch.results.length) this.imageSearch.error = 'No encontramos imágenes para ese nombre. Prueba con otra búsqueda.'; } catch (error) { this.imageSearch.error = error.message; } finally { this.imageSearch.loading = false; } } }">
                     @csrf
+                    @unless ($showSaleUnitPicker)
+                        <input type="hidden" name="sale_unit" value="{{ $initialSaleUnit }}">
+                    @endunless
                     @if ($product->exists)
                         @method('PUT')
                     @endif

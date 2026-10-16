@@ -120,8 +120,13 @@ class QuoteController extends Controller
             return response()->json(['message' => 'El cliente de la cotización está inactivo o ya no pertenece a la tienda.'], 422);
         }
 
+        $validated = $request->validate([
+            'payment_method' => ['nullable', 'string', 'in:cash,card,bank_transfer,other'],
+        ]);
+        $paymentMethod = $validated['payment_method'] ?? 'cash';
+
         try {
-            $invoice = DB::transaction(function () use ($request, $shop, $quote, $inventory) {
+            $invoice = DB::transaction(function () use ($request, $shop, $quote, $inventory, $paymentMethod) {
                 $quote->load('items');
                 $products = $shop->products()->whereIn('id', $quote->items->pluck('product_id'))->get()->keyBy('id');
                 if ($products->count() !== $quote->items->pluck('product_id')->unique()->count()) {
@@ -135,7 +140,7 @@ class QuoteController extends Controller
                     // normalizes it inside InventoryService.
                     'unit_price' => (string) $item->unit_price,
                 ])->all();
-                $movements = $inventory->recordCartSales($sales, $request->user()->id, 'mobile', 'paid', 0, 0, 'cash');
+                $movements = $inventory->recordCartSales($sales, $request->user()->id, 'mobile', 'paid', 0, 0, $paymentMethod);
                 $invoice = $movements[0]->fresh()->invoice;
                 if ($quote->customer_id && $invoice) {
                     $invoice->update(['customer_id' => $quote->customer_id]);
@@ -148,6 +153,7 @@ class QuoteController extends Controller
             return response()->json([
                 'message' => 'Cotización convertida en venta.',
                 'invoice_number' => $invoice?->invoice_number,
+                'converted_sale_id' => $invoice?->id,
                 'invoice_url' => $invoice
                     ? URL::temporarySignedRoute('track.wa.shop', now()->addDays(7), [$shop, 'invoice' => $invoice->id])
                     : null,

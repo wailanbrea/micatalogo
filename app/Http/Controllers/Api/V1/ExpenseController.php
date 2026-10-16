@@ -17,8 +17,17 @@ class ExpenseController extends Controller
         abort_unless(($request->user()->isAdmin() || $request->user()->canSellAtShop($shop)), 403);
         $limits->assertFeature($shop->user, 'expenses');
 
-        $expenses = $shop->expenses()
-            ->with(['category', 'user:id,name', 'payments'])
+        $query = $shop->expenses()
+            ->with(['category', 'user:id,name', 'payments']);
+
+        if ($request->filled('from')) {
+            $query->where('occurred_at', '>=', \Carbon\Carbon::parse((string) $request->query('from'))->startOfDay());
+        }
+        if ($request->filled('to')) {
+            $query->where('occurred_at', '<=', \Carbon\Carbon::parse((string) $request->query('to'))->endOfDay());
+        }
+
+        $expenses = $query
             ->latest('occurred_at')
             ->paginate(25)
             ->through(fn ($expense) => [

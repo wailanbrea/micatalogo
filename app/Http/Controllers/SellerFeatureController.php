@@ -1636,12 +1636,21 @@ class SellerFeatureController extends Controller
         $currentState = $summary['current_state'] ?? [];
         $period = $summary['period'] ?? [];
         $metrics = app(ShopAnalyticsService::class)->getMetricsSummary($shop);
-        $rows = collect($summary['profitability'])->take(20)->map(fn (array $product) => [
-            'primary' => $product['product_name'],
-            'secondary' => number_format($product['units']).' unidad(es) · Ventas '.$this->money($product['revenue']),
-            'value' => $this->money($showSensitiveFinance ? $product['gross_profit'] : $product['revenue']),
-            'status' => $showSensitiveFinance ? ($product['has_unknown_cost'] ? 'Costo pendiente' : 'Calculada') : 'Ventas',
-        ]);
+        $rows = collect($summary['profitability'])->take(20)->map(function (array $product) use ($showSensitiveFinance): array {
+            $hasKnownCost = ((float) ($product['cost'] ?? 0)) > 0;
+            $hasUnknownCost = ! empty($product['has_unknown_cost']);
+
+            return [
+                'primary' => $product['product_name'],
+                'secondary' => number_format($product['units']).' unidad(es) · Ventas '.$this->money($product['revenue']),
+                'value' => $showSensitiveFinance
+                    ? ($hasUnknownCost && ! $hasKnownCost ? 'Sin costo' : $this->money($product['gross_profit']))
+                    : $this->money($product['revenue']),
+                'status' => $showSensitiveFinance
+                    ? ($hasUnknownCost ? ($hasKnownCost ? 'Costo parcial' : 'Costo pendiente') : 'Calculada')
+                    : 'Ventas',
+            ];
+        });
         if ($showSensitiveFinance) {
             $rows->prepend([
             'primary' => 'Inventario al costo',

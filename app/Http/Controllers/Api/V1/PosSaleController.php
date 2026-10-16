@@ -162,17 +162,30 @@ class PosSaleController extends Controller
                 }
 
                 $payments = $validated['payments'] ?? [];
-                if (empty($payments) && $creditCents < $totalCents) {
+                $creditFromPaymentsCents = collect($payments)
+                    ->filter(fn ($p) => strtolower((string) ($p['method'] ?? '')) === 'credit')
+                    ->sum(fn ($p) => Money::toCents($p['amount'] ?? 0));
+                if ($creditCents === 0 && $creditFromPaymentsCents > 0) {
+                    $creditCents = $creditFromPaymentsCents;
+                    $creditAmount = Money::toDecimal($creditCents);
+                }
+
+                $nonCreditPayments = array_values(array_filter(
+                    $payments,
+                    fn ($p) => strtolower((string) ($p['method'] ?? '')) !== 'credit'
+                ));
+
+                if (empty($nonCreditPayments) && $creditCents < $totalCents) {
                     $paidCents = $totalCents - $creditCents;
                     if ($paidCents > 0) {
-                        $payments[] = [
+                        $nonCreditPayments[] = [
                             'method' => 'cash',
                             'amount' => Money::toDecimal($paidCents),
                         ];
                     }
                 }
 
-                $paidCents = collect($payments)->sum(fn ($p) => Money::toCents($p['amount'] ?? 0));
+                $paidCents = collect($nonCreditPayments)->sum(fn ($p) => Money::toCents($p['amount'] ?? 0));
 
                 if ($paidCents + $creditCents !== $totalCents) {
                     $diffFormatted = number_format(abs(($paidCents + $creditCents) - $totalCents) / 100, 2);
@@ -236,7 +249,7 @@ class PosSaleController extends Controller
                     $shop,
                     $invoice,
                     $request->user(),
-                    $payments,
+                    $nonCreditPayments,
                     $creditAmount,
                     $customer,
                     $validated['client_sale_uuid'],
@@ -259,9 +272,15 @@ class PosSaleController extends Controller
             }
 
             if ($exception->getCode() === 409) {
+                $lowerMsg = mb_strtolower($exception->getMessage());
+                $isCreditError = str_contains($lowerMsg, 'crédito')
+                    || str_contains($lowerMsg, 'credito')
+                    || str_contains($lowerMsg, 'límite')
+                    || str_contains($lowerMsg, 'limite');
+
                 return response()->json([
                     'message' => $exception->getMessage(),
-                    'reason' => 'credit_limit',
+                    'reason' => $isCreditError ? 'credit_limit' : 'stock_conflict',
                 ], 409);
             }
 

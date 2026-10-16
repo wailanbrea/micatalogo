@@ -314,6 +314,9 @@ class MobileOperationService
             if (isset($data['minimum_stock'])) {
                 $product->inventory?->update(['low_stock_threshold' => $data['minimum_stock']]);
             }
+            if (! $product->isCombo() && array_key_exists('cost_price', $data) && $data['cost_price'] !== null) {
+                $product->inventory?->update(['cost_price' => $data['cost_price']]);
+            }
             if (array_key_exists('published', $data)) {
                 $published = (bool) $data['published'];
                 $product->forceFill([

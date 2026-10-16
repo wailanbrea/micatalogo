@@ -62,6 +62,20 @@ test('the decant workflow opens the correct product presentation from its dedica
         ->assertSee('Botella fuente y costo de origen', false);
 });
 
+test('a product form hides a fixed sale mode but still submits its business default', function () {
+    $seller = User::factory()->create(['email_verified_at' => now(), 'plan' => UserPlan::Pro]);
+    $shop = Shop::factory()->for($seller)->create([
+        'business_type' => 'appliance_store',
+        'business_capability_overrides' => ['services' => false],
+    ]);
+
+    $this->actingAs($seller)
+        ->get(route('seller.shops.products.create', $shop))
+        ->assertOk()
+        ->assertDontSee('¿Cómo se vende este producto?', false)
+        ->assertSee('name="sale_unit" value="unit"', false);
+});
+
 test('a seller cannot create a product in another sellers shop', function () {
     $sellerA = User::factory()->create(['email_verified_at' => now()]);
     $sellerB = User::factory()->create(['email_verified_at' => now()]);
