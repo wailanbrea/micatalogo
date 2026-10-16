@@ -1,8 +1,8 @@
 # FINAL_REPORT — MiCatalogo Formulario Adaptativo + Cierre Técnico Integral
 
 - **Fecha/hora**: 16 de octubre de 2026, 17:00 (America/Santo_Domingo)
-- **Backend**: branch `work/navigation-closure-20261015` / Base SHA: `99c1492` / SHA final: pendiente de commit / pushed: pendiente
-- **Android**: branch `work/navigation-closure-20261015` / Base SHA: `894540a` / SHA final: pendiente de commit / pushed: pendiente
+- **Backend**: branch `work/navigation-closure-20261015` / Base SHA: `99c1492` / SHA final: `7495762` / pushed: sí (origin/work/navigation-closure-20261015)
+- **Android**: branch `work/navigation-closure-20261015` / Base SHA: `894540a` / SHA final: `4f03ca9` / pushed: sí (origin/work/navigation-closure-20261015)
 - **Entorno QA / Web / Emulador**:
   - MySQL local 3306 (`micatalogo`), SQLite in-memory para testing
   - PHP 8.2 / Laravel 12
