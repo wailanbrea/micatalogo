@@ -7,7 +7,7 @@
 | Web/API | `work/navigation-closure-20261015` | `d1cb137` | igual al HEAD local | limpio |
 | Android | `work/navigation-closure-20261015` | `4f03ca9` | igual al HEAD local | limpio |
 
-Commits finales de esta ejecución, empujados a las mismas ramas de trabajo: Web `0111b97`; Android `03d18b4`.
+Commits de código y evidencia, todos empujados a las mismas ramas de trabajo: Web cambio de código `0111b97`, ledger final `84480b5`; Android `03d18b4`.
 
 Web estaba 7 commits por delante de `origin/master` y Android 4 commits por delante de `origin/main`; ambos HEAD coincidían con su rama remota de trabajo. No se cambió de rama ni se consultó/modificó la base productiva.
 
