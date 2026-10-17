@@ -328,9 +328,19 @@ class SellerProductController extends Controller
             if ($hadLots && $presentationChanged && ! $this->canConfigureUnitAsBottle($product, $presentation)) {
                 throw ValidationException::withMessages(['sale_unit' => 'No cambies la unidad o volumen de un producto con lotes. Crea una presentación vinculada.']);
             }
-            $oldCanonical = $fifo->quantity($product, $inventory);
+            $configureLegacyBottle = $presentationChanged && $this->canConfigureUnitAsBottle($product, $presentation);
+            $initializeAsBottle = ! $hadLots && $configureLegacyBottle;
+            $migrateLegacyLots = $hadLots && $configureLegacyBottle;
+            $oldCanonical = ($initializeAsBottle || $migrateLegacyLots)
+                ? (int) $inventory->stock_quantity * (int) $presentation->volume_ml
+                : $fifo->quantity($product, $inventory);
+            if ($migrateLegacyLots) {
+                app(\App\Services\LegacyBottleFifoMigration::class)->convert($product, $inventory, (int) $presentation->volume_ml);
+            }
             if ($inventory->track_inventory && ! $product->isDecant()) {
-                $fifo->initialize($product, $inventory);
+                // Configure the opening FIFO lot in milliliters when a legacy
+                // item is explicitly changed into a bottle presentation.
+                $fifo->initialize($initializeAsBottle ? $presentation : $product, $inventory);
             }
 
             $inventory->track_inventory = $trackInventory;

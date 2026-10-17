@@ -4,6 +4,7 @@ use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductModerationStatus;
 use App\Enums\UserPlan;
 use App\Models\GlobalCategory;
+use App\Models\InventoryLot;
 use App\Models\InventoryMovement;
 use App\Models\Product;
 use App\Models\ProductInventory;
@@ -11,6 +12,7 @@ use App\Models\Shop;
 use App\Models\ShopCategory;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 
 uses(RefreshDatabase::class);
@@ -245,7 +247,7 @@ test('a seller can update their product', function () {
         ->and($product->availability_status)->toBe(ProductAvailabilityStatus::OutOfStock);
 });
 
-test('a product with inventory history cannot change its sale unit or volume', function () {
+test('a legacy perfume with history can be configured as a bottle without changing its stock or movement history', function () {
     $seller = User::factory()->create(['email_verified_at' => now()]);
     $shop = Shop::factory()->for($seller)->create(['business_type' => 'perfume_store']);
     $product = Product::factory()->for($shop)->create([
@@ -276,22 +278,79 @@ test('a product with inventory history cannot change its sale unit or volume', f
         'created_at' => now(),
     ]);
 
+    $bottleUnitUuid = app(\App\Services\ShopRecordSyncService::class)->localId($shop, 'unit', 'bottle');
     $this->actingAs($seller)->put(route('seller.shops.products.update', [$shop, $product]), [
         'name' => 'Perfume histórico',
         'price' => '2800.00',
         'sale_unit' => 'bottle',
         'volume_ml' => 100,
+        'unit_uuid' => $bottleUnitUuid,
         'track_inventory' => 1,
         'stock_quantity' => 2,
         'cost_price' => '1200.00',
         'availability_status' => ProductAvailabilityStatus::Available->value,
         'moderation_status' => ProductModerationStatus::Active->value,
-    ])->assertSessionHasErrors('sale_unit');
+    ])->assertRedirect(route('seller.shops.products.index', $shop));
 
-    expect($product->fresh()->sale_unit)->toBe('unit')
-        ->and($product->fresh()->volume_ml)->toBeNull()
+    $lot = InventoryLot::query()->where('product_id', $product->id)->firstOrFail();
+    expect($product->fresh()->sale_unit)->toBe('bottle')
+        ->and($product->fresh()->volume_ml)->toBe(100)
         ->and($product->inventory()->value('stock_quantity'))->toBe(2)
-        ->and($product->inventoryMovements()->count())->toBe(1);
+        ->and($product->inventoryMovements()->count())->toBe(1)
+        ->and($product->inventory()->value('available_ml'))->toBe(200)
+        ->and($lot->quantity_unit)->toBe('ml')
+        ->and($lot->received_quantity)->toBe(200)
+        ->and($lot->remaining_quantity)->toBe(200)
+        ->and($lot->received_cost_cents)->toBe(240000)
+        ->and(app(\App\Services\ShopRecordSyncService::class)->productUnits($shop)[$product->public_id])->toBe($bottleUnitUuid);
+});
+
+test('web product edit migrates reconciled FIFO allocations and preserves their cost totals', function () {
+    $seller = User::factory()->create(['email_verified_at' => now()]);
+    $shop = Shop::factory()->for($seller)->create(['business_type' => 'perfume_store']);
+    $product = Product::factory()->for($shop)->create([
+        'name' => 'Perfume FIFO histórico', 'sale_unit' => 'unit', 'volume_ml' => null,
+        'availability_status' => ProductAvailabilityStatus::Available,
+    ]);
+    $inventory = ProductInventory::create([
+        'product_id' => $product->id, 'track_inventory' => true, 'stock_quantity' => 3,
+        'sold_quantity' => 2, 'cost_price' => 1000, 'low_stock_threshold' => 1,
+    ]);
+    $movement = InventoryMovement::create([
+        'product_id' => $product->id, 'user_id' => $seller->id, 'type' => 'sale', 'quantity' => -2,
+        'stock_before' => 5, 'stock_after' => 3, 'unit_price' => 2800, 'unit_cost' => 1000,
+        'total_cost_cents' => 20000, 'notes' => 'Fixture sintético de QA', 'created_at' => now(),
+    ]);
+    $lot = InventoryLot::create([
+        'product_id' => $product->id, 'received_quantity' => 5, 'remaining_quantity' => 3,
+        'received_cost_cents' => 50000, 'remaining_cost_cents' => 30000,
+        'quantity_unit' => 'unit', 'origin' => 'purchase', 'received_at' => now(),
+    ]);
+    DB::table('inventory_lot_allocations')->insert([
+        'inventory_lot_id' => $lot->id, 'inventory_movement_id' => $movement->id,
+        'quantity' => 2, 'cost_cents' => 20000,
+    ]);
+
+    $bottleUnitUuid = app(\App\Services\ShopRecordSyncService::class)->localId($shop, 'unit', 'bottle');
+    $this->actingAs($seller)->put(route('seller.shops.products.update', [$shop, $product]), [
+        'name' => 'Perfume FIFO histórico', 'price' => '2800.00', 'sale_unit' => 'bottle',
+        'volume_ml' => 100, 'unit_uuid' => $bottleUnitUuid, 'track_inventory' => 1,
+        'stock_quantity' => 3, 'cost_price' => '1000.00',
+        'availability_status' => ProductAvailabilityStatus::Available->value,
+        'moderation_status' => ProductModerationStatus::Active->value,
+    ])->assertRedirect(route('seller.shops.products.index', $shop));
+
+    expect($product->fresh()->sale_unit)->toBe('bottle')
+        ->and($product->fresh()->volume_ml)->toBe(100)
+        ->and($inventory->fresh()->stock_quantity)->toBe(3)
+        ->and($inventory->fresh()->available_ml)->toBe(300)
+        ->and($lot->fresh()->quantity_unit)->toBe('ml')
+        ->and($lot->fresh()->received_quantity)->toBe(500)
+        ->and($lot->fresh()->remaining_quantity)->toBe(300)
+        ->and($lot->fresh()->received_cost_cents)->toBe(50000)
+        ->and($lot->fresh()->remaining_cost_cents)->toBe(30000)
+        ->and((int) DB::table('inventory_lot_allocations')->where('inventory_lot_id', $lot->id)->value('quantity'))->toBe(200)
+        ->and((int) DB::table('inventory_lot_allocations')->where('inventory_lot_id', $lot->id)->value('cost_cents'))->toBe(20000);
 });
 
 test('a seller can delete and restore their product', function () {

@@ -27,7 +27,9 @@ class ProductPresentationChangeGuard
         $currentSaleUnit = $product->sale_unit ?: 'unit';
         $nextSaleUnit = $presentation['sale_unit'] ?? $currentSaleUnit;
         $nextVolume = isset($presentation['volume_ml']) ? (int) $presentation['volume_ml'] : null;
-        $nextSource = $presentation['inventory_source_product_id'] ?? null;
+        $nextSource = isset($presentation['inventory_source_product_id'])
+            ? (int) $presentation['inventory_source_product_id']
+            : null;
 
         $unitKey = match ($currentSaleUnit) {
             'bottle' => 'bottle',
@@ -50,9 +52,65 @@ class ProductPresentationChangeGuard
             return;
         }
 
+        // Legacy perfume records were often imported as generic units. Moving
+        // that product to an explicit full-bottle presentation is safe when
+        // the canonical bottle unit is selected and there is no decant,
+        // combo, route reservation, or already-opened-bottle state to rewrite.
+        // Existing stock, FIFO lots and invoices remain untouched.
+        if ($this->isSafeLegacyBottleConfiguration(
+            $shop,
+            $product,
+            $inventory,
+            $nextSaleUnit,
+            $nextVolume,
+            $nextSource,
+            $requestedUnitUuid,
+            $isCombo,
+        )) {
+            return;
+        }
+
         throw ValidationException::withMessages([
             'sale_unit' => 'No puedes cambiar la unidad o presentación de un producto con inventario o historial comercial. Conservamos su FIFO, ventas y devoluciones; crea una presentación nueva vinculada o usa un proceso de conversión seguro.',
         ]);
+    }
+
+    private function isSafeLegacyBottleConfiguration(
+        Shop $shop,
+        Product $product,
+        ?ProductInventory $inventory,
+        string $nextSaleUnit,
+        ?int $nextVolume,
+        ?int $nextSource,
+        ?string $requestedUnitUuid,
+        bool $isCombo,
+    ): bool {
+        if (($product->sale_unit ?: 'unit') !== 'unit'
+            || $nextSaleUnit !== 'bottle'
+            || ($nextVolume ?? 0) <= 0
+            || $nextSource !== null
+            || $isCombo
+            || $product->isCombo()
+            || $requestedUnitUuid !== app(ShopRecordSyncService::class)->localId($shop, 'unit', 'bottle')
+            // Existing unit-denominated FIFO lots can change only after a
+            // reconciliation proves their stock, allocations, and total costs.
+            || (InventoryLot::query()->where('product_id', $product->id)->exists()
+                && ! app(LegacyBottleFifoMigration::class)->canConvert($product, $inventory, $nextVolume))
+            || ($inventory && ((int) ($inventory->available_ml ?? 0) > 0
+                || (int) ($inventory->reserved_decant_ml ?? 0) > 0
+                || (int) ($inventory->opened_bottles ?? 0) > 0))
+            || $product->decantProducts()->withTrashed()->exists()
+            || DB::table('product_combo_items')
+                ->where('product_id', $product->id)
+                ->orWhere('component_product_id', $product->id)
+                ->exists()
+            || app(ShopRouteSyncService::class)->reserved($product) > 0) {
+            return false;
+        }
+
+        return ! app(DecantInventoryService::class)->available()
+            || (! DB::table('decant_batches')->where('product_id', $product->id)->exists()
+                && ! DB::table('decant_openings')->where('product_id', $product->id)->exists());
     }
 
     private function hasCommercialHistory(Product $product, ?ProductInventory $inventory): bool

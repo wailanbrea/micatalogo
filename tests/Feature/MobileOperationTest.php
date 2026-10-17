@@ -4,6 +4,7 @@ use App\Enums\ProductImageProcessingStatus;
 use App\Enums\UserPlan;
 use App\Http\Controllers\SellerBusinessController;
 use App\Models\InventoryLot;
+use App\Models\InventoryMovement;
 use App\Models\Invoice;
 use App\Models\MobileOperation;
 use App\Models\Product;
@@ -14,6 +15,7 @@ use App\Models\ShopMember;
 use App\Models\ShopSeller;
 use App\Models\User;
 use App\Services\InventoryService;
+use App\Services\FifoCostService;
 use App\Services\MediaStorageService;
 use App\Services\PlanLimitsService;
 use App\Services\SellerMenuService;
@@ -334,32 +336,102 @@ test('mobile rekeys legacy generated AUTO SKU conflicts but keeps explicit SKU c
         ->and(Product::where('shop_id', $shop->id)->where('product_code', 'AUTO-PRODUCTO-AUTOMATICO')->count())->toBe(1);
 });
 
-test('mobile cannot change a legacy unit product with FIFO lots into a bottle', function () {
+test('mobile can configure a legacy perfume with stock as a bottle without changing quantity semantics', function () {
     [$user, $shop, $product, $token] = mobileFixture();
-    InventoryLot::create([
-        'product_id' => $product->id,
-        'received_quantity' => 5,
-        'remaining_quantity' => 5,
-        'received_cost_cents' => 50000,
-        'remaining_cost_cents' => 50000,
-        'quantity_unit' => 'unit',
-        'origin' => 'purchase',
-        'received_at' => now(),
-    ]);
 
+    $bottleUnitUuid = app(\App\Services\ShopRecordSyncService::class)->localId($shop, 'unit', 'bottle');
     $this->withToken($token)->postJson('/api/v1/shops/'.$shop->public_id.'/mobile-operations', [
         'client_operation_uuid' => (string) Str::uuid(),
         'type' => 'product_upsert',
         'product_id' => $product->public_id,
         'sale_unit' => 'bottle',
         'volume_ml' => 100,
+        'unit_uuid' => $bottleUnitUuid,
+    ])->assertCreated();
+
+    expect($product->fresh()->sale_unit)->toBe('bottle')
+        ->and($product->fresh()->volume_ml)->toBe(100)
+        ->and($product->fresh()->inventory->stock_quantity)->toBe(5)
+        ->and(InventoryLot::where('product_id', $product->id)->count())->toBe(0)
+        ->and(app(FifoCostService::class)->quantity($product->fresh(), $product->fresh()->inventory))->toBe(500)
+        ->and(app(\App\Services\ShopRecordSyncService::class)->productUnits($shop)[$product->public_id])->toBe($bottleUnitUuid);
+});
+
+test('mobile migrates reconciled legacy FIFO lot quantities to milliliters without changing costs', function () {
+    [$user, $shop, $product, $token] = mobileFixture();
+    $movement = InventoryMovement::create([
+        'product_id' => $product->id, 'user_id' => $user->id, 'type' => 'sale', 'quantity' => -2,
+        'stock_before' => 5, 'stock_after' => 3, 'unit_price' => 2800, 'unit_cost' => 1200,
+        'total_cost_cents' => 20000, 'notes' => 'Fixture sintético de QA', 'created_at' => now(),
+    ]);
+    $product->inventory()->update(['stock_quantity' => 3]);
+    $lot = InventoryLot::create([
+        'product_id' => $product->id,
+        'received_quantity' => 5,
+        'remaining_quantity' => 3,
+        'received_cost_cents' => 50000,
+        'remaining_cost_cents' => 30000,
+        'quantity_unit' => 'unit',
+        'origin' => 'purchase',
+        'received_at' => now(),
+    ]);
+    DB::table('inventory_lot_allocations')->insert([
+        'inventory_lot_id' => $lot->id,
+        'inventory_movement_id' => $movement->id,
+        'quantity' => 2,
+        'cost_cents' => 20000,
+    ]);
+    $bottleUnitUuid = app(\App\Services\ShopRecordSyncService::class)->localId($shop, 'unit', 'bottle');
+    $this->withToken($token)->postJson('/api/v1/shops/'.$shop->public_id.'/mobile-operations', [
+        'client_operation_uuid' => (string) Str::uuid(),
+        'type' => 'product_upsert',
+        'product_id' => $product->public_id,
+        'sale_unit' => 'bottle',
+        'volume_ml' => 100,
+        'unit_uuid' => $bottleUnitUuid,
+    ])->assertCreated();
+
+    expect($product->fresh()->sale_unit)->toBe('bottle')
+        ->and($product->fresh()->volume_ml)->toBe(100)
+        ->and($product->fresh()->inventory->stock_quantity)->toBe(3)
+        ->and($product->fresh()->inventory->available_ml)->toBe(300)
+        ->and($lot->fresh()->quantity_unit)->toBe('ml')
+        ->and($lot->fresh()->received_quantity)->toBe(500)
+        ->and($lot->fresh()->remaining_quantity)->toBe(300)
+        ->and($lot->fresh()->received_cost_cents)->toBe(50000)
+        ->and($lot->fresh()->remaining_cost_cents)->toBe(30000)
+        ->and((int) DB::table('inventory_lot_allocations')->where('inventory_lot_id', $lot->id)->value('quantity'))->toBe(200)
+        ->and((int) DB::table('inventory_lot_allocations')->where('inventory_lot_id', $lot->id)->value('cost_cents'))->toBe(20000)
+        ->and(app(FifoCostService::class)->quantity($product->fresh(), $product->fresh()->inventory))->toBe(300);
+});
+
+test('mobile refuses to convert legacy FIFO lots when allocations do not reconcile', function () {
+    [$user, $shop, $product, $token] = mobileFixture();
+    $lot = InventoryLot::create([
+        'product_id' => $product->id,
+        'received_quantity' => 3,
+        'remaining_quantity' => 3,
+        'received_cost_cents' => 30000,
+        'remaining_cost_cents' => 30000,
+        'quantity_unit' => 'unit',
+        'origin' => 'purchase',
+        'received_at' => now(),
+    ]);
+    $bottleUnitUuid = app(\App\Services\ShopRecordSyncService::class)->localId($shop, 'unit', 'bottle');
+    $this->withToken($token)->postJson('/api/v1/shops/'.$shop->public_id.'/mobile-operations', [
+        'client_operation_uuid' => (string) Str::uuid(),
+        'type' => 'product_upsert',
+        'product_id' => $product->public_id,
+        'sale_unit' => 'bottle',
+        'volume_ml' => 100,
+        'unit_uuid' => $bottleUnitUuid,
     ])->assertUnprocessable()->assertJsonValidationErrors('sale_unit');
 
     expect($product->fresh()->sale_unit)->toBe('unit')
         ->and($product->fresh()->volume_ml)->toBeNull()
         ->and($product->fresh()->inventory->stock_quantity)->toBe(5)
-        ->and(InventoryLot::where('product_id', $product->id)->count())->toBe(1)
-        ->and(InventoryLot::where('product_id', $product->id)->value('remaining_quantity'))->toBe(5);
+        ->and($lot->fresh()->quantity_unit)->toBe('unit')
+        ->and($lot->fresh()->remaining_quantity)->toBe(3);
 });
 
 test('mobile product creation supports validated decant presentations linked to a complete bottle', function () {

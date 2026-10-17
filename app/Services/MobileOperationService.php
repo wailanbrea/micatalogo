@@ -182,6 +182,7 @@ class MobileOperationService
             $hasPresentationInput = array_key_exists('sale_unit', $data)
                 || array_key_exists('volume_ml', $data)
                 || array_key_exists('inventory_source_product_id', $data);
+            $initializeBottlePresentation = false;
             $isCombo = (bool) ($data['is_combo'] ?? (array_key_exists('combo_items', $data) ? true : ($product?->isCombo() ?? false)));
             if ($isCombo) {
                 abort_if(($data['sale_unit'] ?? $product?->sale_unit ?? 'unit') !== 'unit', 422, 'Un combo se vende como una unidad agrupada.');
@@ -263,8 +264,21 @@ class MobileOperationService
                     $presentationChanged = $presentation['sale_unit'] !== ($product->sale_unit ?: 'unit')
                         || $presentation['volume_ml'] !== $product->volume_ml
                         || $presentation['inventory_source_product_id'] !== $product->inventory_source_product_id;
+                    $initializeBottlePresentation = $presentationChanged
+                        && ($product->sale_unit ?: 'unit') === 'unit'
+                        && $presentation['sale_unit'] === 'bottle';
                     if ($hadLots && $presentationChanged && ! $this->canConfigureUnitAsBottle($product, $presentation)) {
                         throw new InvalidArgumentException('No cambies la presentación de un producto con lotes; crea una presentación vinculada.', 422);
+                    }
+                    if ($presentationChanged
+                        && ($product->sale_unit ?: 'unit') === 'unit'
+                        && $presentation['sale_unit'] === 'bottle'
+                        && InventoryLot::where('product_id', $product->id)->exists()) {
+                        app(LegacyBottleFifoMigration::class)->convert(
+                            $product,
+                            $product->inventory,
+                            (int) $presentation['volume_ml'],
+                        );
                     }
                     $product->fill([
                         'sale_unit' => $presentation['sale_unit'],
@@ -317,6 +331,14 @@ class MobileOperationService
                 app(ShopRecordSyncService::class)->saveProductUnit($shop, $product->public_id, $data['unit_uuid'], $user);
             }
             $product->save();
+            if ($initializeBottlePresentation
+                && ($product->sale_unit ?: 'unit') === 'bottle'
+                && (int) $product->volume_ml > 0
+                && $product->inventory?->track_inventory) {
+                $product->inventory->forceFill([
+                    'available_ml' => (int) $product->inventory->stock_quantity * (int) $product->volume_ml,
+                ])->save();
+            }
             if (array_key_exists('combo_items', $data) || ($product->isCombo() && ! $product->comboItems()->exists())) {
                 $this->syncMobileComboItems($shop, $product, $data['combo_items'] ?? []);
             }
