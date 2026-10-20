@@ -31,7 +31,7 @@ $allowed = ['loginSharedCustomerCreditOrderCollectionAndShopSwitch', 'ownerSumma
     'ordersEntryAndReturnDoNotShowTheEmptyLandingForExistingOrders', 'compactCustomersOpenMovementsAndExplainTheirDebt',
     'offlineQueuedSalesSurviveDatabaseRestartAndSyncExactlyOnce', 'offlineQueuedDecantConsumesSourceMillilitersAndSyncsExactlyOnce',
     'anonymousRowEightWorkbookTravelsFromAndroidToRealLaravelAndConfirmsBySession', 'storeOperationsReadBackReplayAndTenantIsolation',
-    'auditedDailyReconciliationPreservesOriginal'];
+    'auditedDailyReconciliationPreservesOriginal', 'operationalReportsReadModel'];
 if (! in_array($scenario, $allowed, true)) { http_response_code(422); echo json_encode(['error' => 'Unknown isolated scenario']); return; }
 
 $result = Illuminate\Support\Facades\DB::transaction(function () use ($app, $scenario) {

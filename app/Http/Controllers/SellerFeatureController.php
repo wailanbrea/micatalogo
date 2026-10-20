@@ -785,7 +785,7 @@ class SellerFeatureController extends Controller
         ];
     }
 
-    private function servicesData(Shop $shop, ?string $search = null, bool $showSensitiveFinance = true): array
+    private function servicesData(Shop $shop, ?string $search = null, bool $showSensitiveFinance = true, bool $complete = false): array
     {
         $search = trim((string) $search);
         $products = $shop->products()
@@ -797,7 +797,7 @@ class SellerFeatureController extends Controller
                     ->orWhere('product_code', 'like', "%{$search}%");
             }))
             ->latest()
-            ->limit(100)
+            ->when(! $complete, fn ($query) => $query->limit(100))
             ->get();
         $serviceIds = $products->pluck('id');
         $periodItems = $serviceIds->isEmpty()
@@ -1636,11 +1636,19 @@ class SellerFeatureController extends Controller
 
     private function reportsData(Shop $shop, BusinessDashboardService $dashboard, bool $showSensitiveFinance = true): array
     {
-        $summary = $dashboard->getSummary($shop, now()->startOfMonth()->toDateString(), now()->toDateString(), 'profit', 'desc');
+        $timezone = app(\App\Services\ShopOperationalSettingsService::class)->forShop($shop)['timezone'];
+        $today = now($timezone);
+        $selection = request()->query('period', 'month');
+        $from = match ($selection) {
+            'today' => $today->copy()->startOfDay(),
+            'last_7' => $today->copy()->subDays(6)->startOfDay(),
+            default => $today->copy()->startOfMonth(),
+        };
+        $summary = $dashboard->getSummary($shop, $from->toDateString(), $today->toDateString(), 'profit', 'desc');
         $currentState = $summary['current_state'] ?? [];
         $period = $summary['period'] ?? [];
         $metrics = app(ShopAnalyticsService::class)->getMetricsSummary($shop);
-        $rows = collect($summary['profitability'])->take(20)->map(function (array $product) use ($showSensitiveFinance): array {
+        $rows = collect($summary['profitability'])->map(function (array $product) use ($showSensitiveFinance): array {
             $hasKnownCost = ((float) ($product['cost'] ?? 0)) > 0;
             $hasUnknownCost = ! empty($product['has_unknown_cost']);
 
@@ -1655,6 +1663,7 @@ class SellerFeatureController extends Controller
                     : 'Ventas',
             ];
         });
+        $salesRows = $rows->values()->all();
         if ($showSensitiveFinance) {
             $rows->prepend([
             'primary' => 'Inventario al costo',
@@ -1663,7 +1672,8 @@ class SellerFeatureController extends Controller
             'status' => 'Actual',
             ]);
         }
-        $serviceData = $this->servicesData($shop, null, $showSensitiveFinance);
+        $serviceData = $this->servicesData($shop, null, $showSensitiveFinance, true);
+        $serviceData['kpis'][1]['label'] = 'Ventas · 30 días';
         $sections = [
             [
                 'key' => 'sales',
@@ -1673,12 +1683,14 @@ class SellerFeatureController extends Controller
                     ['label' => 'Ganancia bruta', 'value' => $this->money($period['gross_profit'] ?? 0), 'tone' => 'emerald'],
                     ['label' => 'Transacciones', 'value' => number_format((int) ($period['sales_count'] ?? 0)), 'tone' => 'slate'],
                 ],
-                'rows' => $rows->take(10)->values()->all(),
+                'rows' => $salesRows,
+                'scope' => $from->toDateString().' - '.$today->toDateString(),
                 'note' => 'Ventas netas, costo FIFO y ganancia se calculan con las mismas reglas contables del módulo Finanzas.',
             ],
             [
                 'key' => 'services',
                 'label' => 'Servicios',
+                'scope' => 'Catálogo actual · Ventas de los últimos 30 días',
                 'kpis' => $serviceData['kpis'],
                 'rows' => $serviceData['rows'],
                 'note' => 'Los servicios y productos sin control de inventario se mantienen en el mismo catálogo y se pueden vender desde Terminal.',
@@ -1686,6 +1698,7 @@ class SellerFeatureController extends Controller
             [
                 'key' => 'visits',
                 'label' => 'Visitas',
+                'scope' => 'Indicadores de 30 días · Productos destacados acumulados',
                 'kpis' => [
                     ['label' => 'Visitas · 30 días', 'value' => number_format($metrics['views_30d']), 'tone' => 'blue'],
                     ['label' => 'Contactos WhatsApp', 'value' => number_format($metrics['clicks_30d']), 'tone' => 'emerald'],
@@ -1702,6 +1715,7 @@ class SellerFeatureController extends Controller
             [
                 'key' => 'links',
                 'label' => 'Enlaces',
+                'scope' => 'Canales actuales · Indicadores acumulados',
                 'kpis' => [
                     ['label' => 'Visitas acumuladas', 'value' => number_format($metrics['total_views']), 'tone' => 'blue'],
                     ['label' => 'Contactos acumulados', 'value' => number_format($metrics['total_clicks']), 'tone' => 'emerald'],
@@ -1715,8 +1729,29 @@ class SellerFeatureController extends Controller
             ],
         ];
 
+        $sections[0]['kpis'][] = ['label' => 'Ticket promedio', 'value' => $this->money($period['average_ticket'] ?? 0), 'tone' => 'slate'];
+        if ($showSensitiveFinance) {
+            $sections[] = [
+                'key' => 'inventory',
+                'label' => 'Inventario',
+                'scope' => 'Estado actual · Valoración al costo FIFO',
+                'kpis' => [
+                    ['label' => 'Inventario al costo', 'value' => $this->money($currentState['inventory_cost_value'] ?? 0), 'tone' => 'blue'],
+                    ['label' => 'Productos activos', 'value' => number_format((int) ($currentState['active_products_count'] ?? 0)), 'tone' => 'slate'],
+                ],
+                'rows' => $rows->take(1)->values()->all(),
+                'note' => 'La valoración corresponde a los lotes disponibles actualmente; no es una fotografía histórica del periodo de ventas.',
+            ];
+        }
         $module = [
             'kind' => 'table',
+            'report_context' => [
+                'shop_name' => $shop->name,
+                'from' => $from->toDateString(),
+                'to' => $today->toDateString(),
+                'timezone' => $timezone,
+                'generated_at' => $today->toIso8601String(),
+            ],
             'kpis' => [
                 ['label' => 'Ventas netas', 'value' => $this->money($summary['period']['net_sales']), 'tone' => 'blue'],
                 ['label' => 'Ganancia bruta', 'value' => $this->money($summary['period']['gross_profit']), 'tone' => 'emerald'],
