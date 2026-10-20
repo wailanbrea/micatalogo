@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\Controller;
 use App\Enums\ProductImageProcessingStatus;
+use App\Http\Controllers\Controller;
 use App\Models\Shop;
 use App\Services\BusinessProfileService;
 use App\Services\ImageProcessingService;
@@ -11,6 +11,7 @@ use App\Services\MediaStorageService;
 use App\Services\SellerMenuService;
 use App\Services\ShopHoursService;
 use App\Services\ShopOperationalSettingsService;
+use App\Support\WhatsAppPhone;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -28,6 +29,12 @@ class ShopSettingsController extends Controller
     public function update(Request $request, Shop $shop, SellerMenuService $menus, BusinessProfileService $profiles, ShopOperationalSettingsService $operational): JsonResponse
     {
         abort_unless($menus->canManage($shop, $request->user()), 403);
+
+        $phone = WhatsAppPhone::normalize($request->input('whatsapp_country_code'), $request->input('whatsapp_number'));
+        $request->merge([
+            'whatsapp_country_code' => $phone['country_code'],
+            'whatsapp_number' => $phone['number'],
+        ]);
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:160'],

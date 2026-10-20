@@ -43,6 +43,23 @@ test('a verified seller can create a shop with normalized contact data', functio
     ]);
 });
 
+test('creating a shop normalizes Dominican legacy prefixes without duplicating the WhatsApp area code', function () {
+    $seller = User::factory()->create();
+
+    $this->actingAs($seller)
+        ->post(route('seller.shops.store'), shopPayload([
+            'name' => 'Tienda QA WhatsApp',
+            'whatsapp_country_code' => '1829',
+            'whatsapp_number' => '8298144525',
+        ]))
+        ->assertRedirect();
+
+    $shop = $seller->shops()->where('name', 'Tienda QA WhatsApp')->firstOrFail();
+
+    expect($shop->whatsapp_country_code)->toBe('1')
+        ->and($shop->whatsapp_number)->toBe('8298144525');
+});
+
 test('creating an appliance shop applies its categories and profile', function () {
     $seller = User::factory()->create(['plan' => UserPlan::Pro]);
 

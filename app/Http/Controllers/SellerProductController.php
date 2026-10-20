@@ -62,7 +62,7 @@ class SellerProductController extends Controller
         $trashedCount = $shop->products()->onlyTrashed()->count();
         $trackedProducts = $shop->products()->whereHas('inventory', fn ($query) => $query->where('track_inventory', true));
         $inventoryRows = $shop->products()->where(fn ($query) => $query->whereNull('sale_unit')->orWhere('sale_unit', '!=', 'service'))->with('inventory')->get(['id', 'price']);
-        $capitalCost = $inventoryRows->sum(fn (Product $product): float => (float) ($product->inventory?->stock_quantity ?? 0) * (float) ($product->inventory?->cost_price ?? 0));
+        $capitalCost = $inventoryRows->sum(fn (Product $product): float => (float) ($product->inventory?->inventory_value ?? 0));
         $totalUnits = $inventoryRows->sum(fn (Product $product): int => (int) ($product->inventory?->stock_quantity ?? 0));
         $marginRows = $inventoryRows->filter(fn (Product $product): bool => $product->inventory?->cost_price !== null && (float) $product->price > 0);
         $averageMargin = $marginRows->isEmpty()
@@ -660,6 +660,11 @@ class SellerProductController extends Controller
     {
         if (! $product->isDecant()) {
             return $requestedStock;
+        }
+
+        $decants = app(DecantInventoryService::class);
+        if ($decants->available()) {
+            return $decants->sellable($product);
         }
 
         $source = $product->sourceProduct()->with('inventory')->first();

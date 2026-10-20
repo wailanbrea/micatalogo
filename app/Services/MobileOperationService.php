@@ -85,7 +85,7 @@ class MobileOperationService
                 'type' => $data['type'], 'payload_sha256' => $hash, 'result' => []]);
             $result = match ($data['type']) {
                 'product_photo_update' => $this->photoOperation($shop, $data),
-                'quote_create', 'quote_convert', 'order_confirm', 'purchase_create', 'purchase_receive', 'supplier_create', 'inventory_import_confirm', 'day_close', 'partner_create', 'partner_transaction' => app(OnlineMobileOperationService::class)->apply($shop, $user, $data),
+                'quote_create', 'quote_convert', 'order_confirm', 'purchase_create', 'purchase_receive', 'supplier_create', 'inventory_import_confirm', 'day_close', 'day_close_adjustment', 'partner_create', 'partner_transaction' => app(OnlineMobileOperationService::class)->apply($shop, $user, $data),
                 'shop_settings_update', 'seller_menu_permissions_update', 'shop_menu_visibility_update', 'seller_create', 'authorization_approve', 'authorization_reject' => app(ShopAdministrationMobileOperationService::class)->apply($shop, $user, $data),
                 'cash_open', 'cash_close', 'cash_movement', 'expense_create', 'expense_payment' => app(FinancialMobileOperationService::class)->apply($shop, $user, $data),
                 'route_upsert', 'route_assign', 'route_unassign', 'route_reorder', 'route_load_create', 'route_load_status' => app(ShopRouteSyncService::class)->apply($shop, $data),

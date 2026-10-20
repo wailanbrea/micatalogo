@@ -10,10 +10,13 @@ use App\Models\ProductInventory;
 use App\Models\Shop;
 use App\Models\ShopSeller;
 use App\Models\User;
+use App\Services\BusinessDashboardService;
 use App\Services\CashRegisterService;
+use App\Services\DecantWorkspaceService;
 use App\Services\SellerMenuService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
@@ -716,6 +719,7 @@ test('opening a bottle moves sealed stock to decant preparation without duplicat
         'volume_ml' => 5,
         'inventory_source_product_id' => $source->id,
         'price' => 100,
+        'moderation_status' => 'active',
     ]);
     ProductInventory::create([
         'product_id' => $source->id,
@@ -734,6 +738,14 @@ test('opening a bottle moves sealed stock to decant preparation without duplicat
         'low_stock_threshold' => 2,
     ]);
 
+    $this->actingAs($user)->postJson('/api/v1/shops/'.$shop->public_id.'/mobile-operations', [
+        'type' => 'decant_vial_receive',
+        'volume_ml' => 5,
+        'quantity' => 40,
+        'unit_cost' => '50.00',
+        'client_operation_uuid' => (string) Str::uuid(),
+    ])->assertCreated();
+
     $this->actingAs($user)
         ->post(route('seller.shops.inventory.open-bottle', [$shop, $source]), ['quantity' => 1])
         ->assertRedirect()
@@ -743,7 +755,13 @@ test('opening a bottle moves sealed stock to decant preparation without duplicat
     expect($source->inventory->stock_quantity)->toBe(1)
         ->and($source->inventory->opened_bottles)->toBe(1)
         ->and($source->inventory->available_ml)->toBe(200)
-        ->and($decant->fresh()->inventory->stock_quantity)->toBe(40);
+        ->and($decant->fresh()->inventory->stock_quantity)->toBe(40)
+        ->and(DB::table('decant_openings')->where('product_id', $source->id)->value('remaining_cost_cents'))->toBe(100000)
+        ->and($source->fresh()->inventory->inventory_value)->toBe(2000.0)
+        ->and(app(DecantWorkspaceService::class)->inventoryValue($shop, true))->toBe(400000)
+        ->and(app(BusinessDashboardService::class)->getSummary($shop)['current_state']['inventory_cost_value'])->toBe(4000.0)
+        ->and($this->actingAs($user)->get(route('seller.shops.products.index', $shop))->assertOk()
+            ->viewData('catalogStats')['capital_cost'])->toBe(2000.0);
 
     $this->actingAs($user)
         ->post(route('seller.shops.inventory.sale', [$shop, $decant]), ['quantity' => 2])
@@ -753,7 +771,8 @@ test('opening a bottle moves sealed stock to decant preparation without duplicat
     expect($source->inventory->stock_quantity)->toBe(1)
         ->and($source->inventory->opened_bottles)->toBe(1)
         ->and($source->inventory->available_ml)->toBe(190)
-        ->and($decant->fresh()->inventory->stock_quantity)->toBe(38);
+        ->and($decant->fresh()->inventory->stock_quantity)->toBe(38)
+        ->and(DB::table('inventory_movements')->where('product_id', $decant->id)->where('type', 'sale')->value('total_cost_cents'))->toBe(20000);
 
     $this->assertDatabaseHas('inventory_movements', [
         'product_id' => $source->id,

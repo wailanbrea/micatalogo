@@ -630,17 +630,39 @@
                                         <div class="rounded-xl bg-blue-50 p-4"><p class="text-[11px] font-bold uppercase tracking-wide text-blue-700">Esperado</p><p class="mt-1 text-xl font-black tabular-nums text-blue-900">{{ $module['day_close']['cash']['expected'] }}</p></div>
                                     </div>
                                     <p class="mt-4 text-xs leading-5 text-slate-500">Solo el efectivo se cuenta aquí. Transferencias y tarjetas se revisan contra el banco, no contra la gaveta.</p>
-                                    <form method="POST" action="{{ route('seller.shops.daily-close.store', $shop) }}" class="mt-5 grid gap-3 border-t border-slate-100 pt-5 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+                                    @if (!$module['closure'])<form method="POST" action="{{ route('seller.shops.daily-close.store', $shop) }}" class="mt-5 grid gap-3 border-t border-slate-100 pt-5 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
                                         @csrf
                                         <input type="hidden" name="date" value="{{ $module['date'] }}">
                                         <label class="text-[11px] font-bold text-slate-600">Efectivo contado (opcional)<input name="counted_cash" min="0" step="0.01" type="number" placeholder="Vacío = sin arqueo" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-black tabular-nums"></label>
                                         <label class="text-[11px] font-bold text-slate-600">Nota (opcional)<input name="notes" placeholder="Observación del día" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"></label>
                                         <button class="rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-black text-white hover:bg-emerald-800">Guardar cierre</button>
-                                    </form>
+                                    </form>@endif
                                     @if ($module['closure'])
+                                        <p class="mt-4 text-sm text-slate-600">Conciliación registrada. Las ventas y cobros posteriores siguen permitidos y no reescriben el cierre original. Efectivo esperado registrado: RD$ {{ $module['closure']['expected_cash'] }}.</p>
                                         <p class="mt-3 text-sm font-semibold {{ $module['closure']['difference'] === null ? 'text-slate-600' : ($module['closure']['difference'] == 0 ? 'text-emerald-700' : 'text-amber-700') }}">
                                             {{ $module['closure']['difference'] === null ? 'Cerrado sin arqueo.' : 'Contado: RD$ '.number_format((float) $module['closure']['counted_cash'], 2).' · Diferencia: RD$ '.number_format((float) $module['closure']['difference'], 2) }}
                                         </p>
+                                        @if ($module['can_adjust'] ?? false)
+                                            <details class="mt-4 rounded-xl border border-blue-200 p-4">
+                                                <summary class="cursor-pointer py-2 font-bold text-blue-900">Registrar ajuste auditado</summary>
+                                                <p class="my-3 text-sm text-slate-600">Anexa un nuevo registro con autor y motivo. No modifica el cierre original ni crea entradas o salidas de caja.</p>
+                                                <form method="POST" action="{{ route('seller.shops.daily-close.adjust', [$shop, $module['closure']['id']]) }}" class="grid gap-3 sm:grid-cols-2">
+                                                    @csrf
+                                                    <input type="hidden" name="client_operation_uuid" value="{{ old('client_operation_uuid', (string) Illuminate\Support\Str::uuid()) }}">
+                                                    <label class="text-sm font-semibold">Nuevo efectivo contado (opcional)<input name="counted_cash" type="number" step="0.01" min="0" value="{{ old('counted_cash') }}" class="mt-1 w-full rounded-lg border p-3"></label>
+                                                    <label class="text-sm font-semibold">Motivo obligatorio<textarea name="reason" required maxlength="1000" class="mt-1 w-full rounded-lg border p-3">{{ old('reason') }}</textarea></label>
+                                                    <button class="rounded-xl bg-blue-700 px-4 py-3 font-bold text-white sm:col-span-2">Confirmar ajuste de conciliación</button>
+                                                </form>
+                                            </details>
+                                        @endif
+                                        @if (!empty($module['adjustments']))<section aria-label="Historial de ajustes" class="mt-4 space-y-3">
+                                            <h3 class="font-bold">Últimos ajustes de conciliación (hasta 50)</h3>
+                                            @foreach ($module['adjustments'] as $adjustment)<article class="rounded-xl border border-slate-200 p-3 text-sm">
+                                                <p class="font-semibold">{{ \Illuminate\Support\Carbon::parse($adjustment['created_at'])->timezone($module['timezone'] ?? 'America/Santo_Domingo')->format('d/m/Y H:i') }} · {{ $adjustment['user_name'] ?? 'Usuario '.$adjustment['user_id'] }}</p>
+                                                <p class="mt-1">{{ $adjustment['reason'] }}</p>
+                                                <p class="mt-1">Esperado al registrar: RD$ {{ $adjustment['expected_cash'] }} · Contado: {{ $adjustment['counted_cash'] === null ? 'Sin nuevo arqueo' : 'RD$ '.$adjustment['counted_cash'] }} · Diferencia: {{ $adjustment['difference'] === null ? '—' : 'RD$ '.$adjustment['difference'] }}</p>
+                                            </article>@endforeach
+                                        </section>@endif
                                     @endif
                                 </section>
                         @endif

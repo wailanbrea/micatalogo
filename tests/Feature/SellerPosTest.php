@@ -65,6 +65,42 @@ test('seller can open the web POS and register a paid sale', function () {
         ->and($product->fresh()->inventory->stock_quantity)->toBe(6);
 });
 
+test('web POS accepts the bottle volume snapshot encoded as a form string', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->create(['user_id' => $user->id, 'business_type' => 'perfume_store']);
+    $product = Product::factory()->create([
+        'shop_id' => $shop->id,
+        'name' => 'Perfume QA 100 ml',
+        'price' => '2500.00',
+        'sale_unit' => 'bottle',
+        'volume_ml' => 100,
+    ]);
+    ProductInventory::create([
+        'product_id' => $product->id,
+        'track_inventory' => true,
+        'stock_quantity' => 2,
+        'cost_price' => '1500.00',
+        'sold_quantity' => 0,
+    ]);
+    $item = webPosProductPayload($product);
+    $item['expected_volume_ml'] = (string) $product->volume_ml;
+
+    $this->actingAs($user)
+        ->post(route('seller.shops.pos.store', $shop), [
+            'client_sale_uuid' => (string) Str::uuid(),
+            'payment_status' => 'paid',
+            'sale_mode' => 'retail',
+            'credit_amount' => '0.00',
+            'payments' => [['method' => 'cash', 'amount' => '2500.00']],
+            'items' => [$item],
+        ])
+        ->assertRedirect(route('seller.shops.pos', $shop))
+        ->assertSessionHas('status');
+
+    expect(Invoice::query()->sole()->total)->toBe('2500.00')
+        ->and($product->fresh()->inventory->stock_quantity)->toBe(1);
+});
+
 test('web POS sells a service without decrementing physical inventory and captures input cost', function () {
     $user = User::factory()->create(['plan' => 'pro']);
     $shop = Shop::factory()->create(['user_id' => $user->id, 'business_type' => 'barbershop']);

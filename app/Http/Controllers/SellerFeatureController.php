@@ -1285,7 +1285,7 @@ class SellerFeatureController extends Controller
             'rows' => [
                 ['primary' => 'Ventas registradas', 'secondary' => 'Facturas no anuladas de hoy', 'value' => number_format((clone $invoices)->count()), 'status' => 'Listo'],
                 ['primary' => 'Gastos registrados', 'secondary' => 'Egresos con fecha de hoy', 'value' => number_format((clone $expenses)->count()), 'status' => 'Listo'],
-                ['primary' => 'Cierre diario', 'secondary' => $dailyClose['closure'] ? 'Guardado por '.$dailyClose['closure']['closed_at'] : 'Todavía no guardado', 'value' => $dailyClose['closure'] ? 'Cerrado' : 'Pendiente', 'status' => $dailyClose['closure'] ? 'Listo' : 'Revisar'],
+                ['primary' => 'Cierre diario', 'secondary' => $dailyClose['closure'] ? 'Guardado por '.\Illuminate\Support\Carbon::parse($dailyClose['closure']['closed_at'])->timezone(app(\App\Services\ShopOperationalSettingsService::class)->forShop($shop)['timezone'])->format('d/m/Y H:i') : 'Todavía no guardado', 'value' => $dailyClose['closure'] ? 'Cerrado' : 'Pendiente', 'status' => $dailyClose['closure'] ? 'Listo' : 'Revisar'],
             ],
             'day_close' => [
                 'sales_total' => $this->money($paidSalesCents / 100),
@@ -1308,6 +1308,10 @@ class SellerFeatureController extends Controller
             ],
             'date' => $date,
             'closure' => $dailyClose['closure'],
+            'adjustments' => $dailyClose['adjustments'],
+            'timezone' => app(\App\Services\ShopOperationalSettingsService::class)->forShop($shop)['timezone'],
+            'can_adjust' => request()->user() && app(DailyCloseService::class)->canAdjust($shop, request()->user())
+                && \Illuminate\Support\Facades\Schema::hasTable('daily_closure_adjustments'),
             'note' => 'El cierre diario funciona sin abrir una sesión. Solo el efectivo entra en el esperado; tarjetas y transferencias se revisan aparte.',
         ];
     }

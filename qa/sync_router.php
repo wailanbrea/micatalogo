@@ -30,7 +30,8 @@ $scenario = $input['scenario'] ?? '';
 $allowed = ['loginSharedCustomerCreditOrderCollectionAndShopSwitch', 'ownerSummaryReadsServerForEachShop',
     'ordersEntryAndReturnDoNotShowTheEmptyLandingForExistingOrders', 'compactCustomersOpenMovementsAndExplainTheirDebt',
     'offlineQueuedSalesSurviveDatabaseRestartAndSyncExactlyOnce', 'offlineQueuedDecantConsumesSourceMillilitersAndSyncsExactlyOnce',
-    'anonymousRowEightWorkbookTravelsFromAndroidToRealLaravelAndConfirmsBySession', 'storeOperationsReadBackReplayAndTenantIsolation'];
+    'anonymousRowEightWorkbookTravelsFromAndroidToRealLaravelAndConfirmsBySession', 'storeOperationsReadBackReplayAndTenantIsolation',
+    'auditedDailyReconciliationPreservesOriginal'];
 if (! in_array($scenario, $allowed, true)) { http_response_code(422); echo json_encode(['error' => 'Unknown isolated scenario']); return; }
 
 $result = Illuminate\Support\Facades\DB::transaction(function () use ($app, $scenario) {
@@ -63,6 +64,7 @@ $result = Illuminate\Support\Facades\DB::transaction(function () use ($app, $sce
     }
     $result = ['email' => $owner->email, 'password' => $password, 'token' => $token, 'shop_a' => $shops['A']->public_id,
         'shop_b' => $shops['B']->public_id, 'product' => $products['A']->public_id, 'scenario' => $scenario,
+        'business_timezone' => app(App\Services\ShopOperationalSettingsService::class)->forShop($shops['A'])['timezone'],
         'order_b_number' => $orders['B']->order_number];
     $call = function (string $controller, string $method, array $body, array $parameters) use ($app, $owner) {
         $request = Illuminate\Http\Request::create('/__qa/fixture-operation', 'POST', $body);

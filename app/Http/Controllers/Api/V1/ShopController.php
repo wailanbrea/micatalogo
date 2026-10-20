@@ -47,6 +47,7 @@ class ShopController extends Controller
                     'id' => $shop->public_id,
                     'name' => $shop->name,
                     'slug' => $shop->slug,
+                    'business_timezone' => app(\App\Services\ShopOperationalSettingsService::class)->forShop($shop)['timezone'],
                     ...$capabilities->payload($shop),
                     'presentation' => $presentation->resolve($shop),
                     'quota' => $limits->shopQuota($shop, $shop->products_count),

@@ -10,6 +10,20 @@ use InvalidArgumentException;
 
 class SellerDailyCloseController extends Controller
 {
+    public function adjust(Request $request, Shop $shop, string $closure, DailyCloseService $service)
+    {
+        abort_unless($service->canAdjust($shop, $request->user()), 403);
+        $data = $request->validate(['client_operation_uuid' => ['required', 'uuid'], 'reason' => ['required', 'string', 'max:1000'],
+            'counted_cash' => ['nullable', 'decimal:0,2', 'min:0', 'max:1000000000000']]);
+        try {
+            $service->adjust($shop, $request->user(), $closure, $data['client_operation_uuid'], $data['counted_cash'] ?? null, $data['reason']);
+            return back()->with('status', 'Ajuste de conciliación registrado en el historial; el cierre original no cambió.');
+        } catch (InvalidArgumentException $error) {
+            if ($request->expectsJson()) return response()->json(['message' => $error->getMessage()], $error->getCode() ?: 422);
+            return back()->withInput()->withErrors(['daily_close' => $error->getMessage()]);
+        }
+    }
+
     public function store(Request $request, Shop $shop, DailyCloseService $service): RedirectResponse
     {
         $validated = $request->validate([

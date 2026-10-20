@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Shop;
+use App\Support\WhatsAppPhone;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -15,9 +16,11 @@ class StoreShopRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $phone = WhatsAppPhone::normalize($this->input('whatsapp_country_code'), $this->input('whatsapp_number'));
+
         $this->merge([
-            'whatsapp_country_code' => preg_replace('/\D/', '', (string) $this->input('whatsapp_country_code')),
-            'whatsapp_number' => preg_replace('/\D/', '', (string) $this->input('whatsapp_number')),
+            'whatsapp_country_code' => $phone['country_code'],
+            'whatsapp_number' => $phone['number'],
             'instagram' => ltrim((string) $this->input('instagram'), '@'),
         ]);
     }

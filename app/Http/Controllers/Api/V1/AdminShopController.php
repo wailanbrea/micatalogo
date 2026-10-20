@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Shop;
+use App\Support\WhatsAppPhone;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -29,9 +30,10 @@ class AdminShopController extends Controller
     {
         $this->authorizeAdmin($request);
 
+        $phone = WhatsAppPhone::normalize($request->input('whatsapp_country_code'), $request->input('whatsapp_number'));
         $request->merge([
-            'whatsapp_country_code' => preg_replace('/\D/', '', (string) $request->input('whatsapp_country_code')),
-            'whatsapp_number' => preg_replace('/\D/', '', (string) $request->input('whatsapp_number')),
+            'whatsapp_country_code' => $phone['country_code'],
+            'whatsapp_number' => $phone['number'],
         ]);
 
         $validated = $request->validate([

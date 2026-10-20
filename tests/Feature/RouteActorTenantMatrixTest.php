@@ -109,6 +109,7 @@ test('ACL-016 every shop-scoped JSON mutation rejects an owner from another tena
         ['POST', 'expenses'],
         ['POST', 'expenses/missing-expense/payments'],
         ['POST', 'finance/day-close'],
+        ['POST', 'finance/day-close/missing-closure/adjustments'],
         ['POST', 'inventory-import'],
         ['POST', 'inventory-import/preview'],
         ['POST', 'inventory-import/missing-session/confirm'],
@@ -143,6 +144,7 @@ test('ACL-016 every shop-scoped JSON mutation rejects an owner from another tena
         'customers/missing-customer/adjustments' => 'customers/{customer}/adjustments',
         'customers/missing-customer/payments' => 'customers/{customer}/payments',
         'expenses/missing-expense/payments' => 'expenses/{expense}/payments',
+        'finance/day-close/missing-closure/adjustments' => 'finance/day-close/{closure}/adjustments',
         'inventory-import/missing-session/confirm' => 'inventory-import/{session}/confirm',
         'orders/missing-order/confirm' => 'orders/{order}/confirm',
         'partners/missing-partner/transactions' => 'partners/{partner}/transactions',
@@ -223,7 +225,7 @@ test('ACL-018 every tenant-scoped web mutation rejects an owner from another ten
         })
         ->values();
 
-    expect($routes)->toHaveCount(63, 'La matriz runtime debe cubrir todas las mutaciones web por tienda.');
+    expect($routes)->toHaveCount(64, 'La matriz runtime debe cubrir todas las mutaciones web por tienda, incluido el ajuste auditado.');
 
     $placeholderValues = [
         'shop' => $shopA->public_id,
@@ -245,6 +247,7 @@ test('ACL-018 every tenant-scoped web mutation rejects an owner from another ten
         'image' => 'missing-qa-image',
         'catalogImage' => 'missing-qa-catalog-image',
         'feature' => 'missing-qa-feature',
+        'closure' => 'missing-qa-closure',
     ];
 
     foreach ($routes as $route) {

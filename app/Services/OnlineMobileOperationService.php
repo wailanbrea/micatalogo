@@ -18,10 +18,18 @@ use Illuminate\Validation\ValidationException;
 /** Durable envelope for existing online modules; original controllers remain the business authority. */
 class OnlineMobileOperationService
 {
-    public const TYPES = ['quote_create', 'quote_convert', 'order_confirm', 'purchase_create', 'purchase_receive', 'supplier_create', 'inventory_import_confirm', 'day_close', 'partner_create', 'partner_transaction'];
+    public const TYPES = ['quote_create', 'quote_convert', 'order_confirm', 'purchase_create', 'purchase_receive', 'supplier_create', 'inventory_import_confirm', 'day_close', 'day_close_adjustment', 'partner_create', 'partner_transaction'];
 
     public function authorize(Shop $shop, User $user, array $data): void
     {
+        if ($data['type'] === 'day_close_adjustment') {
+            abort_unless(app(DailyCloseService::class)->canAdjust($shop, $user), 403);
+            \App\Models\DailyClosure::where('shop_id', $shop->id)->where('public_id', $data['resource_id'])->firstOrFail();
+            abort_unless(\Illuminate\Support\Facades\Schema::hasTable('daily_closure_adjustments'), 503);
+            $receipt = \App\Models\DailyClosureAdjustment::where('shop_id', $shop->id)->where('client_operation_uuid', $data['client_operation_uuid'])->first();
+            if ($receipt) abort_unless((string) $receipt->user_id === (string) $user->id, 403);
+            return;
+        }
         if ($data['type'] === 'purchase_create') {
             app(PurchaseAccessService::class)->assertType($shop, $user, $data['request']['type'] ?? null);
             return;
@@ -63,6 +71,7 @@ class OnlineMobileOperationService
             'supplier_create' => [PurchaseController::class, 'storeSupplier', []],
             'inventory_import_confirm' => [InventoryImportController::class, 'store', []],
             'day_close' => [FinanceReportController::class, 'closeDay', []],
+            'day_close_adjustment' => [FinanceReportController::class, 'adjustDay', ['closure' => $data['resource_id']]],
         };
         $response = app()->call([app($controller), $method], ['request' => $request, 'shop' => $shop] + $parameters);
         if ($response->getStatusCode() >= 400) {

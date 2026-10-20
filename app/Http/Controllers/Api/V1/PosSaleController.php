@@ -12,6 +12,7 @@ use App\Services\CustomerAccountService;
 use App\Services\InventoryService;
 use App\Services\PaymentService;
 use App\Services\ShopOperationalSettingsService;
+use App\Services\ShopRouteSyncService;
 use App\Support\Money;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -105,9 +106,16 @@ class PosSaleController extends Controller
                     $product = $products[$item['product_id']];
                     // Older clients omit presentation hints; new clients capture all three
                     // together so a null source also means "no linked bottle".
+                    // HTML form values arrive as strings ("100") while the model casts
+                    // volume_ml to int (100); normalize both before the stale-snapshot check.
+                    $expectedVolumeMl = array_key_exists('expected_volume_ml', $item)
+                        && $item['expected_volume_ml'] !== null
+                            ? (int) $item['expected_volume_ml']
+                            : null;
+                    $currentVolumeMl = $product->volume_ml === null ? null : (int) $product->volume_ml;
                     if (isset($item['expected_sale_unit']) && (
                         $item['expected_sale_unit'] !== ($product->sale_unit ?: 'unit')
-                        || ($item['expected_volume_ml'] ?? null) !== $product->volume_ml
+                        || $expectedVolumeMl !== $currentVolumeMl
                         || ($item['expected_source_product_id'] ?? null) !== $product->sourceProduct?->public_id
                     )) {
                         return response()->json([
@@ -203,7 +211,7 @@ class PosSaleController extends Controller
                 };
 
                 if (! empty($validated['route_uuid'])) {
-                    app(\App\Services\ShopRouteSyncService::class)->consume($shop, $validated['route_uuid'], $validated['items'], $validated['client_sale_uuid']);
+                    app(ShopRouteSyncService::class)->consume($shop, $validated['route_uuid'], $validated['items'], $validated['client_sale_uuid']);
                 }
                 $upload = PosSaleUpload::create([
                     'shop_id' => $shop->id,
@@ -324,8 +332,8 @@ class PosSaleController extends Controller
     }
 
     /**
-     * @param array<int, array<string, mixed>> $recoveryAfter
-     * @param array<int, array<string, mixed>> $recoveryBefore
+     * @param  array<int, array<string, mixed>>  $recoveryAfter
+     * @param  array<int, array<string, mixed>>  $recoveryBefore
      * @return array<string, mixed>
      */
     private function successPayload(PosSaleUpload $upload, Invoice $invoice, array $recoveryAfter = [], array $recoveryBefore = []): array

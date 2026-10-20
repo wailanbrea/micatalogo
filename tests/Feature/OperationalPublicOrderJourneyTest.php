@@ -67,7 +67,7 @@ test('E2E-01 registro tienda vitrina pedido whatsapp confirmacion factura stock 
     ])->assertCreated()
         ->assertJsonPath('order_number', fn (string $value) => str_starts_with($value, 'MC-'))
         ->assertJsonPath('confirmation_url', fn (string $value) => str_contains($value, 'signature='))
-        ->assertJsonPath('whatsapp_url', fn (string $value) => str_contains($value, 'wa.me/1809'));
+        ->assertJsonPath('whatsapp_url', fn (string $value) => str_starts_with($value, 'https://wa.me/18295550101?text='));
 
     $order = Order::query()->where('order_number', $created->json('order_number'))->sole();
     expect($order->status)->toBe('sent_to_whatsapp')

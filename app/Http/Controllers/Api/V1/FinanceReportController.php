@@ -78,7 +78,8 @@ class FinanceReportController extends Controller
         $date = $request->query('date', now()->toDateString());
         $request->validate(['date' => ['nullable', 'date_format:Y-m-d']]);
 
-        return response()->json($service->calculate($shop, $date));
+        return response()->json($service->calculate($shop, $date) + ['can_adjust' => $service->canAdjust($shop, $request->user())
+            && \Illuminate\Support\Facades\Schema::hasTable('daily_closure_adjustments')]);
     }
 
     public function closeDay(Request $request, Shop $shop, DailyCloseService $service, SellerMenuService $menus): JsonResponse
@@ -102,10 +103,27 @@ class FinanceReportController extends Controller
 
             $calculation = $service->calculate($shop, $validated['date']);
             $calculation['closure'] = $service->serializeClosure($closure);
+            $calculation['can_adjust'] = $service->canAdjust($shop, $request->user())
+                && \Illuminate\Support\Facades\Schema::hasTable('daily_closure_adjustments');
 
             return response()->json($calculation);
         } catch (\InvalidArgumentException $e) {
             return response()->json(['message' => $e->getMessage()], $e->getCode() ?: 422);
+        }
+    }
+
+    public function adjustDay(Request $request, Shop $shop, string $closure, DailyCloseService $service): JsonResponse
+    {
+        abort_unless($service->canAdjust($shop, $request->user()), 403);
+        $validated = $request->validate(['client_operation_uuid' => ['required', 'uuid'], 'reason' => ['required', 'string', 'max:1000'],
+            'counted_cash' => ['nullable', 'decimal:0,2', 'min:0', 'max:1000000000000']]);
+        try {
+            $adjustment = $service->adjust($shop, $request->user(), $closure, $validated['client_operation_uuid'], $validated['counted_cash'] ?? null, $validated['reason']);
+            $record = \App\Models\DailyClosure::where('shop_id', $shop->id)->where('public_id', $closure)->firstOrFail();
+            return response()->json($service->calculate($shop, $record->business_date->toDateString()) + [
+                'adjustment' => $service->serializeAdjustment($adjustment, $record), 'can_adjust' => true], 201);
+        } catch (\InvalidArgumentException $error) {
+            return response()->json(['message' => $error->getMessage()], $error->getCode() ?: 422);
         }
     }
 

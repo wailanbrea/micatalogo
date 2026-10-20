@@ -11,9 +11,24 @@ use App\Services\BusinessPresentationService;
 use App\Services\SellerMenuService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
+
+test('WhatsApp normalization rejects structured input with validation errors instead of crashing', function () {
+    $owner = User::factory()->create();
+    $shop = Shop::factory()->for($owner)->create();
+    $before = $shop->fresh()->getAttributes();
+    $token = $owner->createToken('QA validation', ['shop_settings:write'])->plainTextToken;
+    foreach (['whatsapp_country_code', 'whatsapp_number'] as $field) {
+        $this->withToken($token)->putJson('/api/v1/shops/'.$shop->public_id.'/settings', array_replace([
+            'name' => $shop->name, 'business_type' => $shop->business_type ?: 'general_retail',
+            'whatsapp_country_code' => '1', 'whatsapp_number' => '8095550101',
+        ], [$field => ['unexpected' => 'value']]))->assertUnprocessable()->assertJsonValidationErrors($field);
+    }
+    expect($shop->fresh()->getAttributes())->toBe($before);
+});
 
 test('the Android update manifest is publicly available', function () {
     config()->set('bspos.android_update', [
@@ -60,6 +75,34 @@ test('Android settings expose active payment accounts without exposing disabled 
         ->assertJsonPath('google.checks.0.key', 'logo')
         ->assertJsonPath('payment_accounts.0.name', 'Cuenta principal')
         ->assertJsonMissing(['name' => 'Cuenta desactivada']);
+});
+
+test('Android shop settings normalize Dominican country and area code input', function () {
+    $owner = User::factory()->create();
+    $shop = Shop::factory()->for($owner)->create();
+    $token = $owner->createToken('BSPOS', ['shop_settings:write'])->plainTextToken;
+
+    $this->withToken($token)
+        ->putJson('/api/v1/shops/'.$shop->public_id.'/settings', [
+            'name' => $shop->name,
+            'business_type' => $shop->business_type ?: 'general_retail',
+            'description' => '',
+            'address' => '',
+            'maps_url' => '',
+            'instagram' => '',
+            'whatsapp_country_code' => '1809',
+            'whatsapp_number' => '8095550101',
+            'offers_shipping' => false,
+            'primary_color' => '#1d4ed8',
+            'secondary_color' => '#0f172a',
+            'business_hours' => [],
+        ])
+        ->assertOk()
+        ->assertJsonPath('whatsapp_country_code', '1')
+        ->assertJsonPath('whatsapp_number', '8095550101');
+
+    expect($shop->fresh()->whatsapp_country_code)->toBe('1')
+        ->and($shop->fresh()->whatsapp_number)->toBe('8095550101');
 });
 
 test('Android can upload a shop logo through the authenticated settings API', function () {
@@ -135,10 +178,11 @@ test('a verified active seller can connect BSPOS and retrieve only their shops',
     $shopsResponse = $this->withToken($token)
         ->getJson('/api/v1/shops')
         ->assertOk()
+        ->assertJsonPath('0.business_timezone', 'America/Santo_Domingo')
         ->assertJsonPath('0.navigation.schema_version', 1)
         ->assertJsonPath('0.catalog_permissions.manage_products', true);
     // Keep an exact comparison of the legacy payload while allowing only the documented additive field.
-    expect(array_map(fn (array $record): array => \Illuminate\Support\Arr::except($record, ['navigation', 'catalog_permissions', 'taxonomy_permissions']), $shopsResponse->json()))
+    expect(array_map(fn (array $record): array => Arr::except($record, ['business_timezone', 'navigation', 'catalog_permissions', 'taxonomy_permissions']), $shopsResponse->json()))
         ->toEqual([[
             'id' => $shop->public_id,
             'name' => $shop->name,

@@ -2,20 +2,22 @@
 
 namespace App\Services;
 
+use App\Actions\Fortify\PasswordValidationRules;
 use App\Enums\UserPlan;
 use App\Enums\UserStatus;
 use App\Models\Shop;
 use App\Models\User;
+use App\Support\WhatsAppPhone;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use Illuminate\Database\QueryException;
 use Illuminate\Validation\Rule;
 
 class RegistrationService
 {
-    use \App\Actions\Fortify\PasswordValidationRules;
+    use PasswordValidationRules;
 
     public function __construct(
         private readonly BusinessProfileService $profiles,
@@ -26,6 +28,9 @@ class RegistrationService
     public function create(array $input): User
     {
         $this->turnstile->validate($input['cf-turnstile-response'] ?? null, request(), 'register');
+        $phone = WhatsAppPhone::normalize($input['whatsapp_country_code'] ?? '', $input['whatsapp_number'] ?? '');
+        $input['whatsapp_country_code'] = $phone['country_code'];
+        $input['whatsapp_number'] = $phone['number'];
         $validated = Validator::make($input, [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class)],
@@ -45,9 +50,6 @@ class RegistrationService
 
         $validated['email'] = Str::lower(trim($validated['email']));
         $requestedSlug = $validated['slug'] ?? $validated['business_name'];
-        $validated['whatsapp_country_code'] = preg_replace('/\D/', '', $validated['whatsapp_country_code']);
-        $validated['whatsapp_number'] = preg_replace('/\D/', '', $validated['whatsapp_number']);
-
         for ($attempt = 0; $attempt < 3; $attempt++) {
             $validated['slug'] = $this->uniqueSlug($requestedSlug);
 

@@ -515,6 +515,10 @@ test('bottle sources require their purchase cost and identify the source when cr
         ])
         ->assertRedirect();
 
+    $decant = $shop->products()->where('name', 'Hawas Ice Decant 5 ml')->with('inventory')->firstOrFail();
+    expect($decant->inventory->stock_quantity)->toBe(0)
+        ->and($decant->availability_status->value ?? $decant->availability_status)->toBe(ProductAvailabilityStatus::OutOfStock->value);
+
     $this->assertDatabaseHas('products', [
         'shop_id' => $shop->id,
         'name' => 'Hawas Ice Decant 5 ml',

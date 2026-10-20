@@ -37,6 +37,46 @@ test('registration creates an isolated free shop and applies its business preset
         ->and($shop->categories()->orderBy('sort_order')->pluck('name')->all())->toBe(['Perfumes', 'Sets', 'Body Splash', 'Decants', 'Accesorios']);
 });
 
+test('registration canonicalizes legacy Dominican area-code prefixes for WhatsApp', function () {
+    $user = app(RegistrationService::class)->create([
+        'name' => 'QA WhatsApp',
+        'email' => 'qa-whatsapp@example.com',
+        'business_name' => 'QA WhatsApp Store',
+        'business_type' => 'general_retail',
+        'whatsapp_country_code' => '1809',
+        'whatsapp_number' => '8095550101',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+        'terms_accepted' => '1',
+    ]);
+
+    $shop = $user->shops()->sole();
+
+    expect($shop->whatsapp_country_code)->toBe('1')
+        ->and($shop->whatsapp_number)->toBe('8095550101')
+        ->and('https://wa.me/'.$shop->whatsapp_country_code.$shop->whatsapp_number)
+        ->toBe('https://wa.me/18095550101');
+});
+
+test('registration converts a legacy Dominican area code with a seven-digit local number', function () {
+    $user = app(RegistrationService::class)->create([
+        'name' => 'QA WhatsApp Local',
+        'email' => 'qa-whatsapp-local@example.com',
+        'business_name' => 'QA WhatsApp Local Store',
+        'business_type' => 'general_retail',
+        'whatsapp_country_code' => '1829',
+        'whatsapp_number' => '5550102',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+        'terms_accepted' => '1',
+    ]);
+
+    $shop = $user->shops()->sole();
+
+    expect($shop->whatsapp_country_code)->toBe('1')
+        ->and($shop->whatsapp_number)->toBe('8295550102');
+});
+
 test('reserved and colliding slugs are made unique without replacing an existing shop', function () {
     Shop::factory()->create(['slug' => 'mi-negocio']);
 

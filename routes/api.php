@@ -115,6 +115,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/shops/{shop}/reports/cash-flow', [FinanceReportController::class, 'cashFlow']);
         Route::get('/shops/{shop}/finance/day-close', [FinanceReportController::class, 'dayClose']);
         Route::post('/shops/{shop}/finance/day-close', [FinanceReportController::class, 'closeDay']);
+        Route::post('/shops/{shop}/finance/day-close/{closure}/adjustments', [FinanceReportController::class, 'adjustDay'])->middleware('abilities:pos:write');
 
         Route::get('/shops/{shop}/cash-sessions/current', [CashRegisterController::class, 'current'])->middleware('menu:cash');
         Route::post('/shops/{shop}/cash-sessions/open', [CashRegisterController::class, 'open'])->middleware('menu:cash');

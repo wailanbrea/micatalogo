@@ -213,6 +213,7 @@ class SellerInventoryController extends Controller
                 (int) $validated['quantity'],
                 $validated['notes'] ?? null,
                 $request->user()->id,
+                true,
             );
 
             return back()->with('status', "Se abrieron {$validated['quantity']} botella(s) de {$product->name}. Sus ml ya están disponibles para preparar decants.");
