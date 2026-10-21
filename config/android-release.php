@@ -2,13 +2,13 @@
 
 // Verified against the signed artifact; no credentials belong in this manifest.
 return [
-    'version_code' => 127,
-    'version_name' => '1.0.126',
+    'version_code' => 128,
+    'version_name' => '1.0.127',
     'minimum_supported_version_code' => 23,
-    'apk_url' => 'https://micatalogo.bsolutions.dev/downloads/bspos-1.0.126-release.apk',
-    'apk_sha256' => 'f53b3e41e733f8c6252fafda1563d215c4e718cfb6e6e1f1d144b439611a460a',
-    'release_notes' => 'Reportes operativos rediseñados con el estilo del dashboard, filtros y búsqueda. PDF multipágina para compartir por WhatsApp e imprimir. Detalle completo de ventas y periodos claros por sección.',
-    'release_date' => '2026-10-20',
+    'apk_url' => 'https://micatalogo.bsolutions.dev/downloads/bspos-1.0.127-release.apk',
+    'apk_sha256' => '2a829f9cdb9222f353abe686a436b701c294682013f78b315082ad15c0dca3ba',
+    'release_notes' => 'La impresión de reportes respeta el papel Carta, A4 y el área imprimible. Diseño adaptable para pantallas estrechas y letra ampliada, con importes completos y botones legibles.',
+    'release_date' => '2026-10-21',
     'min_sdk' => 26,
     'size_bytes' => 83970880,
 ];
