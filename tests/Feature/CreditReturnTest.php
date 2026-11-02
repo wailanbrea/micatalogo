@@ -271,3 +271,55 @@ test('sale_cancel operation clears pending debt and marks invoice void', functio
     expect((float) $customer->fresh()->balance)->toBe(0.00);
     expect($invoice->fresh()->status)->toBe('void');
 });
+
+test('sale_cancel rejects sale with recorded payments', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->for($user)->create();
+    $token = $user->createToken('test', ['pos:write'])->plainTextToken;
+
+    $product = Product::factory()->for($shop)->create([
+        'price' => '300.00',
+        'sale_unit' => 'unit',
+    ]);
+    ProductInventory::create([
+        'product_id' => $product->id,
+        'track_inventory' => true,
+        'stock_quantity' => 10,
+        'sold_quantity' => 2,
+        'cost_price' => '150.00',
+    ]);
+
+    $invoice = Invoice::create([
+        'shop_id' => $shop->id,
+        'user_id' => $user->id,
+        'invoice_number' => 'INV-PAID-001',
+        'status' => 'paid',
+        'channel' => 'pos',
+        'currency' => 'DOP',
+        'subtotal' => '300.00',
+        'total' => '300.00',
+        'discount' => '0.00',
+        'tax' => '0.00',
+        'issued_at' => now(),
+    ]);
+
+    $invoice->payments()->create([
+        'shop_id' => $shop->id,
+        'user_id' => $user->id,
+        'payment_method' => 'cash',
+        'amount' => '300.00',
+        'amount_cents' => 30000,
+        'received_at' => now(),
+    ]);
+
+    $cancelPayload = [
+        'client_operation_uuid' => (string) Str::uuid(),
+        'type' => 'sale_cancel',
+        'invoice_id' => $invoice->id,
+    ];
+
+    $this->withToken($token)
+        ->postJson("/api/v1/shops/{$shop->public_id}/mobile-operations", $cancelPayload)
+        ->assertStatus(422)
+        ->assertJsonFragment(['message' => 'Esta venta tiene pagos registrados. Usa devolución para registrar el reembolso del dinero cobrado.']);
+});

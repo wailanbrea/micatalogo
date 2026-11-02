@@ -712,6 +712,11 @@ class MobileOperationService
             return ['invoice_id' => $invoice->id, 'status' => 'void'];
         }
 
+        $paidCents = (int) $invoice->payments()->sum('amount_cents');
+        if ($paidCents > 0) {
+            throw new InvalidArgumentException('Esta venta tiene pagos registrados. Usa devolución para registrar el reembolso del dinero cobrado.', 422);
+        }
+
         // Restock unreturned items
         $rows = $invoice->items()->get();
         foreach ($rows as $item) {
