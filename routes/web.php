@@ -170,9 +170,11 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
     Route::get('/tiendas/{shop}/productos/imagenes/buscar', [SellerProductController::class, 'searchImage'])->middleware(['can:sell,shop', 'catalog.operation:image-search', 'throttle:catalog-media'])->name('shops.products.images.search');
     Route::scopeBindings()->middleware(['can:sell,shop'])->group(function () {
         Route::get('/tiendas/{shop}/clientes', [SellerCustomerController::class, 'index'])->middleware('menu:customers|credit|collections')->name('shops.customers.index');
+        Route::get('/tiendas/{shop}/cobros', [SellerCustomerController::class, 'payments'])->middleware('menu:collections')->name('shops.customers.payments');
         Route::post('/tiendas/{shop}/clientes', [SellerCustomerController::class, 'store'])->middleware('menu:customers')->name('shops.customers.store');
         Route::post('/tiendas/{shop}/clientes/{customer}/credito', [SellerCustomerController::class, 'charge'])->middleware('menu:credit')->name('shops.customers.charge');
         Route::post('/tiendas/{shop}/clientes/{customer}/cobros', [SellerCustomerController::class, 'payment'])->middleware('menu:collections')->name('shops.customers.payment');
+        Route::post('/tiendas/{shop}/clientes/{customer}/cobros/{paymentId}/anular', [SellerCustomerController::class, 'reversePayment'])->middleware('menu:collections')->whereNumber('paymentId')->name('shops.customers.payments.reverse');
     });
     Route::scopeBindings()->middleware(['can:sell,shop', 'menu:metrics'])->group(function () {
         Route::get('/tiendas/{shop}/metricas', [SellerShopMetricController::class, 'index'])->name('shops.metrics.index');

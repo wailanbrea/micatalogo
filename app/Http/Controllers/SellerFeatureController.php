@@ -1600,7 +1600,7 @@ class SellerFeatureController extends Controller
         $payments = CustomerAccountEntry::query()
             ->where('shop_id', $shop->id)
             ->where('type', 'payment')
-            ->with('customer')
+            ->with(['customer', 'reversal'])
             ->latest('created_at')
             ->limit(30)
             ->get();
@@ -1615,7 +1615,7 @@ class SellerFeatureController extends Controller
             'primary' => $entry->customer?->name ?: 'Cliente eliminado',
             'secondary' => ($entry->created_at?->format('d/m/Y H:i') ?: 'Sin fecha').' · '.($entry->notes ?: 'Abono registrado'),
             'value' => $this->money(abs((float) $entry->amount)),
-            'status' => 'Pagado',
+            'status' => $entry->reversal ? 'Anulado' : 'Pagado',
         ])->values()->all();
 
         return [

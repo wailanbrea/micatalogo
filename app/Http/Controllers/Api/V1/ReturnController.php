@@ -22,12 +22,7 @@ class ReturnController extends Controller
 
         $invoices = $shop->invoices()
             ->with(['customer', 'items.product'])
-            ->where('status', 'paid')
-            ->whereNotExists(function ($query): void {
-                $query->selectRaw('1')
-                    ->from('customer_account_entries')
-                    ->whereColumn('customer_account_entries.invoice_id', 'invoices.id');
-            })
+            ->whereIn('status', ['paid', 'pending', 'partial'])
             ->latest('issued_at')
             ->limit(100)
             ->get()
@@ -70,6 +65,7 @@ class ReturnController extends Controller
                     'id' => (int) $invoice->id,
                     'invoice_number' => (string) $invoice->invoice_number,
                     'total' => (string) $invoice->total,
+                    'status' => (string) $invoice->status,
                     'issued_at' => $invoice->issued_at?->toISOString(),
                     'customer_name' => $invoice->customer?->name,
                     'items' => $items->all(),

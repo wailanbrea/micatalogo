@@ -717,7 +717,10 @@
                             <section x-data="{ active: 'receivable' }" class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
                                 <div class="flex gap-2 overflow-x-auto border-b border-slate-100 px-4 py-4 sm:px-5" role="tablist" aria-label="Filtrar crédito">
                                     <button type="button" @click="active = 'receivable'" :class="active === 'receivable' ? 'bg-blue-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700'" class="shrink-0 rounded-full px-4 py-2 text-xs font-black" role="tab">Por cobrar</button>
-                                    <button type="button" @click="active = 'paid'" :class="active === 'paid' ? 'bg-blue-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700'" class="shrink-0 rounded-full px-4 py-2 text-xs font-black" role="tab">Pagados</button>
+                                    <button type="button" @click="active = 'paid'" :class="active === 'paid' ? 'bg-blue-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700'" class="shrink-0 rounded-full px-4 py-2 text-xs font-black" role="tab">Historial de abonos</button>
+                                    @if(in_array('collections', app(\App\Services\SellerMenuService::class)->visibleForUser($shop, auth()->user()), true))
+                                        <a href="{{ route('seller.shops.customers.payments', $shop) }}" class="shrink-0 rounded-full border border-blue-200 px-4 py-2 text-xs font-black text-blue-700">Ver y anular abonos</a>
+                                    @endif
                                 </div>
                                 @foreach (['receivable' => 'Por cobrar', 'paid' => 'Pagados'] as $tabKey => $tabLabel)
                                     <div x-show="active === '{{ $tabKey }}'" x-cloak class="divide-y divide-slate-100" role="tabpanel" aria-label="{{ $tabLabel }}">

@@ -60,6 +60,7 @@ class CashMovement extends Model
         return match ($this->type) {
             'sale' => 'Venta en efectivo',
             'customer_payment' => 'Cobro de cliente',
+            'customer_payment_reversal' => 'Anulación de abono',
             'expense' => 'Gasto pagado',
             'supplier_payment' => 'Pago a suplidor',
             'cash_in' => 'Entrada de efectivo',

@@ -155,7 +155,7 @@ class BusinessDashboardService
         $operatingMarginPercent = $netSalesCents > 0 ? round(($operatingProfitCents / $netSalesCents) * 100, 1) : 0.0;
 
         // 5. Collections and Credit in period
-        $invoicePaymentsQuery = DB::table('invoice_payments')
+        $invoicePaymentsQuery = DB::table('invoice_payments')->whereNull('invoice_payments.reversed_at')
             ->where('shop_id', $shop->id);
         if (Schema::hasColumn('invoice_payments', 'customer_account_entry_id')) {
             $invoicePaymentsQuery->whereNull('customer_account_entry_id');
@@ -174,7 +174,7 @@ class BusinessDashboardService
         $collectedFromCreditCents = abs(Money::toCents(DB::table('customer_account_entries')
             ->where('shop_id', $shop->id)
             ->whereBetween('created_at', [$fromDatetime, $toDatetime])
-            ->where('type', 'payment')
+            ->where('type', 'payment')->whereNull('reversed_at')
             ->sum('amount')));
 
         $totalCollectedInPeriodCents = $collectedFromInvoicesCents + $collectedFromCreditCents;
@@ -624,7 +624,7 @@ class BusinessDashboardService
     {
         // 1. INFLOWS:
         // Cash collected from direct invoice payments (cash, card, transfer, other)
-        $invoicePaymentsQuery = DB::table('invoice_payments')
+        $invoicePaymentsQuery = DB::table('invoice_payments')->whereNull('invoice_payments.reversed_at')
             ->where('shop_id', $shop->id);
         if (Schema::hasColumn('invoice_payments', 'customer_account_entry_id')) {
             $invoicePaymentsQuery->whereNull('customer_account_entry_id');
@@ -642,7 +642,7 @@ class BusinessDashboardService
         $salesOtherCents = (int) ($invoiceCollections->get('other')?->total_cents ?? 0);
 
         // Debt payments are allocated to invoice_payments, so retain their payment method.
-        $debtPaymentCollections = DB::table('invoice_payments')
+        $debtPaymentCollections = DB::table('invoice_payments')->whereNull('invoice_payments.reversed_at')
             ->where('shop_id', $shop->id)
             ->whereNotNull('customer_account_entry_id')
             ->whereBetween('received_at', [$fromDatetime, $toDatetime])
@@ -654,7 +654,7 @@ class BusinessDashboardService
         $legacyDebtAmount = DB::table('customer_account_entries')
             ->where('shop_id', $shop->id)
             ->whereBetween('created_at', [$fromDatetime, $toDatetime])
-            ->where('type', 'payment')
+            ->where('type', 'payment')->whereNull('reversed_at')
             ->sum('amount');
         $allCustomerPaymentsCents = abs(Money::toCents($legacyDebtAmount));
         $debtCollectionsCents = max($allocatedDebtCents, $allCustomerPaymentsCents);

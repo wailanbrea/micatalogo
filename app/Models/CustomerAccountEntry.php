@@ -25,6 +25,9 @@ class CustomerAccountEntry extends Model
         'balance_after',
         'notes',
         'created_at',
+        'reverses_entry_id',
+        'payment_method',
+        'reversed_at',
     ];
 
     protected function casts(): array
@@ -33,6 +36,7 @@ class CustomerAccountEntry extends Model
             'amount' => 'decimal:2',
             'balance_after' => 'decimal:2',
             'created_at' => 'datetime',
+            'reversed_at' => 'datetime',
         ];
     }
 
@@ -59,5 +63,10 @@ class CustomerAccountEntry extends Model
     public function invoicePayments(): HasMany
     {
         return $this->hasMany(InvoicePayment::class);
+    }
+
+    public function reversal(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(self::class, 'reverses_entry_id');
     }
 }

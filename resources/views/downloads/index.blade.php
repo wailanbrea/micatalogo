@@ -4,7 +4,7 @@
         $downloadUrl = $release ? route('downloads.android', $release['version_code']) : '#';
     @endphp
 
-    <div class="min-h-screen overflow-hidden bg-[#f8fbff] font-sans text-[#14213d] selection:bg-blue-600 selection:text-white">
+    <div class="download-page min-h-screen overflow-hidden bg-[#f8fbff] font-sans text-[#14213d] selection:bg-blue-600 selection:text-white">
         <div class="pointer-events-none fixed inset-0 -z-0 overflow-hidden" aria-hidden="true">
             <div class="absolute -left-48 -top-48 h-[38rem] w-[38rem] rounded-full bg-blue-100/70 blur-[100px]"></div>
             <div class="absolute -right-64 top-20 h-[48rem] w-[48rem] rounded-full bg-sky-100/75 blur-[110px]"></div>
@@ -12,19 +12,19 @@
         </div>
 
         <header class="relative z-10 border-b border-slate-200/70 bg-white/80 backdrop-blur-xl">
-            <div class="mx-auto flex h-[78px] max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10">
-                <a href="{{ route('home') }}" class="group flex items-center gap-3" aria-label="Volver al inicio de MiCatalogo">
+            <div class="download-header-container mx-auto flex h-[78px] max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10">
+                <a href="{{ route('home') }}" class="download-brand group flex items-center gap-3" aria-label="Volver al inicio de MiCatalogo">
                     <span class="flex h-11 w-11 items-center justify-center rounded-[14px] bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-lg shadow-blue-600/25 transition group-hover:-rotate-3">
                         <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M5 8.5h14v10.25A2.25 2.25 0 0 1 16.75 21h-9.5A2.25 2.25 0 0 1 5 18.75V8.5Zm3-1.25V6a4 4 0 0 1 8 0v1.25M12 12v4m0 0 2-2m-2 2-2-2"/>
                         </svg>
                     </span>
-                    <span class="text-[27px] font-extrabold leading-none tracking-[-0.055em] text-[#14213d]">Mi<span class="text-blue-600">Catalogo</span></span>
+                    <span class="download-brand-name font-extrabold leading-none text-[#14213d]">Mi<span class="text-blue-600">Catalogo</span></span>
                 </a>
 
-                <a href="{{ route('home') }}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white/80 px-4 py-2.5 text-sm font-bold text-slate-600 shadow-sm transition hover:border-blue-200 hover:text-blue-600">
+                <a href="{{ route('home') }}" class="download-back-link inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white/80 px-4 py-2.5 text-sm font-bold text-slate-600 shadow-sm transition hover:border-blue-200 hover:text-blue-600">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                    Volver al inicio
+                    <span class="download-back-label">Volver al inicio</span><span class="download-back-label-mobile">Inicio</span>
                 </a>
             </div>
         </header>
@@ -37,9 +37,9 @@
                             <span class="h-2.5 w-2.5 rounded-full bg-blue-600 shadow-[0_0_0_6px_rgba(37,99,235,0.12)]"></span>
                             Aplicación oficial para Android
                         </div>
-                        <h1 class="mt-6 max-w-[700px] text-[clamp(3rem,6vw,5.25rem)] font-extrabold leading-[0.98] tracking-[-0.065em] text-[#14213d]">
-                            Descarga la app APK<br>
-                            de <span class="bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 bg-clip-text text-transparent">MiCatalogo</span>
+                        <h1 class="download-title mt-6 max-w-[700px] font-extrabold text-[#14213d]">
+                            Descarga la app APK
+                            <span class="download-title-product">de <span class="bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 bg-clip-text text-transparent">MiCatalogo</span></span>
                         </h1>
                         <p class="mt-7 max-w-[620px] text-lg leading-8 text-slate-600 sm:text-xl">
                             Gestiona tus productos, inventario, ventas y comparte tu catálogo de forma más rápida y desde cualquier lugar.
@@ -60,7 +60,7 @@
                             </a>
                         </div>
 
-                        <div class="mt-9 grid max-w-[700px] grid-cols-3 divide-x divide-slate-200 rounded-2xl border border-slate-200/80 bg-white/85 px-2 py-4 shadow-[0_12px_30px_rgba(44,81,140,0.08)] sm:px-5 sm:py-5">
+                        <div class="download-facts mt-9 max-w-[700px] rounded-2xl border border-slate-200/80 bg-white/85 px-2 py-4 shadow-[0_12px_30px_rgba(44,81,140,0.08)] sm:px-5 sm:py-5">
                             <div class="flex items-center gap-3 px-2 sm:px-4">
                                 <span class="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600 sm:flex"><svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2m6-2a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z"/></svg></span>
                                 <div><p class="text-xs text-slate-500">Versión</p><p class="mt-0.5 text-base font-extrabold text-[#14213d]">{{ $release['version_name'] ?? 'Próximamente' }}</p></div>
@@ -112,11 +112,11 @@
 
             <section id="instrucciones" class="mx-auto max-w-7xl px-5 pb-14 sm:px-8 lg:px-10 lg:pb-20">
                 <div class="grid gap-5 lg:grid-cols-[1fr_1fr]">
-                    <div class="flex items-center gap-5 rounded-3xl border border-blue-100 bg-blue-50/75 p-5 sm:p-6">
+                    <div class="download-instruction-card flex items-center gap-5 rounded-3xl border border-blue-100 bg-blue-50/75 p-5 sm:p-6">
                         <div class="h-28 w-28 shrink-0 rounded-2xl bg-white p-2 shadow-sm sm:h-32 sm:w-32">{!! $qrSvg !!}</div>
                         <div><p class="text-sm font-extrabold text-[#14213d] sm:text-base">También puedes escanear este código</p><p class="mt-1 text-sm leading-6 text-slate-600">para descargar la app APK desde tu celular Android.</p></div>
                     </div>
-                    <div class="flex items-center gap-5 rounded-3xl border border-amber-200 bg-amber-50/80 p-5 sm:p-6">
+                    <div class="download-instruction-card flex items-center gap-5 rounded-3xl border border-amber-200 bg-amber-50/80 p-5 sm:p-6">
                         <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-400 text-white shadow-sm"><svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.3 3.8 2.7 17a2 2 0 0 0 1.74 3h15.12a2 2 0 0 0 1.74-3L13.7 3.8a2 2 0 0 0-3.4 0Z"/></svg></span>
                         <div><p class="text-sm font-extrabold text-[#14213d] sm:text-base">Si tu navegador bloquea la instalación</p><p class="mt-1 text-sm leading-6 text-slate-600">activa “Permitir apps de este origen” en la configuración de seguridad de Android.</p></div>
                     </div>
@@ -133,7 +133,7 @@
                     <div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-end"><div><p class="text-xs font-black uppercase tracking-[0.2em] text-blue-600">Versiones oficiales</p><h2 class="mt-2 text-3xl font-extrabold tracking-tight text-[#14213d] sm:text-4xl">Historial de descargas</h2></div><p class="text-sm font-semibold text-slate-500">{{ number_format($downloadCount) }} descargas registradas</p></div>
                     <div class="mt-8 space-y-4">
                         @forelse ($androidReleases as $release)
-                            <article class="flex flex-col gap-5 rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_14px_35px_rgba(36,76,135,0.08)] sm:flex-row sm:items-center sm:justify-between sm:p-7">
+                            <article class="download-release-card flex flex-col gap-5 rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_14px_35px_rgba(36,76,135,0.08)] sm:flex-row sm:items-center sm:justify-between sm:p-7">
                                 <div class="flex items-start gap-4"><span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600"><svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg></span><div><div class="flex flex-wrap items-center gap-2"><h3 class="text-lg font-extrabold text-[#14213d]">MiCatalogo {{ $release['version_name'] }}</h3><span class="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-700">Recomendada</span></div><p class="mt-1 text-xs font-semibold text-slate-500">Publicada el {{ \Illuminate\Support\Carbon::parse($release['release_date'])->locale('es')->translatedFormat('d \d\e F \d\e Y') }} · Código {{ $release['version_code'] }}</p><p class="mt-3 text-sm leading-6 text-slate-600">{{ $release['release_notes'] }}</p></div></div>
                                 <a href="{{ route('downloads.android', $release['version_code']) }}" class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">Descargar APK <span aria-hidden="true">↗</span></a>
                             </article>

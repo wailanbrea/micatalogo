@@ -314,7 +314,7 @@ class CashRegisterService
         $movements = $session->movements;
 
         $salesCashCents = (int) $movements->where('type', 'sale')->sum('amount_cents');
-        $collectionsCashCents = (int) $movements->where('type', 'customer_payment')->sum('amount_cents');
+        $collectionsCashCents = (int) $movements->whereIn('type', ['customer_payment', 'customer_payment_reversal'])->sum('amount_cents');
         $cashInCents = (int) $movements->where('type', 'cash_in')->sum('amount_cents');
         $ownerContribCents = (int) $movements->where('type', 'owner_contribution')->sum('amount_cents');
 
@@ -349,7 +349,10 @@ class CashRegisterService
             'expected_closing_amount' => (float) Money::toDecimal($expectedCents),
             'movements_count' => $movements->count(),
             'counted_amount' => $session->counted_closing_amount !== null ? (float) $session->counted_closing_amount : null,
-            'difference' => $session->difference !== null ? (float) $session->difference : null,
+            'difference' => $session->counted_closing_amount_cents !== null ? (float) Money::toDecimal($session->counted_closing_amount_cents - $expectedCents) : null,
+            'original_expected_closing_amount' => $session->expected_closing_amount_cents === null ? null : (float) Money::toDecimal($session->expected_closing_amount_cents),
+            'original_difference' => $session->difference !== null ? (float) $session->difference : null,
+            'has_corrections' => $movements->where('type', 'customer_payment_reversal')->isNotEmpty(),
             'status' => $session->status,
         ];
     }

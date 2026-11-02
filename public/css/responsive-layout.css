@@ -81,8 +81,8 @@ body:has(.customer-create-dialog[open]) { overflow: hidden; }
 .pos-product-details > .mt-auto > span:last-child { display: none; }
 @media (min-width: 640px) { .pos-product-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; } }
 main { min-width: 0; }
-main.mx-auto,
-main > .mx-auto {
+.panel-shell main.mx-auto,
+.panel-shell main > .mx-auto {
     width: 100%;
     max-width: none;
     min-width: 0;
@@ -132,4 +132,74 @@ main > .mx-auto {
 @media print {
     body.panel-shell { padding-left: 0; }
     .panel-shell .panel-sidebar { display: none; }
+}
+
+/* Public pages keep their own content widths and never inherit panel geometry. */
+.public-header-logo { flex-shrink: 0; }
+.public-primary-navigation { display: none; white-space: nowrap; }
+.public-menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #fff;
+    color: #334155;
+}
+.public-mobile-navigation {
+    max-height: calc(100dvh - 80px);
+    overflow-y: auto;
+    border-top: 1px solid #e2e8f0;
+    padding: 8px 16px 16px;
+    background: #fff;
+}
+.public-mobile-navigation a { display: block; padding: 12px 8px; color: #334155; font-size: 14px; font-weight: 600; }
+.public-mobile-navigation a:hover { color: #1d4ed8; background: #eff6ff; border-radius: 8px; }
+.public-menu-toggle:focus-visible { outline: 2px solid #2563eb; outline-offset: 3px; }
+@media (max-width: 639px) { .public-header-primary { display: none; } }
+@media (max-width: 767px) { .public-header-login { display: none; } }
+@media (max-width: 479px) { .public-header-support { display: none; } }
+@media (min-width: 1280px) {
+    .public-primary-navigation { display: flex; }
+    .public-menu-toggle, .public-mobile-navigation { display: none !important; }
+}
+.download-page .download-header-container { gap: 16px; }
+.download-page .download-brand { flex-shrink: 0; gap: 10px; }
+.download-page .download-brand-name { font-size: 24px; letter-spacing: -.04em; }
+.download-page .download-back-link { flex-shrink: 0; white-space: nowrap; }
+.download-page .download-back-link svg { flex-shrink: 0; }
+.download-page .download-back-label-mobile { display: none; }
+.download-page .download-title {
+    font-size: clamp(2.15rem, 4.5vw, 3.75rem);
+    line-height: 1.1;
+    letter-spacing: -.04em;
+}
+.download-page .download-title-product { display: block; }
+.download-page .download-title-product > span { white-space: nowrap; }
+.download-page .download-facts { display: grid; grid-template-columns: minmax(0, 1fr); }
+.download-page .download-facts > div { min-width: 0; padding: 12px 16px; border: 0; }
+.download-page .download-facts > div + div { border-top: 1px solid #e2e8f0; }
+.download-page .download-facts > div > span { display: flex; width: 36px; height: 36px; flex-shrink: 0; }
+.download-page .download-facts > div > div { min-width: 0; }
+.download-page .download-facts p { overflow-wrap: anywhere; }
+.download-page .download-instruction-card > div { min-width: 0; }
+.download-page .download-release-card > div { min-width: 0; }
+@media (max-width: 479px) {
+    .download-page .download-header-container { padding-inline: 16px; gap: 8px; }
+    .download-page .download-brand-name { font-size: 21px; }
+    .download-page .download-brand { gap: 8px; }
+    .download-page .download-brand > span:first-child { width: 38px; height: 38px; }
+    .download-page .download-back-link { padding: 10px; }
+    .download-page .download-back-label { display: none; }
+    .download-page .download-back-label-mobile { display: inline; }
+    .download-page .download-instruction-card { flex-direction: column; align-items: flex-start; }
+    .download-page .download-release-card > div { flex-direction: column; }
+}
+@media (min-width: 640px) {
+    .download-page .download-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .download-page .download-facts > div { padding: 0 16px; }
+    .download-page .download-facts > div + div { border-top: 0; border-left: 1px solid #e2e8f0; }
 }

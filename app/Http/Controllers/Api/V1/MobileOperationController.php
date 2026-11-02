@@ -21,7 +21,7 @@ class MobileOperationController extends Controller
         // Otherwise an external actor could probe validation details for a shop
         // they cannot access, even though no mutation would be committed.
         abort_unless($request->user()->canSellAtShop($shop), 404);
-        $type = $request->validate(['type' => ['required', 'in:'.implode(',', array_merge(ShopRecordSyncService::TYPES, ShopRouteSyncService::TYPES, FinancialMobileOperationService::TYPES, OnlineMobileOperationService::TYPES, ShopAdministrationMobileOperationService::TYPES, ['product_upsert','product_archive','product_photo_update','restock','adjustment','open_bottle','customer_upsert','return','decant_setup','decant_vial_receive','decant_vial_update','decant_prepare','decant_presentation_update','decant_discard','decant_undo_open','decant_sell_remainder','decant_reconcile_opening']))]])['type'];
+        $type = $request->validate(['type' => ['required', 'in:'.implode(',', array_merge(ShopRecordSyncService::TYPES, ShopRouteSyncService::TYPES, FinancialMobileOperationService::TYPES, OnlineMobileOperationService::TYPES, ShopAdministrationMobileOperationService::TYPES, ['product_upsert','product_archive','product_photo_update','restock','adjustment','open_bottle','customer_upsert','return','sale_cancel','decant_setup','decant_vial_receive','decant_vial_update','decant_prepare','decant_presentation_update','decant_discard','decant_undo_open','decant_sell_remainder','decant_reconcile_opening']))]])['type'];
         $rules = ['type' => ['required'], 'client_operation_uuid' => ['required', 'uuid'], 'notes' => ['nullable', 'string', 'max:1000']];
         if (in_array($type, array_merge(FinancialMobileOperationService::TYPES, OnlineMobileOperationService::TYPES, ShopAdministrationMobileOperationService::TYPES), true)) {
             $rules += ['request' => ['required', 'array'], 'resource_id' => ['required_if:type,cash_close,cash_movement,expense_payment,quote_convert,order_confirm,purchase_receive,partner_transaction,seller_menu_permissions_update,authorization_approve,authorization_reject,day_close_adjustment', 'nullable', 'string', 'max:80']];
@@ -84,6 +84,8 @@ class MobileOperationController extends Controller
                 'items.*.product_id' => ['required', 'ulid', 'distinct'], 'items.*.quantity' => ['required', 'integer', 'min:1', 'max:10000'],
                 'items.*.refund_price' => ['required', 'decimal:0,2', 'min:0', 'max:1000000000'],
                 'items.*.refund_total' => ['sometimes', 'decimal:0,2', 'min:0', 'max:10000000000000'], 'items.*.restock' => ['required', 'boolean']];
+        } elseif ($type === 'sale_cancel') {
+            $rules += ['client_sale_uuid' => ['required_without:invoice_id', 'nullable', 'uuid'], 'invoice_id' => ['required_without:client_sale_uuid', 'nullable', 'integer']];
         } elseif ($type === 'customer_upsert') {
             $rules['notes'] = ['nullable', 'string', 'max:2000'];
             $rules += [

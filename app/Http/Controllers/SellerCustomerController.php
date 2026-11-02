@@ -14,12 +14,32 @@ use InvalidArgumentException;
 
 class SellerCustomerController extends Controller
 {
+    public function payments(Request $request, Shop $shop, \App\Services\CustomerPaymentReversalService $service): View
+    {
+        $data = $request->validate(['customer' => ['nullable', 'string', 'max:36']]);
+        $payments = \App\Models\CustomerAccountEntry::where('shop_id', $shop->id)->where('type', 'payment')
+            ->when($data['customer'] ?? null, fn ($q, $id) => $q->whereHas('customer', fn ($c) => $c->where('public_id', $id)))
+            ->with(['customer', 'reversal.user'])->orderByDesc('id')->paginate(30)->withQueryString();
+        return view('seller.customers.payments', ['shop' => $shop, 'payments' => $payments, 'canReverse' => $service->canReverse($shop, $request->user())]);
+    }
+
+    public function reversePayment(Request $request, Shop $shop, Customer $customer, int $paymentId, \App\Services\CustomerPaymentReversalService $service): RedirectResponse
+    {
+        $data = $request->validate(['client_transaction_uuid' => ['required', 'uuid'], 'reason' => ['required', 'string', 'max:255']]);
+        try {
+            $service->reverse($shop, $customer, $paymentId, $request->user(), $data['client_transaction_uuid'], $data['reason']);
+        } catch (InvalidArgumentException $e) {
+            return back()->withErrors(['reversal' => $e->getMessage()]);
+        }
+        return back()->with('status', 'Abono anulado. Saldo, facturas y conciliación actualizados; historial conservado.');
+    }
+
     public function index(Request $request, Shop $shop): View
     {
         $validated = $request->validate(['q' => ['nullable', 'string', 'max:120']]);
         $search = trim((string) ($validated['q'] ?? ''));
         $customers = $shop->customers()
-            ->with(['accountEntries' => fn ($query) => $query->reorder()->latest('created_at')->latest('id')->limit(6)])
+            ->with(['accountEntries' => fn ($query) => $query->with('reversal')->reorder()->latest('created_at')->latest('id')->limit(6)])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(fn ($query) => $query->where('name', 'like', "%{$search}%")->orWhere('phone', 'like', "%{$search}%")->orWhere('document_number', 'like', "%{$search}%"));
             })

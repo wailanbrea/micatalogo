@@ -105,6 +105,7 @@ test('ACL-016 every shop-scoped JSON mutation rejects an owner from another tena
         ['POST', 'cash-sessions/missing-session/movements'],
         ['POST', 'customers'],
         ['POST', 'customers/missing-customer/payments'],
+        ['POST', 'customers/missing-customer/payments/999999999/reverse'],
         ['POST', 'customers/missing-customer/adjustments'],
         ['POST', 'expenses'],
         ['POST', 'expenses/missing-expense/payments'],
@@ -143,6 +144,7 @@ test('ACL-016 every shop-scoped JSON mutation rejects an owner from another tena
         'cash-sessions/missing-session/movements' => 'cash-sessions/{session}/movements',
         'customers/missing-customer/adjustments' => 'customers/{customer}/adjustments',
         'customers/missing-customer/payments' => 'customers/{customer}/payments',
+        'customers/missing-customer/payments/999999999/reverse' => 'customers/{customer}/payments/{paymentId}/reverse',
         'expenses/missing-expense/payments' => 'expenses/{expense}/payments',
         'finance/day-close/missing-closure/adjustments' => 'finance/day-close/{closure}/adjustments',
         'inventory-import/missing-session/confirm' => 'inventory-import/{session}/confirm',
@@ -225,7 +227,7 @@ test('ACL-018 every tenant-scoped web mutation rejects an owner from another ten
         })
         ->values();
 
-    expect($routes)->toHaveCount(64, 'La matriz runtime debe cubrir todas las mutaciones web por tienda, incluido el ajuste auditado.');
+    expect($routes)->toHaveCount(65, 'La matriz runtime debe cubrir todas las mutaciones web por tienda, incluidas las anulaciones de abonos.');
 
     $placeholderValues = [
         'shop' => $shopA->public_id,
@@ -233,6 +235,7 @@ test('ACL-018 every tenant-scoped web mutation rejects an owner from another ten
         'attribute' => 'missing-qa-attribute',
         'category' => 'missing-qa-category',
         'customer' => 'missing-qa-customer',
+        'paymentId' => '999999999',
         'expense' => 'missing-qa-expense',
         'session' => 'missing-qa-session',
         'quote' => 'missing-qa-quote',

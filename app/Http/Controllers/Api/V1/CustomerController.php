@@ -18,6 +18,32 @@ use InvalidArgumentException;
 
 class CustomerController extends Controller
 {
+    public function payments(Request $request, Shop $shop, \App\Services\CustomerPaymentReversalService $service): JsonResponse
+    {
+        $this->ensureShopOwner($request, $shop, ['collections']);
+        $validated = $request->validate(['before_id' => ['nullable', 'integer', 'min:1'], 'payment_ids' => ['nullable', 'array', 'max:50'], 'payment_ids.*' => ['integer', 'min:1']]);
+        $rows = CustomerAccountEntry::where('shop_id', $shop->id)->where('type', 'payment')
+            ->when($validated['before_id'] ?? null, fn ($q, $id) => $q->where('id', '<', $id))
+            ->when($validated['payment_ids'] ?? null, fn ($q, $ids) => $q->whereIn('id', $ids))
+            ->with(['customer', 'reversal.user', 'invoicePayments' => fn ($q) => $q->withoutGlobalScope('applied')])
+            ->orderByDesc('id')->limit(51)->get();
+        return response()->json(['payments' => $rows->take(50)->map(fn ($p) => $service->payload($p, $shop, $request->user()))->values(),
+            'next_cursor' => $rows->count() > 50 ? (string) $rows[49]->id : null]);
+    }
+
+    public function reversePayment(Request $request, Shop $shop, Customer $customer, int $paymentId, \App\Services\CustomerPaymentReversalService $service): JsonResponse
+    {
+        $this->ensureCustomerOwner($request, $shop, $customer, ['collections']);
+        $data = $request->validate(['client_transaction_uuid' => ['required', 'uuid'], 'reason' => ['required', 'string', 'max:255']]);
+        try {
+            $entry = $service->reverse($shop, $customer, $paymentId, $request->user(), $data['client_transaction_uuid'], $data['reason']);
+        } catch (InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], $e->getCode() ?: 422);
+        }
+        $payment = CustomerAccountEntry::whereKey($entry->reverses_entry_id)->firstOrFail();
+        return response()->json(['payment' => $service->payload($payment, $shop, $request->user()), 'customer' => $this->customerPayload($customer->fresh())]);
+    }
+
     public function index(Request $request, Shop $shop): JsonResponse
     {
         $this->ensureShopOwner($request, $shop, ['customers', 'credit', 'collections']);

@@ -27,6 +27,7 @@ class InvoicePayment extends Model
         'received_at',
         'client_operation_uuid',
         'payload_sha256',
+        'reversed_at',
     ];
 
     protected function casts(): array
@@ -35,12 +36,19 @@ class InvoicePayment extends Model
             'amount' => 'decimal:2',
             'amount_cents' => 'integer',
             'received_at' => 'datetime',
+            'reversed_at' => 'datetime',
         ];
     }
 
     public function shop(): BelongsTo
     {
         return $this->belongsTo(Shop::class);
+    }
+
+    protected static function booted(): void
+    {
+        // Original amounts remain immutable audit evidence; sums use applied payments.
+        static::addGlobalScope('applied', fn ($query) => $query->whereNull('invoice_payments.reversed_at'));
     }
 
     public function invoice(): BelongsTo

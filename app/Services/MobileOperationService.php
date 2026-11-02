@@ -41,7 +41,7 @@ class MobileOperationService
             abort_unless(app(CatalogAccessService::class)->canManagePhotos($shop, $user, $product), 403);
         } elseif (in_array($data['type'], ['category_upsert', 'unit_upsert'], true)) {
             app(CatalogTaxonomyService::class)->authorize($shop, $user, $data);
-        } elseif ($data['type'] !== 'return') {
+        } elseif (! in_array($data['type'], ['return', 'sale_cancel'], true)) {
             Gate::forUser($user)->authorize('update', $shop);
             if (in_array($data['type'], ['restock', 'adjustment', 'open_bottle'], true)) {
                 $key = match ($data['type']) {
@@ -50,7 +50,8 @@ class MobileOperationService
                 abort_unless(in_array($key, app(SellerMenuService::class)->visibleForUser($shop, $user), true), 403);
             }
         } else {
-            abort_unless(in_array('returns', app(SellerMenuService::class)->visibleForUser($shop, $user), true), 403);
+            $visible = app(SellerMenuService::class)->visibleForUser($shop, $user);
+            abort_unless(in_array('returns', $visible, true) || in_array('sales', $visible, true), 403);
         }
         // A previous successful receipt does not bypass current permission checks.
         // Perform these before looking up the UUID, including administrative envelopes.
@@ -91,6 +92,7 @@ class MobileOperationService
                 'route_upsert', 'route_assign', 'route_unassign', 'route_reorder', 'route_load_create', 'route_load_status' => app(ShopRouteSyncService::class)->apply($shop, $data),
                 'category_upsert', 'unit_upsert', 'adjustment_reason_upsert' => app(ShopRecordSyncService::class)->apply($shop, $data, $user, $source),
                 'return' => $this->refund($shop, $user, $data, $operation),
+                'sale_cancel' => $this->cancelSale($shop, $user, $data, $operation),
                 'customer_upsert' => $this->customerOperation($shop, $data),
                 'decant_setup', 'decant_vial_receive', 'decant_vial_update', 'decant_prepare', 'decant_presentation_update', 'decant_discard', 'decant_undo_open', 'decant_sell_remainder', 'decant_reconcile_opening' => app(DecantInventoryService::class)->command($shop, $data, $user->id),
                 default => $this->productOperation($shop, $user, $data),
@@ -583,8 +585,8 @@ class MobileOperationService
             throw new InvalidArgumentException('Sincroniza primero la venta original.', 409);
         }
         $invoice = Invoice::whereKey($invoice->id)->lockForUpdate()->firstOrFail();
-        if ($invoice->status !== 'paid' || CustomerAccountEntry::where('invoice_id', $invoice->id)->exists()) {
-            throw new InvalidArgumentException('Solo se devuelven ventas de contado pagadas, sin deuda.', 422);
+        if (! in_array($invoice->status, ['paid', 'pending', 'partial'], true)) {
+            throw new InvalidArgumentException('Solo se pueden devolver ventas vigentes.', 422);
         }
         $rows = $invoice->items()->get();
         $invoiceItems = $rows->keyBy(fn ($item) => (string) $item->product_id);
@@ -646,6 +648,119 @@ class MobileOperationService
         }
         DB::table('invoice_returns')->where('id', $returnId)->update(['total' => Money::toDecimal($totalCents)]);
 
+        $paidCents = (int) $invoice->payments()->sum('amount_cents');
+        $priorReturnsCents = Money::toCents(DB::table('invoice_returns')->where('invoice_id', $invoice->id)->where('id', '!=', $returnId)->sum('total'));
+        $invoicePendingCents = max(0, Money::toCents($invoice->total) - $paidCents - $priorReturnsCents);
+
+        if ($totalCents > 0 && $invoice->customer_id && $invoicePendingCents > 0) {
+            $debtReductionCents = min($totalCents, $invoicePendingCents);
+            if ($debtReductionCents > 0) {
+                $customer = Customer::whereKey($invoice->customer_id)->lockForUpdate()->first();
+                if ($customer) {
+                    $newBalanceCents = max(0, Money::toCents($customer->balance) - $debtReductionCents);
+                    $customer->update(['balance' => Money::toDecimal($newBalanceCents)]);
+                    CustomerAccountEntry::create([
+                        'shop_id' => $shop->id,
+                        'customer_id' => $customer->id,
+                        'user_id' => $user->id,
+                        'invoice_id' => $invoice->id,
+                        'type' => 'adjustment',
+                        'amount' => Money::toDecimal(-$debtReductionCents),
+                        'balance_after' => Money::toDecimal($newBalanceCents),
+                        'notes' => 'Devolución de factura #' . $invoice->invoice_number . (! empty($data['notes']) ? ': ' . $data['notes'] : ''),
+                        'client_transaction_uuid' => (string) Str::uuid(),
+                    ]);
+                }
+            }
+        }
+
+        $totalItemsSold = (int) $invoice->items()->sum('quantity');
+        $totalItemsReturned = (int) DB::table('invoice_return_items')
+            ->join('invoice_returns', 'invoice_returns.id', '=', 'invoice_return_items.invoice_return_id')
+            ->where('invoice_returns.invoice_id', $invoice->id)
+            ->sum('invoice_return_items.quantity');
+        $allReturned = ($totalItemsReturned >= $totalItemsSold);
+        $allReturnsTotalCents = Money::toCents(DB::table('invoice_returns')->where('invoice_id', $invoice->id)->sum('total'));
+        $remainingBalanceCents = max(0, Money::toCents($invoice->total) - $allReturnsTotalCents - $paidCents);
+
+        if ($allReturned) {
+            $newStatus = ($paidCents > 0) ? 'refunded' : 'void';
+        } else {
+            if ($remainingBalanceCents === 0) {
+                $newStatus = 'paid';
+            } elseif ($paidCents > 0) {
+                $newStatus = 'partial';
+            } else {
+                $newStatus = 'pending';
+            }
+        }
+        $invoice->update(['status' => $newStatus]);
+
         return ['return_id' => $returnId, 'total' => number_format($totalCents / 100, 2, '.', '')];
+    }
+
+    private function cancelSale(Shop $shop, User $user, array $data, MobileOperation $operation): array
+    {
+        $invoice = ! empty($data['invoice_id'])
+            ? $shop->invoices()->whereKey((int) $data['invoice_id'])->lockForUpdate()->firstOrFail()
+            : optional(PosSaleUpload::where('shop_id', $shop->id)->where('client_sale_uuid', $data['client_sale_uuid'])->first())->invoice;
+        if (! $invoice) {
+            throw new InvalidArgumentException('Sincroniza primero la venta original.', 409);
+        }
+        $invoice = Invoice::whereKey($invoice->id)->lockForUpdate()->firstOrFail();
+        if ($invoice->status === 'void') {
+            return ['invoice_id' => $invoice->id, 'status' => 'void'];
+        }
+
+        // Restock unreturned items
+        $rows = $invoice->items()->get();
+        foreach ($rows as $item) {
+            $oldReturnedQty = (int) DB::table('invoice_return_items')->where('invoice_item_id', $item->id)->sum('quantity');
+            $remQty = $item->quantity - $oldReturnedQty;
+            if ($remQty > 0) {
+                $product = $shop->products()->withTrashed()->whereKey($item->product_id)->first();
+                if ($product) {
+                    $remainder = app(DecantInventoryService::class)->available()
+                        ? DB::table('decant_remainder_sales')->join('inventory_movements', 'inventory_movements.id', '=', 'decant_remainder_sales.movement_id')
+                            ->where('inventory_movements.invoice_id', $invoice->id)->where('inventory_movements.product_id', $product->id)->select('decant_remainder_sales.*')->first()
+                        : null;
+                    $cost = $item->total_cost_cents === null ? null : intdiv($item->total_cost_cents * $remQty, $item->quantity);
+                    if ($remainder) {
+                        app(DecantInventoryService::class)->returnRemainder($product, $remainder, $cost, $user->id);
+                    } else {
+                        app(InventoryService::class)->recordReturn($product, $remQty, $cost, $user->id, $data['notes'] ?? 'Anulación de venta #' . $invoice->invoice_number);
+                    }
+                }
+            }
+        }
+
+        // Wipe remaining customer pending debt on this invoice
+        if ($invoice->customer_id) {
+            $customer = Customer::whereKey($invoice->customer_id)->lockForUpdate()->first();
+            if ($customer) {
+                $paidCents = (int) $invoice->payments()->sum('amount_cents');
+                $returnsCents = Money::toCents(DB::table('invoice_returns')->where('invoice_id', $invoice->id)->sum('total'));
+                $pendingDebtCents = max(0, Money::toCents($invoice->total) - $paidCents - $returnsCents);
+                if ($pendingDebtCents > 0) {
+                    $newBalanceCents = max(0, Money::toCents($customer->balance) - $pendingDebtCents);
+                    $customer->update(['balance' => Money::toDecimal($newBalanceCents)]);
+                    CustomerAccountEntry::create([
+                        'shop_id' => $shop->id,
+                        'customer_id' => $customer->id,
+                        'user_id' => $user->id,
+                        'invoice_id' => $invoice->id,
+                        'type' => 'adjustment',
+                        'amount' => Money::toDecimal(-$pendingDebtCents),
+                        'balance_after' => Money::toDecimal($newBalanceCents),
+                        'notes' => 'Anulación de factura #' . $invoice->invoice_number . (! empty($data['notes']) ? ': ' . $data['notes'] : ''),
+                        'client_transaction_uuid' => (string) Str::uuid(),
+                    ]);
+                }
+            }
+        }
+
+        $invoice->update(['status' => 'void']);
+
+        return ['invoice_id' => $invoice->id, 'status' => 'void'];
     }
 }

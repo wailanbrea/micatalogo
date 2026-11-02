@@ -7,10 +7,10 @@
         <div class="pointer-events-none absolute top-[3500px] -right-40 h-[700px] w-[700px] rounded-full bg-blue-100/60 blur-[160px]"></div>
 
         <!-- Sticky Header -->
-        <header class="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-200/80 shadow-xs transition-all">
+        <header class="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-200/80 shadow-xs transition-all" x-data="{ mobileMenuOpen: false }" @click.outside="mobileMenuOpen = false" @keydown.escape.window="mobileMenuOpen = false">
             <div class="h-20 max-w-7xl mx-auto min-w-0 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-2 sm:gap-4">
                 <!-- Logo -->
-                <a class="flex items-center gap-2.5 group text-decoration-none" href="{{ route('home') }}">
+                <a class="public-header-logo flex items-center gap-2.5 group text-decoration-none" href="{{ route('home') }}">
                     <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 group-hover:bg-blue-700 transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
@@ -22,7 +22,7 @@
                 </a>
 
                 <!-- Desktop Navigation Links -->
-                <nav class="hidden md:flex items-center gap-7">
+                <nav class="public-primary-navigation items-center gap-7" aria-label="Navegación principal">
                     <a class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" href="#ejemplos">Ejemplos</a>
                     <a class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" href="#como-funciona">Cómo funciona</a>
                     <a class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" href="#ventajas">Ventajas</a>
@@ -32,7 +32,7 @@
 
                 <!-- Auth / Guest Actions -->
                 <div class="flex shrink-0 items-center gap-1 sm:gap-3">
-                    <a class="inline-flex items-center justify-center rounded-lg px-2 py-1.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-50 sm:px-3 sm:text-sm" href="{{ route('support.create') }}">Soporte</a>
+                    <a class="public-header-support inline-flex items-center justify-center rounded-lg px-2 py-1.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-50 sm:px-3 sm:text-sm" href="{{ route('support.create') }}">Soporte</a>
                     @auth
                         <!-- Authenticated Dropdown Menu -->
                         <div class="relative" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false" @click.outside="open = false">
@@ -116,19 +116,36 @@
                             </div>
                         </div>
                     @else
-                        <a class="hidden sm:inline-flex text-sm font-semibold text-slate-700 hover:text-blue-600 px-3 py-1.5 transition-colors" href="{{ route('login') }}">
+                        <a class="public-header-login hidden sm:inline-flex text-sm font-semibold text-slate-700 hover:text-blue-600 px-3 py-1.5 transition-colors" href="{{ route('login') }}">
                             Iniciar sesión
                         </a>
-                        <a class="inline-flex items-center justify-center bg-blue-600 text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-xl shadow-md shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-98 whitespace-nowrap" href="{{ route('register') }}">
+                        <a class="public-header-primary inline-flex items-center justify-center bg-blue-600 text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-xl shadow-md shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-98 whitespace-nowrap" href="{{ route('register') }}">
                             <span class="sm:hidden">Crear catálogo</span>
                             <span class="hidden sm:inline">Crear catálogo gratis</span>
                         </a>
                     @endauth
+                    <button type="button" class="public-menu-toggle" @click="mobileMenuOpen = !mobileMenuOpen" :aria-expanded="mobileMenuOpen.toString()" aria-expanded="false" aria-controls="public-mobile-navigation" aria-label="Abrir menú de navegación">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    </button>
                 </div>
             </div>
+            <nav id="public-mobile-navigation" class="public-mobile-navigation" x-show="mobileMenuOpen" x-cloak @click="mobileMenuOpen = false" aria-label="Navegación móvil">
+                <a href="#ejemplos">Ejemplos</a>
+                <a href="#como-funciona">Cómo funciona</a>
+                <a href="#ventajas">Ventajas</a>
+                <a href="{{ route('downloads.index') }}">Descargar app Android</a>
+                <a href="#preguntas-frecuentes">Preguntas frecuentes</a>
+                <a href="{{ route('support.create') }}">Soporte</a>
+                @guest
+                    <a href="{{ route('login') }}">Iniciar sesión</a>
+                    <a href="{{ route('register') }}">Crear catálogo gratis</a>
+                @else
+                    <a href="{{ route('seller.dashboard') }}">Mi panel de tiendas</a>
+                @endguest
+            </nav>
         </header>
 
-        <main class="w-full pt-20">
+        <main class="relative z-10 w-full pt-20">
             <!-- 1. HERO SECTION -->
             <section class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">

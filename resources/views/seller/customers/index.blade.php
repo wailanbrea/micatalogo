@@ -10,6 +10,7 @@
     <main class="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8" x-data="{ creatingCustomer: false }" x-init="{{ $errors->any() && old('first_name') !== null ? '$nextTick(() => $refs.customerDialog.showModal())' : '' }}">
         <div class="mx-auto max-w-7xl space-y-6">
             <x-seller.shop-header :shop="$shop" activeTab="customers" />
+            @if($canCollect)<div class="flex justify-end"><a href="{{ route('seller.shops.customers.payments', $shop) }}" class="rounded-xl border border-blue-200 bg-white px-4 py-2.5 text-sm font-bold text-blue-700">Historial y anulación de abonos</a></div>@endif
 
             @if (session('status'))
                 <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">{{ session('status') }}</div>
@@ -74,6 +75,25 @@
                                         <button class="whitespace-nowrap rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700">Registrar cobro</button>
                                     </form>@endif
                                 </div>
+                                @if ((float) $customer->balance > 0)
+                                    @php
+                                        $rawPhone = preg_replace('/\D/', '', (string) ($customer->whatsapp ?: $customer->phone));
+                                        $waPhone = strlen($rawPhone) === 10 ? '1' . $rawPhone : $rawPhone;
+                                        $reminderText = "Hola {$customer->name}, le saludamos de {$shop->name}. Le recordamos que presenta un balance pendiente de RD$ " . number_format((float) $customer->balance, 2) . ". Agradecemos su gestión de pago. ¡Muchas gracias!";
+                                        $waUrl = !empty($waPhone) ? 'https://wa.me/' . $waPhone . '?text=' . rawurlencode($reminderText) : 'https://wa.me/?text=' . rawurlencode($reminderText);
+                                    @endphp
+                                    <div class="mt-3 flex flex-wrap items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 p-3" x-data="{ copied: false }">
+                                        <span class="text-xs font-semibold text-amber-900">Recordatorio de cobro:</span>
+                                        <a href="{{ $waUrl }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 shadow-xs">
+                                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.588-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.071.376-.043.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824z"/></svg>
+                                            <span>Recordar por WhatsApp</span>
+                                        </a>
+                                        <button type="button" @click="navigator.clipboard.writeText(@js($reminderText)); copied = true; setTimeout(() => copied = false, 2500)" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-xs">
+                                            <svg class="h-3.5 w-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                                            <span x-text="copied ? '¡Copiado!' : 'Copiar mensaje'">Copiar mensaje</span>
+                                        </button>
+                                    </div>
+                                @endif
                                 @if ($customer->accountEntries->isNotEmpty())
                                     <section class="customer-movements" aria-label="Últimos movimientos de {{ $customer->name }}">
                                         <h3 class="text-sm font-bold text-slate-800">Últimos movimientos</h3>
@@ -84,7 +104,7 @@
                                                     @foreach ($entries as $entry)
                                                         @php
                                                             $isPayment = $entry->type === 'payment';
-                                                            $entryLabel = $isPayment ? 'Abono recibido' : ($entry->type === 'charge' ? 'Crédito registrado' : 'Ajuste de cuenta');
+                                                            $entryLabel = $isPayment ? ($entry->reversal ? 'Abono anulado' : 'Abono recibido') : ($entry->type === 'payment_reversal' ? 'Anulación de abono' : ($entry->type === 'charge' ? 'Crédito registrado' : 'Ajuste de cuenta'));
                                                             $localTime = $entry->created_at->copy()->timezone('America/Santo_Domingo');
                                                         @endphp
                                                         <li class="customer-movement-row">

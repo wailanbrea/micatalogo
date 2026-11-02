@@ -334,6 +334,7 @@ class PaymentService
                 $hash,
                 $notes ?: "Cobro cliente {$customer->name} ({$paymentMethod})"
             );
+            $entry->forceFill(['payment_method' => $paymentMethod])->save();
 
             // 3. FIFO Allocation to unpaid invoices (due_date ASC, issued_at ASC, id ASC)
             $unpaidInvoices = Invoice::query()

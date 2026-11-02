@@ -42,7 +42,7 @@ class DailyCloseService
     }
 
     /** @return array<string, mixed> */
-    private function calculateCents(Shop $shop, ?string $date = null): array
+    public function calculateCents(Shop $shop, ?string $date = null): array
     {
         $businessDate = Carbon::parse($date ?: now()->toDateString())->toDateString();
         $summary = $this->dashboard->getSummary($shop, $businessDate, $businessDate);
