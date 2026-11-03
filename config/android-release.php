@@ -2,13 +2,13 @@
 
 // Verified against the signed artifact; no credentials belong in this manifest.
 return [
-    'version_code' => 129,
-    'version_name' => '1.0.128',
+    'version_code' => 130,
+    'version_name' => '1.0.129',
     'minimum_supported_version_code' => 23,
-    'apk_url' => 'https://micatalogo.bsolutions.dev/downloads/bspos-1.0.128-release.apk',
-    'apk_sha256' => '455a220e06030065e9d7656f221417885b8d83e85511e1609756fe08bd8f5c04',
-    'release_notes' => 'Anulación auditada de abonos con motivo obligatorio. Corrige deuda, facturas, caja y conciliación; conserva el recibo original. Historial compartido con la web y sincronización de anulaciones sin duplicarlas. Requiere conexión y permiso de propietario o encargado.',
-    'release_date' => '2026-10-30',
+    'apk_url' => 'https://micatalogo.bsolutions.dev/downloads/bspos-1.0.129-release.apk',
+    'apk_sha256' => 'f092edcd2e9bc7b34c4ef07a7944207d82ff364d0fd0a9f71afbbeb32e807dbe',
+    'release_notes' => 'Anulación y devolución de ventas a crédito con restitución de inventario y saldo deudor. Recordatorio de cobros por WhatsApp y portapapeles. Cierre y arqueo de caja protegidos.',
+    'release_date' => '2026-11-02',
     'min_sdk' => 26,
-    'size_bytes' => 84003648,
+    'size_bytes' => 84020032,
 ];
