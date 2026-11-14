@@ -1143,18 +1143,23 @@ class SellerFeatureController extends Controller
                 'search' => $search,
                 'count' => $rows->count(),
             ],
-            'rows' => $rows->map(fn (Invoice $invoice) => [
-                'id' => (string) $invoice->id,
-                'primary' => $invoice->invoice_number,
-                'secondary' => ($invoice->customer?->name ?: 'Venta general').' · '.($invoice->issued_at?->format('d/m/Y H:i') ?: 'Sin fecha').' · '.number_format((int) $invoice->items->sum('quantity')).' artículo(s)',
-                'value' => $this->money($invoice->total),
-                'status' => $this->invoiceStatus($invoice),
-                'can_void' => $canVoid && ! in_array($invoice->status, ['void', 'refunded'], true),
-                'customer_name' => $invoice->customer?->name,
-                'created_at' => $invoice->issued_at?->toISOString(),
-                'items' => $invoice->items->map(fn ($item) => ['name' => $item->product_name, 'quantity' => (int) $item->quantity,
-                    'unit_price' => (string) $item->unit_price, 'line_total' => (string) $item->line_total])->all(),
-            ])->all(),
+            'rows' => $rows->map(function (Invoice $invoice) use ($canVoid): array {
+                $itemCount = (int) $invoice->items->sum('quantity');
+                $itemsLabel = $itemCount === 1 ? '1 artículo' : number_format($itemCount).' artículos';
+
+                return [
+                    'id' => (string) $invoice->id,
+                    'primary' => $invoice->invoice_number,
+                    'secondary' => ($invoice->customer?->name ?: 'Venta general').' · '.($invoice->issued_at?->format('d/m/Y H:i') ?: 'Sin fecha').' · '.$itemsLabel,
+                    'value' => $this->money($invoice->total),
+                    'status' => $this->invoiceStatus($invoice),
+                    'can_void' => $canVoid && ! in_array($invoice->status, ['void', 'refunded'], true),
+                    'customer_name' => $invoice->customer?->name,
+                    'created_at' => $invoice->issued_at?->toISOString(),
+                    'items' => $invoice->items->map(fn ($item) => ['name' => $item->product_name, 'quantity' => (int) $item->quantity,
+                        'unit_price' => (string) $item->unit_price, 'line_total' => (string) $item->line_total])->all(),
+                ];
+            })->all(),
             'note' => null,
         ];
     }

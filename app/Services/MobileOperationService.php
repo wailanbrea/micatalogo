@@ -123,6 +123,14 @@ class MobileOperationService
         if ($deleted && $customer && Money::toCents($customer->balance) > 0) {
             throw ValidationException::withMessages(['customer_id' => 'No se puede eliminar un cliente con saldo pendiente.']);
         }
+        $docNumber = isset($data['document_number']) ? trim((string) $data['document_number']) : '';
+        if ($docNumber === '' || in_array(mb_strtolower($docNumber), ['n/a', 'na', 's/n', '-', 'ninguno', '0'], true)) {
+            $data['document_number'] = null;
+            $data['document_type'] = null;
+        } else {
+            $data['document_number'] = $docNumber;
+        }
+
         $identity = null;
         if (! empty($data['document_type']) && ! empty($data['document_number'])) {
             $identity = $shop->customers()->withTrashed()
@@ -714,7 +722,9 @@ class MobileOperationService
 
         $paidCents = (int) $invoice->payments()->sum('amount_cents');
         if ($paidCents > 0) {
-            throw new InvalidArgumentException('Esta venta tiene pagos registrados. Usa devolución para registrar el reembolso del dinero cobrado.', 422);
+            app(SaleVoidService::class)->void($shop, $invoice, $user, trim((string) ($data['notes'] ?? '')) ?: 'Anulación de venta #' . $invoice->invoice_number);
+
+            return ['invoice_id' => $invoice->id, 'status' => 'void'];
         }
 
         // Restock unreturned items

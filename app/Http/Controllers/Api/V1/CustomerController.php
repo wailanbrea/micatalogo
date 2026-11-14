@@ -97,10 +97,24 @@ class CustomerController extends Controller
                     }
                 }
 
+                if (! empty($validated['document_type']) && ! empty($validated['document_number'])) {
+                    $duplicateIdentity = $shop->customers()
+                        ->withTrashed()
+                        ->where('document_type', $validated['document_type'])
+                        ->where('document_number', $validated['document_number'])
+                        ->exists();
+
+                    if ($duplicateIdentity) {
+                        throw new InvalidArgumentException('Ya existe un cliente registrado con ese documento.', 422);
+                    }
+                }
+
                 return $shop->customers()->create(array_merge($validated, ['payload_sha256' => $payloadHash]));
             });
         } catch (InvalidArgumentException $exception) {
-            return response()->json(['message' => $exception->getMessage(), 'reason' => 'idempotency_conflict'], $exception->getCode() ?: 422);
+            $reason = ($exception->getCode() === 409) ? 'idempotency_conflict' : 'validation_error';
+
+            return response()->json(['message' => $exception->getMessage(), 'reason' => $reason], $exception->getCode() ?: 422);
         }
 
         return response()->json($this->customerPayload($customer), 201);
@@ -232,6 +246,14 @@ class CustomerController extends Controller
 
         if (empty($validated['name'])) {
             abort(422, 'El nombre del cliente es obligatorio.');
+        }
+
+        $docNumber = isset($validated['document_number']) ? trim((string) $validated['document_number']) : '';
+        if ($docNumber === '' || in_array(mb_strtolower($docNumber), ['n/a', 'na', 's/n', '-', 'ninguno', '0'], true)) {
+            $validated['document_number'] = null;
+            $validated['document_type'] = null;
+        } else {
+            $validated['document_number'] = $docNumber;
         }
 
         return $validated;

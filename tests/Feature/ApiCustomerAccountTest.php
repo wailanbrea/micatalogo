@@ -38,6 +38,67 @@ test('a seller creates an idempotent customer scoped to their shop', function ()
     expect(Customer::query()->count())->toBe(1);
 });
 
+test('creating multiple customers with placeholder document_number succeeds and real duplicate returns 422', function () {
+    $user = User::factory()->create();
+    $shop = Shop::factory()->create(['user_id' => $user->id]);
+    $token = $user->createToken('BSPOS', ['customers:write'])->plainTextToken;
+
+    $this->withToken($token)
+        ->postJson("/api/v1/shops/{$shop->public_id}/customers", [
+            'client_customer_uuid' => (string) Str::uuid(),
+            'first_name' => 'Carlos',
+            'last_name' => 'Diaz',
+            'document_type' => 'cedula',
+            'document_number' => 'N/A',
+            'phone' => '8095550101',
+            'address' => 'Calle 1',
+            'credit_limit' => '0.00',
+        ])
+        ->assertCreated()
+        ->assertJsonPath('document_number', null);
+
+    $this->withToken($token)
+        ->postJson("/api/v1/shops/{$shop->public_id}/customers", [
+            'client_customer_uuid' => (string) Str::uuid(),
+            'first_name' => 'Maria',
+            'last_name' => 'Lopez',
+            'document_type' => 'cedula',
+            'document_number' => 'n/a',
+            'phone' => '8095550102',
+            'address' => 'Calle 2',
+            'credit_limit' => '0.00',
+        ])
+        ->assertCreated()
+        ->assertJsonPath('document_number', null);
+
+    $this->withToken($token)
+        ->postJson("/api/v1/shops/{$shop->public_id}/customers", [
+            'client_customer_uuid' => (string) Str::uuid(),
+            'first_name' => 'Pedro',
+            'last_name' => 'Ruiz',
+            'document_type' => 'cedula',
+            'document_number' => '001-9999999-1',
+            'phone' => '8095550103',
+            'address' => 'Calle 3',
+            'credit_limit' => '0.00',
+        ])
+        ->assertCreated();
+
+    $this->withToken($token)
+        ->postJson("/api/v1/shops/{$shop->public_id}/customers", [
+            'client_customer_uuid' => (string) Str::uuid(),
+            'first_name' => 'Otro',
+            'last_name' => 'Cliente',
+            'document_type' => 'cedula',
+            'document_number' => '001-9999999-1',
+            'phone' => '8095550104',
+            'address' => 'Calle 4',
+            'credit_limit' => '0.00',
+        ])
+        ->assertStatus(422)
+        ->assertJsonPath('message', 'Ya existe un cliente registrado con ese documento.');
+});
+
 test('a customer created with credit profile keeps identity and contact fields', function () {
     $user = User::factory()->create();
     $shop = Shop::factory()->create(['user_id' => $user->id]);
