@@ -137,3 +137,27 @@ test('regular seller cannot void a sale', function () {
         ->post(route('seller.shops.sales.void', [$shop, $invoice]), ['reason' => 'Intento'])
         ->assertForbidden();
 });
+
+test('api voidSaleApi voids sale by invoice id and returns json', function () {
+    $owner = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->for($owner)->create();
+    $token = $owner->createToken('test', ['pos:write'])->plainTextToken;
+    $invoice = Invoice::create([
+        'shop_id' => $shop->id,
+        'user_id' => $owner->id,
+        'invoice_number' => 'FAC-API-1',
+        'channel' => 'pos',
+        'currency' => 'DOP',
+        'status' => 'paid',
+        'subtotal' => '200.00',
+        'total' => '200.00',
+        'issued_at' => now(),
+    ]);
+
+    $this->withToken($token)
+        ->postJson("/api/v1/shops/{$shop->public_id}/sales/{$invoice->id}/void", ['reason' => 'Error desde app'])
+        ->assertOk()
+        ->assertJson(['id' => (string) $invoice->id, 'status' => 'void']);
+
+    expect($invoice->fresh()->status)->toBe('void');
+});

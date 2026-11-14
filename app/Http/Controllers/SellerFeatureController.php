@@ -1076,6 +1076,42 @@ class SellerFeatureController extends Controller
         return back()->with('status', "Venta #{$invoice->invoice_number} anulada.");
     }
 
+    public function voidSaleApi(Request $request, Shop $shop, SaleVoidService $voidService, ?Invoice $invoice = null): JsonResponse
+    {
+        abort_unless($request->user()->canSellAtShop($shop), 403);
+        $data = $request->validate([
+            'invoice_id' => ['nullable', 'integer'],
+            'client_sale_uuid' => ['nullable', 'uuid'],
+            'reason' => ['required', 'string', 'max:255'],
+        ]);
+
+        if (! $invoice) {
+            if (! empty($data['invoice_id'])) {
+                $invoice = $shop->invoices()->whereKey((int) $data['invoice_id'])->first();
+            } elseif (! empty($data['client_sale_uuid'])) {
+                $invoice = \App\Models\PosSaleUpload::where('shop_id', $shop->id)
+                    ->where('client_sale_uuid', $data['client_sale_uuid'])
+                    ->first()?->invoice;
+            }
+        }
+
+        if (! $invoice || $invoice->shop_id !== $shop->id) {
+            return response()->json(['message' => 'Venta no encontrada o pendiente de sincronizar.'], 404);
+        }
+
+        try {
+            $voided = $voidService->void($shop, $invoice, $request->user(), $data['reason']);
+        } catch (InvalidArgumentException $error) {
+            return response()->json(['message' => $error->getMessage()], $error->getCode() ?: 422);
+        }
+
+        return response()->json([
+            'id' => (string) $voided->id,
+            'invoice_number' => $voided->invoice_number,
+            'status' => $voided->status,
+        ]);
+    }
+
     private function salesData(Shop $shop): array
     {
         $period = (string) request()->query('period', 'today');

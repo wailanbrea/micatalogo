@@ -99,6 +99,8 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/shops/{shop}/quotes/{quote}/convert', [QuoteController::class, 'convert'])->middleware(['abilities:pos:write', 'menu:quotes']);
         Route::get('/shops/{shop}/returns/eligible', [ReturnController::class, 'eligible'])->middleware('menu:returns');
         Route::get('/shops/{shop}/sales/export', [\App\Http\Controllers\Api\V1\SalesExportController::class, 'show'])->middleware('menu:sales');
+        Route::post('/shops/{shop}/sales/void', [SellerFeatureController::class, 'voidSaleApi'])->middleware(['abilities:pos:write', 'menu:sales']);
+        Route::post('/shops/{shop}/sales/{invoice}/void', [SellerFeatureController::class, 'voidSaleApi'])->middleware(['abilities:pos:write', 'menu:sales'])->whereNumber('invoice');
         Route::post('/shops/{shop}/orders/{order}/confirm', [OrderController::class, 'confirm'])->middleware(['abilities:pos:write', 'menu:orders']);
         Route::post('/shops/{shop}/mobile-operations', [MobileOperationController::class, 'store'])->middleware(['abilities:pos:write', 'throttle:60,1']);
         Route::get('/shops/{shop}/customers', [CustomerController::class, 'index'])->middleware(['abilities:customers:read', 'menu:customers|credit|collections']);
