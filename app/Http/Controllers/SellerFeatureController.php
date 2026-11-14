@@ -23,11 +23,13 @@ use App\Services\BusinessDashboardService;
 use App\Services\DailyCloseService;
 use App\Services\DecantInventoryService;
 use App\Services\InventoryService;
+use App\Services\SaleVoidService;
 use App\Services\SellerMenuService;
 use App\Services\ShopAnalyticsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use InvalidArgumentException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
@@ -1059,6 +1061,21 @@ class SellerFeatureController extends Controller
         ];
     }
 
+    public function voidSale(Request $request, Shop $shop, Invoice $invoice, SaleVoidService $voidService): RedirectResponse
+    {
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'max:255'],
+        ]);
+
+        try {
+            $voidService->void($shop, $invoice, $request->user(), $data['reason']);
+        } catch (InvalidArgumentException $error) {
+            return back()->withErrors(['sale' => $error->getMessage()]);
+        }
+
+        return back()->with('status', "Venta #{$invoice->invoice_number} anulada.");
+    }
+
     private function salesData(Shop $shop): array
     {
         $period = (string) request()->query('period', 'today');
@@ -1066,6 +1083,7 @@ class SellerFeatureController extends Controller
         $status = (string) request()->query('status', 'all');
         $status = in_array($status, ['all', 'paid', 'credit', 'partial', 'void'], true) ? $status : 'all';
         $search = trim((string) request()->query('q', ''));
+        $canVoid = app(SaleVoidService::class)->canVoid($shop, request()->user());
 
         $filtered = app(\App\Services\ShopSalesReadService::class)->query($shop, request());
 
@@ -1095,12 +1113,13 @@ class SellerFeatureController extends Controller
                 'secondary' => ($invoice->customer?->name ?: 'Venta general').' · '.($invoice->issued_at?->format('d/m/Y H:i') ?: 'Sin fecha').' · '.number_format((int) $invoice->items->sum('quantity')).' artículo(s)',
                 'value' => $this->money($invoice->total),
                 'status' => $this->invoiceStatus($invoice),
+                'can_void' => $canVoid && ! in_array($invoice->status, ['void', 'refunded'], true),
                 'customer_name' => $invoice->customer?->name,
                 'created_at' => $invoice->issued_at?->toISOString(),
                 'items' => $invoice->items->map(fn ($item) => ['name' => $item->product_name, 'quantity' => (int) $item->quantity,
                     'unit_price' => (string) $item->unit_price, 'line_total' => (string) $item->line_total])->all(),
             ])->all(),
-            'note' => 'Las ventas confirmadas alimentan inventario, caja, crédito y ganancias. Las anuladas se mantienen fuera del resumen general, pero pueden consultarse desde el filtro de estado.',
+            'note' => null,
         ];
     }
 

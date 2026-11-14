@@ -185,6 +185,7 @@ Route::middleware(['auth', EnsureWebAccountIsActive::class, 'verified'])->prefix
         Route::get('/tiendas/{shop}/cotizaciones/{quote}', [SellerCommerceController::class, 'showQuote'])->middleware('menu:quotes')->name('shops.quotes.show');
         Route::get('/tiendas/{shop}/cotizaciones/{quote}/pdf', [SellerCommerceController::class, 'quotePdf'])->middleware('menu:quotes')->name('shops.quotes.pdf');
         Route::get('/tiendas/{shop}/modulo/{feature}', [SellerFeatureController::class, 'show'])->name('shops.feature');
+        Route::post('/tiendas/{shop}/ventas/{invoice}/anular', [SellerFeatureController::class, 'voidSale'])->middleware('menu:sales')->whereNumber('invoice')->name('shops.sales.void');
         Route::post('/tiendas/{shop}/cierre-diario', [SellerDailyCloseController::class, 'store'])->middleware('menu:day_close')->name('shops.daily-close.store');
         Route::post('/tiendas/{shop}/cierre-diario/{closure}/ajustes', [SellerDailyCloseController::class, 'adjust'])->middleware(['menu:day_close', 'can:update,shop'])->name('shops.daily-close.adjust');
         Route::post('/tiendas/{shop}/autorizaciones/{authorizationRequest}/aprobar', [SellerAuthorizationController::class, 'approve'])

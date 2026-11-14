@@ -1007,43 +1007,58 @@
                             @elseif (count($module['rows']))
                                 <div class="divide-y divide-slate-100">
                                     @foreach ($module['rows'] as $row)
-                                        <div class="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-                                            <div class="min-w-0">
-                                                @if ($featureKey === 'quotes' && ! empty($row['id']))
-                                                    <a wire:navigate.hover href="{{ route('seller.shops.quotes.show', [$shop, 'quote' => $row['id']]) }}" class="truncate text-sm font-black text-blue-700 hover:underline">{{ $row['primary'] }}</a>
-                                                @elseif ($featureKey === 'services' && ! empty($row['edit_url']))
-                                                    <a wire:navigate.hover href="{{ $row['edit_url'] }}" class="truncate text-sm font-black text-blue-700 hover:underline">{{ $row['primary'] }}</a>
-                                                @else
-                                                    <p class="truncate text-sm font-black text-slate-900">{{ $row['primary'] }}</p>
-                                                @endif
-                                                <p class="mt-1 text-xs text-slate-500">{{ $row['secondary'] }}</p>
-                                            </div>
-                                            <div class="flex flex-wrap items-center gap-3 sm:justify-end">
-                                                <span class="text-sm font-black tabular-nums text-slate-900">{{ $row['value'] }}</span>
-                                                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">{{ $row['status'] }}</span>
-                                                @if (($row['can_confirm'] ?? false) && in_array($featureKey, ['orders', 'encargos', 'shipments'], true))
-                                                    @if (! empty($row['confirm_url']))
-                                                        <a href="{{ $row['confirm_url'] }}" class="rounded-xl bg-emerald-600 px-3 py-2 text-[11px] font-black text-white hover:bg-emerald-700">Confirmar venta</a>
+                                        <div @if ($featureKey === 'sales') x-data="{ voiding: false }" @endif class="px-4 py-4 sm:px-5">
+                                            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                                <div class="min-w-0">
+                                                    @if ($featureKey === 'quotes' && ! empty($row['id']))
+                                                        <a wire:navigate.hover href="{{ route('seller.shops.quotes.show', [$shop, 'quote' => $row['id']]) }}" class="truncate text-sm font-black text-blue-700 hover:underline">{{ $row['primary'] }}</a>
+                                                    @elseif ($featureKey === 'services' && ! empty($row['edit_url']))
+                                                        <a wire:navigate.hover href="{{ $row['edit_url'] }}" class="truncate text-sm font-black text-blue-700 hover:underline">{{ $row['primary'] }}</a>
                                                     @else
-                                                        <form method="POST" action="{{ route('seller.shops.orders.confirm', [$shop, $row['id']]) }}">
+                                                        <p class="truncate text-sm font-black text-slate-900">{{ $row['primary'] }}</p>
+                                                    @endif
+                                                    <p class="mt-1 text-xs text-slate-500">{{ $row['secondary'] }}</p>
+                                                </div>
+                                                <div class="flex flex-wrap items-center gap-3 sm:justify-end">
+                                                    <span class="whitespace-nowrap text-sm font-black tabular-nums text-slate-900">{{ $row['value'] }}</span>
+                                                    <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">{{ $row['status'] }}</span>
+                                                    @if ($featureKey === 'sales' && ($row['can_void'] ?? false))
+                                                        <button type="button" @click="voiding = !voiding" :aria-expanded="voiding" class="rounded-xl border border-rose-200 px-3 py-1.5 text-[11px] font-black text-rose-700 hover:bg-rose-50">Anular</button>
+                                                    @endif
+                                                    @if (($row['can_confirm'] ?? false) && in_array($featureKey, ['orders', 'encargos', 'shipments'], true))
+                                                        @if (! empty($row['confirm_url']))
+                                                            <a href="{{ $row['confirm_url'] }}" class="rounded-xl bg-emerald-600 px-3 py-2 text-[11px] font-black text-white hover:bg-emerald-700">Confirmar venta</a>
+                                                        @else
+                                                            <form method="POST" action="{{ route('seller.shops.orders.confirm', [$shop, $row['id']]) }}">
+                                                                @csrf
+                                                                <button class="rounded-xl bg-emerald-600 px-3 py-2 text-[11px] font-black text-white hover:bg-emerald-700">Confirmar venta</button>
+                                                            </form>
+                                                        @endif
+                                                    @endif
+                                                    @if (($row['can_convert'] ?? false) && $featureKey === 'quotes')
+                                                        <form method="POST" action="{{ route('seller.shops.quotes.convert', [$shop, 'quote' => $row['id']]) }}">
                                                             @csrf
-                                                            <button class="rounded-xl bg-emerald-600 px-3 py-2 text-[11px] font-black text-white hover:bg-emerald-700">Confirmar venta</button>
+                                                            <button class="rounded-xl bg-emerald-600 px-3 py-2 text-[11px] font-black text-white hover:bg-emerald-700">Convertir en venta</button>
                                                         </form>
                                                     @endif
-                                                @endif
-                                                @if (($row['can_convert'] ?? false) && $featureKey === 'quotes')
-                                                    <form method="POST" action="{{ route('seller.shops.quotes.convert', [$shop, 'quote' => $row['id']]) }}">
-                                                        @csrf
-                                                        <button class="rounded-xl bg-emerald-600 px-3 py-2 text-[11px] font-black text-white hover:bg-emerald-700">Convertir en venta</button>
-                                                    </form>
-                                                @endif
-                                                @if (($row['can_receive'] ?? false) && in_array($featureKey, ['containers', 'loads', 'purchase_invoices'], true))
-                                                    <form method="POST" action="{{ route('seller.shops.purchases.receive', [$shop, 'document' => $row['id']]) }}">
-                                                        @csrf
-                                                        <button class="rounded-xl bg-emerald-600 px-3 py-2 text-[11px] font-black text-white hover:bg-emerald-700">Recibir inventario</button>
-                                                    </form>
-                                                @endif
+                                                    @if (($row['can_receive'] ?? false) && in_array($featureKey, ['containers', 'loads', 'purchase_invoices'], true))
+                                                        <form method="POST" action="{{ route('seller.shops.purchases.receive', [$shop, 'document' => $row['id']]) }}">
+                                                            @csrf
+                                                            <button class="rounded-xl bg-emerald-600 px-3 py-2 text-[11px] font-black text-white hover:bg-emerald-700">Recibir inventario</button>
+                                                        </form>
+                                                    @endif
+                                                </div>
                                             </div>
+                                            @if ($featureKey === 'sales' && ($row['can_void'] ?? false))
+                                                <form x-show="voiding" x-cloak method="POST" action="{{ route('seller.shops.sales.void', [$shop, $row['id']]) }}" class="mt-3 flex flex-col gap-2 rounded-xl border border-rose-200 bg-rose-50/60 p-3 sm:flex-row sm:items-center">
+                                                    @csrf
+                                                    <input type="text" name="reason" required maxlength="255" placeholder="Motivo de anulación (ej. venta duplicada)" class="min-w-0 flex-1 rounded-lg border border-rose-200 bg-white px-3 py-2 text-xs text-slate-900 focus:border-rose-400 focus:ring-rose-400">
+                                                    <div class="flex items-center gap-2">
+                                                        <button type="submit" class="rounded-lg bg-rose-600 px-3 py-2 text-xs font-black text-white hover:bg-rose-700">Confirmar anulación</button>
+                                                        <button type="button" @click="voiding = false" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50">Cancelar</button>
+                                                    </div>
+                                                </form>
+                                            @endif
                                         </div>
                                     @endforeach
                                 </div>
