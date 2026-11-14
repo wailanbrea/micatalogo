@@ -1123,11 +1123,11 @@ class SellerFeatureController extends Controller
 
         $filtered = app(\App\Services\ShopSalesReadService::class)->query($shop, request());
 
-        $today = $shop->invoices()->whereDate('issued_at', today())->where('status', '!=', 'void');
         $rows = (clone $filtered)->latest('issued_at')->limit(100)->get();
-        $operationCount = (clone $filtered)->count();
-        $totalSold = (float) (clone $filtered)->sum('total');
-        $creditCount = (clone $filtered)->whereIn('status', ['credit', 'pending', 'partial'])->count();
+        $kpiQuery = $status === 'void' ? (clone $filtered) : (clone $filtered)->where('status', '!=', 'void');
+        $operationCount = (clone $kpiQuery)->count();
+        $totalSold = (float) (clone $kpiQuery)->sum('total');
+        $creditCount = (clone $kpiQuery)->whereIn('status', ['credit', 'pending', 'partial'])->count();
 
         return [
             'kind' => 'table',

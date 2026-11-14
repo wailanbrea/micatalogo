@@ -16,9 +16,8 @@ class ShopSalesReadService
             'max_amount' => ['nullable', 'decimal:0,2', 'min:0']]);
         $query = $shop->invoices()->with(['customer', 'user', 'items']);
         $status = $data['status'] ?? 'all';
-        if ($status === 'all') $query->where('status', '!=', 'void');
-        elseif ($status === 'credit') $query->whereIn('status', ['credit', 'pending']);
-        else $query->where('status', $status);
+        if ($status === 'credit') $query->whereIn('status', ['credit', 'pending']);
+        elseif ($status !== 'all') $query->where('status', $status);
         match ($data['period'] ?? 'today') {
             'today' => $query->whereDate('issued_at', today()),
             'month' => $query->whereBetween('issued_at', [now()->startOfMonth(), now()->endOfDay()]),
