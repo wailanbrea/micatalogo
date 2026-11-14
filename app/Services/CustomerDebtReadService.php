@@ -18,9 +18,13 @@ class CustomerDebtReadService
             ->whereIn('status', ['pending', 'partial'])
             ->withSum('payments', 'amount_cents')
             ->orderByRaw('COALESCE(due_date, issued_at) asc')->orderBy('id')->get();
-        $returns = DB::table('invoice_returns')->where('shop_id', $shop->id)
-            ->whereIn('invoice_id', $invoices->pluck('id'))
-            ->selectRaw('invoice_id, SUM(total) AS total')->groupBy('invoice_id')->pluck('total', 'invoice_id');
+        $returns = DB::table('invoice_returns')
+            ->join('invoices', 'invoices.id', '=', 'invoice_returns.invoice_id')
+            ->where('invoices.shop_id', $shop->id)
+            ->whereIn('invoice_returns.invoice_id', $invoices->pluck('id'))
+            ->selectRaw('invoice_returns.invoice_id, SUM(invoice_returns.total) AS total')
+            ->groupBy('invoice_returns.invoice_id')
+            ->pluck('total', 'invoice_id');
         $orders = Order::where('shop_id', $shop->id)->whereIn('invoice_id', $invoices->pluck('id'))
             ->pluck('order_number', 'invoice_id');
         $remaining = max(0, Money::toCents($customer->balance));

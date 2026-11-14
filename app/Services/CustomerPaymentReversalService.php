@@ -41,7 +41,7 @@ class CustomerPaymentReversalService
             foreach ($allocations->groupBy('invoice_id') as $invoiceId => $rows) {
                 $invoice = Invoice::where('shop_id', $shop->id)->where('customer_id', $customer->id)->whereKey($invoiceId)->lockForUpdate()->firstOrFail();
                 $paidCents = (int) $invoice->payments()->sum('amount_cents');
-                $returned = Money::toCents(DB::table('invoice_returns')->where('shop_id', $shop->id)->where('invoice_id', $invoiceId)->sum('total'));
+                $returned = Money::toCents(DB::table('invoice_returns')->where('invoice_id', $invoice->id)->sum('total'));
                 $net = Money::toCents($invoice->total) - $returned;
                 $restore = (int) $rows->sum('amount_cents');
                 if ($invoice->status === 'void' || max(0, $net - $paidCents + $restore) - max(0, $net - $paidCents) !== $restore) {
@@ -66,7 +66,7 @@ class CustomerPaymentReversalService
                 $invoice = Invoice::where('shop_id', $shop->id)->where('customer_id', $customer->id)->whereKey($invoiceId)->lockForUpdate()->firstOrFail();
                 if ($invoice->status === 'void') continue;
                 $paid = (int) $invoice->payments()->sum('amount_cents');
-                $returned = Money::toCents(DB::table('invoice_returns')->where('shop_id', $shop->id)->where('invoice_id', $invoiceId)->sum('total'));
+                $returned = Money::toCents(DB::table('invoice_returns')->where('invoice_id', $invoice->id)->sum('total'));
                 $pending = max(0, Money::toCents($invoice->total) - $paid - $returned);
                 $invoice->forceFill(['status' => $pending === 0 ? 'paid' : ($paid > 0 ? 'partial' : 'pending')])->save();
             }
