@@ -28,6 +28,7 @@ test('sales history displays void button and omits unnecessary note', function (
     $response->assertOk()
         ->assertSee('FAC-1001')
         ->assertSee('Anular')
+        ->assertSee('Devolver artículos al inventario')
         ->assertSee(route('seller.shops.sales.void', [$shop, $invoice]), false)
         ->assertDontSee('Las ventas confirmadas alimentan inventario');
 });
@@ -160,4 +161,42 @@ test('api voidSaleApi voids sale by invoice id and returns json', function () {
         ->assertJson(['id' => (string) $invoice->id, 'status' => 'void']);
 
     expect($invoice->fresh()->status)->toBe('void');
+});
+
+test('api voidSaleApi respects restock false and leaves inventory untouched', function () {
+    $owner = User::factory()->create(['plan' => 'pro']);
+    $shop = Shop::factory()->for($owner)->create();
+    $product = Product::factory()->for($shop)->create(['price' => 200]);
+    ProductInventory::create(['product_id' => $product->id, 'track_inventory' => true, 'stock_quantity' => 5]);
+    $token = $owner->createToken('test', ['pos:write'])->plainTextToken;
+    $invoice = Invoice::create([
+        'shop_id' => $shop->id,
+        'user_id' => $owner->id,
+        'invoice_number' => 'FAC-API-NORESTOCK',
+        'channel' => 'pos',
+        'currency' => 'DOP',
+        'status' => 'paid',
+        'subtotal' => '200.00',
+        'total' => '200.00',
+        'issued_at' => now(),
+    ]);
+    InvoiceItem::create([
+        'invoice_id' => $invoice->id,
+        'product_id' => $product->id,
+        'product_name' => $product->name,
+        'quantity' => 3,
+        'unit_price' => '200.00',
+        'line_total' => '600.00',
+    ]);
+
+    $this->withToken($token)
+        ->postJson("/api/v1/shops/{$shop->public_id}/sales/{$invoice->id}/void", [
+            'reason' => 'Merma o daño sin reposición',
+            'restock' => false,
+        ])
+        ->assertOk()
+        ->assertJson(['id' => (string) $invoice->id, 'status' => 'void']);
+
+    expect($invoice->fresh()->status)->toBe('void')
+        ->and((int) $product->inventory()->first()->stock_quantity)->toBe(5);
 });

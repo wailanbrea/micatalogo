@@ -33,7 +33,7 @@ class SaleVoidService
             && in_array('sales', app(SellerMenuService::class)->visibleForUser($shop, $user), true);
     }
 
-    public function void(Shop $shop, Invoice $invoice, User $user, string $reason): Invoice
+    public function void(Shop $shop, Invoice $invoice, User $user, string $reason, bool $restock = true): Invoice
     {
         abort_unless($this->canVoid($shop, $user), 403);
         abort_unless($invoice->shop_id === $shop->id, 404);
@@ -43,7 +43,7 @@ class SaleVoidService
             throw new InvalidArgumentException('Indica un motivo de hasta 255 caracteres.', 422);
         }
 
-        return DB::transaction(function () use ($shop, $invoice, $user, $reason): Invoice {
+        return DB::transaction(function () use ($shop, $invoice, $user, $reason, $restock): Invoice {
             $locked = Invoice::where('shop_id', $shop->id)
                 ->whereKey($invoice->id)
                 ->lockForUpdate()
@@ -64,7 +64,9 @@ class SaleVoidService
                 throw new InvalidArgumentException('Esta venta tiene abonos aplicados. Anula primero el abono desde Cobros.', 422);
             }
 
-            $this->restockItems($shop, $locked, $user, $reason);
+            if ($restock) {
+                $this->restockItems($shop, $locked, $user, $reason);
+            }
 
             $paidCents = (int) $payments->sum('amount_cents');
             if ($payments->isNotEmpty()) {

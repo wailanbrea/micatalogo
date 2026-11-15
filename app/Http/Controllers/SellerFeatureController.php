@@ -1065,10 +1065,12 @@ class SellerFeatureController extends Controller
     {
         $data = $request->validate([
             'reason' => ['required', 'string', 'max:255'],
+            'restock' => ['nullable', 'boolean'],
         ]);
+        $restock = array_key_exists('restock', $data) ? (bool) $data['restock'] : true;
 
         try {
-            $voidService->void($shop, $invoice, $request->user(), $data['reason']);
+            $voidService->void($shop, $invoice, $request->user(), $data['reason'], $restock);
         } catch (InvalidArgumentException $error) {
             return back()->withErrors(['sale' => $error->getMessage()]);
         }
@@ -1083,7 +1085,9 @@ class SellerFeatureController extends Controller
             'invoice_id' => ['nullable', 'integer'],
             'client_sale_uuid' => ['nullable', 'uuid'],
             'reason' => ['required', 'string', 'max:255'],
+            'restock' => ['nullable', 'boolean'],
         ]);
+        $restock = array_key_exists('restock', $data) ? (bool) $data['restock'] : true;
 
         if (! $invoice) {
             if (! empty($data['invoice_id'])) {
@@ -1100,7 +1104,7 @@ class SellerFeatureController extends Controller
         }
 
         try {
-            $voided = $voidService->void($shop, $invoice, $request->user(), $data['reason']);
+            $voided = $voidService->void($shop, $invoice, $request->user(), $data['reason'], $restock);
         } catch (InvalidArgumentException $error) {
             return response()->json(['message' => $error->getMessage()], $error->getCode() ?: 422);
         }

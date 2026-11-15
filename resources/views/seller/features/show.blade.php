@@ -1050,13 +1050,20 @@
                                                 </div>
                                             </div>
                                             @if ($featureKey === 'sales' && ($row['can_void'] ?? false))
-                                                <form x-show="voiding" x-cloak method="POST" action="{{ route('seller.shops.sales.void', [$shop, $row['id']]) }}" class="mt-3 flex flex-col gap-2 rounded-xl border border-rose-200 bg-rose-50/60 p-3 sm:flex-row sm:items-center">
+                                                <form x-show="voiding" x-cloak method="POST" action="{{ route('seller.shops.sales.void', [$shop, $row['id']]) }}" class="mt-3 flex flex-col gap-2 rounded-xl border border-rose-200 bg-rose-50/60 p-3">
                                                     @csrf
-                                                    <input type="text" name="reason" required maxlength="255" placeholder="Motivo de anulación (ej. venta duplicada)" class="min-w-0 flex-1 rounded-lg border border-rose-200 bg-white px-3 py-2 text-xs text-slate-900 focus:border-rose-400 focus:ring-rose-400">
-                                                    <div class="flex items-center gap-2">
-                                                        <button type="submit" class="rounded-lg bg-rose-600 px-3 py-2 text-xs font-black text-white hover:bg-rose-700">Confirmar anulación</button>
-                                                        <button type="button" @click="voiding = false" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50">Cancelar</button>
+                                                    <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                                        <input type="text" name="reason" required maxlength="255" placeholder="Motivo de anulación (ej. venta duplicada)" class="min-w-0 flex-1 rounded-lg border border-rose-200 bg-white px-3 py-2 text-xs text-slate-900 focus:border-rose-400 focus:ring-rose-400">
+                                                        <div class="flex items-center gap-2">
+                                                            <button type="submit" class="rounded-lg bg-rose-600 px-3 py-2 text-xs font-black text-white hover:bg-rose-700">Confirmar anulación</button>
+                                                            <button type="button" @click="voiding = false" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50">Cancelar</button>
+                                                        </div>
                                                     </div>
+                                                    <label class="flex cursor-pointer select-none items-center gap-2 text-xs font-bold text-slate-700">
+                                                        <input type="hidden" name="restock" value="0">
+                                                        <input type="checkbox" name="restock" value="1" checked class="h-4 w-4 rounded border-rose-300 text-rose-600 focus:ring-rose-500">
+                                                        <span>Devolver artículos al inventario</span>
+                                                    </label>
                                                 </form>
                                             @endif
                                         </div>

@@ -738,30 +738,42 @@ class MobileOperationService
             return ['invoice_id' => $invoice->id, 'status' => 'void'];
         }
 
+        $restock = array_key_exists('restock', $data)
+            ? (filter_var($data['restock'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true)
+            : true;
+
         $paidCents = (int) $invoice->payments()->sum('amount_cents');
         if ($paidCents > 0) {
-            app(SaleVoidService::class)->void($shop, $invoice, $user, trim((string) ($data['notes'] ?? '')) ?: 'Anulación de venta #' . $invoice->invoice_number);
+            app(SaleVoidService::class)->void(
+                $shop,
+                $invoice,
+                $user,
+                trim((string) ($data['notes'] ?? '')) ?: 'Anulación de venta #' . $invoice->invoice_number,
+                $restock
+            );
 
             return ['invoice_id' => $invoice->id, 'status' => 'void'];
         }
 
-        // Restock unreturned items
-        $rows = $invoice->items()->get();
-        foreach ($rows as $item) {
-            $oldReturnedQty = (int) DB::table('invoice_return_items')->where('invoice_item_id', $item->id)->sum('quantity');
-            $remQty = $item->quantity - $oldReturnedQty;
-            if ($remQty > 0) {
-                $product = $shop->products()->withTrashed()->whereKey($item->product_id)->first();
-                if ($product) {
-                    $remainder = app(DecantInventoryService::class)->available()
-                        ? DB::table('decant_remainder_sales')->join('inventory_movements', 'inventory_movements.id', '=', 'decant_remainder_sales.movement_id')
-                            ->where('inventory_movements.invoice_id', $invoice->id)->where('inventory_movements.product_id', $product->id)->select('decant_remainder_sales.*')->first()
-                        : null;
-                    $cost = $item->total_cost_cents === null ? null : intdiv($item->total_cost_cents * $remQty, $item->quantity);
-                    if ($remainder) {
-                        app(DecantInventoryService::class)->returnRemainder($product, $remainder, $cost, $user->id);
-                    } else {
-                        app(InventoryService::class)->recordReturn($product, $remQty, $cost, $user->id, $data['notes'] ?? 'Anulación de venta #' . $invoice->invoice_number);
+        if ($restock) {
+            // Restock unreturned items
+            $rows = $invoice->items()->get();
+            foreach ($rows as $item) {
+                $oldReturnedQty = (int) DB::table('invoice_return_items')->where('invoice_item_id', $item->id)->sum('quantity');
+                $remQty = $item->quantity - $oldReturnedQty;
+                if ($remQty > 0) {
+                    $product = $shop->products()->withTrashed()->whereKey($item->product_id)->first();
+                    if ($product) {
+                        $remainder = app(DecantInventoryService::class)->available()
+                            ? DB::table('decant_remainder_sales')->join('inventory_movements', 'inventory_movements.id', '=', 'decant_remainder_sales.movement_id')
+                                ->where('inventory_movements.invoice_id', $invoice->id)->where('inventory_movements.product_id', $product->id)->select('decant_remainder_sales.*')->first()
+                            : null;
+                        $cost = $item->total_cost_cents === null ? null : intdiv($item->total_cost_cents * $remQty, $item->quantity);
+                        if ($remainder) {
+                            app(DecantInventoryService::class)->returnRemainder($product, $remainder, $cost, $user->id);
+                        } else {
+                            app(InventoryService::class)->recordReturn($product, $remQty, $cost, $user->id, $data['notes'] ?? 'Anulación de venta #' . $invoice->invoice_number);
+                        }
                     }
                 }
             }
