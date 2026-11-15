@@ -195,6 +195,10 @@ class SellerCommerceController extends Controller
         $supplier = $shop->suppliers()->where('public_id', $data['supplier_id'])->firstOrFail();
         $number = $data['document_number'] ?: 'DEUDA-'.now()->format('YmdHis');
 
+        if ($shop->purchaseDocuments()->where('document_number', $number)->exists()) {
+            return back()->withErrors(['document_number' => 'Ya existe un documento con ese número en esta tienda.'])->withInput();
+        }
+
         $document = PurchaseDocument::create([
             'shop_id' => $shop->id,
             'supplier_id' => $supplier->id,
@@ -295,6 +299,10 @@ class SellerCommerceController extends Controller
         })->values();
         $subtotalCents = $lines->sum(fn (array $line): int => $line['unit_cost_cents'] * $line['quantity']);
         $mode = ($data['type'] ?? null) === 'load' ? 'draft' : ($data['mode'] ?? 'received');
+
+        if ($shop->purchaseDocuments()->where('document_number', $data['document_number'])->exists()) {
+            return back()->withErrors(['document_number' => 'Ya existe un documento con ese número en esta tienda.'])->withInput();
+        }
 
         try {
             $document = DB::transaction(function () use ($request, $shop, $data, $supplier, $parent, $inventory, $lines, $subtotalCents, $mode): PurchaseDocument {

@@ -34,6 +34,10 @@ class PurchaseDocumentService
             }
         }
 
+        if ($shop->purchaseDocuments()->where('document_number', $data['document_number'])->exists()) {
+            throw new InvalidArgumentException('Ya existe un documento con ese número en esta tienda.');
+        }
+
         $products = Product::query()
             ->where('shop_id', $shop->id)
             ->whereIn('public_id', $items->pluck('product_id')->unique())

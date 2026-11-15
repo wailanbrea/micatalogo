@@ -84,6 +84,18 @@ class SellerCustomerController extends Controller
             $validated['name'] = trim($validated['first_name'].' '.$validated['last_name']);
         }
 
+        if (! empty($validated['document_type']) && ! empty($validated['document_number'])) {
+            $duplicate = $shop->customers()
+                ->where('document_type', $validated['document_type'])
+                ->where('document_number', $validated['document_number'])
+                ->exists();
+            if ($duplicate) {
+                return back()->withErrors([
+                    'document_number' => 'Ya existe un cliente registrado con ese documento en esta tienda.',
+                ])->withInput();
+            }
+        }
+
         $shop->customers()->create($validated);
 
         return back()->with('status', 'Cliente creado correctamente.');

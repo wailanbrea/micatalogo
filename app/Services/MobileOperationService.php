@@ -660,6 +660,7 @@ class MobileOperationService
         $priorReturnsCents = Money::toCents(DB::table('invoice_returns')->where('invoice_id', $invoice->id)->where('id', '!=', $returnId)->sum('total'));
         $invoicePendingCents = max(0, Money::toCents($invoice->total) - $paidCents - $priorReturnsCents);
 
+        $debtReductionCents = 0;
         if ($totalCents > 0 && $invoice->customer_id && $invoicePendingCents > 0) {
             $debtReductionCents = min($totalCents, $invoicePendingCents);
             if ($debtReductionCents > 0) {
@@ -679,6 +680,23 @@ class MobileOperationService
                         'client_transaction_uuid' => (string) Str::uuid(),
                     ]);
                 }
+            }
+        }
+
+        $cashRefundCents = max(0, $totalCents - $debtReductionCents);
+        if ($cashRefundCents > 0 && $invoice->payments()->where('payment_method', 'cash')->exists()) {
+            $cashService = app(CashRegisterService::class);
+            $openSession = $cashService->getCurrentSession($shop, $user);
+            if ($openSession) {
+                $cashService->recordMovement(
+                    $openSession,
+                    $user,
+                    'cash_out',
+                    Money::toDecimal($cashRefundCents),
+                    'Devolución de factura #' . $invoice->invoice_number . (! empty($data['notes']) ? ': ' . $data['notes'] : ''),
+                    'invoice_return',
+                    $returnId
+                );
             }
         }
 

@@ -14,7 +14,7 @@ body:has(.customer-create-dialog[open]) { overflow: hidden; }
 .customer-create-form > .grid, .customer-create-form > div:has(textarea), .customer-dialog-footer { grid-column: 1 / -1; }
 .customer-dialog-footer { display: flex; justify-content: end; gap: 12px; position: sticky; bottom: -1px; background: white; padding-block: 16px; border-top: 1px solid #e2e8f0; }
 @media (max-width: 480px) { .customer-create-form { grid-template-columns: minmax(0, 1fr); padding: 16px; } .customer-dialog-header { padding: 16px; } .customer-list-tools { width: 100%; } }
-.customer-table-wrapper { border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; }
+.customer-table-wrapper { border: 1px solid #e2e8f0; border-radius: 14px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .customer-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .customer-table thead { background: #f8fafc; color: #64748b; }
 .customer-table th, .customer-table td { padding: 14px 12px; text-align: left; border-bottom: 1px solid #e2e8f0; overflow-wrap: anywhere; }
