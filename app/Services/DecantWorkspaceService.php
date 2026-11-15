@@ -129,10 +129,10 @@ class DecantWorkspaceService
 
     public function inventoryValue(Shop $shop, bool $available): int
     {
-        $ids = $shop->products()->withTrashed()->select('id');
+        $ids = $shop->products()->select('id');
         $value = (int) DB::table('inventory_lots')->whereIn('product_id', $ids)->sum('remaining_cost_cents');
         $value += (int) DB::table('product_inventories')->join('products', 'products.id', '=', 'product_inventories.product_id')
-            ->where('products.shop_id', $shop->id)->where('product_inventories.track_inventory', true)
+            ->where('products.shop_id', $shop->id)->whereNull('products.deleted_at')->where('product_inventories.track_inventory', true)
             ->where(fn ($q) => $q->whereNull('products.sale_unit')->orWhere('products.sale_unit', '!=', 'decant'))
             ->whereNotExists(fn ($q) => $q->selectRaw('1')->from('inventory_lots')->whereColumn('inventory_lots.product_id', 'products.id'))
             ->selectRaw('COALESCE(SUM(ROUND(product_inventories.stock_quantity * product_inventories.cost_price * 100)), 0) AS cents')->value('cents');
