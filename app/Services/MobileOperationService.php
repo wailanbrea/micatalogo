@@ -369,6 +369,8 @@ class MobileOperationService
             if (isset($data['image_base64'])) {
                 $this->productImage($shop, $product, $data);
             }
+            $this->syncMobileAttribute($shop, $product, 'Color', 'color', $data);
+            $this->syncMobileAttribute($shop, $product, 'Size', 'size', $data);
         } else {
             abort_unless($product && ! $product->trashed(), 404);
             if ($data['type'] === 'product_archive') {
@@ -807,5 +809,36 @@ class MobileOperationService
         $invoice->update(['status' => 'void']);
 
         return ['invoice_id' => $invoice->id, 'status' => 'void'];
+    }
+
+    private function syncMobileAttribute(Shop $shop, Product $product, string $label, string $key, array $data): void
+    {
+        if (! array_key_exists($key, $data)) {
+            return;
+        }
+        $value = trim((string) ($data[$key] ?? ''));
+        $slug = Str::slug($label);
+        $definition = \App\Models\AttributeDefinition::firstOrCreate(
+            [
+                'shop_id' => $shop->id,
+                'shop_category_id' => $product->shop_category_id,
+                'slug' => $slug,
+            ],
+            [
+                'name' => $label,
+                'type' => 'text',
+                'filterable' => true,
+                'display_order' => $key === 'color' ? 0 : 1,
+            ]
+        );
+        if ($value === '') {
+            $product->attributeValues()->where('attribute_definition_id', $definition->id)->delete();
+
+            return;
+        }
+        $product->attributeValues()->updateOrCreate(
+            ['attribute_definition_id' => $definition->id],
+            ['value' => mb_substr($value, 0, 255)]
+        );
     }
 }
